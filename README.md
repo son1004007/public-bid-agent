@@ -1,59 +1,113 @@
-# Public Bid Agent
+# 공공 AI 입찰 분석 에이전트 (Public Bid Agent)
 
-Public Bid Agent is a public portfolio project for discovering AI/software public procurement opportunities and analyzing participation fit with traceable evidence from official public sources.
+공공데이터를 활용해 **AI 및 소프트웨어 분야의 공공 입찰공고를 탐색하고, 제안요청서(RFP)의 요구사항과 기업의 기술 역량을 비교하여 검토 근거를 제공하는 웹 서비스**를 목표로 하는 개인 포트폴리오 프로젝트입니다.
 
-> Current status: planning / architecture. No runtime implementation or public deployment has been verified yet.
+> **현재 진행 상태: 기획 및 설계 단계**
+>
+> 서비스 구현, 자동화 테스트, 실제 배포는 아직 완료되지 않았습니다. 아래 기술 구성과 기능은 **구현 계획**이며, 검증되지 않은 기능을 구현 성과로 표시하지 않습니다.
 
-## Intended flow
+## 프로젝트를 시작한 이유
+
+공공 입찰 참여를 검토하려면 공고 검색뿐 아니라 참가자격, 과업 범위, 요구 기술, 제출 기한과 첨부문서를 함께 확인해야 합니다. 이러한 반복 검토를 공개 데이터를 기반으로 지원하고, **AI가 내린 판단의 근거를 사용자가 직접 확인할 수 있는 서비스**를 구현하고자 합니다.
+
+이 프로젝트에서는 단순히 LLM 응답을 출력하는 것을 넘어 다음 역량을 구현하고 검증하는 것이 목표입니다.
+
+- React와 FastAPI를 이용한 사용자 중심 웹 서비스 개발
+- 공공데이터 API와 외부 문서의 수집, 검증 및 표준화
+- LangGraph를 이용한 단계별 AI Agent 작업 흐름
+- RAG 기반 제안요청서 검색과 출처 추적
+- 사용자 인증, 접근권한, 입력 검증 등 서비스 보안
+- 자동화 테스트, 장애 처리, 배포 및 운영 품질 검증
+
+## 주요 기능 계획
+
+| 기능 | 설명 | 상태 |
+| --- | --- | --- |
+| 공공 입찰공고 검색 | 나라장터 공개 API에서 AI/SW 관련 공고 탐색 | 설계 |
+| 기업 및 기술 역량 관리 | 사용자가 기업 조건과 보유 기술 입력 | 설계 |
+| 공고 및 제안요청서 분석 | 참가요건, 기술요건, 사업기간 등 추출 | 설계 |
+| AI Agent 분석 | 검색, 문서 분석, 조건 비교, 부족한 정보 확인 | 설계 |
+| 근거 기반 적합성 평가 | 적합, 추가 검토 필요, 부적합과 판단 근거 표시 | 설계 |
+| Google 로그인 | 사용자별 정보 및 분석 이력 분리 | 설계 |
+| 분석 진행상황 표시 | 장시간 작업을 SSE로 전달 | 설계 |
+
+**실제 전자입찰 제출, 인증서 서명, 결제 및 계약 체결은 구현 범위에 포함하지 않습니다.** 또한 분석 결과는 참고 정보이며 법적 참가자격에 대한 공식 판정이 아닙니다.
+
+## 서비스 이용 흐름 (설계)
 
 ```text
-Google sign-in
--> organization/technology profile
--> official procurement search
--> AI/software relevance filtering
--> notice/RFP evidence retrieval
--> eligibility and technical-fit analysis
--> follow-up for missing facts
--> SUITABLE / NEEDS_REVIEW / UNSUITABLE with evidence
+사용자 로그인
+    ↓
+기업 정보 및 보유 기술 등록
+    ↓
+나라장터 공공 입찰공고 검색
+    ↓
+AI/SW 관련 공고 선별
+    ↓
+공고문 및 제안요청서 분석
+    ↓
+참가자격과 기술요건 비교
+    ↓
+부족한 정보가 있으면 사용자에게 질문
+    ↓
+적합 / 추가 검토 필요 / 부적합
+    + 판단 근거 및 원문 링크 제공
 ```
 
-## Planned architecture
+## 기술 구성 (예정)
 
-- React + TypeScript
-- Python + FastAPI
-- LangGraph
-- LangChain where justified by retrieval/LLM integration
-- PostgreSQL + pgVector
-- official G2B public-data adapters
-- MCP-compatible tool boundary where it adds a real integration boundary
-- Google SSO
-- Codex as the preferred reasoning target, subject to verified deployment/authentication support
-- SSE
-- Docker Compose
-- pytest / frontend tests / GitHub Actions
+| 구분 | 기술 | 적용 목적 |
+| --- | --- | --- |
+| 프론트엔드 | React, TypeScript | 사용자 화면 및 분석 결과 표시 |
+| 백엔드 | Python, FastAPI | 인증, API, 분석 실행 및 외부 연동 |
+| AI Agent | LangGraph | 검색부터 결과 생성까지 상태 기반 작업 흐름 |
+| LLM/RAG | LangChain | 문서 처리 및 근거 검색 연계 |
+| 데이터베이스 | PostgreSQL, pgVector | 사용자 정보, 공고, 분석 이력, 벡터 검색 |
+| 외부 도구 | MCP 적용 검토 | 조달 API 연동 도구 경계 |
+| 인증 | Google SSO | 사용자 인증 및 데이터 격리 |
+| 스트리밍 | SSE | 분석 진행상황 전달 |
+| 배포/검증 | Docker Compose, pytest, GitHub Actions | 실행 환경 및 자동 검증 |
 
-These are planned components, not implementation claims.
+추론 모델은 Codex 활용을 우선 검토하지만, **공개 웹 서비스에서 사용자별 ChatGPT/Codex 계정 연결을 지원할 수 있는지는 확인 중**입니다. 지원 여부가 확인되기 전까지 구현 완료 기능으로 표시하지 않습니다.
 
-## MVP boundary
+## 데이터 출처
 
-The project supports discovery and analysis. It does **not** submit bids, sign certificates, make payments, create contractual commitments, or claim to make an official legal eligibility determination.
+- [공공데이터포털 - 조달청 나라장터 입찰공고정보서비스](https://www.data.go.kr/data/15129394/openapi.do)
+- [공공데이터포털 - 조달청 나라장터 사전규격정보서비스](https://www.data.go.kr/data/15129437/openapi.do)
 
-## Documentation
+공공 입찰공고와 첨부문서의 저작권 및 이용조건은 원 출처를 따릅니다. AI 분석 결과와 공식 원문 정보는 구분해 제공할 계획입니다.
 
-Read in this order:
+## 설계 및 개발 문서
 
-1. `AGENTS.md`
-2. `AI_CONTEXT.md`
-3. `CURRENT_STATE.md`
-4. `docs/00-project-context.md`
-5. `docs/01-requirements.md`
-6. `docs/02-architecture.md`
-7. `docs/03-test-plan.md`
-8. `docs/04-operation-and-deployment.md`
-9. `docs/05-coding-standards.md`
-10. `docs/06-source-layout.md`
-11. `TASKS.md`
+| 문서 | 내용 |
+| --- | --- |
+| [프로젝트 배경](docs/00-project-context.md) | 해결할 문제, 사용자, 범위 |
+| [요구사항](docs/01-requirements.md) | 기능 및 비기능 요구사항 |
+| [아키텍처](docs/02-architecture.md) | 구성요소와 신뢰 경계 |
+| [테스트 계획](docs/03-test-plan.md) | 기능, 보안, AI 품질 검증 |
+| [운영 및 배포](docs/04-operation-and-deployment.md) | 배포와 운영 기준 |
+| [코드 작성 규칙](docs/05-coding-standards.md) | 공식 문서 기반 React/FastAPI 표준 |
+| [소스 구조](docs/06-source-layout.md) | 프로젝트 디렉터리와 책임 |
+| [현재 상태](CURRENT_STATE.md) | 구현 및 검증 진행 현황 |
+| [작업 목록](TASKS.md) | 단계별 구현 계획 |
 
-## License
+Codex 및 기타 AI 코딩 도구는 [AGENTS.md](AGENTS.md)를 진입점으로 사용하고, 기존 공통 개발 규칙과 한글 파일 설계 계약을 확인한 뒤 구현하도록 정의했습니다.
 
-Project-authored source code and documentation are licensed under Apache License 2.0. Public procurement data, notices, RFPs, attachments, trademarks and other third-party content retain their original terms and rights. See `LICENSE` and `NOTICE`.
+## 진행 현황
+
+- [x] 프로젝트 목표 및 MVP 범위 정의
+- [x] 라이선스 적용
+- [x] 요구사항 및 초기 아키텍처 설계
+- [x] React/FastAPI 코드 작성 규칙 연결
+- [ ] 독립 설계 및 보안 리뷰 완료
+- [ ] 프론트엔드/백엔드 구현
+- [ ] 자동화 테스트 및 실제 API 연동 검증
+- [ ] 공개 서비스 배포
+
+독립 설계 및 보안 리뷰는 현재 별도 리뷰 도구를 사용할 수 없어 **진행 보류** 상태입니다.
+
+## 라이선스
+
+프로젝트에서 직접 작성한 소스 코드와 문서는 **Apache License 2.0**을 따릅니다. 자세한 내용은 [LICENSE](LICENSE)와 [NOTICE](NOTICE)를 참고하세요.
+
+나라장터 공고, 제안요청서, 첨부파일 등 제3자 콘텐츠에는 이 라이선스를 적용하지 않으며, 해당 출처의 권리 및 이용조건을 따릅니다.
