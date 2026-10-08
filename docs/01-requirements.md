@@ -158,3 +158,13 @@ Agent는 provider 자격증명을 도메인에 결합하지 않으며 `fake / di
 ## 구현 승인 전 확인
 
 [검수 조정](reviews/2026-10-08-review-reconciliation.md)에서 실질적 MAJOR를 해소하고, 실제 API 표본과 LLM 공개 연동 제한에 대한 검증 또는 명확한 기능 비활성 경로를 확보해야 한다. 문서 변경만으로 테스트/인증/법률 준수 완료를 선언하지 않는다.
+
+## R3 검수 반영: 상세 검증 게이트
+
+- REQ-BID-003: [ADR-002](adr/ADR-002-procurement-data-lifecycle.md)의 `EffectiveNoticeProjection`은 revision 분기/순환/역순/중복, 완전 동기화 여부와 확인된 마감 시각을 함께 검증한다. 최신본이나 접수 가능 여부가 모호하면 `NEEDS_REVIEW`.
+- REQ-DOC-002: [ADR-003](adr/ADR-003-evidence-retrieval.md)에 따른 `extraction_completeness`가 `COMPLETE`가 아니면 필수요건을 모두 분석했다고 주장하거나 `SUITABLE`로 판정하지 않는다.
+- REQ-STREAM-002: 이미 열린 SSE 연결도 각 이벤트 전송 전에 세션 유효성/계정/소유권을 검증하고 폐기 후 전송을 중지한다.
+- REQ-UI-SEC-001: [코드 작성 규칙](05-coding-standards.md)에 따라 공고·모델 출력은 React 텍스트로 렌더링하고, 공식 허용된 원문 HTTPS 링크만 활성화한다.
+- REQ-QUESTION-001: [ADR-007](adr/ADR-007-analysis-state-evaluation.md)의 후속 질문·답변은 비민감 enum/스키마만 허용한다. 미공개 고객/개인/기업자료 제출을 요구하지 않는다.
+- REQ-BUDGET-001: 모델 사용량은 실패·재시도·worker 재시작까지 포함한 영속 예약·사용 ledger로 관리하고 입력/출력 토큰, 활성/대기 시간을 구분한다. 사용자/전역 한도 검증 전 실제 공개 AI 호출을 허용하지 않는다.
+- REQ-REAUTH-001: 계정 삭제, 전체 데이터 export, 외부 모델 연결·해제는 최신 사용자 인증과 일회용 승인 절차를 검증한다.
