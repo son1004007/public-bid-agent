@@ -170,3 +170,11 @@ production build
 - 실제로 검증하지 않은 성능·보안 보장을 주석에 작성하지 않는다.
 - TODO에는 사유와 제거 조건을 기록한다.
 - 요구사항과 코드 계약·테스트·독립 검수 결과가 일치하고 필요한 정적검사/테스트를 **실제 실행한 후**에만 완료라고 표시한다.
+
+## 6. 비신뢰 문자열의 React 렌더링 규칙 — R3-004
+
+- RFP/공고에서 추출한 문구, 모델 생성 결과, 사용자 프로필 문자열은 **기본적으로 JSX text node**로 렌더링한다. `dangerouslySetInnerHTML`, 임의 HTML 해석 또는 사용자 제공 Markdown의 raw HTML 활성화는 금지한다.
+- 초기 MVP에서는 원문/모델 출력의 Markdown HTML 렌더링을 지원하지 않는다. 추후 도입한다면 명시적인 HTML/URL allowlist, 검증된 sanitizer, escape 테스트, 보안 리뷰를 통과해야 한다.
+- 링크는 서버에서 허용된 `canonical_source_url`만 클릭 가능한 값으로 사용한다. 브라우저에서도 `https:`/공식 호스트를 검사하여 `javascript:`, `data:`, HTML 이벤트 핸들러, 임의 open redirect를 활성화하지 않는다.
+- 외부 출처 링크는 `rel="noopener noreferrer"` 및 안전한 `target` 정책을 사용한다. CSP는 `default-src 'self'`, 제한된 `script-src`, `object-src 'none'`, `base-uri 'self'` 등을 공개 호스팅 환경에 맞게 검증하고 unsafe inline 실행을 허용하지 않는다.
+- 브라우저 E2E에서 합성 PDF/모델 출력의 `<script>`, SVG/event attribute, malformed Markdown 및 위험 스킴을 주입하여 DOM 스크립트·임의 navigation·인증된 요청이 실행되지 않는지 확인한다.
