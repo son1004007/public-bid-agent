@@ -114,3 +114,12 @@ LLM이 돌려준 citation ID는 서버가 존재 여부·원문 버전·해당 �
 ## 남은 외부 검증
 
 실제 조달 API 필드/정정 관계/파일 형식, 배포 도메인 및 OAuth 콘솔 설정, 유료 API 사용 없이 원격 ChatGPT 연동이 허용되는지, 문서 원문 재배포·보존 범위는 확인 전까지 `UNVERIFIED`다. 의사결정 미완료를 구현 완료로 표시하지 않는다.
+
+## R3 수정: 완전성·지속 권한·소모량 계약
+
+- 현재 공고 선택은 [ADR-002](adr/ADR-002-procurement-data-lifecycle.md) `EffectiveNoticeProjection`에서 단일 유효 revision, 마지막 완전 동기화 시점, 상태·마감시각을 별도로 판정한다. 접수 불명확/오래된 snapshot의 긍정 판정을 막는다.
+- 문서 추출은 parser 성공과 별도로 원문 페이지 처리·표/스캔 누락을 포함한 `extraction_completeness`를 유지한다. 불완전 추출은 `NEEDS_REVIEW`로 전달한다.
+- SSE는 연결 이후에도 매 이벤트 전송 전에 세션 generation·계정 상태·run 소유권을 검증하고 logout/탈퇴/철회 시 연결을 종료한다.
+- React는 모든 공고/모델 출력의 기본 표시를 text node로 한정하고, 공식 출처 URL만 안전한 링크로 변환한다. HTML 직접 렌더링은 MVP에서 금지한다.
+- 후속 질문은 승인된 비민감 스키마와 option으로만 제공한다. 회사 기밀·계약/연락처/계좌/실적 원문은 업로드/자유 입력/LLM 전송을 허용하지 않는다.
+- 분석 worker는 [ADR-007](adr/ADR-007-analysis-state-evaluation.md)의 DB `RunBudget/UsageAttempt` 영속 장부를 사용하고, 모델 호출 전 예약·응답 후 사용량을 조정한다. timeout·중복 작업·취소에도 시도 예산을 되돌리지 않는다.
