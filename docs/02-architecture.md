@@ -19,7 +19,9 @@ FastAPI 단일 백엔드(BFF + modular monolith)
     |-- 문서 다운로드 게이트 -> 격리 PDF 파서
     |-- 원문 근거 버전 -> passage -> 요건 -> claim
     |-- 적합성 규칙 엔진 / 정보 부족 처리
-    |-- 분석 상태/예산/질문/취소/재시작
+    |-- 분석 실행 상태/판정/원문 최신성의 분리
+    |-- PostgreSQL lease 기반 worker claim/heartbeat/recovery/취소
+    |-- 모델 호출 예산/질문/취소/재시작
     |-- AI provider 인터페이스(기본 disabled/fake)
     |-- (필요 시) LangGraph, SSE, pgVector, MCP
     |
@@ -52,11 +54,13 @@ FastAPI 단일 백엔드(BFF + modular monolith)
 공공 API 응답
  -> RawNoticeSnapshot(바이트 해시, 출처, 수집 일시, parser version)
  -> NoticeIdentity/NoticeRevision(실제 API 필드 확인 후 key 결정)
- -> OPEN/CORRECTED/CANCELLED/CLOSED/UNKNOWN의 내부 관찰 상태
+ -> revision_kind(ORIGINAL/CORRECTION/UNKNOWN)
+ -> availability_status(OPEN/CLOSED/CANCELLED/UNKNOWN)
+ -> source_freshness(CURRENT/STALE_SOURCE/UNKNOWN)
  -> DocumentVersion -> Requirement -> AnalysisRun
 ```
 
-정정·취소·원문 변경 시 기존 분석 이력을 덮어쓰지 않고 stale 표시한다. API 0건/partial/error/schema drift와 원천 시간대 미확정을 구별한다. 확증 없는 마감·참가 가능성은 `UNKNOWN`이다.
+정정·취소·원문 변경 시 기존 분석 이력의 실행 완료 상태를 바꾸지 않고 최신성 projection에서 stale을 표시한다. 실제 fetch URL에 비밀정보가 있을 수 있으므로 원천 링크는 서버 fetch 주소와 공개 canonical 주소를 분리한다. API 0건/partial/error/schema drift와 원천 시간대 미확정을 구별한다. 확증 없는 마감·참가 가능성은 `UNKNOWN`이다.
 
 ## 안전한 문서 수집 및 근거 관계
 
@@ -71,10 +75,10 @@ NoticeRevision
  -> Passage(id, source version, location)
  -> ExtractedRequirement(priority, condition, passage id)
  -> Claim(assertion, result state)
- -> EvidenceLink(validated passage id, support relation)
+ -> EvidenceLink(passage id, support relation, structure + semantic validation state)
 ```
 
-LLM이 돌려준 citation ID는 서버가 존재 여부·원문 버전·해당 분석 범위를 확인한다. 재파싱 또는 원문 갱신으로 과거 출처 링크를 바꿔치기하지 않는다.
+LLM이 돌려준 citation ID는 서버가 존재 여부·원문 버전·해당 분석 범위를 확인한다. **ID가 실재한다는 사실과 주장 내용을 의미상 지지한다는 사실을 분리하고**, 후자가 검증되지 않으면 긍정 확정 판정을 제한한다. 재파싱 또는 원문 갱신으로 과거 출처 링크를 바꿔치기하지 않는다.
 
 ## 적합성 판정과 상태 전이
 
@@ -89,9 +93,9 @@ LLM이 돌려준 citation ID는 서버가 존재 여부·원문 버전·해당 �
  -> 결과와 출처 버전 표시
 ```
 
-단일 분석 실행은 도구·LLM 호출, 토큰, 시간, 상태 전이, 질문 수 예산을 가진다. 모델에 범용 shell/SQL/URL fetch를 허용하지 않는다. 취소/재개는 별도 권한·idempotency 검사를 거친다.
+단일 분석 실행은 도구·LLM 호출, 토큰, 시간, 상태 전이, 질문 수 예산을 가진다. 실행/판정/최신성 3축을 구별하고, 공개 배포에서는 별도 worker의 DB job lease와 CAS로 장기 분석·재시작·취소 경쟁을 처리한다. 모델에 범용 shell/SQL/URL fetch를 허용하지 않는다. 취소/재개는 별도 권한·idempotency 검사를 거친다.
 
-기술 적합성과 필수 참가자격은 별도 판단이다. `SUITABLE`은 법적 자격 확인을 의미하지 않으며 필수 요건 UNKNOWN이 남았으면 사용하지 않는다.
+기술 적합성과 필수 참가자격은 별도 판단이다. UNKNOWN_PRIORITY의 중요한 조항이 하나라도 남으면 SUITABLE을 금지하며, UNSUITABLE은 의미상 검증된 필수조건 상충일 때만 사용한다. `SUITABLE`은 법적 자격 확인을 의미하지 않으며 필수 요건 UNKNOWN이 남았으면 사용하지 않는다.
 
 ## LLM/검색 설계와 비용
 
@@ -103,7 +107,7 @@ LLM이 돌려준 citation ID는 서버가 존재 여부·원문 버전·해당 �
 ## 배포, 데이터 생명주기, 검증
 
 - [ADR-005](adr/ADR-005-hosting-operations.md): HTTPS edge, 비공개 DB, 로그 최소화, 백업/복원, 오류 관찰, 호출 제한.
-- [ADR-008](adr/ADR-008-profile-privacy.md): 프로필 최소수집, 원문 권리 구분, 계정/분석 삭제, 모델 전송 allowlist.
+- [ADR-008](adr/ADR-008-profile-privacy.md): 프로필 최소수집, 원문 내 제3자 개인정보 처리, 세션·worker 취소를 포함한 계정 삭제, 삭제 저널/재가입, 모델 전송 allowlist.
 - [03 테스트 계획](03-test-plan.md)에서 각 위협 경계와 오류·복구·출시 평가 게이트를 검증한다.
 - 사용하지 않는 데이터 수집, 법적 입찰 자격 확정, 실제 전자입찰 제출은 범위 밖이다.
 
