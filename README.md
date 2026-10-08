@@ -50,7 +50,9 @@ Read in this order:
 6. `docs/02-architecture.md`
 7. `docs/03-test-plan.md`
 8. `docs/04-operation-and-deployment.md`
-9. `TASKS.md`
+9. `docs/05-coding-standards.md`
+10. `docs/06-source-layout.md`
+11. `TASKS.md`
 
 ## License
 
