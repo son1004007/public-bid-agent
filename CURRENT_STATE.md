@@ -1,13 +1,13 @@
 # 현재 개발 상태
 
 - 기준일: 2026-10-08
-- 단계: 기획 및 아키텍처 설계
+- 단계: 최초 독립 Codex 지적사항의 설계 반영 / 독립 재검수 대기
 - 저장소: 공개
 - 라이선스: Apache-2.0
 - 서비스 구현: 미착수
 - 테스트: 미실행
 - 배포: 미실행
-- 독립 설계/보안 리뷰: AGY/Gemini + Codex 독립 검토 실행 완료. 판정: `HOLD` (주요 설계 지적 미해결)
+- 최초 독립 설계/보안 리뷰: AGY/Gemini + Codex 완료. Codex 13건의 수정 요구를 설계 문서에 반영했으나 독립 재검수 전이므로 `HOLD` 유지
 
 ## 확인된 사항
 
@@ -19,8 +19,15 @@
 
 ## 구현 전 확인 사항
 
-1. 독립 설계/보안 리뷰는 실행 완료했지만 주요 지적사항이 미해결입니다. `docs/reviews/2026-10-08-review-reconciliation.md`를 근거로 인증, 권한, 데이터 버전, 첨부 보안, 근거 모델, Agent 실행 예산의 설계 보완이 필요합니다.
+1. [ADR 설계 8개](docs/adr/README.md)에 Codex 검토 결과를 반영했다. 아직 수정한 설계의 독립 Codex 재검수, 판정 조정 및 주요 발견 해결이 필요하다.
 2. 나라장터 API의 실제 작업/필드/첨부 수집 방법 검증
 3. Google OAuth 운영 설정과 redirect/origin 정책 검증
 4. 오픈소스 ChatGPT 플랜 연동(SIWC)과 원격 호스팅 앱의 별도 승인/등록 요건을 구분하여 공식 지원 여부 검증
 5. 운영비, 비밀정보 보관, 배포 대상 결정
+
+## 리뷰 실행 자료
+
+- [Gemini 1차 리뷰](docs/reviews/2026-10-08-agy-gemini-raw.md)
+- [Codex 1차 독립 리뷰](docs/reviews/2026-10-08-codex-raw.md)
+- [검토 결과 조정](docs/reviews/2026-10-08-review-reconciliation.md)
+- [한글 설계 결정](docs/adr/README.md)
