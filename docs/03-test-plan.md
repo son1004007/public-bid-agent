@@ -22,7 +22,7 @@
 - 실제 공공 API 응답의 id, 변경 차수, 정정/취소, 첨부, 마감 표본을 read-only로 검증하고 fixture 생성
 - 정상 결과/0건/partial pagination/중복/기간·타임존 경계/schema drift/rate limit/timeout/4xx/5xx
 - raw snapshot과 normalized revision hash·parser version 보존, 재수집 후 변경 감지
-- 변경 공고 분석 결과 `STALE_SOURCE` 처리, 취소 공고의 지원 가능 판정 방지
+- 정정 뒤 OPEN/CLOSED/CANCELLED의 접수 상태 유지, 과거 분석 실행 상태는 보존하면서 별도 `source_freshness=STALE_SOURCE` 처리
 - 불분명한 날짜·원천 상태·서버 오류가 `UNKNOWN` 또는 명시적 오류로 유지되는지 검사
 
 ## 안전한 첨부 수집과 격리 파서 — REQ-DOC
@@ -37,16 +37,18 @@
 
 - document byte hash, parser version, passage ID, source link, 원문 offset 또는 위치 불명확 상태 유지
 - LLM이 임의 생성한 passage ID, 다른 문서/버전/사용자의 ID를 인용하면 거절
+- 진짜 passage ID이지만 주장을 지지하지 않거나 반박/예외가 있는 본문을 인용한 경우 `STRUCTURALLY_VALIDATED`에서 `SEMANTICALLY_REVIEWED`로 자동 승격 금지
 - 정정·재파싱·chunk 순서 변경 후에도 과거 결과의 버전이 변경되지 않음
 - 원문 저장 불가·근거 검색 실패/정보 없음이 임의 긍정 판정으로 변환되지 않음
 - 공개 평가 표본의 문서 버전/라이선스/어노테이션 기준·검토자·불일치 처리와 retrieval quality 측정
 
 ## 적합성 및 Agent 실행 — REQ-AGENT
 
-- 필수 참가조건 충족/충돌/UNKNOWN, 기술 적합성과 참가자격 분리, 사용자 프로필 미입력
+- `UNKNOWN_PRIORITY`, `UNKNOWN_KIND`, 선택조건 CONFLICT, 필수조건 CONFLICT, 기술 적합성과 참가자격의 판정 진리표 검증
 - AND/OR/예외조항/금액/기간, 근거 상충, stale document, 근거 없는 확정 판정 금지
 - 도구 호출 횟수/문서 바이트/모델 토큰·상태 전이·시간 상한, 비용·재시도 제한
-- 무한 follow-up 루프, TTL 만료, 두 번 resume, 늦은 모델 응답, 취소 전파, 이미 완료된 run의 변경 방지
+- 무한 follow-up, TTL 만료, 중복 resume, 늦은 모델 응답, 취소 전파, 세 축(run_execution_status/overall_verdict/source_freshness)의 독립성 및 terminal 상태 불변
+- worker 동시 claim/lease 만료/heartbeat, DB 재시작·이중 처리·사용자 탈퇴 중 결과 저장 방지, idempotency/CAS 검증
 - 위조한 tool 출력이나 모델 명령으로 임의 shell/SQL/URL fetch·권한 변경 불가능함을 확인
 
 ## LLM 제공자·비용·비밀정보 — REQ-LLM
@@ -59,10 +61,13 @@
 
 ## 개인정보 및 운영 복구 — REQ-PRIV / REQ-OPS
 
-- 계정 삭제 후 profile, run, 질문, cache, vector 인덱스, 백업 복원 삭제 목록 반영
+- 계정 삭제 즉시 기존 세션/로그인 시도/run 거부, 재가입 시 새 내부 사용자 ID와 옛 리소스 차단, 별도 삭제 저널을 사용한 백업 복원 차단
+- 공식 PDF에 있는 제3자 이메일/전화/서명/메타데이터 합성 자료가 인덱스·DB·모델 입력에 노출되지 않는지 확인
+- fetch URL의 가상 API key/서명 query/path가 원문 링크·로그·DB·응답에 남지 않는지 확인
 - 분석 보존 TTL 및 로그 민감정보 노출 여부 확인
 - 공개 서비스에서 HTTPS, 비공개 DB, 정량적 rate limit, backup·restore, migration rollback/forward recovery
 - 실행 중 재시작, 외부 API 장애, 복구 버전과 DB schema 호환성 smoke
+- 비로그인 공개 조회의 IP/전역 동시성 제한, 위조 X-Forwarded-For, 캐시 우회 테스트
 
 ## 평가 및 실제 공개 승인
 
