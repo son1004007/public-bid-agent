@@ -1,42 +1,42 @@
-# Tasks
+# 작업 목록
 
-## P0 - planning gate
+## P0 설계 및 검토
 
-- [x] Apply Apache-2.0 license.
-- [x] Add third-party/public-data license boundary.
-- [x] Add repository operating rules.
-- [x] Define MVP requirements.
-- [x] Define initial architecture.
-- [x] Define verification strategy.
-- [ ] Run mandatory independent design/security review.
-- [ ] Reconcile BLOCKER/MAJOR findings.
-- [ ] Verify exact G2B API operations and attachment retrieval behavior with an approved service key.
+- [x] Apache-2.0 라이선스 적용
+- [x] 제3자 데이터 이용조건 분리
+- [x] 저장소 AI 개발 규칙 연결
+- [x] MVP 요구사항 작성
+- [x] 초기 아키텍처 작성
+- [x] 검증 계획 작성
+- [ ] 독립 설계/보안 리뷰 수행
+- [ ] BLOCKER/MAJOR 지적사항 반영
+- [ ] 실제 나라장터 API 필드와 첨부 수집 검증
 
-## P1 - implementation
+## P1 구현
 
-- [ ] Bootstrap React + TypeScript frontend.
-- [ ] Bootstrap FastAPI backend.
-- [ ] Implement Google SSO and server-side identity verification.
-- [ ] Implement procurement API adapter.
-- [ ] Implement normalized bid domain model.
-- [ ] Implement AI/software opportunity classifier with evaluation fixtures.
-- [ ] Implement RFP/attachment ingestion with retrieval safety limits.
-- [ ] Implement pgVector retrieval and retrieval evaluation.
-- [ ] Implement LangGraph analysis workflow.
-- [ ] Implement evidence-backed fit result contract.
-- [ ] Implement SSE progress/result streaming.
-- [ ] Add deterministic tests and CI.
+- [ ] React/TypeScript 초기 구성
+- [ ] FastAPI 초기 구성
+- [ ] Google 로그인 및 서버 신원 검증
+- [ ] 나라장터 API 연동
+- [ ] 입찰공고 표준 데이터 모델
+- [ ] AI/SW 공고 분류와 평가 데이터
+- [ ] 안전한 RFP/첨부파일 수집
+- [ ] pgVector 근거 검색 및 평가
+- [ ] LangGraph 분석 워크플로
+- [ ] 근거 기반 결과 계약
+- [ ] SSE 진행상황 전달
+- [ ] 자동 테스트 및 CI
 
-## P2 - public demo
+## P2 공개 데모
 
-- [ ] Threat/security review before public exposure.
-- [ ] Deploy bounded public demo.
-- [ ] Verify unauthorized access, rate limiting, source attribution, secret non-exposure and user isolation.
-- [ ] Add portfolio evidence only after runtime verification.
+- [ ] 외부 공개 전 보안 검토
+- [ ] 공개 데모 배포
+- [ ] 권한, 호출 제한, 출처표시, 비밀정보, 사용자 격리 검증
+- [ ] 실제 검증 근거를 포트폴리오에 반영
 
-## Future / conditional
+## 향후 검토
 
-- [ ] Per-user ChatGPT/Codex connection, only if current official remote-hosting support permits it.
-- [ ] Additional procurement sources.
-- [ ] Historical award/contract analytics.
-- [ ] Organization profile enrichment.
+- [ ] 공식 지원 확인 후 사용자별 ChatGPT/Codex 연결
+- [ ] 조달 데이터 출처 확대
+- [ ] 과거 낙찰/계약 분석
+- [ ] 기업 프로필 정보 확장
