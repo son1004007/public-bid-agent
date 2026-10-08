@@ -23,17 +23,17 @@
 ## 개인정보·로그·권리
 
 - 인증 토큰, 세션/CSRF 키, API 키, 민감정보, 프로필 본문 또는 전체 프롬프트는 로그에 저장하지 않는다.
-- `correlation_id`, `run_id`, 요청/외부 API 지연과 안전한 오류 범주만 기록한다.
-- 사용자 프로필 최소수집, 30일 분석 결과 보존, 최대 30일 백업 순환 등 초기 정책값은 [ADR-008](adr/ADR-008-profile-privacy.md)에 기록한다. 실제 운영 전 고지·삭제·복원 테스트와 일치시킨다.
+- `correlation_id`, `run_id`, 요청/외부 API 지연과 안전한 오류 범주만 기록한다. fetch URL의 서명 query/path와 임시 token은 로그·DB·화면 링크에 기록하지 않으며 공개 canonical URL을 별도 생성한다.
+- 사용자 프로필 최소수집, 공식 PDF의 제3자 정보, 30일 분석 결과 보존과 백업 순환, 별도 삭제 저널 및 재가입 시 새 내부 사용자 ID 계약은 [ADR-008](adr/ADR-008-profile-privacy.md)에 기록한다. 실제 운영 전 고지·삭제·복원 테스트와 일치시킨다.
 - 제3자 공고/RFP는 저작권·재배포·임베딩 조건을 독립적으로 확인하며 공개 GitHub에 파일 원본을 임의 업로드하지 않는다.
 
 ## 복구·운영 품질
 
 - 데이터 분류: 사용자 프로필과 계정 연결/분석 기록은 `authoritative`, 검색 인덱스와 복원 가능한 파생 자료는 `rebuildable`, 공공 API 원천 자료는 `external`이다.
 - 초기 복구 목표는 **RPO 24시간 / RTO 24시간**으로 설정하지만 실제 측정 전 보장하지 않는다.
-- migration 전 백업, backward-compatible 배포, 오류 시 롤백/forward recovery, 계정 삭제 후 백업 복원 시 삭제 목록 재적용을 시험한다.
+- migration 전 백업, backward-compatible 배포, 오류 시 롤백/forward recovery, 계정 삭제 후 별도 보호된 삭제 저널의 복원 시 재적용을 시험한다. 공개 장기 분석은 FastAPI 요청과 분리된 PostgreSQL lease/heartbeat/CAS worker 경계로 관리하며 중복 실행·취소 경쟁을 검증한다.
 - request ID, analysis run ID, 외부 API 오류, parser 오류, 비용/토큰 범주를 진단하며 개인정보/secret 로그 저장은 금지한다.
-- 제공자별 인증 승인, 비용 한도, 사용자 동의/철회, rate limit을 실제 운영에서 확인한다.
+- 제공자별 인증 승인, 비용 한도, 사용자 동의/철회, rate limit을 실제 운영에서 확인한다. 비로그인 공개 검색은 별도 IP·전역 동시성·캐시·reverse proxy 신뢰 정책으로 남용을 막는다.
 
 ## 공개 서비스 출시 게이트
 
