@@ -31,7 +31,7 @@
 
 ## 의미상 근거 타당성 검증 — R2-004
 
-- 근거 연결 상태: `PROPOSED`(모델 제안), `STRUCTURALLY_VALIDATED`(존재·출처·버전·소유권·위치 검증), `SEMANTICALLY_REVIEWED`(해당 주장과 문맥에서 실제 지지/반박 여부 검토), `REJECTED`(잘못되거나 무관한 근거). 각 상태 변화는 검증 방법(`DETERMINISTIC/HUMAN/ASSISTED`)·검증자/도구 버전·시각을 함께 기록한다.
+- 근거 연결 상태: `PROPOSED`(모델 제안), `STRUCTURALLY_VALIDATED`(존재·출처·버전·소유권·위치 검증), `SEMANTICALLY_REVIEWED`(해당 주장과 문맥에서 실제 지지/반박 여부 검토), `REJECTED`(잘못되거나 무관한 근거). 각 상태 변화는 검증 방법(`DETERMINISTIC/AUTHORIZED_HUMAN/UNVERIFIED_MODEL`)·검증자/도구 버전·시각을 함께 기록한다.
 - 모델이 같은 문서의 **실제 passage ID**를 선택해도 문맥상 무관하거나 반대 의미일 수 있다. 구조 검증 통과는 의미 검증 통과와 다르다.
 - `SEMANTICALLY_REVIEWED`는 사람이 문맥을 점검했거나, 제한된 구조적 사실을 재현 가능한 결정적 규칙으로 검증한 경우 등 검증 방법과 범위가 명시된 상태만 허용한다. 모델 자신의 self-check만으로 이 상태를 부여하지 않는다.
 - 중요한 필수 참가요건의 결론을 확정하려면 해당 판단의 관계(`SUPPORTS/CONTRADICTS/INSUFFICIENT`)가 문맥상 뒷받침되어야 한다. 그렇지 않다면 결과는 `NEEDS_REVIEW`이며 UI에서 해당 문장을 '모델 제안 근거/미검증'으로 표시한다.
@@ -48,14 +48,29 @@
 - `SUITABLE`은 문서 내용 범위와 필수요건 추출의 포괄성이 확인되고, 중요한 근거가 의미 검증된 경우에만 가능하다. 그렇지 않으면 `NEEDS_REVIEW`. 추출본이 완전해도 법적 적격성을 보장하지 않는다.
 - 테스트: 합성 이미지 PDF, 텍스트 없는 페이지, 표 안의 필수조항, 특수 글꼴, 암호화·손상, 페이지 제한 및 partial extraction. 이러한 사례가 `SUITABLE`이 되면 출시 실패.
 
-## 의미 검증의 역할·권한 분리 — R3-Q01
+## 검증 상태·주체·관계의 단일 스키마 — R3-Q01 / R4-001
 
-`EvidenceLink.verification_status`는 `PROPOSED/STRUCTURALLY_VALIDATED/SEMANTICALLY_REVIEWED/REJECTED`이고, `review_source`는 `NONE/DETERMINISTIC/USER_ACKNOWLEDGED/HUMAN_SERVICE`로 **별도 필드**다. 서로 다른 신뢰 단계를 한 enum에 혼합하지 않는다. `USER_ACKNOWLEDGED`는 검토 이벤트이며 `verification_status=SEMANTICALLY_REVIEWED`로 승격하지 않는다.
+`EvidenceLink`는 아래 **서로 다른 필드**를 갖는다.
 
-- `STRUCTURALLY_VALIDATED`: 백엔드가 문서/버전/소유권/범위 검증을 수행했음을 의미한다. 주장 의미 검증을 나타내지 않는다.
-- `DETERMINISTICALLY_VERIFIED`: 명시적인 구조적 값·조건을 재현 가능한 규칙으로 검증한 특정 주장에만 적용한다. 검증 규칙 버전과 입력·출처 범위를 기록한다.
-- `USER_ACKNOWLEDGED`: 일반 사용자가 해당 인용을 확인했다는 표시이며, 서비스가 의미상 검증했다고 주장하지 않는다.
-- `SERVICE_REVIEWED`: 별도 권한을 부여받은 운영 검토자가 출처 원문을 직접 판단한 경우에만 부여 가능하고 검토자/시각/결정 근거를 남긴다. **현재 포트폴리오 MVP에는 운영 검토 인력이 없으므로 이 상태를 자동 발급하지 않는다.**
-- `SEMANTICALLY_REVIEWED`는 위 검증된 특정 주장(`DETERMINISTICALLY_VERIFIED`) 또는 허가된 `SERVICE_REVIEWED`만 해당한다. 모델 자체의 추정이나 일반 사용자의 확인 클릭만으로 승격하지 않는다.
-- 중요한 참가요건의 의미 검증을 완료할 수 없으면 최종 결과는 `NEEDS_REVIEW`로 유지한다. UI는 '모델 제안', '구조 검사', '사용자 확인', '결정적 검증', '서비스 검토'의 신뢰도를 별도 표시한다.
-- 검증: 다른 사용자의 승인, 모델의 `SEMANTICALLY_REVIEWED` 위조, 자격 없는 사용자의 서비스 검토 변경, 단순 확인 클릭만으로의 SUITABLE 승격 방지.
+| 필드 | 허용값 | 의미 |
+|---|---|---|
+| `verification_status` | `PROPOSED / STRUCTURALLY_VALIDATED / SEMANTICALLY_REVIEWED / REJECTED` | 근거 연결 자체의 검증 단계 |
+| `review_source` | `NONE / DETERMINISTIC / AUTHORIZED_HUMAN` | 의미 검증을 수행한 권한 있는 경로 |
+| `semantic_relation` | `SUPPORTS / CONTRADICTS / INSUFFICIENT` | 정확히 어떤 주장에 대한 관계인지 |
+| `validator_ref` | 버전이 있는 `rule_id` 또는 권한 있는 `service_reviewer_id`, 없으면 null | 검증 책임과 재현 근거 |
+| `user_acknowledged_at` | 시간 또는 null | 일반 사용자가 출처를 읽었다는 행위. 검증 상태를 변경하지 않음 |
+| `source_document_version_id` | 존재·소유권·범위를 확인한 버전 ID | 근거가 참조하는 원문 |
+
+**DETERMINISTICALLY_VERIFIED, SERVICE_REVIEWED, USER_ACKNOWLEDGED는 별도의 verification_status enum 값이 아니다.** 설명상의 검토 방법·사용자 행위를 뜻하며 코드·DB·API에는 위 표의 정확한 값만 사용한다.
+
+전이 및 권한:
+
+1. 모델은 `PROPOSED` 제안만 가능하다. `review_source`·`verification_status`를 모델 입력값으로 신뢰하지 않는다.
+2. 서버는 허용된 passage ID·버전·소유권·범위를 검증한 뒤 `STRUCTURALLY_VALIDATED`로만 승격할 수 있다.
+3. `SEMANTICALLY_REVIEWED`는 좁은 범위의 재현 가능한 결정적 규칙(`review_source=DETERMINISTIC`, 유효한 rule id/version) 또는 별도 승인된 서비스 운영 검토자(`AUTHORIZED_HUMAN`, 실제 reviewer id)의 확인 뒤에만 가능하다.
+4. 일반 사용자는 자신의 자료를 `user_acknowledged_at`으로 표시할 수 있지만 서비스 의미 검증을 승인할 수 없다. 타 사용자의 자료에는 이 행위도 금지한다.
+5. 현재 포트폴리오 MVP에는 서비스 전담 검토자가 없으므로 `AUTHORIZED_HUMAN` 승격 UI/권한을 구현하지 않는다. 규칙으로 검증할 수 없는 해석적 자격 판단은 `NEEDS_REVIEW`.
+6. `SUPPORTS`인 의미 검증만 충족 근거로 쓰고, `CONTRADICTS`는 충돌 근거로 표시한다. `INSUFFICIENT` 또는 검증 상태 미완성 시 SUITABLE 승격 금지.
+7. 재파싱/공고 정정은 기존 링크의 값을 조용히 변경하지 않고 새 원문·분석 버전으로 별도 검증한다.
+
+검증: 모델/일반 사용자/다른 사용자의 의미 승격 거부, rule version 누락, reviewer id·권한 누락, 지원 관계 상충, DB/API/도메인의 enum 계약 불일치, 사용자 확인만으로 SUITABLE 변경되는지 확인.
