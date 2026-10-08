@@ -74,3 +74,18 @@ state/nonce/PKCE 실패, redirect mismatch, ID Token 서명·iss·aud·만료 �
 - `EXPORT_DOWNLOAD`: 사용자 자료 export는 `Cache-Control: private, no-store`, 짧은 수명과 1회용 전송 권한을 적용하고 요청마다 계정·소유권을 검증한다.
 - `Vary: Cookie`만으로 사용자별 자료 보호를 대신하지 않는다. service worker의 오프라인 캐시에도 개인정보·분석 결과를 저장하지 않는다.
 - 실제 reverse proxy/CDN을 통과하는 두 사용자 테스트에서 캐시 적중·미적중, 로그아웃·탈퇴 후 조회, export·SSE의 공유 캐시·buffering 차단을 검증한다.
+
+
+## SSE의 실행 취소와 접근 권한 철회 구분 — R4-007
+
+- 계정 삭제·로그아웃·세션 만료·소유권 회수는 **접근 권한 철회**이므로 추가 이벤트를 발송하지 않고 연결을 종료한다.
+- 권한이 유지된 사용자가 자신의 실행을 취소한 경우 `CANCELLED` terminal event를 해당 run에 발행한 뒤 종료한다.
+- 네트워크 단절로 terminal event 전달이 보장되지 않을 수 있으므로 클라이언트는 소유권이 검증되는 `GET /api/analysis-runs/{run_id}`를 최종 상태 확인 경로로 사용한다.
+- event sequence와 재연결 cursor는 멱등 처리하고 다른 run의 이벤트 접근을 차단한다.
+
+## Google OIDC의 최소 동의 범위 — R4-008
+
+- 초기 scope는 `openid`만 요청하고 검증된 issuer와 `sub`를 앱 내부 식별자로 사용한다.
+- `email`, `profile` scope는 실제 필요성·이용자 고지·데이터 최소화를 별도 승인하기 전 요청하지 않는다.
+- 응답에 포함된 필요 없는 이름·이메일·사진 등 claim은 저장·로그하지 않는다.
+- 실제 Google 콘솔 설정과 동의 화면은 배포 전 확인한다.
