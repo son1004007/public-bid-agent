@@ -168,3 +168,12 @@ Agent는 provider 자격증명을 도메인에 결합하지 않으며 `fake / di
 - REQ-QUESTION-001: [ADR-007](adr/ADR-007-analysis-state-evaluation.md)의 후속 질문·답변은 비민감 enum/스키마만 허용한다. 미공개 고객/개인/기업자료 제출을 요구하지 않는다.
 - REQ-BUDGET-001: 모델 사용량은 실패·재시도·worker 재시작까지 포함한 영속 예약·사용 ledger로 관리하고 입력/출력 토큰, 활성/대기 시간을 구분한다. 사용자/전역 한도 검증 전 실제 공개 AI 호출을 허용하지 않는다.
 - REQ-REAUTH-001: 계정 삭제, 전체 데이터 export, 외부 모델 연결·해제는 최신 사용자 인증과 일회용 승인 절차를 검증한다.
+
+## R4 설계 지적사항에 따른 필수 계약
+
+- REQ-EVIDENCE-002: `EvidenceLink`는 검증 단계, 실제 의미 지지 여부, 검증 주체와 책임 식별자를 서로 다른 필드로 보존한다. 모델·일반 사용자의 의미 검증 승격은 거부한다([ADR-003](adr/ADR-003-evidence-retrieval.md)).
+- REQ-BUDGET-002: 사용자·provider 계정·서비스 전체 한도를 포함해 DB의 모든 범위 예산을 하나의 원자적 거래에서 예약한다([ADR-007](adr/ADR-007-analysis-state-evaluation.md)).
+- REQ-BID-004: `SyncCoverage`는 조회 작업·필터·업무구분·기간·전체 페이지 범위를 식별하며, 특정 공고의 최신성은 해당 공고 상세 재확인 또는 검증된 coverage만으로 승격한다([ADR-002](adr/ADR-002-procurement-data-lifecycle.md)).
+- REQ-PROFILE-002: 기술 비교를 위한 자기신고와 법적·행정적 자격의 공식 검증을 구별한다. 사용자 YES 입력은 공식 자격 증명이 아니다([ADR-007](adr/ADR-007-analysis-state-evaluation.md)).
+- REQ-SEC-CACHE-001: 사용자별 응답·SSE·export에 공유 캐시/프록시 격리 정책을 적용한다([ADR-001](adr/ADR-001-auth-session-ownership.md)).
+- REQ-PRIV-002: 탈퇴 직전 외부 모델로 전송한 데이터의 취소 가능성, 로컬 결과 차단 및 provider 보존 상태를 구분한다([ADR-008](adr/ADR-008-profile-privacy.md)).
