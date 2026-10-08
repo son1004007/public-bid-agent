@@ -105,3 +105,33 @@
 - timeout·네트워크 장애·중복 worker·lease 회수 뒤 사용량을 확인할 수 없으면 **예약 상한을 소모한 것으로 보수적으로 처리**하고 같은 idempotency key로 중복 청구·결과 반영을 최소화한다. 과금/실사용량 보장은 provider의 실제 API 계약 확인 전에는 주장하지 않는다.
 - 사용자별 일일 한도 및 전체 서비스 전역 동시 실행/비용 제한이 설정·검증되기 전에는 `approved_remote` AI 호출 모드를 공개하지 않는다. 초과 시 `LIMIT_EXCEEDED`를 사용자에게 표시하고 기존 분석 결과를 임의 성공으로 변경하지 않는다.
 - 테스트: 출력을 포함한 한도, 재시도·timeout·취소 직후 늦은 usage, provider usage 누락, 동시 작업 예약, waiting 이후 resume, worker 재시작 뒤 원래 장부 복원 및 초과 요청 거부.
+
+
+## 자기신고와 공식 검증의 구분 — R4-004
+
+- 프로필의 모든 판단 입력에는 `fact_provenance=SELF_DECLARED/EXTERNALLY_VERIFIED/UNKNOWN`, 확인자, 확인 시각, 허용된 증빙 출처 및 유효 기간을 각각 기록한다. 일반 사용자의 예/아니요 응답이나 임의 인증 명칭은 `SELF_DECLARED`이다.
+- 요건 대비 `SATISFIED`는 **해당 프로필 주장과 공고 요건의 내용상 일치**를 의미할 뿐 행정적 입찰 참가자격의 공식 확인이 아니다. `assessment`와 `fact_provenance`, `evidence_verification_status`를 독립 필드로 보존한다.
+- 법률·행정적 필수 참가자격은 외부 검증이 끝나지 않은 자기신고만으로 `eligibility_verdict=NO_KNOWN_CONFLICT` 또는 `overall_verdict=SUITABLE`로 확정하지 않는다. 필요하면 `NEEDS_REVIEW`로 두고 공식 자격 확인을 안내한다.
+- 기술 숙련도·기술 스택처럼 이용자의 자기신고를 비교에 사용하는 경우 기술 축에서 `SELF_DECLARED_PROFILE_MATCH`라고 별도 표시할 수 있다. 이를 공식 자격 확인으로 승격하거나 `SUITABLE`이라는 무조건적 문구로 바꾸지 않는다.
+- 공식 검증 수단을 구현하지 않은 MVP에서는 `EXTERNALLY_VERIFIED` 값을 클라이언트/모델이 임의로 설정할 수 없다. 운영자가 승인한 신뢰 출처/서버 검증 기능이 없으면 미검증을 유지한다.
+
+| 필수 요건 | 프로필 사실 | 의미 검증 | 참가자격 표시 | 종합 판정 |
+|---|---|---|---|---|
+| 행정/법적 요건 | 자기신고 일치 | 공고 내용 검증됨 | 공식 검증 전 | NEEDS_REVIEW |
+| 행정/법적 요건 | 공식 검증 충족 | 공고 내용 검증됨 | 확인된 범위 내 충족 | 다른 모든 조건 충족 때만 제한적 SUITABLE |
+| 행정/법적 요건 | 공신력 있는 검증으로 충돌 확인 | 공고 내용 검증됨 | 필수 조건 충돌 | UNSUITABLE |
+| 기술 요건 | 자기신고 일치 | 공고 내용 검증됨 | 기술 프로필 기준 일치 | 행정 요건 미확인이면 NEEDS_REVIEW |
+| 모든 종류 | UNKNOWN / 분류·의미 검증 불완전 | 불완전 | 판단 보류 | NEEDS_REVIEW |
+
+## 다중 범위 영속 예산의 원자적 예약 — R4-002
+
+`RunBudget/UsageAttempt` 외에 `BudgetAccount`와 `BudgetReservation`을 정의한다.
+
+- `BudgetAccount` scope: `RUN`, `USER_UTC_DAY`, `PROVIDER_ACCOUNT_UTC_DAY`, `SERVICE_GLOBAL_UTC_DAY`. 키는 실제 provider·계정·자원 단위와 UTC 날짜 경계를 포함하며, UTC 자정 시간창 전환 정책과 이미 진행 중인 예약의 정산 창을 고정한다.
+- 각 범위에는 최대 허용 input tokens, output tokens, 시도 수, 외부 청구 가능 금액/단위, 소모량, 예약량, provider 가격표 버전을 보존한다. provider 가격이나 사용량 집계가 불가능하면 **최대 손실 상한을 입증한 환경에서만** 호출하고, 그렇지 않으면 공개 AI 기능을 비활성화한다.
+- **모든 범위의 계정 행을 동일한 DB transaction에서 고정 순서로 잠그고**(예: scope 순서의 `SELECT ... FOR UPDATE`), 각 범위의 잔여량을 검증한 후 `BudgetReservation`을 원자적으로 만든다. 한 범위라도 부족하면 어떤 외부 요청도 실행하지 않는다. 계정 행이 아직 없으면 unique constraint와 충돌 재시도를 고려하여 원자적으로 생성한다.
+- 자원예약과 외부 호출 사이의 장애, 결제 금액 변화, provider 사용량 누락, 재시도 및 중복 worker를 고려한다. 확정 소비량/시도 횟수는 단조 증가하고, 미소비 예약의 반환은 독립적인 보정 거래로 감사한다. 계정별/전체 예산 합계가 변조되지 않게 ledger 불변 이력을 남긴다.
+- 외부 호출 비용 단위는 모델/provider별 입력·출력 토큰, 캐시 비용, 요청별 고정요금 등 실제 지원되는 항목으로 환산하고 사용된 가격표 `version`을 저장한다. 환율 적용이 필요하면 기준 시각·통화를 기록하되 무작정 외환율을 가정하지 않는다.
+- 공개 모델 호출은 실제 사용자/서비스 전체 쿼터, 동시 예약, 장애 시 잔여 예산 정책을 테스트하기 전까지 기본 비활성이다.
+
+검증: 동일 사용자 100개 동시 예약, 다른 사용자 동시 예약, 날짜 경계, provider 계정/서비스 예산 동시 고갈, 사용량 미확인, 가격표 교체, worker 이중 claim, crash 직전/직후 예약 재실행과 호출 불허를 DB 트랜잭션 테스트로 확인한다.
