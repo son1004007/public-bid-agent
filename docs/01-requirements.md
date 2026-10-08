@@ -33,7 +33,7 @@ Google OIDC Authorization Code Flow의 서버 인증, 신원 검증, 세션 생�
 검수:
 - 사용자 소유권을 server-derived actor로 판정
 - 알 수 없는 정보는 UNKNOWN; 미입력을 부적합으로 단정하지 않음
-- 개인정보 최소수집·정정·삭제·계정 탈퇴와 데이터 파기 검증
+- 개인정보 최소수집·정정·삭제·계정 탈퇴와 데이터 파기 검증. 탈퇴 시 모든 세션과 실행 폐기, 재가입 새 내부 ID, 별도 보호된 삭제 저널 적용
 
 ### REQ-SEC-OWNER-001 사용자별 리소스 권한
 
@@ -48,8 +48,8 @@ Google OIDC Authorization Code Flow의 서버 인증, 신원 검증, 세션 생�
 실제 조달청 공식 API 응답을 검증한 뒤 내부 공고 모델에 변환한다. [ADR-002](adr/ADR-002-procurement-data-lifecycle.md).
 
 검수:
-- 원천 ID와 원문 스냅샷·해시·관측시각·파서 버전 보존
-- 개정·정정·취소·마감 및 분석 결과 stale 처리
+- 원천 ID와 허용된 원문 스냅샷·해시·관측시각·파서 버전 보존. 서명/비밀정보 포함 fetch URL과 공개 canonical URL 분리
+- `revision_kind`(원본/정정)와 `availability_status`(OPEN/CLOSED/CANCELLED/UNKNOWN)를 독립 모델로 취급하고 분석 결과 최신성을 별도 projection으로 관리
 - 시간대 불명확 시 마감/지원 가능성 확정 금지
 - 진짜 0건과 API 실패·partial page·schema drift·rate limit 구분
 - 실제 API 필드는 contract fixture로 확인 전 구현 확정 금지
@@ -73,6 +73,7 @@ AI 및 SW 관련 공고 후보를 분류하고 포함 근거를 기록한다.
 - timeout, streaming byte/문서 수/타입/페이지·파서 리소스 상한 테스트
 - 격리 파서의 오류/과다 입력을 전체 서비스 장애로 전파하지 않음
 - 미지원 포맷/불명확한 이용조건은 수집 거부하고 명시적 제한 노출
+- 제3자 연락처/서명/숨은 메타데이터가 포함된 공식 PDF는 이용조건과 개인정보 검증 전 모델 전송·색인 금지
 
 ### REQ-EVIDENCE-001 원문과 판단 추적
 
@@ -80,8 +81,8 @@ AI 및 SW 관련 공고 후보를 분류하고 포함 근거를 기록한다.
 
 검수:
 - SourceDocumentVersion → ParsedArtifact → Passage → Requirement → Claim → EvidenceLink 추적
-- LLM이 가짜 근거 ID를 생성해도 서버가 거부
-- 원문 개정/파서 변경 후에도 과거 결과의 근거 버전은 불변
+- LLM이 가짜 근거 ID를 생성하면 거부하며, **실제 passage라도 주장 의미를 지지하지 않으면 미검증/거부**
+- 원문 개정/파서 변경 후에도 과거 결과의 근거 버전·실행 완료 상태는 불변, 최신성 축만 재평가
 - 미검색/근거 없음은 충족 사실로 치환하지 않음
 
 ### REQ-RAG-001 근거 검색과 평가
@@ -98,7 +99,7 @@ AI 및 SW 관련 공고 후보를 분류하고 포함 근거를 기록한다.
 최종 판단은 `SUITABLE`, `NEEDS_REVIEW`, `UNSUITABLE`로 한정하되 참가자격과 기술 적합성을 따로 보여준다. [ADR-007](adr/ADR-007-analysis-state-evaluation.md).
 
 검수:
-- 필수요건 UNKNOWN이면 SUITABLE 금지, 실제 상충이 확인되면 UNSUITABLE
+- 필수요건 UNKNOWN 또는 UNKNOWN_PRIORITY/UNKNOWN_KIND면 SUITABLE 금지. **의미 근거가 확인된 MANDATORY 충돌에만 UNSUITABLE** 적용
 - 사용자 입력 부족은 CONFLICT가 아닌 UNKNOWN
 - 공식 법적 자격 보장이 아니며 모든 핵심 결론에는 유효 근거 또는 근거 없음 표시
 - 사용자 프로필을 모델 출력으로 수정하거나 실제 입찰 행위 실행 금지
@@ -108,7 +109,7 @@ AI 및 SW 관련 공고 후보를 분류하고 포함 근거를 기록한다.
 공고 검색, 공식 근거 획득, 참가요건 추출, 프로필 비교, 후속 질문, 결과 생성을 명시적 상태로 처리한다.
 
 검수:
-- [ADR-007](adr/ADR-007-analysis-state-evaluation.md)의 도구 allowlist, 호출/토큰/시간/상태전이 예산, retry, cancel, resume, idempotency 적용
+- [ADR-007](adr/ADR-007-analysis-state-evaluation.md)의 도구 allowlist, 호출/토큰/시간/상태전이 예산, retry, cancel, resume, idempotency 및 PostgreSQL lease/CAS 기반 재시작 복구 적용
 - 프롬프트 주입으로 도구 정책/권한/예산이 변경되지 않음
 - tool 실패를 정상 결과 0건으로 위장하지 않음
 
