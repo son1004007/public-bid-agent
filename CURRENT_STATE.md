@@ -1,26 +1,26 @@
-# Current State
+# 현재 개발 상태
 
-- Date: 2026-10-08
-- Phase: planning / architecture
-- Repository: public
-- License: Apache-2.0
-- Runtime implementation: NOT STARTED
-- Tests: NOT STARTED
-- Deployment: NOT STARTED
-- Independent design review: BLOCKED - independent AGY/Gemini reviewer unavailable in current tool environment
+- 기준일: 2026-10-08
+- 단계: 기획 및 아키텍처 설계
+- 저장소: 공개
+- 라이선스: Apache-2.0
+- 서비스 구현: 미착수
+- 테스트: 미실행
+- 배포: 미실행
+- 독립 설계/보안 리뷰: 차단됨 (현재 환경에서 AGY/Gemini 독립 리뷰 도구 미연결)
 
-## Confirmed
+## 확인된 사항
 
-- Repository exists as `son1004007/public-bid-agent`.
-- Project-authored code/documentation use Apache-2.0.
-- Public procurement/third-party content is not relicensed by this repository.
-- Primary product direction is public AI/software procurement discovery and evidence-backed fit analysis.
-- Official G2B bid notice OpenAPI is available from the Korea Public Procurement Service through data.go.kr; it is REST, JSON/XML, free, real-time, and automatically approved for development/operation accounts according to the current portal entry.
+- `son1004007/public-bid-agent` 저장소가 존재합니다.
+- 프로젝트 작성 코드와 문서는 Apache-2.0을 적용합니다.
+- 제3자 공고/RFP의 이용조건은 별도로 유지합니다.
+- 목표는 공공 AI/SW 입찰 탐색 및 원문 근거 기반 적합성 분석입니다.
+- 공공데이터포털에서 조달청 나라장터 입찰공고정보서비스를 제공하고 있습니다.
 
-## Pending before implementation
+## 구현 전 확인 사항
 
-1. Independent design/security review required by owner policy. Current attempt is BLOCKED; see `docs/reviews/2026-10-08-design-security-review.md`.
-2. Confirm exact OpenAPI operations/fields needed for service-type notices and attachment access.
-3. Confirm Google OAuth production configuration and redirect/origin policy from current official docs.
-4. Confirm current OpenAI/Codex user-auth deployment constraints before enabling per-user ChatGPT connection on a remotely hosted public service.
-5. Choose initial hosting target only after cost/security/secret-storage constraints are documented.
+1. 독립 설계/보안 리뷰 및 주요 지적사항 해결. 현재 상태는 `BLOCKED`이며 `docs/reviews/2026-10-08-design-security-review.md`를 참고합니다.
+2. 나라장터 API의 실제 작업/필드/첨부 수집 방법 검증
+3. Google OAuth 운영 설정과 redirect/origin 정책 검증
+4. 공개 웹서비스의 사용자별 ChatGPT/Codex 인증 공식 지원 여부 검증
+5. 운영비, 비밀정보 보관, 배포 대상 결정
