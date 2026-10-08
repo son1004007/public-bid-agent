@@ -1,84 +1,70 @@
-# 00 Project Context
+# 00 프로젝트 배경
 
-## Problem
+## 문제
 
-Public procurement portals expose useful bid data, but a developer or software company still has to search notices, open attachments/RFPs, identify AI relevance, read participation restrictions, compare technical requirements, and decide whether the opportunity deserves deeper review.
+공공조달 포털에는 유용한 입찰 데이터가 공개되어 있지만, 개발자나 소프트웨어 기업이 실제 검토하려면 공고 검색, 첨부/RFP 확인, AI 관련성 판단, 참가 제한 확인, 기술 요구사항 비교를 반복해야 한다.
 
-Public Bid Agent aims to reduce that review cost without pretending to make an official procurement decision.
+Public Bid Agent는 이 검토 비용을 줄이는 서비스다. 공식적인 입찰 자격 판정이나 실제 입찰 행위를 대신하지 않는다.
 
-## Product goal
+## 제품 목표
 
-Given a user's organization/technology profile, find active public AI/software procurement opportunities and return evidence-backed fit analysis.
+사용자의 기업/기술 프로필을 기준으로 현재 검토 가능한 공공 AI/SW 사업을 찾고, 공식 출처 근거와 함께 적합성을 분석한다.
 
-## MVP user
+## MVP 사용자
 
-A software company, independent developer, or technical reviewer evaluating public AI/software opportunities.
+- 공공 AI/SW 사업을 탐색하는 소프트웨어 기업
+- 독립 개발자
+- 기술 검토 담당자
 
-## Primary user outcome
+## 사용자가 얻어야 하는 답
 
-The user can answer:
+1. 이 공고가 실제 AI/SW 사업인가?
+2. 현재 검토/지원 가능한 상태인가?
+3. 중요한 참가요건은 무엇인가?
+4. 요구 기술은 무엇인가?
+5. 사용자/기업의 확인된 역량과 무엇이 맞거나 부족한가?
+6. 아직 확인되지 않은 중요 정보는 무엇인가?
+7. 각 판단의 공식 원문 근거는 어디인가?
 
-1. Is this notice actually related to AI/software work?
-2. Is it still actionable?
-3. What are the important participation requirements?
-4. What technical capabilities are requested?
-5. Which known organization capabilities match or do not match?
-6. Which material facts are still unknown?
-7. Where in the official source did the conclusion come from?
+## 확인된 요구사항
 
-## Sources
+2026-10-08 기준 사용자 요구:
 
-### SRC-001 - owner requirements
-
-Confirmed from project conversation on 2026-10-08:
-
-- public web service
+- 공개 웹 서비스
 - React frontend
-- Google SSO desired
-- Codex preferred as the actual reasoning model instead of separately billed OpenAI API usage
-- future per-user Codex/ChatGPT connection desired
-- service should be publicly accessible for portfolio testing
-- use public procurement data
-- focus on AI-related public bid opportunities
+- Google SSO
+- 공개 조달 데이터 사용
+- AI 관련 공공 입찰 탐색/분석
+- 별도 OpenAI API 사용료를 전제로 하지 않고 Codex를 추론 모델로 사용하는 방향 선호
+- 향후 사용자별 ChatGPT/Codex 연결 희망
+- 공개 포트폴리오로 다른 사용자가 테스트 가능해야 함
+- 설계 문서와 파일 상단 설계 계약은 한글 작성
+- AI가 기존 개인 개발 규칙과 프로젝트 설계를 먼저 읽고 구현해야 함
 
-### SRC-002 - global engineering control
+## 외부 데이터
 
-`son1004007/ai-agent-workflow-playbook/CONTROL.md`
+### 조달청 나라장터 입찰공고정보서비스
 
-### SRC-003 - engineering review policy
+- 공식 출처: 공공데이터포털
+- REST, JSON/XML
+- 무료
+- 실시간 갱신
+- 개발/운영 자동승인으로 안내됨
+- 업무구분별 입찰공고 목록/상세/제한정보 제공
 
-`son1004007/personal-engineering-handbook/REVIEW_POLICY.md`
+https://www.data.go.kr/data/15129394/openapi.do
 
-### SRC-004 - G2B bid notice API
+### 조달청 나라장터 사전규격정보서비스
 
-Public Data Portal: `조달청_나라장터 입찰공고정보서비스`
+사전규격과 규격서 파일 정보를 제공한다.
 
-Current portal information checked 2026-10-08:
+https://www.data.go.kr/data/15129437/openapi.do
 
-- REST
-- JSON/XML
-- free
-- real-time update
-- unrestricted use range shown by the portal
-- development/operation approval: automatic
-- development traffic: 1,000 calls
-- provides bid notice list/detail and related restriction information by procurement work category
+## 제약
 
-Source: https://www.data.go.kr/data/15129394/openapi.do
-
-### SRC-005 - G2B prior specification API
-
-Public Data Portal: `조달청_나라장터 사전규격정보서비스`
-
-It exposes prior specifications by procurement category and includes specification-file information.
-
-Source: https://www.data.go.kr/data/15129437/openapi.do
-
-## Constraints
-
-- Public repository: no employer/client confidential material.
-- No actual bid submission in MVP.
-- No secrets in repository or client bundle.
-- Source data and AI interpretation must remain distinguishable.
-- AI analysis must expose uncertainty and source evidence.
-- Public remote Codex/ChatGPT-plan authentication is not assumed supported until verified against current official OpenAI documentation.
+- 회사/고객의 비공개 코드, 데이터, 프롬프트, 내부 URL, 인증정보를 사용하지 않는다.
+- 실제 전자입찰 제출, 인증서 서명, 결제, 계약 행위는 MVP 범위가 아니다.
+- secret은 repository/frontend/log에 저장하지 않는다.
+- 공식 출처 사실, 사용자 제공 사실, 파싱 결과, AI 해석, 미확인 사실을 구분한다.
+- AI 판단은 원문 근거와 불확실성을 제공해야 한다.
+- 공개 원격 서비스에서 사용자별 Codex/ChatGPT 인증을 지원할 수 있다고 공식 확인하기 전에는 해당 기능을 활성화하지 않는다.
