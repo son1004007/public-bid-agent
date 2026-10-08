@@ -36,3 +36,18 @@
 ## 테스트
 
 같은 공고의 revision, checksum 변화만 있는 경우, 정정 후 OPEN/CLOSED/CANCELLED, deadline timezone 미정, 잘못된 페이지, 원천 지연 및 타 사용자 분석 결과와의 최신성 projection 분리를 시험한다. 서명 URL/가상 서비스 키가 DB·로그·브라우저·분석 결과에 남지 않음을 검증한다.
+
+## 현재 유효 공고 선택: EffectiveNoticeProjection — R3-001
+
+단순히 '마지막으로 수집한 revision'을 현재 공고로 사용하지 않는다. 서버에서 다음 계약으로 `EffectiveNoticeProjection`을 생성한다.
+
+1. `notice_identity`에 연결된 revision을 출처가 제공하는 **검증된 revision 순서 및 supersedes 관계**로 정렬한다. 원천 수정 시각과 수집 시각은 보조 근거이며, 단독 현재본 선택 기준이 아니다.
+2. revision 그래프는 중복 식별, 순환 참조, 복수 말단 분기, 상충하는 선후 관계를 검사한다. 정정 차수/순서가 공식 원천에서 확인되지 않거나 최신본을 하나로 식별할 수 없으면 `effective_revision=UNKNOWN`으로 처리한다.
+3. `last_successful_complete_sync`는 필요한 페이지/커서 전체를 성공적으로 수집한 경우에만 갱신한다. partial/error/rate limit 후의 캐시를 최신 원문이라고 표시하지 않는다. `as_of`와 원천 관측시각을 결과에 보여준다.
+4. `source_freshness`는 현재 유효 revision과 특정 분석의 원문 revision이 일치하고 완전 동기화·허용 보관 기간을 만족할 때만 `CURRENT`다. 그 밖에는 `UNKNOWN` 또는 `STALE_SOURCE`이며 `SUITABLE`을 금지한다.
+5. `availability_status`는 원천이 표시한 접수/취소 상태와 별개로 기록하고, `submission_window_status`는 서버가 **확인된 UTC 마감시각과 현재 UTC**를 비교해 `OPEN/CLOSED/UNKNOWN`으로 계산한다. 서버 시계 동기화 이상·시간대 미확정·마감 전후 허용 오차 구간은 `UNKNOWN`으로 처리한다.
+6. `availability_status=CANCELLED/CLOSED`이거나 `submission_window_status=CLOSED`이면 실제 접수 가능한 공고로 표시하지 않는다. 원천이 `OPEN`이라고 주장해도 확인된 마감이 지났다면 마감 판단을 우선한다.
+7. 공개 추천 가능 조건은 **유효 revision 단일 확정 + complete sync 신뢰 + `availability_status=OPEN` + `submission_window_status=OPEN` + `source_freshness=CURRENT`**의 동시 충족이다. 다른 경우 `UNKNOWN/NEEDS_REVIEW` 혹은 명시적인 '마감/취소' 상태를 표시하고 긍정 추천을 제한한다.
+8. 문서·조건·마감이 정정되면 이전 분석의 실행 상태/근거 이력은 유지하면서 최신성 projection을 변경한다. 역순 동기화 중에도 이전 분석의 최신성을 낙관적으로 승격하지 않는다.
+
+테스트: 역순 도착, 중복, supersedes cycle, branch, 상충 상태, partial pagination, 오래된 캐시, 정정 후 OPEN/CLOSED/CANCELLED, 마감 직전·직후, 시간대 불명확, 서버 시계 오차. 실제 API의 revision 표현을 관찰하기 전 이 알고리즘이 원천에서 완전히 검증됐다고 주장하지 않는다.
