@@ -26,6 +26,7 @@ public-bid-agent/
       infrastructure/
         auth/
         procurement/
+        documents/
         persistence/
         llm/
         retrieval/
@@ -70,6 +71,18 @@ use case orchestration과 transaction 범위를 담당한다.
 ### backend/agent
 
 AI workflow/state machine을 담당한다. authorization, persistence, network safety 정책을 우회할 수 없다.
+
+## 근거 및 설계 책임
+
+원문·분석 상태·검증 결과는 소스 위치가 아니라 도메인 계약으로 보호한다.
+
+- `domain/`: `NoticeRevision`, `SourceDocumentVersion`, `Passage`, `ExtractedRequirement`, `Claim`, `AnalysisRun` 계약 및 불변조건
+- `application/`: 인증 actor 권한 확인, 분석/취소/재개의 트랜잭션과 자원 예산
+- `infrastructure/auth/`: [ADR-001](adr/ADR-001-auth-session-ownership.md)의 OIDC와 쿠키 세션
+- `infrastructure/procurement/`: [ADR-002](adr/ADR-002-procurement-data-lifecycle.md)의 공고/개정/원천 형식 변환
+- `infrastructure/documents/`: [ADR-006](adr/ADR-006-document-ingestion-security.md)의 검증된 파일 다운로드 및 별도 파서 경계
+- `infrastructure/retrieval/`: [ADR-003](adr/ADR-003-evidence-retrieval.md)의 검색 계약. 임베딩 미결정 시 결정적 baseline 유지
+- `infrastructure/llm/`: [ADR-004](adr/ADR-004-llm-auth-cost.md)의 `disabled/fake/approved` 분리
 
 ## 변경 원칙
 
