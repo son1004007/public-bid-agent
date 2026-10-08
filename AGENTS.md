@@ -82,6 +82,49 @@ This project includes public exposure, authentication, external APIs, AI-generat
 - Comments/docstrings explain durable business rules, trust boundaries, failure behavior and non-obvious reasons; do not narrate obvious syntax.
 - Keep changes small and purpose-focused; do not mix unrelated refactors, dependency upgrades, file moves or global formatting with feature work.
 
+## 5.1 File-first design contract
+
+For every substantive source file, write or update the file-level design contract **before implementation**.
+
+Required when the file contains business logic, API/auth boundaries, state changes, persistence, external I/O, AI/Agent/RAG behavior, security policy, or non-trivial orchestration.
+
+Use the language-native top-of-file form:
+
+Python:
+```python
+"""File design contract.
+
+Purpose:
+Inputs/Outputs:
+Trust boundary / Authorization:
+State changes / Side effects:
+Failure / Timeout / Retry:
+Key invariants:
+Related requirements/tests/docs:
+"""
+```
+
+TypeScript/TSX:
+```ts
+/**
+ * File design contract
+ *
+ * Purpose:
+ * Inputs/Outputs:
+ * Trust boundary / Authorization:
+ * State changes / Side effects:
+ * Failure / Timeout / Retry:
+ * Key invariants:
+ * Related requirements/tests/docs:
+ */
+```
+
+The header is a local implementation contract, not decorative prose. Implementation, tests, and the header must agree. If responsibility or behavior changes, update the header and affected tests/docs in the same change.
+
+Do not copy full architecture documents into source headers. Keep detailed design in `docs/` or ADRs and reference it from the file contract.
+
+Trivial DTO/value files, generated files, simple re-export/index files, generated migrations and framework boilerplate may omit the header when it adds no meaningful contract.
+
 ## 6. Verification
 
 Record exact verification as `PASS`, `FAIL`, `NOT RUN`, or `BLOCKED`.
