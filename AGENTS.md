@@ -86,7 +86,7 @@ This project includes public exposure, authentication, external APIs, AI-generat
 
 ## 5.1 File-first design contract
 
-For every substantive source file, write or update the file-level design contract **before implementation**.
+For every substantive source file, write or update the file-level design contract **before implementation**. The design prose in this repository, including file-level design contracts, MUST be written in Korean by default. Keep code identifiers, protocol names, library names and machine-readable values in their original English form where appropriate.
 
 Required when the file contains business logic, API/auth boundaries, state changes, persistence, external I/O, AI/Agent/RAG behavior, security policy, or non-trivial orchestration.
 
@@ -94,30 +94,30 @@ Use the language-native top-of-file form:
 
 Python:
 ```python
-"""File design contract.
+"""파일 설계 계약.
 
-Purpose:
-Inputs/Outputs:
-Trust boundary / Authorization:
-State changes / Side effects:
-Failure / Timeout / Retry:
-Key invariants:
-Related requirements/tests/docs:
+목적/책임:
+입력/출력:
+신뢰 경계/권한:
+상태 변경/부작용:
+실패/타임아웃/재시도:
+핵심 불변조건:
+관련 요구사항/테스트/설계 문서:
 """
 ```
 
 TypeScript/TSX:
 ```ts
 /**
- * File design contract
+ * 파일 설계 계약
  *
- * Purpose:
- * Inputs/Outputs:
- * Trust boundary / Authorization:
- * State changes / Side effects:
- * Failure / Timeout / Retry:
- * Key invariants:
- * Related requirements/tests/docs:
+ * 목적/책임:
+ * 입력/출력:
+ * 신뢰 경계/권한:
+ * 상태 변경/부작용:
+ * 실패/타임아웃/재시도:
+ * 핵심 불변조건:
+ * 관련 요구사항/테스트/설계 문서:
  */
 ```
 
