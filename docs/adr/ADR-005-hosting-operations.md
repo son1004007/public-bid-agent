@@ -29,3 +29,12 @@
 ## 미확정 사항
 
 클라우드 제공자, 비용 상한, 백업 저장소, 배포 도메인과 사용자 수 제한은 운영 전 별도 확정한다. 호스팅이 미정이어도 코드 레이어/비밀 관리/복구 원칙은 변하지 않는다.
+
+## 공개 장기 분석 worker의 내구성과 남용 방지 — R2-003/R2-Q02
+
+- 공개 분석 실행은 FastAPI 요청이나 일회성 메모리 background task와 분리한다. PostgreSQL job 테이블과 소규모 별도 worker 프로세스가 `run_id/actor_id/version/lease_owner/lease_expires_at/heartbeat_at/cancel/idempotency_key`를 관리한다([ADR-007](ADR-007-analysis-state-evaluation.md)).
+- DB 원자적 claim 및 lease 만료·재획득을 통해 웹 프로세스 재시작 후에도 상태가 보존되게 설계한다. terminal 상태와 결과 저장은 CAS/version 검사 후 처리하며, 중복 청구 가능성을 포함한 외부 도구 멱등성을 검증한다.
+- 배포 재시작 시 새로운 worker가 만료 작업을 회수하고, 예산을 이미 초과했거나 계정이 탈퇴/취소된 run은 재개하지 않는다. 취소·실행 상태는 공개 화면에 DB 기준으로 표시한다.
+- 비로그인 공고 조회를 허용하는 경우 **공개 읽기 API**에 대해서도 IP 기반/전역 요청 한도, 동시 연결 상한, 캐시/서버 기원 제한, 트래픽 관찰과 비로그인 첨부 수집 거부 등을 배포 환경에 따라 결정한다. 프록시가 넘기는 `X-Forwarded-For`는 신뢰한 프록시 목록에서만 해석하고 임의 client header는 rate limit key로 신뢰하지 않는다.
+- 비로그인에게 과도한 문서 다운로드/AI 분석 비용이 발생하지 않도록 검색과 열람 외의 자원 사용 작업은 로그인·자원 예산을 선행한다.
+- 검증: worker 종료/재시작, 동시 claim, lease 만료, 취소 중 외부 응답, migration 중 실행, 비로그인 IP/헤더 위조/캐시 장애/동시 요청에 대한 한도 테스트.
