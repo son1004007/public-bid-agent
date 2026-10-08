@@ -38,3 +38,17 @@
 - 비로그인 공고 조회를 허용하는 경우 **공개 읽기 API**에 대해서도 IP 기반/전역 요청 한도, 동시 연결 상한, 캐시/서버 기원 제한, 트래픽 관찰과 비로그인 첨부 수집 거부 등을 배포 환경에 따라 결정한다. 프록시가 넘기는 `X-Forwarded-For`는 신뢰한 프록시 목록에서만 해석하고 임의 client header는 rate limit key로 신뢰하지 않는다.
 - 비로그인에게 과도한 문서 다운로드/AI 분석 비용이 발생하지 않도록 검색과 열람 외의 자원 사용 작업은 로그인·자원 예산을 선행한다.
 - 검증: worker 종료/재시작, 동시 claim, lease 만료, 취소 중 외부 응답, migration 중 실행, 비로그인 IP/헤더 위조/캐시 장애/동시 요청에 대한 한도 테스트.
+
+
+## 프록시 캐시 분류 및 사용자 정보 누출 방지 — R4-005
+
+- 배포에 선택한 HTTPS reverse proxy/CDN에서 `/api/profile`, 분석 결과, 질문/응답, 인용, 개인 export는 기본 `Cache-Control: private, no-store` 및 shared cache 우회를 설정한다. `Vary: Cookie`는 보조 조치일 뿐 단독 보호로 사용하지 않는다.
+- SSE는 `no-store, no-transform` 및 proxy buffering/cache 비활성, 이력 사용자별 확인을 적용한다.
+- 공개 입찰 목록만 출처 변경/정정에 적합한 제한적 공유 캐시를 사용하고, 경로/쿠키 기준 cache bypass 오류와 CDN의 잘못된 캐시 키를 검사한다.
+- 개인 자료 export는 요청별 서버 권한 재검증, 임시 발급 권한의 TTL·1회성/재사용 방지, `Content-Disposition` 등 다운로드 헤더를 확인한다.
+- 선택한 실제 프록시를 통한 서로 다른 사용자 2명의 캐시 hit/miss E2E, 로그아웃·계정 삭제 직후 조회, 브라우저 back/service-worker 오프라인 자료를 검증해야 공개 운영 가능하다.
+
+## 실제 서비스 비용과 외부 보존 한계 — R4-002/R4-006
+
+- provider 계정 및 서비스 전체 예산은 run별 한도와 별개로 PostgreSQL 트랜잭션에서 원자 예약하여 다중 사용자의 동시 호출 폭증을 차단한다([ADR-007](ADR-007-analysis-state-evaluation.md)).
+- 외부 모델에 이미 보낸 요청은 탈퇴 시 즉시 삭제된다고 보장하지 않는다. provider 공식 취소/보존 정책을 확인하고, 로컬 저장/출력 차단과 외부 제공자의 삭제·보존 상태를 구분한다([ADR-008](ADR-008-profile-privacy.md)).
