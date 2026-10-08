@@ -123,3 +123,11 @@ LLM이 돌려준 citation ID는 서버가 존재 여부·원문 버전·해당 �
 - React는 모든 공고/모델 출력의 기본 표시를 text node로 한정하고, 공식 출처 URL만 안전한 링크로 변환한다. HTML 직접 렌더링은 MVP에서 금지한다.
 - 후속 질문은 승인된 비민감 스키마와 option으로만 제공한다. 회사 기밀·계약/연락처/계좌/실적 원문은 업로드/자유 입력/LLM 전송을 허용하지 않는다.
 - 분석 worker는 [ADR-007](adr/ADR-007-analysis-state-evaluation.md)의 DB `RunBudget/UsageAttempt` 영속 장부를 사용하고, 모델 호출 전 예약·응답 후 사용량을 조정한다. timeout·중복 작업·취소에도 시도 예산을 되돌리지 않는다.
+
+## Codex R4 설계 보완 사항
+
+- 근거는 [ADR-003](adr/ADR-003-evidence-retrieval.md)의 단일 `verification_status`, `review_source`, `semantic_relation`, `validator_ref` 계약을 따르며 의미 검증이 되지 않은 자기신고는 공식 검증 결과로 취급하지 않는다.
+- 공공 API 최신성은 [ADR-002](adr/ADR-002-procurement-data-lifecycle.md)의 원천 조회조건·페이지 coverage 및 공고별 authoritative detail 확인을 통해 판단한다.
+- 장기 실행은 [ADR-007](adr/ADR-007-analysis-state-evaluation.md)의 run/user/day/provider/day/service/day DB 원자 예산 예약을 통과한 경우에만 외부 도구·모델을 호출한다.
+- HTTPS edge/CDN은 사용자별 profile/run/citation/export를 공유 캐시하지 않고 SSE에는 streaming cache·buffering 제한을 적용한다([ADR-001](adr/ADR-001-auth-session-ownership.md), [ADR-005](adr/ADR-005-hosting-operations.md)).
+- 계정 삭제 시 외부 provider에 이미 보낸 요청은 provider 정책에 따라 취소를 시도하며, 늦은 결과의 로컬 기록을 차단하고 외부 보존 상태는 별도 안내한다([ADR-008](adr/ADR-008-profile-privacy.md)).
