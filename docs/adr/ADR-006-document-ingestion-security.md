@@ -38,3 +38,10 @@
 ## 추출 완전성 판정
 
 PDF parser 프로세스 실행 성공과 필수 참가요건 추출 완료는 동일하지 않다. `parse_status`와 `extraction_completeness`를 별도로 기록하고, 처리/전체 페이지 수·텍스트가 없는 페이지·표/이미지 전용 페이지·폰트 오류·부분 중단 사유를 보관한다. 스캔·손상·표 누락·일부 페이지 추출 및 포괄성 미확인 자료는 `PARTIAL/UNREADABLE/UNKNOWN`으로 두고 `SUITABLE`을 금지한다. 상세 계약은 [ADR-003](ADR-003-evidence-retrieval.md)에 따른다.
+
+
+## 원본 PDF 저장 및 사용자 제공 정책 — R4-Q02
+
+- 초기 MVP는 **원본 PDF를 공개 정적 파일이나 공개된 동일 origin 다운로드 경로로 제공하지 않고** 공식 사이트의 검증된 공개 `canonical_source_url`로 안내한다.
+- 파싱을 위해 다운로드한 원본 PDF는 접근 제한된 격리 임시 저장소에서만 처리하며 원천 이용조건상 허용된 기간 내 파기한다. `Content-Type`과 실행 파일/내장 객체는 신뢰하지 않는다.
+- 향후 원본 파일을 저장·사용자에게 제공해야 할 실제 요구가 생기면 제3자 이용조건, 사용자별 접근 권한, 다운로드 제한, `Content-Disposition: attachment`, 격리 origin, MIME 및 CSP·보안 헤더 검증을 별도 ADR/테스트 후 활성화한다.
