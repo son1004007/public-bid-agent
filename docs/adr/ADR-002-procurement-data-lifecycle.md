@@ -51,3 +51,18 @@
 8. 문서·조건·마감이 정정되면 이전 분석의 실행 상태/근거 이력은 유지하면서 최신성 projection을 변경한다. 역순 동기화 중에도 이전 분석의 최신성을 낙관적으로 승격하지 않는다.
 
 테스트: 역순 도착, 중복, supersedes cycle, branch, 상충 상태, partial pagination, 오래된 캐시, 정정 후 OPEN/CLOSED/CANCELLED, 마감 직전·직후, 시간대 불명확, 서버 시계 오차. 실제 API의 revision 표현을 관찰하기 전 이 알고리즘이 원천에서 완전히 검증됐다고 주장하지 않는다.
+
+
+## 원천 동기화의 범위와 최신성 증명 — R4-003
+
+`last_successful_complete_sync`는 데이터 소스 전체에 대한 단일 플래그가 아니다. `SyncCoverage` 단위로 관리한다.
+
+- `SyncCoverage`: `source_system`, `operation_id`, 원천에서 지원하는 날짜구간/업무구분/상태/검색조건, 정규화·해시된 query 필터, pagination cursor 또는 page manifest, 각 페이지 checksum, 시작·완료 시각, 완료/부분실패/오류 상태, 이 동기화의 식별자.
+- `COMPLETE`은 해당 **범위에서 필요한 전체 페이지/커서**를 오류·누락 없이 가져온 경우에만 부여한다. 한 검색조건의 성공으로 다른 기간·업무구분이나 원천 전체를 fresh하게 만들지 않는다.
+- 공고 `NoticeRevision`의 `source_freshness=CURRENT`는 다음 중 하나가 확인된 경우만 가능하다: (1) 해당 공고에 대해 공식 authoritative detail API가 정상 응답하고 최신 상태를 직접 검증함, 또는 (2) 해당 공고를 포함하는 범위임을 입증한 완전 `SyncCoverage`와 원천 개정 관계가 확인됨.
+- 조회가 지원하지 않는 정정 이력, 취소 정보, 상세 필드를 포함하지 않으면 **목록 완전 수집만으로 상세 최신성은 확정할 수 없다**. 이런 경우 detail refresh가 필요하며 실패하면 `UNKNOWN/STALE_SOURCE`로 fail closed 한다.
+- 목록에서 사라진 공고는 삭제·취소 확증이 아니다. `NOT_OBSERVED_IN_SCOPE`라는 관측 상태로만 기록하고 공식 상세 상태, tombstone/취소 통지 등 직접적인 증거가 나오기 전에는 `CANCELLED`로 확정하지 않는다.
+- `as_of`와 `last_authoritative_detail_check_at`, `source_status_observed_at` 및 freshness 허용 유효 기간을 구분한다. 공고가 현재 활성인지 사용자에게 표시할 때는 범위와 확인 시각을 알 수 있어야 한다.
+- 서로 다른 검색 query의 완료가 같은 `notice_identity`에 대해 잘못된 `CURRENT`를 덮어쓰지 않도록 원천 버전과 상태변경의 조건부 원자 갱신을 적용한다.
+
+테스트: 다른 필터의 동시 동기화, 겹치는 기간, cursor 누락, 늦게 온 정정, 목록에는 없지만 상세 취소 확인 불가, 상세 조회 실패/복구, 원천 최신본과 부분 캐시의 경쟁, 전혀 다른 query 완료로 해당 공고의 freshness가 승격되지 않는지 확인한다.
