@@ -50,6 +50,8 @@
 
 ## 의미 검증의 역할·권한 분리 — R3-Q01
 
+`EvidenceLink.verification_status`는 `PROPOSED/STRUCTURALLY_VALIDATED/SEMANTICALLY_REVIEWED/REJECTED`이고, `review_source`는 `NONE/DETERMINISTIC/USER_ACKNOWLEDGED/HUMAN_SERVICE`로 **별도 필드**다. 서로 다른 신뢰 단계를 한 enum에 혼합하지 않는다. `USER_ACKNOWLEDGED`는 검토 이벤트이며 `verification_status=SEMANTICALLY_REVIEWED`로 승격하지 않는다.
+
 - `STRUCTURALLY_VALIDATED`: 백엔드가 문서/버전/소유권/범위 검증을 수행했음을 의미한다. 주장 의미 검증을 나타내지 않는다.
 - `DETERMINISTICALLY_VERIFIED`: 명시적인 구조적 값·조건을 재현 가능한 규칙으로 검증한 특정 주장에만 적용한다. 검증 규칙 버전과 입력·출처 범위를 기록한다.
 - `USER_ACKNOWLEDGED`: 일반 사용자가 해당 인용을 확인했다는 표시이며, 서비스가 의미상 검증했다고 주장하지 않는다.
