@@ -1,28 +1,38 @@
-# ADR-002 공공 입찰 원천 데이터와 공고 생명주기
+# ADR-002 나라장터 데이터 식별·개정·접수상태·출처 URL
 
-- 상태: **설계 채택(실제 API 필드 매핑은 검증 대기)**
-- 관련 지적: DSR-004, Gemini F-04
-- 자료: https://www.data.go.kr/data/15129394/openapi.do 및 https://www.data.go.kr/data/15129437/openapi.do
-- 제한: 실제 API 응답과 공고 차수/정정/취소 필드의 존재를 아직 검증하지 않았다. 아래 필드는 **내부 표준 계약**이지 공공 API 실제 필드 이름이 아니다.
+- 상태: **설계 계약 보완(실제 API 필드 매핑 대기)**
+- 검수 대응: 초기 DSR-004, 재검수 R2-005/R2-008
+- 참고: https://www.data.go.kr/data/15129394/openapi.do 및 https://www.data.go.kr/data/15129437/openapi.do
+- **주의:** 아래 내부 필드 이름은 실제 공공데이터 API 필드명이 아니다. 실제 API 표본을 확인한 뒤 정규화 어댑터에 매핑한다.
 
-## 결정
+## 원천 저장과 개정 모델
 
-1. 수집 어댑터는 원천별 `source_system`, `source_record_id`, 원문 URL, 수집 시각, HTTP 상태와 응답 checksum을 보존한다.
-2. 원문 `RawNoticeSnapshot`은 API 응답의 원문 바이트 해시, 관측 시각, 출처, 파서 버전 및 출처별 식별 정보를 보존한다. 정규화된 `NoticeRevision`과 분리한다.
-3. 동일 사업의 식별자 `notice_identity`와 개정 `revision_identity`를 구분한다. **실제 composite natural key는 표본 계약 테스트 후 확정**한다. 원천의 '차수' 표현을 임의로 가정하지 않는다.
-4. 개정 여부는 원천 개정/정정/취소 필드가 있으면 그 근거를 사용하고, 없는 경우 원문 checksum 변경을 발견하더라도 원천 의미를 단정하지 않는다. `UNKNOWN` 상태로 수동 확인한다.
-5. 내부 상태는 `OPEN`, `CLOSED`, `CORRECTED`, `CANCELLED`, `UNKNOWN`을 사용하지만 원천 상태와 일대일 대응한다고 가정하지 않는다. 분류 근거·판정 일시를 함께 저장한다.
-6. 마감 시각은 `deadline_raw`, `deadline_timezone_source`, 해석된 `deadline_utc`, `retrieved_at_utc`를 구분한다. 원천 시간대를 증명할 수 없으면 `UNKNOWN`으로 두고 '지원 가능'을 확정하지 않는다. 마감 경계에서는 원천 재조회한다.
-7. `last_checked_at`과 `stale_after` 기준을 둔다. 최초 구현에서 stale 허용 시간은 **공고 표시에 명시하고 운영에서 검증할 설정값**이며 보장된 실시간성을 주장하지 않는다.
-8. 정정·취소 또는 의미 있는 내용 변경을 감지하면 이전 `AnalysisRun`은 불변 이력으로 남기되 `STALE_SOURCE`로 표시하여 최신 판단으로 제공하지 않고, 재분석 필요를 알린다.
-9. 취소·마감 여부가 확인되지 않거나 API 조회 실패 시 지원 가능하다는 긍정 판정을 내리지 않는다.
-10. 검색 결과 `EMPTY`는 검증된 완전한 페이지 결과가 0건일 때만 사용한다. `UPSTREAM_ERROR`, `PARTIAL`, `RATE_LIMITED`, `SCHEMA_DRIFT`, `STALE_CACHE`를 다른 상태로 관리한다.
-11. 공식 API 이용조건, 원문 링크, 원천 데이터의 보존 및 재배포 제한은 출처별로 기록한다. 라이선스가 불명확한 자료를 공개 저장소에 복제하지 않는다.
+1. `RawNoticeSnapshot`: 출처 식별자, 관측 시각, 원본 바이트 해시, 파서 버전, 수집 응답 오류 상태. 수집 응답에 서명 URL/개인정보가 있으면 raw payload를 무조건 영구 보관하지 않는다. 원본 해시와 허용된 최소 내용만 별도 보안 정책으로 보관한다.
+2. `NoticeIdentity`: 원천의 하나의 공고 정체성. `source_system + natural_key` 조합을 도메인 키로 삼으나, **natural_key 실제 필드는 계약 표본 후 확정**한다.
+3. `NoticeRevision`: `revision_id`, `notice_identity`, `source_revision_id`(있을 때), `supersedes_revision_id`, `revision_kind`(`ORIGINAL/CORRECTION/UNKNOWN`), `observed_at`, `content_hash`.
+4. `content_change_observation`: checksum 변경·서식 차이 등 관측 사실. 이 이벤트만으로 정정/취소/마감 의미를 자동 확정하지 않는다.
+5. **`availability_status` 별도 필드**: `OPEN/CLOSED/CANCELLED/UNKNOWN`, 원천 상태 문자열, 결정 근거, `status_observed_at`, `last_checked_at`, `stale_after`. 정정된 공고도 `OPEN` 또는 `CLOSED`일 수 있다.
+6. `source_freshness`: 특정 분석이 참조한 source revision과 최신 확인 revision의 비교 결과 `CURRENT/STALE_SOURCE/UNKNOWN`. 과거 분석의 실행 성공 상태는 변경하지 않는다.
+7. `deadline_raw`, 확인된 시간대, `deadline_utc`, `retrieved_at_utc`를 분리한다. 시간대가 확인되지 않으면 자동으로 `OPEN` 확정하거나 지원 가능으로 표시하지 않는다.
+8. 개정·취소·상태 변화 또는 의미 있는 원문 변경 발생 시 과거 `AnalysisRun`과 그때의 문서/근거 버전은 **불변 이력**으로 남긴다. 새로운 최신성 projection을 통해 재검토 필요 또는 추천 제외를 표시한다.
+9. 확실한 `EMPTY`와 `PARTIAL`, `UPSTREAM_ERROR`, `RATE_LIMITED`, `SCHEMA_DRIFT`, `STALE_CACHE`를 구분한다. 커서·페이지 중복/누락과 upstream 데이터 오류를 조용히 0건으로 바꾸지 않는다.
 
-## 표본 조사 게이트
+## 수집용 URL과 표시용 URL 분리
 
-실제 조달청 API의 응답을 최소한 정상 공고, 동일/변경 공고, 페이지 처리, 결과 없음, 오류, 첨부 URL 사례별로 읽기 전용 확인한다. 사용 가능한 실제 정정·취소 예시가 없다면 fixture는 명확히 **합성 데이터**로 표시한다. API key나 민감한 원문은 리뷰 산출물에 기록하지 않는다.
+- `fetch_endpoint`: 비밀키가 포함될 수 있는 서버 내부 일시적 요청 대상. 서버 설정과 공식 ID에서 구성하며 **로그·저장·응답·원문 근거에 저장하지 않는다**.
+- `canonical_source_url`: 사용자에게 공개 가능한 공식 원문 링크. credential/signature/일회성 토큰/민감 추적 query·fragment가 없는 allowlisted 주소만 저장·표시한다.
+- 원천이 토큰 포함 임시 다운로드 URL만 제공하면 이를 화면에 노출하지 않고, 공식 공고 상세 페이지의 공개 URL을 근거 링크로 사용한다. 표시 URL을 안전하게 만들 수 없으면 비공개로 유지하고 링크 불가 상태로 표시한다.
+- URL 정책은 scheme·host/port, 허용 path/query 키 목록, 비밀정보 패턴, proxy/redirect 및 오픈 리다이렉트 경계를 포함한다. raw API 응답에 포함된 민감 URL도 안전한 내부 범위에서만 처리한다.
+- `display_url`은 원본 fetch URL에서 무조건 문자열 치환해서 만들지 않고 공식적으로 알려진 공고 식별자와 허용된 경로로 생성한다. secret redaction 실패는 fail closed다.
+- HTTP 로그와 분석 trace에서는 query/path 기반 credential이 남지 않도록 별도 검증한다.
+
+## 실제 API 표본 조사 게이트
+
+- 정상 공고, 원천에 확인된 변경/정정/취소 표본, 서로 다른 페이지와 빈 결과/부분 실패를 읽기 전용 확인한다. 실제 예시가 없으면 합성 fixture로 명확히 구분한다.
+- 공고 번호/차수/원천 자연키/첨부 ID/마감 시각/시간대/상태 코드의 실제 의미는 외부 공식 문서와 관찰된 응답을 함께 확인한다.
+- 동기화 규칙은 정정 후 `OPEN`, 정정 후 `CLOSED`, 정정 후 `CANCELLED` 및 `UNKNOWN`을 모두 허용해야 한다.
+- 원문 재배포·보존/임베딩 이용 조건이 불명확하면 허용된 최소 메타데이터와 원문 링크만 유지한다.
 
 ## 테스트
 
-원천 key 충돌, 동일 공고의 재수집, 개정/취소, checksum 변화와 의미 상태 분리, 날짜 시간대 모름, 마감 경계, 페이지 중복, 부분 결과, schema drift, API 실패 후 stale snapshot의 경고 동작을 검증한다.
+같은 공고의 revision, checksum 변화만 있는 경우, 정정 후 OPEN/CLOSED/CANCELLED, deadline timezone 미정, 잘못된 페이지, 원천 지연 및 타 사용자 분석 결과와의 최신성 projection 분리를 시험한다. 서명 URL/가상 서비스 키가 DB·로그·브라우저·분석 결과에 남지 않음을 검증한다.
