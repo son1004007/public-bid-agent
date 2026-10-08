@@ -26,16 +26,16 @@
 
 | 우선순위 | 확인된 요건 및 출처 상태 | 참가/기술 결과 | 최종 결과 |
 |---|---|---|---|
-| 1 | 필수 참가요건이 확인된 근거와 함께 `CONFLICT` | `MANDATORY_CONFLICT` | `UNSUITABLE` |
-| 2 | `UNKNOWN_PRIORITY`, `UNKNOWN_KIND`, 필수요건 `UNKNOWN`, 근거 검증 미완료 또는 원문 최신성 `UNKNOWN/STALE_SOURCE` | `NEEDS_REVIEW` | `NEEDS_REVIEW` |
-| 3 | 접수 가능성이 `OPEN`이 아니거나 마감 시각/시간대 불명확 | 별도 상태에 원문 사유 표시 | `NEEDS_REVIEW` (닫힘/취소 공고는 추천 목록에서 제외 가능) |
+| 1 | 원문 최신성이 `UNKNOWN/STALE_SOURCE`, 접수 가능성이 `OPEN`이 아니거나 마감 시각/시간대 불명확 | 당시 요건 평가와 분리해 현재 참가 가능성 판단 보류 | `NEEDS_REVIEW` (닫힘/취소 공고는 추천 목록에서 제외 가능) |
+| 2 | 최신 공고의 필수 참가요건이 의미상 검증된 근거와 함께 `CONFLICT` | `MANDATORY_CONFLICT` | `UNSUITABLE` |
+| 3 | `UNKNOWN_PRIORITY`, `UNKNOWN_KIND`, 필수요건 `UNKNOWN`, 근거 의미 검증 미완료 | `NEEDS_REVIEW` | `NEEDS_REVIEW` |
 | 4 | 필수조건 미충족 없음, 선택조건만 `CONFLICT`이거나 기술 평가가 `PARTIAL/MISMATCH/UNKNOWN` | 필수조건 판정과 기술 판정 분리 | `NEEDS_REVIEW` |
 | 5 | 모든 확인된 필수요건이 근거로 충족/정당한 `NOT_APPLICABLE`, 분류 누락 없음, 출처 `CURRENT`, 접수 `OPEN`, 기술 `MATCH`, 중요한 근거가 의미 검증됨 | `NO_KNOWN_CONFLICT` + `MATCH` | `SUITABLE` (법적 자격 보장 아님) |
 | 기본 | 그 밖의 모든 정보 부족/상충/추출 실패 | `NEEDS_REVIEW` 또는 `UNKNOWN` | `NEEDS_REVIEW` |
 
 **반드시 지킬 불변조건:** 
 - 임의 `OPTIONAL + CONFLICT`만으로 `UNSUITABLE`을 내리지 않는다.
-- `UNSUITABLE`은 근거가 확인된 **MANDATORY 조건 충돌**일 때만 사용한다. 기술상 필수조건은 `MANDATORY`로 분류돼야 충돌로 집계한다.
+- `UNSUITABLE`은 **현재 유효한 공고 버전에서** 근거가 확인된 **MANDATORY 조건 충돌**일 때만 사용한다. 기술상 필수조건은 `MANDATORY`로 분류돼야 충돌로 집계한다.
 - 잠재적인 필수 참가조항의 추출 또는 분류 범위가 검증되지 않았다면 `SUITABLE` 대신 `NEEDS_REVIEW`로 표시한다.
 - 사용자가 제공한 프로필 값이 없으면 `UNKNOWN`; 사용자가 제공하지 않았다는 사실이 부적합의 근거가 아니다.
 - 결과 UI에서 참가자격과 기술 적합성, 접수 상태, 출처 최신성을 모두 별도로 보여준다.
