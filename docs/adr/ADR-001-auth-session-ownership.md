@@ -43,3 +43,10 @@
 ## 요구되는 검증
 
 state/nonce/PKCE 실패, redirect mismatch, ID Token 서명·iss·aud·만료 오류, session fixation/rotation, CSRF/Origin, 로그아웃 후 접근, 양 사용자 간 profile/run/question/SSE/cancel 교차 요청과 재연결을 테스트한다. 인증 토큰과 CSRF 토큰은 로그에 남기지 않는다.
+
+## 계정 삭제 시 인증 무효화 및 재가입 — R2-007
+
+- 계정 삭제는 단순 로그아웃보다 강한 작업이다. 삭제를 시작하면 관련 세션 전부, 미완료 로그인 state/nonce/PKCE 시도, 실행/질문/SSE 접근을 폐기한다. 진행 중인 worker는 ownership 및 계정 상태를 재검증하고 결과 저장을 거부한다.
+- 같은 Google `issuer + sub`로 다시 로그인한 사용자는 별도의 새 내부 사용자 ID를 받아야 하며 이전 탈퇴 계정의 자원을 자동 회수하지 못한다.
+- DB 복원 시 세션/소유권이 함께 복구되어도 서비스 재개 전에 별도 삭제 저널을 재적용해야 한다. 상세 저장/보존 정책은 [ADR-008](ADR-008-profile-privacy.md)을 따른다.
+- E2E: 삭제 후 옛 쿠키, 삭제 중 콜백, 삭제 후 동일 계정 재가입, 오래된 백업 복원 및 사용자 간 이전 소유권 접근 차단.
