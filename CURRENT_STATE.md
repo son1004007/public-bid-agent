@@ -1,13 +1,13 @@
 # 현재 개발 상태
 
 - 기준일: 2026-10-08
-- 단계: 최초 독립 Codex 지적사항의 설계 반영 / 독립 재검수 대기
+- 단계: Codex 재검수 R2·R3 지적사항에 대한 설계 수정 완료 / R4 독립 검수 대기
 - 저장소: 공개
 - 라이선스: Apache-2.0
 - 서비스 구현: 미착수
 - 테스트: 미실행
 - 배포: 미실행
-- 최초 독립 설계/보안 리뷰: AGY/Gemini + Codex 완료. Codex 13건의 수정 요구를 설계 문서에 반영했으나 독립 재검수 전이므로 `HOLD` 유지
+- 독립 설계 리뷰: Codex 초기 검수(13건) → R2(주요 7건) → R3(주요 6건). 지적된 설계 계약을 수정했으며 R4 검증 전까지 `HOLD` 유지
 
 ## 확인된 사항
 
@@ -19,7 +19,7 @@
 
 ## 구현 전 확인 사항
 
-1. [ADR 설계 8개](docs/adr/README.md)에 Codex 검토 결과를 반영했다. 아직 수정한 설계의 독립 Codex 재검수, 판정 조정 및 주요 발견 해결이 필요하다.
+1. [ADR 설계 8개](docs/adr/README.md)에 Codex R2/R3의 최신 공고 projection, PDF 추출 완전성, 기존 SSE 권한 철회, React 출력 안전, 질문·답변 최소수집, 영속 사용량 장부를 반영했다. 아직 R4 재검수와 주요 finding 판정 정리가 필요하다.
 2. 나라장터 API의 실제 작업/필드/첨부 수집 방법 검증
 3. Google OAuth 운영 설정과 redirect/origin 정책 검증
 4. 오픈소스 ChatGPT 플랜 연동(SIWC)과 원격 호스팅 앱의 별도 승인/등록 요건을 구분하여 공식 지원 여부 검증
@@ -30,4 +30,6 @@
 - [Gemini 1차 리뷰](docs/reviews/2026-10-08-agy-gemini-raw.md)
 - [Codex 1차 독립 리뷰](docs/reviews/2026-10-08-codex-raw.md)
 - [검토 결과 조정](docs/reviews/2026-10-08-review-reconciliation.md)
+- [Codex R2 원문](docs/reviews/2026-10-08-codex-r2-raw.md)
+- [Codex R3 원문](docs/reviews/2026-10-08-codex-r3-raw.md)
 - [한글 설계 결정](docs/adr/README.md)
