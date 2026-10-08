@@ -62,3 +62,15 @@ state/nonce/PKCE 실패, redirect mismatch, ID Token 서명·iss·aud·만료 �
 ## 고위험 계정 조작의 최근 인증 — R3-008
 
 계정 삭제, 계정 전체 데이터 export, 외부 모델 연결/해제는 일반 세션만으로 실행하지 않는다. Google 재인증 또는 지원되는 최근 인증 증명으로 **직전 10분 이내의 확인된 사용자 인증**을 요구하고, 짧은 수명의 일회용 작업 nonce와 명시적 확인을 적용한다. 재인증 방식은 Google의 실제 OIDC 지원·`auth_time` 확인 및 브라우저 E2E를 통과한 경우에만 배포하고, 실패/취소/재사용 nonce는 작업 거부로 처리한다.
+
+
+## HTTP 응답 캐시와 사용자 격리 — R4-005
+
+인증된 API 응답은 서버 ownership 검사와 별개로 CDN·프록시의 공유 캐시 유출을 막아야 한다.
+
+- `PUBLIC_CACHEABLE`: 개인 정보가 없는 공식 공고 목록만 제한적 TTL 및 출처 버전 기준으로 공유 캐시할 수 있다.
+- `AUTHENTICATED_PRIVATE`: 프로필, 분석, 질문, 근거, 계정 조회 API 응답은 `Cache-Control: private, no-store`로 설정하고 프록시/CDN 공유 캐시에서 제외한다.
+- `STREAMING`: SSE는 `Cache-Control: no-store, no-transform`, reverse proxy buffering/cache 해제, 최초 연결과 메시지 전송 시 권한 검증을 적용한다.
+- `EXPORT_DOWNLOAD`: 사용자 자료 export는 `Cache-Control: private, no-store`, 짧은 수명과 1회용 전송 권한을 적용하고 요청마다 계정·소유권을 검증한다.
+- `Vary: Cookie`만으로 사용자별 자료 보호를 대신하지 않는다. service worker의 오프라인 캐시에도 개인정보·분석 결과를 저장하지 않는다.
+- 실제 reverse proxy/CDN을 통과하는 두 사용자 테스트에서 캐시 적중·미적중, 로그아웃·탈퇴 후 조회, export·SSE의 공유 캐시·buffering 차단을 검증한다.
