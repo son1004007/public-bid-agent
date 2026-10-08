@@ -7,7 +7,7 @@
 - Runtime implementation: NOT STARTED
 - Tests: NOT STARTED
 - Deployment: NOT STARTED
-- Independent design review: PENDING
+- Independent design review: BLOCKED - independent AGY/Gemini reviewer unavailable in current tool environment
 
 ## Confirmed
 
@@ -19,7 +19,7 @@
 
 ## Pending before implementation
 
-1. Independent design/security review required by owner policy.
+1. Independent design/security review required by owner policy. Current attempt is BLOCKED; see `docs/reviews/2026-10-08-design-security-review.md`.
 2. Confirm exact OpenAPI operations/fields needed for service-type notices and attachment access.
 3. Confirm Google OAuth production configuration and redirect/origin policy from current official docs.
 4. Confirm current OpenAI/Codex user-auth deployment constraints before enabling per-user ChatGPT connection on a remotely hosted public service.
