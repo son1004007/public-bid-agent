@@ -1,29 +1,11 @@
-# 06 Source Layout
+# 06 소스 구조 설계
 
-## Goal
+## 목적
 
-Define the initial repository shape before bootstrap. This is a design boundary, not proof that the directories are implemented.
+구현 전에 초기 repository 경계를 정의한다. 아래 폴더가 실제 구현되었다는 의미가 아니다.
 
 ```text
 public-bid-agent/
-  AGENTS.md
-  AI_CONTEXT.md
-  CURRENT_STATE.md
-  TASKS.md
-  README.md
-  LICENSE
-  NOTICE
-
-  docs/
-    00-project-context.md
-    01-requirements.md
-    02-architecture.md
-    03-test-plan.md
-    04-operation-and-deployment.md
-    05-coding-standards.md
-    06-source-layout.md
-    adr/
-
   frontend/
     src/
       app/
@@ -54,44 +36,41 @@ public-bid-agent/
       integration/
       contract/
 
-  .github/
-    workflows/
+  docs/
+    adr/
 
+  .github/workflows/
   docker/
   docker-compose.yml
   .env.example
 ```
 
-## Boundary rules
+## 경계
 
 ### frontend
 
-Owns presentation and interaction. It cannot make authoritative authorization/eligibility decisions.
+표현과 사용자 상호작용을 담당한다. authorization이나 입찰 적합성을 최종 판정하지 않는다.
 
 ### backend/api
 
-Owns HTTP/SSE transport contracts only.
+HTTP/SSE transport contract를 담당한다.
 
 ### backend/application
 
-Owns use-case orchestration, transaction scope and calls into domain/ports.
+use case orchestration과 transaction 범위를 담당한다.
 
 ### backend/domain
 
-Owns stable bid/profile/analysis concepts and deterministic rules. No FastAPI, SQLAlchemy, Google, G2B, LangChain or LangGraph imports unless a later ADR demonstrates a justified exception.
+안정적인 입찰/프로필/분석 개념과 deterministic rule을 담당한다. 특별한 ADR이 없으면 FastAPI, SQLAlchemy, Google, G2B, LangChain, LangGraph에 의존하지 않는다.
 
 ### backend/infrastructure
 
-Owns replaceable external technology adapters.
+외부 기술/서비스 adapter를 담당한다.
 
 ### backend/agent
 
-Owns the explicit AI workflow/state machine. It can call application/domain ports but cannot bypass authorization/persistence/network safety policies.
+AI workflow/state machine을 담당한다. authorization, persistence, network safety 정책을 우회할 수 없다.
 
-## Initial deployment unit
+## 변경 원칙
 
-Frontend and backend may be built separately, but backend remains a modular monolith. PostgreSQL/pgVector is the only planned persistent data service for MVP.
-
-## Change rule
-
-If implementation reveals that this layout creates empty/pass-through layers or forces circular dependencies, change the design deliberately and record the reason. Do not preserve folders solely because this document predicted them.
+실제 구현에서 빈 계층이나 단순 pass-through가 생기거나 circular dependency를 강제하면 구조를 단순화하고 이유를 기록한다. 문서에 폴더가 있다는 이유만으로 유지하지 않는다.
