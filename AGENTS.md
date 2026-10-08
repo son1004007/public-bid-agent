@@ -12,6 +12,16 @@ Before substantive work, when GitHub access is available, read:
 
 Then return to this repository. This repository is the source of truth for its product requirements, architecture, code, tests, deployment, and verification evidence.
 
+For implementation or review work, also read the owner's reusable engineering standards:
+
+- `son1004007/personal-engineering-handbook/standards/implementation.md`
+- `son1004007/personal-engineering-handbook/standards/testing.md`
+- `son1004007/personal-engineering-handbook/standards/security.md`
+- `son1004007/personal-engineering-handbook/standards/ai-assisted-development.md`
+- `son1004007/personal-engineering-handbook/standards/code-review.md`
+
+These shared standards are normative defaults unless this repository has a more specific verified rule. Do not invent a language/framework-specific house rule when the shared handbook does not define one; use current official framework/tool guidance plus the local project contract instead.
+
 ## 1. Project
 
 - Name: `public-bid-agent`
@@ -30,7 +40,8 @@ Then return to this repository. This repository is the source of truth for its p
 6. `docs/02-architecture.md`
 7. `docs/03-test-plan.md`
 8. `docs/04-operation-and-deployment.md`
-9. relevant ADRs, source, tests, configuration and current GitHub evidence
+9. the shared implementation/testing/security/AI/code-review standards listed in Section 0 when the task touches code, tests, dependencies, security, or review
+10. relevant ADRs, source, tests, configuration and current GitHub evidence
 
 ## 3. Evidence states
 
@@ -62,6 +73,14 @@ This project includes public exposure, authentication, external APIs, AI-generat
 - Do not automate actual bid submission, certificate signing, payment, or other legally consequential procurement actions in the MVP.
 - Do not copy employer/client code, data, prompts, schemas, internal URLs, or secrets into this public repository.
 - Add dependencies only when justified by an implemented requirement.
+- AI-generated code, SQL, shell, configuration, architecture, tests and dependency suggestions are candidates until verified.
+- Before adding an npm/PyPI dependency, verify that the package exists in the official registry/source and review version, license, maintenance/support and security impact.
+- Keep input/output/error/state/authorization/transaction/side-effect/retry contracts explicit in code, tests, or adjacent documentation.
+- Protect invariants at the strongest appropriate boundary; never trust client-supplied identity, role, ownership or LLM output.
+- For external I/O, define bounded timeout behavior and evaluate retry together with idempotency and load amplification.
+- Do not add abstractions, layers, factories, infrastructure, or frameworks only for possible future use or portfolio keyword coverage.
+- Comments/docstrings explain durable business rules, trust boundaries, failure behavior and non-obvious reasons; do not narrate obvious syntax.
+- Keep changes small and purpose-focused; do not mix unrelated refactors, dependency upgrades, file moves or global formatting with feature work.
 
 ## 6. Verification
 
