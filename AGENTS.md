@@ -40,8 +40,10 @@ These shared standards are normative defaults unless this repository has a more 
 6. `docs/02-architecture.md`
 7. `docs/03-test-plan.md`
 8. `docs/04-operation-and-deployment.md`
-9. the shared implementation/testing/security/AI/code-review standards listed in Section 0 when the task touches code, tests, dependencies, security, or review
-10. relevant ADRs, source, tests, configuration and current GitHub evidence
+9. `docs/05-coding-standards.md`
+10. `docs/06-source-layout.md`
+11. the shared implementation/testing/security/AI/code-review standards listed in Section 0 when the task touches code, tests, dependencies, security, or review
+12. relevant ADRs, source, tests, configuration and current GitHub evidence
 
 ## 3. Evidence states
 
