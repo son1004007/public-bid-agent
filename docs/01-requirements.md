@@ -1,156 +1,138 @@
-# 01 Requirements
+# 01 요구사항
 
-## Status
+## 상태
 
-`READY WITH ASSUMPTIONS` for design; `NOT READY` for public production deployment.
+설계 기준: `READY WITH ASSUMPTIONS`
+공개 운영 기준: `NOT READY`
 
-## Requirement precedence
+## 우선순위
 
 ```text
-latest explicit owner instruction
-> applicable law / external service terms
-> project security and data rules
-> approved owner engineering policy
-> this requirement document
-> architecture/design preference
+최신 사용자 지시
+> 법률/외부 서비스 약관
+> 프로젝트 보안/데이터 규칙
+> 승인된 개인 개발 표준
+> 이 요구사항
+> 설계 선호
 ```
 
-## MVP functional requirements
+## MVP 기능 요구사항
 
-### REQ-AUTH-001 - Google sign-in
+### REQ-AUTH-001 Google 로그인
 
-A user can authenticate with Google and the backend verifies the identity before creating an application session.
+Google OIDC/OAuth 기반 로그인 후 backend가 신원을 검증하고 애플리케이션 세션을 만든다.
 
-Acceptance:
-- unauthenticated protected API requests are rejected;
-- client-supplied user identifiers are not trusted as identity;
-- logout/session expiry behavior is explicit.
+검수:
+- 미인증 보호 API 거부
+- client가 전달한 user id/role을 권한 근거로 신뢰하지 않음
+- logout/session expiry 정의
 
-### REQ-PROFILE-001 - organization profile
+### REQ-PROFILE-001 기업/기술 프로필
 
-An authenticated user can maintain a profile containing only the information required for bid-fit analysis, such as technology capabilities, organization type, region and known certifications/qualifications.
+로그인 사용자는 입찰 적합성 분석에 필요한 기업/기술 정보를 관리한다.
 
-Acceptance:
-- profile ownership is enforced server-side;
-- unknown fields may remain unknown;
-- absence of information is not converted to a negative fact.
+검수:
+- server-side ownership
+- 모르는 값은 UNKNOWN 유지
+- 정보 부재를 부적합 사실로 변환하지 않음
 
-### REQ-BID-001 - official notice discovery
+### REQ-BID-001 공식 공고 탐색
 
-The service retrieves public procurement notices through an official public API adapter and normalizes them into an internal domain model.
+공식 공공 API를 통해 입찰공고를 조회하고 내부 표준 모델로 변환한다.
 
-Acceptance:
-- source identifier and source URL are retained;
-- API failure is distinguishable from an empty result;
-- duplicate notices are handled deterministically.
+검수:
+- 공식 source id와 원문 참조 유지
+- API 장애와 검색결과 0건 구분
+- 중복 공고 결정적으로 처리
 
-### REQ-BID-002 - AI/software relevance
+### REQ-BID-002 AI/SW 관련성
 
-The service identifies likely AI/software opportunities and records why an item was included.
+AI/SW 사업 후보를 식별하고 포함 이유를 기록한다.
 
-Acceptance:
-- deterministic keyword/rule baseline exists;
-- LLM classification, if used, is evaluated separately from the baseline;
-- false-positive/false-negative evaluation set is maintained.
+검수:
+- deterministic keyword/rule baseline 존재
+- LLM 분류 사용 시 baseline과 별도로 평가
+- false positive/negative 평가 데이터 유지
 
-### REQ-DOC-001 - source document ingestion
+### REQ-DOC-001 공고/RFP 문서 수집
 
-The service may retrieve relevant public notice/RFP/specification documents for analysis.
+분석에 필요한 공식 공고/RFP/규격 문서를 제한적으로 가져온다.
 
-Acceptance:
-- retrieval has allowlisted source policy, timeout, redirect, file-size and file-type controls;
-- source metadata and original reference are retained;
-- retrieved text is treated as untrusted data.
+검수:
+- 허용 출처, redirect, timeout, 크기, 형식 제한
+- 원 출처 metadata 유지
+- 문서 내용은 untrusted data로 처리
 
-### REQ-RAG-001 - evidence retrieval
+### REQ-RAG-001 근거 검색
 
-Relevant source passages can be retrieved for a specific bid.
+특정 입찰의 관련 원문 구간을 검색한다.
 
-Acceptance:
-- chunks retain document/page/section/source metadata when available;
-- retrieval evaluation is recorded against a small labeled set;
-- no claim of quality is made without measured evidence.
+검수:
+- 가능한 경우 문서/페이지/섹션/source metadata 유지
+- 작은 labeled set으로 retrieval 평가
+- 측정 전 품질 보장 표현 금지
 
-### REQ-AGENT-001 - fit analysis workflow
+### REQ-AGENT-001 적합성 분석
 
-The agent compares source requirements with known user profile facts and produces:
+결과 상태:
 - `SUITABLE`
 - `NEEDS_REVIEW`
 - `UNSUITABLE`
 
-Acceptance:
-- each material conclusion includes evidence or explicitly says evidence is unavailable;
-- missing required user facts produce questions or `NEEDS_REVIEW`;
-- model output cannot directly mutate the user profile or submit a bid.
+검수:
+- 중요한 결론마다 근거 또는 근거 없음 명시
+- 사용자 정보가 부족하면 질문 또는 NEEDS_REVIEW
+- 모델 출력이 사용자 프로필을 임의 변경하거나 실제 입찰을 실행할 수 없음
 
-### REQ-AGENT-002 - workflow state
+### REQ-AGENT-002 명시적 workflow
 
-The workflow supports search, source retrieval, eligibility extraction, technical-fit comparison, missing-information handling and final synthesis as explicit states/nodes.
+검색, 근거수집, 요구조건 추출, 프로필 비교, 부족정보 질문, 최종 합성을 명시적 상태/node로 관리한다.
 
-Acceptance:
-- node transitions are testable;
-- retries/timeouts are bounded;
-- external-tool failure does not become a fabricated result.
+검수:
+- 상태 전이 테스트 가능
+- retry/timeout bounded
+- tool 장애를 정상 결과로 조작하지 않음
 
-### REQ-STREAM-001 - progress streaming
+### REQ-STREAM-001 진행상황 스트리밍
 
-Long-running analysis exposes bounded progress/result events to the React client.
+장시간 분석은 인증된 사용자에게 SSE로 진행/결과 이벤트를 전달한다.
 
-Acceptance:
-- event schema is versioned or explicitly typed;
-- reconnect/error behavior is defined;
-- one user's events cannot be read by another user.
+검수:
+- event schema 명시
+- 오류/재연결 정책
+- 사용자 간 event 격리
 
-### REQ-LLM-001 - replaceable LLM boundary
+### REQ-LLM-001 교체 가능한 LLM 경계
 
-Agent code depends on a project LLM interface rather than a hard-coded API credential mode.
+Agent는 특정 credential 방식에 직접 결합하지 않는다.
 
-Acceptance:
-- provider-specific auth is isolated;
-- tests can use deterministic fake/stub inference;
-- application startup does not expose provider credentials to the browser.
+검수:
+- provider 인증 격리
+- 테스트용 deterministic fake provider 가능
+- browser에 provider secret 미노출
 
-### REQ-LLM-002 - Codex target
+### REQ-LLM-002 Codex 목표
 
-Codex is the preferred reasoning-model target.
+Codex는 선호 추론 모델이다.
 
-Status: `PLANNED / SUPPORT CONSTRAINT PENDING`.
+상태: `PLANNED / SUPPORT CONSTRAINT PENDING`
 
-Public remotely hosted per-user ChatGPT/Codex connection must remain disabled until current official OpenAI support and terms for that deployment are verified.
+공개 원격 서비스에서 사용자별 ChatGPT/Codex 연결이 공식 지원되는지 확인하기 전에는 활성화하지 않는다.
 
-## Non-functional requirements
+## 비기능 요구사항
 
-### REQ-SEC-001
+- REQ-SEC-001: secret은 server-side only.
+- REQ-SEC-002: 외부 문서는 시스템 지시/권한/도구 정책을 변경할 수 없다.
+- REQ-SEC-003: 사용자 소유 데이터는 server-derived identity로 scope한다.
+- REQ-TRACE-001: 분석 결과에서 공식 원문 근거를 추적할 수 있어야 한다.
+- REQ-LIC-001: 프로젝트 작성 코드/문서는 Apache-2.0, 제3자 데이터는 원 권리/조건 유지.
+- REQ-COST-001: 별도 종량제 LLM API 비용을 MVP 필수조건으로 만들지 않는다.
 
-Secrets are server-side only and excluded from Git, logs and frontend bundles.
+## MVP 제외
 
-### REQ-SEC-002
-
-Retrieved documents cannot supply system instructions, authorize tool calls, change access control, or override project policy.
-
-### REQ-SEC-003
-
-All persistent user-owned records are scoped by authenticated server-side identity.
-
-### REQ-TRACE-001
-
-A displayed bid analysis retains enough source metadata to reproduce which public notice/documents supported it.
-
-### REQ-LIC-001
-
-Project-authored code/documentation are Apache-2.0. Third-party/public data retain their original terms and attribution requirements.
-
-### REQ-COST-001
-
-MVP should avoid mandatory separately metered LLM API cost. Any fallback that creates external usage cost requires an explicit design decision before implementation.
-
-## Explicit non-goals for MVP
-
-- actual electronic bid submission
-- certificate signing
-- payment
-- contractual commitment
-- automatic legal eligibility determination
-- autonomous company registration or qualification changes
-- Kubernetes/microservices solely for portfolio breadth
-- fine-tuning solely to satisfy a technology checklist
+- 실제 전자입찰 제출
+- 인증서 서명
+- 결제/계약
+- 공식 법적 자격 판정
+- 기업 자격 자동 변경
+- 포트폴리오 키워드만을 위한 Kubernetes/microservice/fine-tuning
