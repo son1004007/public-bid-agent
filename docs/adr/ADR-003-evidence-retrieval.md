@@ -7,7 +7,7 @@
 ## 최소 데이터 계약
 
 - `SourceDocumentVersion`: `document_id`, 공식 출처 URL, `source_notice_revision_id`, 바이트 해시, 관측 시각, 취득 권한/조건 및 저장 정책.
-- `ParsedArtifact`: 해당 원문 버전의 `parser_name/version`, `extractor_configuration_hash`, 추출 성공/실패 및 출력 checksum.
+- `ParsedArtifact`: 해당 원문 버전의 `parser_name/version`, `extractor_configuration_hash`, 추출 성공/실패, 출력 checksum과 **추출 완전성·범위**를 별도 기록.
 - `Passage`: `passage_id`, `parsed_artifact_id`, 페이지/섹션/문자 오프셋(지원되는 범위), 내용 해시. 오프셋 미지원 시 위치 정확도를 `UNKNOWN`으로 남긴다.
 - `ExtractedRequirement`: 인용 가능 근거 ID, 요구 조건의 원시 표현·정규화 형태·필수/권장 구분·추출 신뢰상태.
 - `Claim`: 결과로 제시할 주장, 그 주장의 근거 상태, 공고 버전, 분석 시점.
@@ -38,3 +38,12 @@
 - UI는 최소한 passage 발췌, 공식 링크, 문서 버전·위치 정확도, 검증 상태 및 반대/부족 근거를 구분한다. 민감한 제3자 정보는 별도 마스킹·인용 최소화 규칙(ADR-008)에 따른다.
 - 모델의 인용은 서버가 제공한 후보 집합으로 제한하고, 허위 ID·잘못된 문서·다른 사용자/버전은 서버에서 거부한다.
 - 테스트는 존재하지만 무관한 passage, 정반대 의미, 일부 조건만 표현한 passage, 조건의 부정/예외, 다른 문서/버전 인용을 포함한다. 이 사례들이 `SEMANTICALLY_REVIEWED`로 자동 승격되면 실패다.
+
+## PDF 추출 완전성 및 필수요건 포괄성 — R3-002
+
+- `extraction_completeness`: `COMPLETE`, `PARTIAL`, `UNREADABLE`, `UNKNOWN`. parser 실행 성공(`parse_status=SUCCESS`)과 **판정에 필요한 내용 추출 성공**은 서로 다른 축이다.
+- 원문 페이지 총수, 실제 처리 페이지 수, 텍스트 없는 페이지 수, 이미지 전용 페이지, 표 추출 여부, 처리 중단 사유와 허용 문자/분량 초과를 기록한다.
+- 모든 페이지를 처리했다는 사실만으로 `COMPLETE`로 자동 승격하지 않는다. 표/스캔/특수 폰트/텍스트 누락 위험 검사가 통과하고 추출 가능한 범위가 확인될 때만 제한적인 `COMPLETE`를 부여한다.
+- 스캔 PDF에 대한 OCR은 초기 MVP에서 자동 수행하지 않는다. 이미지 전용 PDF, 심한 텍스트 깨짐, 과도한 페이지, 표 추출 실패, 일부 페이지만 추출한 경우에는 `PARTIAL/UNREADABLE/UNKNOWN`을 설정하고 **필수 참가요건을 모두 검토했다고 주장하지 않는다**.
+- `SUITABLE`은 문서 내용 범위와 필수요건 추출의 포괄성이 확인되고, 중요한 근거가 의미 검증된 경우에만 가능하다. 그렇지 않으면 `NEEDS_REVIEW`. 추출본이 완전해도 법적 적격성을 보장하지 않는다.
+- 테스트: 합성 이미지 PDF, 텍스트 없는 페이지, 표 안의 필수조항, 특수 글꼴, 암호화·손상, 페이지 제한 및 partial extraction. 이러한 사례가 `SUITABLE`이 되면 출시 실패.
