@@ -1,0 +1,45 @@
+# ADR-001 Google 인증, 세션, 객체 권한 및 SSE
+
+- 상태: **설계 채택(구현·운영 미검증)**
+- 관련 지적: DSR-002, DSR-003, Gemini F-02/F-05
+- 검증 근거: https://developers.google.com/identity/openid-connect/openid-connect
+- 전제: React와 FastAPI를 동일한 공개 origin으로 제공하는 BFF 방식. 실제 도메인·OAuth 콘솔 설정은 배포 전 확인한다.
+
+## 결정
+
+1. React는 인증 화면만 담당한다. 브라우저에 Google access/refresh/ID token이나 앱 세션 비밀을 저장하지 않는다.
+2. FastAPI가 Google OIDC **Authorization Code Flow**를 시작하고 콜백을 받으며, 서버에서 인증 코드를 교환한다. redirect URI는 사전 등록값과 정확히 일치해야 하며 허용 redirect 대상만 사용한다.
+3. 로그인 시도마다 예측 불가능한 일회용 `state`와 OIDC `nonce`를 생성하고, 가능하면 PKCE S256 code verifier/challenge를 적용한다. 이 프로젝트에서는 일관성을 위해 **PKCE S256을 필수**로 한다. 서버에 보관한 인증 시도와 callback의 state를 대조하고 1회 소비한다.
+4. Google ID Token의 서명과 허용 알고리즘/JWKS, issuer, audience, expiration, nonce, 필요 시 azp 및 시간 관련 claim을 검증한다. JWKS 캐시와 갱신 실패는 안전하게 거부하며 토큰 검증 실패는 로그인 실패다.
+5. 사용자 식별의 안정적인 키는 검증된 Google `sub`와 issuer 조합이며, 이메일 주소·사용자 제공 id는 권한 키로 사용하지 않는다.
+6. 검증 이후 **서버 측 opaque 세션**을 생성한다. 충분한 엔트로피의 세션 식별자만 `__Host-session` 쿠키에 저장하고 DB에는 해시로 매핑한다. 쿠키는 `HttpOnly; Secure; SameSite=Lax; Path=/`, Domain 미설정이다. 배포 환경에서 HTTPS 및 `__Host-` 사용 가능 여부를 검증한다.
+7. 로그인/권한상승 시 세션을 새로 발급하여 고정 공격을 방지한다. 서버 측 세션 폐기, 명시적 로그아웃, 유휴 30분 및 절대 8시간 만료를 **초기 설계값**으로 채택하고 테스트/운영 요구에 맞게 검증 후 조정한다.
+8. 모든 상태 변경 요청은 서버가 발급하고 앱 세션과 결합한 CSRF 토큰의 헤더 검증과 정확한 Origin 검사로 보호한다. `GET`은 상태를 변경하지 않는다. 인증 callback은 일회용 state로 별도 보호한다. CORS는 허용된 origin만 설정하며 wildcard+credentials 조합을 금지한다.
+9. API는 세션에서 `actor_id`를 도출한다. 클라이언트의 `user_id`, `role`, `tenant_id`는 신뢰하지 않는다.
+
+## 소유권 계약
+
+| 리소스 | 읽기 | 변경/삭제 | 부가 조작 |
+|---|---|---|---|
+| Profile | 본인만 | 본인만 | 서버 actor 기준 |
+| AnalysisRun | 소유자만 | 소유자만 | 실행·취소·재개 시 재검증 |
+| Question/Answer | 해당 run 소유자만 | 해당 run 소유자만 | 타 사용자 답변/재개 금지 |
+| EvidenceSet/Claim | 해당 run 소유자만 | 불변 snapshot 원칙 | 공식 공개 원문 자체는 별도 공개 가능 |
+| SSE subscription | 연결된 run 소유자만 | 해당 run 소유자만 | 최초 연결 및 모든 재연결 검사 |
+
+- DB query/application service는 `(actor_id, resource_id)`를 인자로 받고 권한 있는 집합에서 조회한다. 임의 ID 추측 불가만으로 보호하지 않는다.
+- 타 사용자 리소스 ID는 정보 노출을 피하도록 일반적인 404 응답으로 처리하고, 권한 오류와 내부 오류를 기록상 구분한다.
+- 공개 데이터 조회는 비로그인으로 제공할 수 있지만 사용자별 분석·질문·SSE에는 소유권을 적용한다.
+
+## SSE 계약
+
+- 초기 연결은 동일 출처 쿠키 세션을 사용한다. `EventSource`가 Authorization 사용자 지정 헤더를 제공한다고 가정하지 않는다.
+- 별도 bearer token이나 API key를 URL query에 넣지 않는다. 1회용 ticket은 필수가 아니며 다른 origin이 필요한 ADR이 생기면 재평가한다.
+- `GET /api/analysis-runs/{run_id}/events`에서 actor와 run 소유권을 검증한다. `Last-Event-ID`는 순번만 제공하며 다른 run의 이벤트 선택자로 사용하지 못한다.
+- 이벤트는 `run_id`, 증가하는 `sequence`, `type`, `timestamp`, 최소 상태 payload로 정의한다. `Last-Event-ID`에 따른 재전송은 **같은 run의 허용된 범위**에 제한한다.
+- 서버에서 event를 최대 N개 또는 TTL 동안 보존하고, 오래된 cursor에는 명시적 resync 경로(`GET /api/analysis-runs/{run_id}`)를 제공한다. 정확한 보존 상한은 부하 측정 후 확정한다.
+- 네트워크 연결 종료가 분석 취소를 의미하지는 않는다. 취소는 CSRF로 보호된 별도 POST 및 run ownership 검사 후 수행한다.
+
+## 요구되는 검증
+
+state/nonce/PKCE 실패, redirect mismatch, ID Token 서명·iss·aud·만료 오류, session fixation/rotation, CSRF/Origin, 로그아웃 후 접근, 양 사용자 간 profile/run/question/SSE/cancel 교차 요청과 재연결을 테스트한다. 인증 토큰과 CSRF 토큰은 로그에 남기지 않는다.
