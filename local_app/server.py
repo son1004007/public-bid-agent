@@ -202,7 +202,7 @@ def update_case(case,data):
 
 class Handler(BaseHTTPRequestHandler):
  server_version="LocalBidAgent/0.1"
- def headers(self,code,typ,size):
+ def send_local_headers(self,code,typ,size):
   self.send_response(code)
   self.send_header("Content-Type",typ)
   self.send_header("Content-Length",str(size))
@@ -214,18 +214,18 @@ class Handler(BaseHTTPRequestHandler):
   self.end_headers()
  def respond(self,data,code=200):
   b=json.dumps(data,ensure_ascii=False).encode()
-  self.headers(code,"application/json; charset=utf-8",len(b))
+  self.send_local_headers(code,"application/json; charset=utf-8",len(b))
   self.wfile.write(b)
  def host_ok(self): return self.headers.get("Host")==f"127.0.0.1:{self.server.server_port}"
  def do_GET(self):
   if not self.host_ok(): return self.respond({"error":"Host 검증 실패"},403)
   if self.path=="/":
    b=HTML.read_bytes()
-   self.headers(200,"text/html; charset=utf-8",len(b))
+   self.send_local_headers(200,"text/html; charset=utf-8",len(b))
    return self.wfile.write(b)
   if self.path=="/app.js":
    b=APP_JS.read_bytes()
-   self.headers(200,"text/javascript; charset=utf-8",len(b))
+   self.send_local_headers(200,"text/javascript; charset=utf-8",len(b))
    return self.wfile.write(b)
   if self.path=="/api/state":
    with LOCK: data=load()
