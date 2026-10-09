@@ -156,3 +156,10 @@
 - 코드/자동화: `local_app/test_extractors.py` 형식별 테스트, `local_app/test-requirements.txt` CI 테스트 의존성, 다운로드 아티팩트 업데이트.
 - 이 변경은 업로드 바이너리를 업무 JSON에 저장하지 않고 추출된 텍스트·방식·오류경고·잘림 여부만 기록한다. Codex/Claude AI 전송은 사용자 명시 동의 이후 별개 경로.
 - **검증 게이트:** GH CI 성공 여부/실 HWP·XLS 테스트는 실제 run evidence로 확인. 외부 악성 파일에 대한 완전한 OS 격리나 실제 사용자의 CLI 교차 검토/인증/정확도는 별도 미완료.
+
+## 형식별 검증 및 파서 수정 (2026-10-09)
+
+- 초기 CI HWP 테스트에서 python-hwpx의 TextExtractor가 ZIP HWPX 전용이라 실패. `HwpxDocument.open(path)`로 변경 후 HWP5 실바이너리 생성/재추출 테스트 통과 (커밋 `b5c1e176a5020717181620dcabf3b7a17688d6fb`).
+- [GitHub CI 37932735254](https://github.com/son1004007/public-bid-agent/actions/runs/37932735254) push: frontend/backend SUCCESS, 로컬 문서 unittest 19개 중 18개 PASS + 1개 OCR Tesseract 미설치 skip. 실 HWP5·XLS 읽기 PASS.
+- 로컬에서는 Tesseract+kor로 이미지 PDF OCR 시험 통과. CI에도 Korean Tesseract 설치 단계 추가하여 후속 run에서 19개 전부 검증하도록 함.
+- 실제 다양한 기관 문서의 HWP 특수기능, 이미지 표/수식, OCR 숫자·표 재현율은 미검증. 중요한 사업 조건은 원문 직접 확인 필요.
