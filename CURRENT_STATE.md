@@ -97,3 +97,10 @@
 - 공식 조사: `docs/research/2026-10-09-chatgpt-account-integration.md`. OpenAI의 Sign in with ChatGPT는 로컬 OSS용 사용자별 계정 등록·전환 및 사용자 승인 사용량 공유를 지원하지만, 공개 원격 웹서비스 적용은 별도 승인 대상.
 - 후속 백엔드/인증 개발은 공식 원격 연동 승인/허용 여부 확인, OAuth/OIDC PKCE/state/nonce, ID token 검증, 계정/워크스페이스/권한 분리, 안전한 token 보관·폐기, 사용량 한도/예산과 데이터 격리 검증 뒤 진행.
 - 화면 사용성 승인 `UI_PROPOSED`, 이번 변경의 독립 최종 검수 `NOT RUN/REVIEW_DEBT`로 유지.
+
+## 2026-10-09 개인 Codex 계정 시안 검증 증거
+
+- GitHub Actions push [37917254772](https://github.com/son1004007/public-bid-agent/actions/runs/37917254772) 및 PR [37917259804](https://github.com/son1004007/public-bid-agent/actions/runs/37917259804): **success**, Python backend pytest, React/Vite 빌드 및 오프라인 HTML JavaScript 정적 검사 통과.
+- CI 산출물 `bid-management-ui-preview` artifact ID `11610855568` (신규 `ai-account-preview.html` 포함 HTML 4개). 외부 배포가 아니라 검토용 다운로드 파일이다.
+- CI 아티팩트의 신규 계정 시안을 Chromium Playwright로 메모리 페이지 로드/인터랙션 테스트: **16/16 PASS**, 브라우저 pageerror **0**, 390px 모바일 가로 넘침 없음. 로그인 비활성·가상 A 선택·사용권한 의향 미승인·가상 계정 추가/전환·초기화·새 문서 로딩 상태 폐기·입찰관리 사이드바 링크를 포함.
+- 전체 인증 E2E/실제 OpenAI OAuth·모델 사용 및 사용자 UI 승인, 독립 최종 검수: **NOT RUN**. 기존 REVIEW_DEBT 및 Draft PR 게이트 유지.

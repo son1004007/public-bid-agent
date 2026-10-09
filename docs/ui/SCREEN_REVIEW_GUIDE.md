@@ -127,3 +127,9 @@
 - UI 검증 질문: 사용자가 서비스 로그인과 자신의 Codex 계정 연결이 다른 단계임을 알 수 있는가? 2개 이상의 계정 선택, 유료/무료 구독 사용 권한 별도 동의, 사용량 및 해제 절차가 분명한가?
 - 공식 제약/구현 계약: [Codex 사용자별 계정 연결 조사](../research/2026-10-09-chatgpt-account-integration.md)
 - 화면 검증 이후 공식 제공 형태에 맞춰 설계를 확정한다. `UI_APPROVED`는 아직 아니다.
+
+## Codex 계정 선택 시안 테스트 증거
+
+- GitHub Actions PR: https://github.com/son1004007/public-bid-agent/actions/runs/37917259804 — 성공
+- `ai-account-preview.html` Chrome/Chromium Playwright 사용자 시나리오 16/16 PASS, 화면 오류 0, 390px 가로 넘침 없음. 정확한 HTML은 `bid-management-ui-preview` ZIP artifact (ID 11610855568).
+- 실제 OpenAI 자격 검증·사용량/권한 요청은 호출하지 않았으며 자동 테스트 성공이 사용자 화면 승인/실제 로그인 가능성을 보장하지 않는다.
