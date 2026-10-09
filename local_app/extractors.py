@@ -183,14 +183,15 @@ def _hwpx(raw: bytes) -> tuple[str, str, list[str]]:
 def _hwp(raw: bytes) -> tuple[str, str, list[str]]:
     # Apache-2.0 python-hwpx. legacy AGPL pyhwp를 묶어 배포하지 않음.
     try:
-        from hwpx import TextExtractor
+        from hwpx import HwpxDocument
     except ImportError as e:
         raise ExtractionError("HWP를 읽으려면 pip install python-hwpx가 필요합니다") from e
     with tempfile.TemporaryDirectory(prefix="local-bid-hwp-") as tmp:
         path = Path(tmp)/"input.hwp"
         path.write_bytes(raw)
-        with TextExtractor(path) as extractor:
-            return extractor.extract_text(include_nested=True), "HWP 5.x 한컴 바이너리 파서", []
+        with HwpxDocument.open(path) as document:
+            paragraphs = [paragraph.text for paragraph in document.paragraphs]
+            return "\n".join(paragraphs), "HWP 5.x 한컴 바이너리 파서", []
 
 
 def extract_document(name: str, raw: bytes) -> dict:
