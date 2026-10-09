@@ -117,3 +117,13 @@
 - [GitHub PR CI](https://github.com/son1004007/public-bid-agent/actions/runs/37904121398): Python 테스트, 프런트엔드 빌드, 퍼블리싱 HTML JS 정적 검사, 다운로드 아티팩트 작성 성공.
 - CI 아티팩트 `bid-management-ui-preview`에 목록, 이전 상세, 최신 통합 관리 HTML 3개를 제공한다. PC/모바일 브라우저에서 파일 자체를 열어 검토 가능하다.
 - Playwright Chromium 브라우저 시뮬레이션 17개 조작 PASS (코드 버전 `cbc397156ccec3b1c92cc50c206c74fec9f2d7a0`), 페이지 JS 오류 0, 모바일 가로 넘침 없음. 다만 사용자의 업무 적합성 평가는 **완료되지 않았다**.
+
+## 사용자 자신의 ChatGPT/Codex 계정 선택 시안 (2026-10-09)
+
+- 대상: `frontend/public/ai-account-preview.html` 또는 최신 `bid-management-preview.html`의 `내 AI 계정 설정` 메뉴.
+- 시험 흐름: AI 미사용 → 자신의 계정 사용(설계 선택) → 가상 계정 A 또는 B 선택 → 추가 가상 계정 생성·전환 → 사용 권한 요청 의향 선택 → 현재 상태 확인 → 초기화.
+- `Continue with ChatGPT`는 실제 승인/백엔드가 없는 웹사이트 시안에서 비활성화. **계정 연결/사용 승인·LLM 실행 상태로 변경되면 안 된다**.
+- 진짜 계정 이메일/비밀번호/코드/토큰/API 키는 데모에 입력하지 않는다. 페이지 새로고침 시 모든 시안 선택이 사라진다.
+- UI 검증 질문: 사용자가 서비스 로그인과 자신의 Codex 계정 연결이 다른 단계임을 알 수 있는가? 2개 이상의 계정 선택, 유료/무료 구독 사용 권한 별도 동의, 사용량 및 해제 절차가 분명한가?
+- 공식 제약/구현 계약: [Codex 사용자별 계정 연결 조사](../research/2026-10-09-chatgpt-account-integration.md)
+- 화면 검증 이후 공식 제공 형태에 맞춰 설계를 확정한다. `UI_APPROVED`는 아직 아니다.

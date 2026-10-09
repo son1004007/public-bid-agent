@@ -110,14 +110,15 @@ td small{color:#8998ab}.row-link{border:0;background:none;color:#205fbf;text-ali
     <button type="button" data-route="records"><span class="nicon">▤</span> 공고별 관리</button>
     <button type="button" data-route="insights"><span class="nicon">◈</span> 결과·회고</button>
     <a href="ui-review.html"><span class="nicon">⌕</span> 기존 공고 검색</a>
+    <a href="ai-account-preview.html"><span class="nicon">♙</span> 내 AI 계정 설정</a>
   </nav>
-  <div class="side-footer">UI PROTOTYPE 0.3<br>모든 기록은 가상 시뮬레이션<br>서버·DB·나라장터 연동 없음</div>
+  <div class="side-footer"><a href="ai-account-preview.html" style="color:#b4d2ff;font-size:12px">내 Codex 계정 선택 (시안) →</a><br>AI 인증: 실제 미연결<br>UI PROTOTYPE 0.4<br>모든 기록은 가상 시뮬레이션<br>서버·DB·나라장터 연동 없음</div>
  </aside>
  <div class="main-wrap">
   <header class="topbar"><div class="top-left">프로젝트 / <b id="breadcrumb">입찰 진행 대시보드</b></div><span class="demo-pill">합성 데이터 · 설계 검증용</span></header>
   <main class="workspace">
    <div class="eyebrow">BID MANAGEMENT / USER FLOW PREVIEW</div>
-   <div class="headline"><div><h1 id="screenTitle">공고부터 수주 분석까지</h1><p class="mini" id="screenDesc">발굴한 공고의 참여 결정과 제출·결과를 한곳에서 관리하는 화면 시안입니다.</p></div><div class="actions"><button class="btn" id="loadSample" type="button">가상 진행 사례 채우기</button><button class="btn danger" id="reset" type="button">시안 초기화</button></div></div>
+   <div class="headline"><div><h1 id="screenTitle">공고부터 수주 분석까지</h1><p class="mini" id="screenDesc">발굴한 공고의 참여 결정과 제출·결과를 한곳에서 관리하는 화면 시안입니다.</p></div><div class="actions"><a href="ai-account-preview.html" class="btn" style="display:inline-flex;align-items:center">AI 계정 설정 →</a><button class="btn" id="loadSample" type="button">가상 진행 사례 채우기</button><button class="btn danger" id="reset" type="button">시안 초기화</button></div></div>
    <div class="notice" role="note"><strong>화면 검증 전용입니다.</strong> 모든 공고·기관·업체·제출 상태·점수는 합성 예시입니다. 실제 입찰서 제출, 나라장터 조회, 사용자 정보 저장, AI 평가를 하지 않습니다. 입력은 이 페이지를 닫거나 새로고침하면 사라집니다. 실제 회사 자료나 접수번호는 입력하지 마세요.</div>
    <div id="toast" role="status" aria-live="polite"></div>
    <section id="dashboard">

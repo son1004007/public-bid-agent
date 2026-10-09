@@ -88,3 +88,22 @@ with tempfile.TemporaryDirectory() as directory:
     subprocess.run(["node", "--check", str(script_path)], check=True, timeout=20)
 
 print("Bid management UI publishing static/syntax check: PASS")
+
+
+# 내 ChatGPT/Codex 계정 선택 UI는 OAuth나 실제 로그인으로 오인하지 않는 별도 목업.
+account_page = Path(__file__).resolve().parents[1] / "frontend/public/ai-account-preview.html"
+account_html = account_page.read_text(encoding="utf-8")
+account_parser = PreviewParser()
+account_parser.feed(account_html)
+assert len(account_parser.scripts) == 1, "AI account preview must have exactly one inline JS"
+assert not any(a.get("src") or a.get("href") for _, a in account_parser.links), "unexpected script/link/iframe asset URL"
+for keyword in ["실제 로그인 미연결", "가상 계정", "사용 권한", "id=\"accounts\"", "id=\"connect\"", "disabled", "PKCE"]:
+    assert keyword in account_html, f"AI account screen missing {keyword}"
+for forbidden in ["localStorage", "sessionStorage", "document.cookie", "fetch(", "XMLHttpRequest", "sendBeacon", "innerHTML"]:
+    assert forbidden not in account_parser.scripts[0], f"AI account mock unexpected network/persistence: {forbidden}"
+with tempfile.TemporaryDirectory() as directory:
+    script = Path(directory) / "account.js"
+    script.write_text(account_parser.scripts[0], encoding="utf-8")
+    subprocess.run(["node", "--check", str(script)], check=True, timeout=20)
+
+print("Personal Codex account preview syntax/security-static check: PASS")

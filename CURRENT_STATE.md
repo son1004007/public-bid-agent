@@ -87,3 +87,13 @@
 - HTML 3개를 CI 아티팩트에서 확보해 로컬 Chromium Playwright로 직접 시나리오 검증 **17/17 PASS**. 검사 항목: 8건 목록/집계, 가상 사례, 미참여 사유 필수, 제안서 접수 증빙 필수, 제안서/가격서 상태 독립, 점수 범위 및 출처, 회고 반영, 초기화, 콘솔 페이지 오류 0, 390px 모바일 가로 넘침 없음, 기존 목록의 새 화면 연결.
 - Chromium은 HTML 문서를 `page.set_content`로 로딩해 가상 사용자 조작을 확인했으며 로컬 HTTP 서버/공개 배포를 수행하지 않았다. 브라우저 E2E 전체 경로/Google OIDC/실제 나라장터/인증·권한은 테스트하지 않았다.
 - **UI 사용자 직접 검수: PENDING, 독립 최종 의미 검수: NOT RUN (REVIEW_DEBT)**. Draft PR #1 유지, `main` 병합 및 공개 운영 배포 미실행.
+
+## 2026-10-09 사용자 개인 Codex 계정 선택 시안
+
+- 최신 명시 요구: Public Bid Agent 사용자마다 **자신의 ChatGPT/Codex 계정을 선택해서 AI 분석에 사용할 수 있도록** UI 추가.
+- `frontend/public/ai-account-preview.html`: 화면 내 AI 사용 안 함 / 내 ChatGPT-Codex 계정 선택 방식, 가상 A/B 계정 전환·가상 계정 추가·초기화, AI 요금제 사용 권한 요청 의향·공개 데이터만 전송 옵션, 실제 인증 미연결 상태를 구분.
+- `frontend/public/bid-management-preview.html` 대시보드/메뉴, `ui-review.html` 목록, React 초기 앱에서 해당 화면으로 링크 추가.
+- UI 시안 계정 정보: **합성 이름과 임시 메모리만 사용**. OAuth, 실제 계정 목록 조회/연결, 사용자 이메일·API 토큰 수집/보관, AI 요청·실제 비용/요금제 차감 없음.
+- 공식 조사: `docs/research/2026-10-09-chatgpt-account-integration.md`. OpenAI의 Sign in with ChatGPT는 로컬 OSS용 사용자별 계정 등록·전환 및 사용자 승인 사용량 공유를 지원하지만, 공개 원격 웹서비스 적용은 별도 승인 대상.
+- 후속 백엔드/인증 개발은 공식 원격 연동 승인/허용 여부 확인, OAuth/OIDC PKCE/state/nonce, ID token 검증, 계정/워크스페이스/권한 분리, 안전한 token 보관·폐기, 사용량 한도/예산과 데이터 격리 검증 뒤 진행.
+- 화면 사용성 승인 `UI_PROPOSED`, 이번 변경의 독립 최종 검수 `NOT RUN/REVIEW_DEBT`로 유지.

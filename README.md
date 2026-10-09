@@ -9,6 +9,8 @@
 
 - [독립 실행 퍼블리싱 시안](frontend/public/ui-review.html): 실제 서버 없이 열 수 있는 합성 공고 8건 탐색/보관함 화면
 - **[최신 통합 입찰관리 퍼블리싱](frontend/public/bid-management-preview.html):** 공고 목록·검색/필터 → Bid/No-Bid → 기술/가격 서류별 접수 확인 → 개찰/수주·계약 → 기술/가격 평가 → 회고의 연결된 화면. 서버 없이 HTML 단독 실행 가능.
+- **[내 ChatGPT/Codex 계정 선택 시안](frontend/public/ai-account-preview.html):** 사용자별 AI 연결 방식, 가상 계정 추가·선택·전환, 사용권한 요청 의향, 사용량/실제 로그인 미연결 상태를 백엔드 없이 직접 확인. 실제 OAuth/모델 호출은 미구현.
+- [Codex 사용자별 인증 공식 지원 범위 조사](docs/research/2026-10-09-chatgpt-account-integration.md)
 - [이전 상세 시안](frontend/public/bid-detail-review.html): 기능 검토용 구버전 참고.
 - [나라장터 조회 범위와 기업 입찰관리 방식 조사](docs/research/2026-10-09-bid-lifecycle-management.md)
 - [화면 검증 가이드](docs/ui/SCREEN_REVIEW_GUIDE.md): 시연 순서 및 사용자 피드백 체크리스트
