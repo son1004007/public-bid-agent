@@ -143,3 +143,10 @@
 - 판단 결과: 필수조건 미충족이면 가중합을 산출해도 참여 가능으로 표시하지 않음. 미확인 조건/평점은 0으로 처리하지 않음. 모든 값이 있어도 `권고 지표`는 예시 점수이지 수주확률이 아니다.
 - 참여 결정 탭으로 이동하면 입력 완료 상태와 자동 요약이 나타나고, 사용자 자신이 최종 선택한다. Codex/Claude는 실제 미연결로 표시되어야 한다.
 - 사용자는 아래에서 변수 및 가중치를 검토해야 한다: [Bid/No-Bid 독립변수 명세](../design/BID_NO_BID_FACTORS.md).
+
+### 영향인자 입력 퍼블리싱 테스트 증거
+
+- 변경 단위 `f1ffbbe1e981237e7615e803422998dad907f6a5`.
+- GitHub PR CI 성공: https://github.com/son1004007/public-bid-agent/actions/runs/37921419837.
+- CI 아티팩트 `bid-management-ui-preview`(ID 11611952655)에 `bid-management-preview.html` 포함. Chromium Playwright 18개 사용자 동선/유효성 검사 성공; 모바일 390px 가로넘침 없음.
+- 업무 실무 기준(필수조건 정의, 가중치, 비용, 검토자 역할)은 아직 사용자가 직접 승인하지 않았다.

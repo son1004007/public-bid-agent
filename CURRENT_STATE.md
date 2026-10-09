@@ -114,3 +114,11 @@
 - 상세 변수 정의/근거/후속 LangGraph 계약: `docs/design/BID_NO_BID_FACTORS.md`. 실제 회사 자료 입력 금지.
 - 필수 Gate·평가인자·지표의 수치는 공개 제품 시연용 가설로, 사용자/실제 사례 검토 전 정책·통계적 추천 정확도는 미확인.
 - 본 UI 작업은 기존 공개 배포 불가, 사용자 UI 검토/독립 최종 검수 대기 상태 유지.
+
+## 2026-10-09 Bid/No-Bid 영향인자 UI 검증 결과
+
+- GitHub Actions push [37921415790](https://github.com/son1004007/public-bid-agent/actions/runs/37921415790) / PR [37921419837](https://github.com/son1004007/public-bid-agent/actions/runs/37921419837): **SUCCESS**. 최신 합성 HTML 4개 퍼블리싱 정적 검사, JS `node --check`, Vite 빌드, 기존 FastAPI pytest 정상.
+- PR head `f1ffbbe1e981237e7615e803422998dad907f6a5`의 CI 산출물 ZIP `bid-management-ui-preview` (artifact `11611952655`)을 별도 확보, Chromium 브라우저에서 `page.set_content` 로드해 18개 조작 점검 **PASS**. 포함 항목: 빈 상태/메뉴/필수조건 근거 오류/6개 Gate+8개 인자/가중점수 80·100/가상 이익률 25%/사용자 결정 미변경/두 AI 미실행/기술·가격 배점 합계 거부/필수요건 실패 시 점수 미산출/공고별 입력 격리/브라우저 JS 오류 0/모바일 390px 가로넘침 없음.
+- Chrome `file://` 접근은 컨테이너 정책상 차단돼 로컬 브라우저 자동시험은 `page.set_content` 방식이다. GitHub Pages 또는 사용자 실제 인터넷 브라우저/데이터 연동/인증 E2E 테스트를 의미하지 않는다.
+- 영향인자 가중치 20/15/15/15/10/10/10/5 및 참여 검토 75·55 임계치는 *임의 퍼블리싱 시연 정책*이며 통계적 정확도나 실제 경쟁력·수익성 증빙이 없다.
+- 여전히 `UI_PROPOSED / USER_FEEDBACK_PENDING`, AGY 독립 최종 의미 검수 `NOT RUN/REVIEW_DEBT`, `main` 병합/운영 배포 미실행.
