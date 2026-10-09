@@ -111,3 +111,4 @@ python scripts/check_documentation_sync.py
 - CI: 실행형 로컬 코드와 문서 형식 테스트. **모의 AI CLI 응답으로 LangGraph 테스트**하며 실제 개인 계정으로 모델을 호출하지 않습니다.
 - 미완료: 기관별 실제 HWP/RFP OCR 정확도, 완전한 파일 파서 샌드박스, LangGraph 영속 체크포인트/재개, 정식 RAG, 실제 두 모델 CLI 인증/출력 E2E, 독립 최종 보안 검수와 사용자 UI 승인.
 - 검수 전 개발 브랜치 `feat/sprint1-search-demo` 및 [Draft PR #1](https://github.com/son1004007/public-bid-agent/pull/1) 유지. 사용자 승인 없는 운영 배포/`main` 병합은 진행하지 않습니다.
+> CI 의존성 계약: 각 Python 패키지는 `local_app/requirements.txt`에 한 줄씩 기록합니다. 2026-10-09 LangGraph 추가 시 줄바꿈 오류를 검사하고 수정했습니다.

@@ -65,3 +65,4 @@ python scripts/check_documentation_sync.py
 ```
 
 **앱 코드/사용법/의존성 변경 커밋마다 루트 `README.md`와 이 README를 함께 갱신**합니다. GitHub CI에서 `scripts/check_documentation_sync.py`가 이를 확인합니다. 전체 아키텍처/패키지 변경 시 `docs/02-architecture.md`, `docs/DEPENDENCIES_AND_LICENSES.md`, `CURRENT_STATE.md`도 갱신합니다.
+> `requirements.txt`는 각 패키지/버전을 별도의 줄로 표기하며, LangGraph·LangChain Core 설치 결과를 CI에서 확인합니다.
