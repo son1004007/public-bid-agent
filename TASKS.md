@@ -23,7 +23,11 @@
 - [x] Python 표준 라이브러리 로컬 HTTP/JSON 저장 프로토타입 (`local_app/server.py`); pdf/docx 파서는 선택 설치
 - [x] 공고 프롬프트·파일 업로드·Codex/Claude CLI 선택/외부 전송 동의·AI 영향인자 초안/사용자 보정 화면
 - [x] AI와 사용자 최종 참여 결정을 분리하고, 필수조건 미검증/실패 시 점수 미산출
-- [ ] 변경 코드 실제 CI/브라우저 테스트 및 독립 검수
+- [x] 로컬 Python unittest 8개 및 기존 프로젝트 CI/프런트엔드 build 통과 (37927086638)
+- [x] CI artifacts 로컬 재검증·모의 fetch Chromium UI 점검 / 모바일 390px 가로 넘침 없음
+- [ ] 실제 브라우저→127.0.0.1 HTTP 통합 E2E 테스트 및 사용자 직접 UI 검토
+- [ ] Codex/Claude 실제 CLI 통합 실행 및 JSON 결과 검증 (로컬 사용자 로그인 필요)
+- [ ] 관련 보안/설계 독립 최종 검수와 finding disposition (REVIEW_DEBT)
 - [ ] 두 AI 교차 반론 및 LangGraph 체크포인트/사람 승인 기반 실제 상태 그래프 구현
 - [ ] 업로드 PDF/DOCX 별도 파서 격리 및 정정 공고/출처 문단 검증
 - [ ] 실제 운영/계정별 Codex·Claude 구독 이용 조건 확인·계정 인증 고도화

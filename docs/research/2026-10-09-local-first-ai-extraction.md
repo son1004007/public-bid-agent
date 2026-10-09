@@ -70,3 +70,11 @@ Browser(local origin) -> Python localhost HTTP -> \`~/.public-bid-agent-local/ca
 - Codex·Claude 상호 반론/랭그래프 HUMAN_IN_THE_LOOP 상태 저장.
 - 파일 업로드 안전 파서 프로세스 격리와 HWP/HWPX/OCR.
 - 실제 평가점수·수주 결과 정답 데이터 수집 및 지표/가중치 검증.
+
+## 구현 검증 증거와 중요 제한
+
+- GitHub PR Actions 37927086638: 기존 프런트·백엔드 CI 및 신규 로컬 unittest 8개 통과.
+- 로컬 다운로드 artifact ID 11613449792 (run 37927086638).
+- Python 3.13 및 Node 로컬 재검증 8개 테스트 및 JS syntax PASS.
+- 크롬 브라우저 테스트는 정책으로 localhost 직접 접속 차단, `set_content` + mock fetch로 UX만 부분 검증. Python HTTP 테스트는 loopback 직접 요청으로 실제 데이터·CSRF 검사.
+- 공식 모델의 사용자 구독 허가와 Claude CLI 운영약관은 설치/로그인된 실제 PC에서 검증 필요. 기밀자료는 승인 전 사용 금지. 원격 provider 및 로컬 CLI 자체 캐시는 별도 보관 경계.

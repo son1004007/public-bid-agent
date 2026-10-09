@@ -134,3 +134,14 @@
 - AI가 만든 원문 근거/점수는 수기 확인 전 `verified=false`이며 사람이 기존 검증한 값은 자동 덮어쓰기 불가. 권고와 결정 별도.
 - APMP 자료의 Go/No-Go·경쟁 우위·공고준비 비용·발주 목적·수익 및 조달청 계약 방식 검토를 반영한 8 Gate/12 비교 인자. 기준은 `docs/research/2026-10-09-local-first-ai-extraction.md`.
 - 현재 단계: 신규 로컬 실행 MVP 코드 작성; CI/직접 브라우저 검증 및 사용자 승인/독립 리뷰는 별도 증거 전까지 **PENDING**. 이전 공개 웹 UI는 보존되고 본 변경으로 출시/공개 배포가 허용된 것이 아님.
+
+## 2026-10-09 로컬 앱 구현 검증
+
+- 최신 구현 커밋 `d097edc0652671d389d104bb32d5346ab65a37ef` — Python localhost Handler HTTP 속성 충돌 수정.
+- GitHub Actions PR [37927086638](https://github.com/son1004007/public-bid-agent/actions/runs/37927086638): `success`, backend 기존 pytest, 로컬 JSON/HTTP unittest **8개 PASS**, frontend TypeScript/Vite 빌드 및 JS `node --check`, 기존 퍼블리싱 검사 PASS.
+- 로컬 실행 ZIP: Actions run 37927086638 artifact `local-python-bid-agent` (ID 11613449792), source 6개 파일. 해당 ZIP을 내려받아 Python 3.13에서 unittest 8개 및 Node 문법 검사를 다시 통과.
+- 로컬 Python 서버를 `127.0.0.1:8766`으로 실제 실행하고 직접 HTTP/JSON/CSRF 테스트는 성공. Chromium 환경에서는 localhost 직접 탐색이 플랫폼에서 차단됨(`ERR_BLOCKED_BY_ADMINISTRATOR`). 브라우저 화면 검사는 `set_content`와 모의 프런트엔드 fetch 결과로 분리 수행; 공고 생성/설명 저장/영향인자 입력 UI 등 핵심 UI 조작 성공, 모바일 390px 스크롤 가로 넘침 없음, page JS 오류 0. **실제 browser-to-localhost E2E 미검증**.
+- 실제 Codex·Claude CLI 인증으로 수행하는 모델 분석은 **NOT RUN**. 이번 테스트는 실제 AI로 원문을 전송하지 않았으며 CLI 실행에서 계약/인증/JSON 생성 여부는 사용자 PC 검증 필요.
+- 업로드 PDF/DOCX는 아직 완전한 별도 샌드박스가 없으므로 신뢰 불가능한 문서 처리는 개발 단계. 실제 기밀 회사 자료 운영 사용은 승인·보안 검수 전 HOLD.
+- LangChain/RAG 및 LangGraph의 두 AI 상호 반론·상태 보존·중단/재개: **NOT IMPLEMENTED**. 현재는 독립 Codex/Claude 의견 요청과 사람 결정 분리용 MVP.
+- 사용자 직접 UI 승인 `UI_PROPOSED`, AGY/Gemini 독립 최종 검수 `NOT RUN / REVIEW_DEBT`, `main` 병합/운영 배포 금지.
