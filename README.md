@@ -8,7 +8,8 @@
 현재는 백엔드 기능 추가 구현보다 **실제로 조작 가능한 퍼블리싱 화면을 먼저 제작·검토**합니다. 화면 검증을 통해 탐색 동선, 중요 정보, 빈 결과/오류, 모바일 사용성을 확인한 후 API/DB·인증·AI 기능의 상세 설계를 보완합니다.
 
 - [독립 실행 퍼블리싱 시안](frontend/public/ui-review.html): 실제 서버 없이 열 수 있는 합성 공고 8건 탐색/보관함 화면
-- [공고별 전체 상세·제출/수주 결과 시안](frontend/public/bid-detail-review.html): 6개 탭에서 공고·참가자격·RFP·제출·낙찰·점수·진행상태를 임시 시뮬레이션
+- **[최신 통합 입찰관리 퍼블리싱](frontend/public/bid-management-preview.html):** 공고 목록·검색/필터 → Bid/No-Bid → 기술/가격 서류별 접수 확인 → 개찰/수주·계약 → 기술/가격 평가 → 회고의 연결된 화면. 서버 없이 HTML 단독 실행 가능.
+- [이전 상세 시안](frontend/public/bid-detail-review.html): 기능 검토용 구버전 참고.
 - [나라장터 조회 범위와 기업 입찰관리 방식 조사](docs/research/2026-10-09-bid-lifecycle-management.md)
 - [화면 검증 가이드](docs/ui/SCREEN_REVIEW_GUIDE.md): 시연 순서 및 사용자 피드백 체크리스트
 - 현재 사용자 검토 상태: `UI_PROPOSED` / `USER_FEEDBACK_PENDING`. 기능 구현·보안 승인·서비스 배포와 별개.

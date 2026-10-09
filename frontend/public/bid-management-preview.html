@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="합성 데이터만 사용하는 공공 입찰 진행관리 퍼블리싱 설계 검증">
+<title>Public Bid Agent | 입찰 진행관리 UI 시안</title>
+<style>
+:root{font:14px/1.55 system-ui,-apple-system,"Malgun Gothic",sans-serif;background:#f4f7fc;color:#1c2e49;font-synthesis:none}
+*{box-sizing:border-box}
+body{margin:0}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+a{color:#1d5db3;text-decoration:none}
+:focus-visible{outline:3px solid #83b5ff;outline-offset:2px}
+.layout{display:grid;grid-template-columns:244px minmax(0,1fr);min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;padding:24px 15px;background:#102747;color:#d7e3f4;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 12px 34px}
+.brand-logo{width:37px;height:37px;background:#376bd7;border-radius:11px;display:grid;place-items:center;font-size:20px;font-weight:900;color:white}
+.brand strong{font-size:15px;display:block}.brand small{font-size:10px;color:#91abd1;letter-spacing:1.2px}
+.nav-label{font-size:10px;letter-spacing:1.5px;color:#6f91bf;padding:0 13px 8px;font-weight:900}
+.nav{display:grid;gap:4px}
+.nav button,.nav a{display:block;width:100%;text-align:left;color:#adc4e2;background:transparent;border:0;border-radius:8px;padding:12px 14px;font-weight:670;font-size:13px}
+.nav button.active,.nav button:hover,.nav a:hover{background:#24466f;color:white}
+.nav .nicon{display:inline-block;width:23px;font-size:16px}
+.side-footer{font-size:11px;color:#809dc4;padding:15px;margin-top:auto;border-top:1px solid #274464;line-height:1.9}
+.main-wrap{min-width:0}
+.topbar{height:67px;background:white;border-bottom:1px solid #e3eaf4;display:flex;align-items:center;justify-content:space-between;padding:0 34px;gap:10px}
+.top-left{color:#8b99ad;font-size:12px}.top-left b{color:#304562}
+.demo-pill{border:1px solid #eacb90;background:#fff5df;color:#865e20;border-radius:40px;padding:6px 11px;font-weight:800;font-size:11px;white-space:nowrap}
+.workspace{max-width:1410px;margin:auto;padding:31px 34px 60px}
+.eyebrow{color:#326bcb;font-weight:900;font-size:11px;letter-spacing:1.4px}
+.headline{display:flex;justify-content:space-between;align-items:center;gap:14px;margin:5px 0 23px}
+h1{font-size:29px;letter-spacing:-1px;margin:5px 0}
+h2{font-size:17px;margin:0 0 13px}
+h3{font-size:15px;margin:18px 0 10px;color:#2d4569}
+p{margin:5px 0;color:#74859c}
+.mini{font-size:12px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid #cfdded;background:white;color:#275b9c;border-radius:8px;padding:9px 13px;font-weight:760;font-size:12px}
+.btn.primary{border-color:#2265c4;background:#2768ce;color:white}
+.btn.danger{color:#9b4949;background:#fff;border-color:#e8ccd0}
+.notice{border:1px solid #b8d5fa;background:#eaf3ff;color:#335c92;padding:15px 17px;border-radius:10px;font-size:12px;margin-bottom:23px;line-height:1.85}
+.notice strong{color:#1f56a1}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.kpi{border:1px solid #e0e8f3;background:white;border-radius:12px;padding:17px 19px}
+.kpi:first-child{background:#183b73;color:white;border-color:#183b73}
+.kpi span{display:block;font-size:12px;color:#7287a1}.kpi:first-child span{color:#b7cdef}
+.kpi strong{display:block;font-size:29px;margin-top:3px;font-variant-numeric:tabular-nums}
+.kpi small{font-size:12px;font-weight:500;color:#8497ac}.kpi:first-child small{color:#b7cdef}
+.panel{border:1px solid #e1e9f4;background:white;border-radius:12px;min-width:0;margin-bottom:16px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:19px 20px;border-bottom:1px solid #edf1f6}
+.panel-head h2{margin:0}.panel-head small{font-size:11px;color:#8b99ae}
+.panel-body{padding:21px}
+.flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.flow span{border:1px solid #dce7f6;color:#41638c;background:#f1f6fe;border-radius:8px;padding:9px 12px;font-size:11px;font-weight:750}
+.flow b{color:#a9bad0;font-size:11px}
+.toolbar{padding:17px 18px;display:flex;gap:9px;flex-wrap:wrap}
+.field{border:1px solid #cddaea;border-radius:8px;background:white;color:#253a56;min-height:39px;padding:9px 11px;max-width:100%}
+.toolbar input{flex:1;min-width:200px}
+.toolbar select{min-width:130px}
+.table-scroll{width:100%;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:790px;text-align:left}
+th{background:#f8fafd;color:#7c8ca3;font-size:11px;font-weight:800;padding:13px 16px;border-bottom:1px solid #e3eaf3}
+td{padding:14px 16px;border-bottom:1px solid #ecf0f6;color:#455a75;vertical-align:middle;font-size:12px}
+td strong{display:block;font-size:13px;color:#1f3552;line-height:1.55}
+td small{color:#8998ab}.row-link{border:0;background:none;color:#205fbf;text-align:left;font-weight:800;padding:0;font-size:13px}
+.badge{font-size:10px;font-weight:850;padding:4px 7px;border-radius:5px;background:#edf2f9;color:#5a6f88;display:inline-block}
+.badge.blue{background:#e9f3ff;color:#2363b7}.badge.green{background:#e7f6ee;color:#287b51}.badge.amber{background:#fff3dd;color:#95671d}.badge.purple{background:#f0eaff;color:#7551a9}
+.empty{text-align:center;padding:53px 20px;color:#657b98}.empty strong{display:block;margin-bottom:8px;color:#324e72;font-size:14px}
+.detail-title{font-size:25px;margin:8px 0;color:#1e3555;line-height:1.4}.detail-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tabs{display:flex;gap:5px;flex-wrap:wrap;border-bottom:1px solid #e0e8f2;padding:0 18px;margin:0}
+.tabs button{border:0;background:transparent;color:#627692;padding:15px 13px;font-size:12px;font-weight:700;border-bottom:3px solid transparent}
+.tabs button.active{color:#1f60bd;border-bottom-color:#2d68cf}
+.kv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.kv{padding:14px;background:#f8fafd;border:1px solid #e2eaf4;border-radius:9px}
+.kv small{display:block;color:#8292a7;font-size:11px;margin-bottom:5px}
+.kv strong{display:block;color:#294260;font-size:13px;overflow-wrap:anywhere}
+.info{border-left:3px solid #4382cc;background:#eff6ff;padding:13px 15px;border-radius:4px;color:#486a92;font-size:12px;margin:15px 0}
+.warning{background:#fff8e9;border:1px solid #f1e0af;color:#805e22;padding:13px 15px;border-radius:9px;font-size:12px;margin:14px 0}
+.success{background:#e9f8f1;border:1px solid #b5dec9;color:#23684e;padding:12px;border-radius:9px;font-size:12px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-top:15px}
+.fields label{display:flex;flex-direction:column;gap:6px;color:#435c7c;font-size:12px;font-weight:780;min-width:0}
+.fields input,.fields select,.fields textarea{width:100%;border:1px solid #cfdceb;border-radius:8px;padding:10px 12px;color:#213752;background:white}
+.fields input:disabled,.fields select:disabled{background:#edf1f6;color:#7a8ba2}
+.fields textarea{min-height:80px;resize:vertical}
+.fields label.wide{grid-column:1/-1}
+.inline-actions{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-top:20px}
+.submission-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.submission-box{border:1px solid #dce6f3;border-radius:11px;padding:17px;background:#fbfcff}
+.submission-box h3{margin:0 0 12px}.submission-box .fields{grid-template-columns:1fr}
+.score-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.score{background:#f0f5fd;border:1px solid #dfeaf9;border-radius:10px;padding:15px}
+.score small{color:#6983a2;font-size:11px}.score strong{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.list{padding-left:21px;color:#4f6685;font-size:13px;line-height:2}
+.hidden{display:none!important}
+.footer{text-align:center;padding:20px 0;color:#8ca0b9;font-size:11px}
+#toast{min-height:1px}
+@media(max-width:1120px){.layout{grid-template-columns:1fr}.sidebar{height:auto;position:static;flex-direction:row;align-items:center;gap:12px;padding:9px 16px}.brand{padding:0;margin-right:auto}.nav{display:flex;flex-wrap:wrap}.nav-label,.side-footer{display:none}.nav button,.nav a{width:auto}.workspace{padding:24px}.topbar{padding:0 24px}}
+@media(max-width:700px){.sidebar{flex-wrap:wrap}.brand{flex:1 1 100%}.nav{width:100%;justify-content:space-between}.nav button,.nav a{padding:9px;font-size:12px}.topbar{height:52px;padding:0 15px}.workspace{padding:18px 12px}.headline{align-items:flex-start;flex-direction:column}h1{font-size:23px}.kpis{grid-template-columns:1fr 1fr;gap:9px}.kpi{padding:14px}.kpi strong{font-size:25px}.panel-body{padding:15px}.panel-head{padding:15px}.kv-grid,.fields,.submission-grid{grid-template-columns:1fr}.score-grid{grid-template-columns:1fr 1fr}.tabs{padding:0 7px}.tabs button{padding:11px 8px}.detail-title{font-size:20px}}
+</style>
+</head>
+<body>
+<div class="layout">
+ <aside class="sidebar">
+  <div class="brand"><span class="brand-logo">B</span><span><strong>Public Bid Agent</strong><small>PROCUREMENT WORKSPACE</small></span></div>
+  <div class="nav-label">WORKSPACE</div>
+  <nav class="nav" aria-label="주요 화면">
+    <button type="button" data-route="dashboard" class="active"><span class="nicon">▦</span> 진행 대시보드</button>
+    <button type="button" data-route="records"><span class="nicon">▤</span> 공고별 관리</button>
+    <button type="button" data-route="insights"><span class="nicon">◈</span> 결과·회고</button>
+    <a href="ui-review.html"><span class="nicon">⌕</span> 기존 공고 검색</a>
+  </nav>
+  <div class="side-footer">UI PROTOTYPE 0.3<br>모든 기록은 가상 시뮬레이션<br>서버·DB·나라장터 연동 없음</div>
+ </aside>
+ <div class="main-wrap">
+  <header class="topbar"><div class="top-left">프로젝트 / <b id="breadcrumb">입찰 진행 대시보드</b></div><span class="demo-pill">합성 데이터 · 설계 검증용</span></header>
+  <main class="workspace">
+   <div class="eyebrow">BID MANAGEMENT / USER FLOW PREVIEW</div>
+   <div class="headline"><div><h1 id="screenTitle">공고부터 수주 분석까지</h1><p class="mini" id="screenDesc">발굴한 공고의 참여 결정과 제출·결과를 한곳에서 관리하는 화면 시안입니다.</p></div><div class="actions"><button class="btn" id="loadSample" type="button">가상 진행 사례 채우기</button><button class="btn danger" id="reset" type="button">시안 초기화</button></div></div>
+   <div class="notice" role="note"><strong>화면 검증 전용입니다.</strong> 모든 공고·기관·업체·제출 상태·점수는 합성 예시입니다. 실제 입찰서 제출, 나라장터 조회, 사용자 정보 저장, AI 평가를 하지 않습니다. 입력은 이 페이지를 닫거나 새로고침하면 사라집니다. 실제 회사 자료나 접수번호는 입력하지 마세요.</div>
+   <div id="toast" role="status" aria-live="polite"></div>
+   <section id="dashboard">
+    <div class="kpis"><div class="kpi"><span>합성 공고</span><strong>8 <small>건</small></strong></div><div class="kpi"><span>참여 결정</span><strong id="kpiBid">0 <small>건</small></strong></div><div class="kpi"><span>접수증 확인 수기 기록</span><strong id="kpiSubmit">0 <small>건</small></strong></div><div class="kpi"><span>수주 수기 기록</span><strong id="kpiWon">0 <small>건</small></strong></div></div>
+    <section class="panel"><div class="panel-head"><h2>입찰 업무 흐름</h2><small>단계별 화면 연결</small></div><div class="panel-body"><div class="flow"><span>공고 발굴</span><b>→</b><span>Bid / No-Bid</span><b>→</b><span>제안서·가격서 준비</span><b>→</b><span>서류별 접수 확인</span><b>→</b><span>개찰·선정·계약</span><b>→</b><span>평가·Win/Loss</span></div></div></section>
+    <section class="panel"><div class="panel-head"><h2>입찰 기회 및 진행 상태</h2><small>각 행에서 공고별 관리 열기</small></div><div class="toolbar"><input id="search" class="field" placeholder="사업명, 발주기관, 기술 키워드" aria-label="공고 검색어" maxlength="100"><select id="category" class="field" aria-label="분야"><option value="">전체 분야</option><option>AI</option><option>SW</option><option>DATA</option></select><select id="decisionFilter" class="field" aria-label="참여 결정"><option value="">참여 결정 전체</option><option value="undecided">검토 전</option><option value="bid">참여 결정</option><option value="no-bid">미참여</option></select></div>
+    <div class="table-scroll"><table><thead><tr><th>공고 / 기관</th><th>분야</th><th>참여 결정</th><th>제출 확인</th><th>결과</th><th>열기</th></tr></thead><tbody id="boardRows"></tbody></table></div><div class="empty hidden" id="boardEmpty"><strong>조건에 맞는 가상 공고가 없습니다.</strong>검색어나 필터를 변경해 주세요.</div></section>
+   </section>
+   <section id="records" class="hidden">
+    <section class="panel"><div class="panel-head"><h2>공고 선택 및 상세 관리</h2><small>입찰별 정보를 순서대로 검토</small></div><div class="panel-body">
+     <label for="selectedNotice" class="mini"><strong>합성 공고 선택</strong></label> <select id="selectedNotice" class="field" style="width:min(100%,660px)"></select>
+     <div class="detail-meta" style="margin-top:17px"><span class="badge blue" id="detailCategory">AI</span><span class="badge amber">공식 자격 미확인</span><span class="badge">합성 공고</span></div>
+     <h2 class="detail-title" id="detailTitle"></h2><p class="mini" id="detailOrg"></p>
+    </div><nav id="tabs" class="tabs" aria-label="입찰 상세 항목"></nav><div id="detailBody" class="panel-body"></div></section>
+   </section>
+   <section id="insights" class="hidden">
+    <div class="kpis"><div class="kpi"><span>참여 결정</span><strong id="reportBid">0</strong></div><div class="kpi"><span>미참여 결정</span><strong id="reportNoBid">0</strong></div><div class="kpi"><span>수주 수기 기록</span><strong id="reportWin">0</strong></div><div class="kpi"><span>미선정 수기 기록</span><strong id="reportLoss">0</strong></div></div>
+    <section class="panel"><div class="panel-head"><h2>입찰 결과 및 회고 목록</h2><small>자료가 있는 경우에만 표시</small></div><div class="table-scroll"><table><thead><tr><th>공고</th><th>결정</th><th>회사 결과</th><th>기술점수</th><th>가격점수</th><th>개선사항</th></tr></thead><tbody id="reportRows"></tbody></table></div></section>
+    <div class="info">표시된 수주율이나 평균 점수는 입력하지 않은 공고를 0점·탈락으로 처리하면 왜곡됩니다. 아직 이 시안에서는 임의의 성공률을 계산하지 않습니다. 결과 출처, 평가자료의 공개 범위, 비교 대상의 정의를 먼저 검증해야 합니다.</div>
+   </section>
+   <footer class="footer">PUBLIC BID AGENT · DESIGN REVIEW ONLY · SYNTHETIC DATA · NO SERVER · NO SUBMISSION</footer>
+  </main>
+ </div>
+</div>
+<script>
+/** 파일 설계 계약
+ * 목적/책임: 공고 발굴→참여 결정→기술/가격 제출 확인→개찰·수주/계약→점수·회고까지 UI를 먼저 검증한다.
+ * 입력/출력: 합성 fixture와 사람이 임의로 기입한 예시값→브라우저 DOM 렌더링.
+ * 신뢰 경계/권한: 외부 API/DB/브라우저 영속 저장 없음. 실제 기업자료 입력 금지.
+ * 상태 변경/부작용: JS Map 메모리만 변경, 새로고침 시 제거. 실제 입찰/서명/외부 연락 불가.
+ * 실패/검증: 출처 없는 판단 미확인 유지, 점수는 0<=값<=만점, 증빙단계와 제출구분 분리.
+ * 불변조건: 공개 개찰결과만으로 우리 업체의 제출/수주를 확인했다고 주장하지 않는다.
+ * 관련 문서: docs/ui/SCREEN_REVIEW_GUIDE.md 및 TASKS.md P0.
+ */
+const notices=[
+{id:"m1",category:"AI",title:"[합성] 공공기관 AI 업무지원 플랫폼 구축",org:"가상 공공기관 A",tags:["FastAPI","RAG","Python"],needs:["업무문서 검색/질의응답","업무 시스템 API 연계","정보보호·접근권한 검토"]},
+{id:"m2",category:"SW",title:"[합성] 행정 포털 기능 고도화",org:"가상 공공기관 B",tags:["Spring","Java","REST"],needs:["업무 API 응답 구조","접근성 및 오류 처리","사용자 인증 시스템 연동"]},
+{id:"m3",category:"DATA",title:"[합성] 공공데이터 수집·품질검증 플랫폼",org:"가상 공공기관 C",tags:["Python","ETL","PostgreSQL"],needs:["자료 수집 파이프라인","데이터 품질 검증","운영 추적"]},
+{id:"m4",category:"AI",title:"[합성] AI 문서 자동 분류 시범사업",org:"가상 공공기관 D",tags:["AI","FastAPI","TypeScript"],needs:["분류 결과 검토","검증 가능한 근거 표시","담당자 확인 단계"]},
+{id:"m5",category:"SW",title:"[합성] 공공 웹 접근성 개선",org:"가상 공공기관 E",tags:["React","Accessibility"],needs:["모바일 대응","키보드 접근성","조회 오류 상태"]},
+{id:"m6",category:"DATA",title:"[합성] 분석 데이터 표준화 API 개발",org:"가상 공공기관 F",tags:["API","SQL","FastAPI"],needs:["표준모델 수립","필드 검증","오류 이력 관리"]},
+{id:"m7",category:"SW",title:"[합성] 사용자 인증·업무 연계 고도화",org:"가상 공공기관 G",tags:["Security","Spring","OAuth"],needs:["권한 검토","인증 연계","사용자 이력"]},
+{id:"m8",category:"AI",title:"[합성] 민원 AI 답변 보조 시스템",org:"가상 공공기관 H",tags:["LLM","RAG","Python"],needs:["답변 근거 표시","최신성 검증","담당자 검토"]}
+];
+const TABS=[["overview","공고 개요"],["decision","참여 결정"],["submission","제출 확인"],["outcome","낙찰·계약"],["score","평가 점수"],["retro","회고"]];
+const $=id=>document.getElementById(id);
+const el=(tag,cls,txt)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(txt!==undefined)x.textContent=txt;return x};
+const add=(p,tag,cls,txt)=>{const x=el(tag,cls,txt);p.append(x);return x};
+const states=new Map();
+let route="dashboard",tab="overview",current="m1";
+function newSubmission(){return {required:"unknown",status:"unknown",evidence:"none",verifiedAt:""}}
+function newRecord(){return {decision:"undecided",noBidReason:"",owner:"",internalDeadline:"",stage:"identified",decisionNote:"",technical:newSubmission(),price:newSubmission(),opening:"unknown",winnerName:"",companyResult:"unknown",contract:"unknown",resultSource:"unknown",techScore:"",techMax:"",priceScore:"",priceMax:"",scoreSource:"unknown",lossReason:"unknown",improvements:"",nextAction:""}}
+function getRecord(id=current){if(!states.has(id))states.set(id,newRecord());return states.get(id)}
+function notice(){return notices.find(n=>n.id===current)||notices[0]}
+function statusBadge(v){const names={undecided:"미결정",bid:"참여 결정","no-bid":"미참여",unknown:"미확인","self-reported":"제출 주장(수기)","receipt-sighted":"접수증 확인(수기)",submitted:"제출 수기 기록",won:"수주 수기 기록",lost:"미선정 수기 기록","no-result":"유찰·취소 확인 필요",identified:"공고 발굴",review:"요건 검토",proposal:"제안서 준비",opening:"개찰",result:"결과 확인",yes:"필수(가정)",no:"대상 아님(가정)"};return names[v]||"미확인"}
+function note(p,text,kind="info"){add(p,"div",kind,text)}
+function paragraph(p,text){add(p,"p","mini",text)}
+function title(p,text){add(p,"h3","",text)}
+function list(p,items){const ul=add(p,"ul","list");items.forEach(item=>add(ul,"li","",item))}
+function grid(p,values){const root=add(p,"div","kv-grid");values.forEach(([label,value])=>{const d=add(root,"div","kv");add(d,"small","",label);add(d,"strong","",value)})}
+function input(parent,label,key,kind,opts,recordObj){const wrap=add(parent,"label","",""+label);let x;
+ if(kind==="select"){x=el("select");(opts||[]).forEach(([v,display])=>{const o=el("option","",display);o.value=v;x.append(o)})}
+ else if(kind==="textarea"){x=el("textarea");x.maxLength=400}
+ else{x=el("input");x.type=kind;x.maxLength=100;if(kind==="number"){x.min="0";x.step="0.01"}}
+ x.name=key;x.value=recordObj[key]===undefined?"":recordObj[key];wrap.append(x);return x}
+function form(p,fields,recordObj,onSave,validate,submitText){
+ const form=add(p,"form","fields");form.noValidate=true;
+ fields.forEach(f=>{const x=input(form,f.label,f.key,f.kind,f.options,recordObj);if(f.wide)x.parentElement.classList.add("wide")});
+ const actions=add(form,"div","inline-actions wide");const button=add(actions,"button","btn primary",submitText||"예시 기록 적용");button.type="submit";
+ form.addEventListener("submit",event=>{event.preventDefault();const values=Object.fromEntries(new FormData(form).entries());const error=validate?validate(values):null;if(error){toast(error,true);return}onSave(values);render();toast("브라우저 메모리에만 반영했습니다. 실제 제출·선정 검증이 아닙니다.")});
+ return form
+}
+function toast(message,error=false){const box=$("toast");box.replaceChildren();add(box,"div",error?"warning":"success",message)}
+function clearToast(){$("toast").replaceChildren()}
+function navigate(next){route=next;clearToast();render();window.scrollTo({top:0,behavior:"instant"})}
+function open(id,target="overview"){current=id;tab=target;navigate("records")}
+function reset(){states.clear();current="m1";tab="overview";navigate("dashboard")}
+function seed(){
+ states.clear();
+ let a=getRecord("m1");Object.assign(a,{decision:"bid",owner:"가상 담당자",stage:"proposal",decisionNote:"기술 범위가 가상 역량과 관련 있음",internalDeadline:"2026-11-10"});
+ let b=getRecord("m2");Object.assign(b,{decision:"no-bid",noBidReason:"예시: 일정과 투입 인력 제약",stage:"review"});
+ let c=getRecord("m3");Object.assign(c,{decision:"bid",stage:"result",companyResult:"lost",opening:"published",winnerName:"가상 업체 X",resultSource:"public",contract:"unknown",techScore:"68",techMax:"80",priceScore:"15",priceMax:"20",scoreSource:"agency",lossReason:"example-tech",improvements:"기술요건 대응표 명료화",nextAction:"실패 항목에 대한 정량 근거 확보"});
+ c.technical={required:"yes",status:"receipt-sighted",evidence:"operator",verifiedAt:"2026-10-08"};c.price={required:"yes",status:"receipt-sighted",evidence:"operator",verifiedAt:"2026-10-08"};
+ let d=getRecord("m4");Object.assign(d,{decision:"bid",stage:"result",companyResult:"won",opening:"published",winnerName:"가상 업체 Y",resultSource:"public",contract:"signed",scoreSource:"none"});
+ d.technical={required:"yes",status:"receipt-sighted",evidence:"operator",verifiedAt:"2026-10-08"};d.price={required:"yes",status:"receipt-sighted",evidence:"operator",verifiedAt:"2026-10-08"};
+ navigate("dashboard");toast("가상 진행 사례를 채웠습니다. 수치·회사·점수는 모두 합성 예시입니다.");
+}
+function submissionSummary(record){
+ if(record.technical.status==="receipt-sighted"&&record.price.status==="receipt-sighted")return "서류별 접수 확인(수기)";
+ if(record.technical.status!=="unknown"||record.price.status!=="unknown")return "일부 기록·확인 필요";
+ return "미확인"
+}
+function renderDashboard(){
+ const bid=notices.filter(n=>getRecord(n.id).decision==="bid").length;
+ const submitted=notices.filter(n=>{const r=getRecord(n.id);return r.technical.status==="receipt-sighted"&&r.price.status==="receipt-sighted"}).length;
+ const won=notices.filter(n=>getRecord(n.id).companyResult==="won").length;
+ $("kpiBid").replaceChildren(document.createTextNode(bid+" 건"));$("kpiSubmit").textContent=submitted+" 건";$("kpiWon").textContent=won+" 건";
+ const tbody=$("boardRows");tbody.replaceChildren();const q=$("search").value.trim().toLocaleLowerCase("ko");const cat=$("category").value;const dec=$("decisionFilter").value;
+ const found=notices.filter(n=>(!cat||n.category===cat)&&(!dec||getRecord(n.id).decision===dec)&&(!q||[n.title,n.org,n.tags.join(" ")].join(" ").toLocaleLowerCase("ko").includes(q)));
+ $("boardEmpty").classList.toggle("hidden",found.length!==0);
+ found.forEach(n=>{const r=getRecord(n.id);const tr=add(tbody,"tr");const first=add(tr,"td");add(first,"strong","",n.title);add(first,"small","",n.org);const catCell=add(tr,"td");add(catCell,"span","badge blue",n.category);
+ const decCell=add(tr,"td");add(decCell,"span","badge "+(r.decision==="bid"?"green":r.decision==="no-bid"?"amber":""),statusBadge(r.decision));
+ add(tr,"td","",submissionSummary(r));add(tr,"td","",statusBadge(r.companyResult));
+ const link=add(tr,"td");const btn=add(link,"button","row-link","상세 관리 →");btn.type="button";btn.addEventListener("click",()=>open(n.id))});
+}
+function renderRecords(){
+ const selected=$("selectedNotice");selected.value=current;
+ const n=notice();$("detailTitle").textContent=n.title;$("detailOrg").textContent=n.org+" · 합성 식별자 "+n.id.toUpperCase()+" · 실제 공고 아님";$("detailCategory").textContent=n.category;
+ const nav=$("tabs");nav.replaceChildren();TABS.forEach(([id,label])=>{const b=add(nav,"button",id===tab?"active":"",label);b.type="button";b.setAttribute("aria-current",id===tab?"page":"false");b.addEventListener("click",()=>{tab=id;clearToast();renderRecords()})});
+ const p=$("detailBody");p.replaceChildren();const r=getRecord();
+ if(tab==="overview"){
+  title(p,"공고 기본정보");note(p,"공고번호/정정차수, 기한, 입찰 방법은 공식 자료 미연동으로 확인되지 않았습니다.", "warning");
+  grid(p,[["발주기관",n.org],["분야",n.category],["공고번호",n.id.toUpperCase()+" (합성)"],["실제 마감일","미확인"],["공고 변경차수","미확인"],["공식 참가자격","미검증"]]);
+  title(p,"사업 요구사항 (합성 시나리오)");list(p,n.needs);
+  title(p,"화면 확정 후 연동할 데이터");list(p,["최신 공고문/정정공고 및 입찰참가자격과 증빙","기술제안서·가격입찰서의 실제 필수 여부와 제출 경로","개찰 결과·낙찰업체·계약 공개정보(서로 다른 출처로 확인)"]);
+  const a=add(p,"div","inline-actions");const b=add(a,"button","btn primary","참여 결정 화면 →");b.type="button";b.addEventListener("click",()=>{tab="decision";renderRecords()});
+ }else if(tab==="decision"){
+  title(p,"Bid / No-Bid 참여 판단");note(p,"참여 판단은 내부 수기 입력이며 입찰 자격·기술 적합성 공식 인증이 아닙니다.","warning");
+  form(p,[
+   {label:"참여 결정",key:"decision",kind:"select",options:[["undecided","검토 중"],["bid","참여하기로 결정"],["no-bid","참여하지 않기로 결정"]]},
+   {label:"진행 단계",key:"stage",kind:"select",options:[["identified","공고 발굴"],["review","요건 검토"],["proposal","제안서 준비"],["submitted","제출 기록"],["opening","개찰 확인"],["result","결과 확인"]]},
+   {label:"담당자 (합성 이름만 입력)",key:"owner",kind:"text"},
+   {label:"내부 준비 기한 (예시)",key:"internalDeadline",kind:"date"},
+   {label:"미참여 사유",key:"noBidReason",kind:"textarea",wide:true},
+   {label:"결정 근거·내부 검토 메모",key:"decisionNote",kind:"textarea",wide:true},
+  ],r,values=>Object.assign(r,values),values=>{
+    if(values.decision==="no-bid"&&!values.noBidReason.trim())return "미참여를 선택한 경우 사유를 입력해 주세요.";
+    if(values.owner.length>70)return "담당자 표시가 너무 깁니다.";return null
+  },"참여 결정 임시 적용");
+  title(p,"검토 기준 예시");list(p,["필수 참가자격, 수행 역량, 실제 일정과 인력·리스크","공동수급 여부 및 수행 조건 (원문 확인 필요)","미참여 시 사유를 남겨 향후 불필요한 재검토 방지"]);
+ }else if(tab==="submission"){
+  title(p,"제출물별 접수 확인");note(p,"가격입찰서와 기술제안서의 제출·접수를 따로 기록합니다. 공고에 따라 필수 제출물이 다르므로 현재 둘 다 '요구 여부 미확인'에서 시작합니다.","warning");
+  const g=add(p,"div","submission-grid");
+  for(const [key,label,desc] of [["technical","기술제안서","예시: 제안서/공모안 제출내역"],["price","가격입찰서","예시: 나의투찰내역"]]){
+   const area=add(g,"div","submission-box");title(area,label);paragraph(area,"나라장터 확인 경로: "+desc+" (공고별 실제 경로 확인 필요)");
+   const o=r[key];
+   form(area,[
+    {label:"공고상 제출 의무",key:"required",kind:"select",options:[["unknown","공고 원문 미확인"],["yes","제출 필요(수기)"],["no","요구 안 됨(수기)"]]},
+    {label:"제출·접수 확인 상태",key:"status",kind:"select",options:[["unknown","미확인"],["not-submitted","미제출(수기)"],["self-reported","제출했다고 기록(검증 전)"],["receipt-sighted","접수증 직접 확인(수기)"]]},
+    {label:"확인 근거",key:"evidence",kind:"select",options:[["none","없음"],["operator","담당자가 접수증 확인"],["internal","내부 확인 메모"]]},
+    {label:"접수증 확인일 (예시)",key:"verifiedAt",kind:"date"}
+   ],o,v=>{Object.assign(o,v);},v=>v.status==="receipt-sighted"&&v.evidence==="none"?"접수증 확인 기록에는 확인 근거를 선택해 주세요.":null,label+" 기록 적용");
+  }
+  title(p,"중요한 제출 검증 원칙");list(p,["전자 투찰과 제안서 제출은 서로 다른 제출 이력이 될 수 있습니다.","공개 개찰·낙찰 결과가 있다는 사실만으로 우리 회사가 제출했다고 확정할 수 없습니다.","원문 접수증/고객사 내부 자료는 이 데모에 업로드하거나 입력하지 않습니다."]);
+ }else if(tab==="outcome"){
+  title(p,"공개 개찰·낙찰 및 내부 계약 구분");note(p,"공고 전체의 공개 결과, 우리 회사의 선정 여부, 계약 체결 여부를 분리합니다. 입력값은 출처 검증 없는 수기 기록입니다.","warning");
+  form(p,[
+   {label:"공고 개찰·낙찰 결과",key:"opening",kind:"select",options:[["unknown","공식 개찰 결과 미확인"],["published","공개 결과를 봤다고 기록"],["cancelled","취소·유찰 수기 기록"]]},
+   {label:"공개 결과의 낙찰업체 (합성만)",key:"winnerName",kind:"text"},
+   {label:"우리 업체 선정 여부",key:"companyResult",kind:"select",options:[["unknown","미확인"],["won","수주 수기 기록 (미검증)"],["lost","미선정 수기 기록 (미검증)"],["no-result","유찰·취소 등 확인 필요"]]},
+   {label:"계약 체결 상태",key:"contract",kind:"select",options:[["unknown","계약 상태 미확인"],["negotiation","협상·계약 준비 수기 기록"],["signed","계약 체결 수기 기록"],["not-signed","체결되지 않음 수기 기록"]]},
+   {label:"공개 결과 확인 경로",key:"resultSource",kind:"select",options:[["unknown","미확인"],["public","조달청 공개정보를 봤다고 기록"],["agency","발주기관 통보를 봤다고 기록"],["internal","회사 내부에서 수기 확인"]]},
+  ],r,v=>Object.assign(r,v),v=>v.winnerName.length>90?"낙찰업체 이름이 너무 깁니다.":null,"결과 상태 임시 적용");
+  title(p,"향후 연계 구분");list(p,["공고 공통 공개정보: 개찰 결과·낙찰업체/순위·유찰 여부","회사별 비공개정보: 실제 제출과 선정 여부의 증빙·소유권 검증","계약정보: 체결·변경·계약번호와 공고의 실제 연결 검증"]);
+ }else if(tab==="score"){
+  title(p,"기술/가격 평가점수 기록");note(p,"평가점수는 모든 공고에서 공개되지 않습니다. 점수가 없으면 '미확인'으로 남기며 0점으로 계산하지 않습니다.","warning");
+  form(p,[
+   {label:"기술점수",key:"techScore",kind:"number"},{label:"기술 만점",key:"techMax",kind:"number"},
+   {label:"가격점수",key:"priceScore",kind:"number"},{label:"가격 만점",key:"priceMax",kind:"number"},
+   {label:"점수 출처",key:"scoreSource",kind:"select",options:[["unknown","미확인"],["public","공개 평가결과 확인했다고 기록"],["agency","기관 개별 통보 확인했다고 기록"],["internal","회사 내부자료 수기 기록"]],wide:true}
+  ],r,v=>Object.assign(r,v),v=>{
+    for(const [score,max] of [["techScore","techMax"],["priceScore","priceMax"]]){
+     if(Boolean(v[score])!==Boolean(v[max]))return "점수와 만점은 함께 입력해야 합니다.";
+     if(v[score]!==""){const a=Number(v[score]),b=Number(v[max]);if(!Number.isFinite(a)||!Number.isFinite(b)||a<0||b<=0||a>b)return "점수는 0 이상, 만점은 0 초과이며 점수가 만점 이하이어야 합니다.";}
+    }
+    if((v.techScore!==""||v.priceScore!=="")&&v.scoreSource==="unknown")return "점수를 입력했다면 점수 출처를 선택해 주세요.";
+    return null
+  },"평가점수 임시 적용");
+  const g=add(p,"div","score-grid");const vals=[["기술점수",r.techScore!==""&&r.techMax!==""?r.techScore+" / "+r.techMax:"미확인"],["가격점수",r.priceScore!==""&&r.priceMax!==""?r.priceScore+" / "+r.priceMax:"미확인"],["합계",r.techScore!==""&&r.priceScore!==""&&r.techMax!==""&&r.priceMax!==""?String(Number(r.techScore)+Number(r.priceScore))+" / "+String(Number(r.techMax)+Number(r.priceMax)):"미확인"]];
+  vals.forEach(([label,value])=>{const card=add(g,"div","score");add(card,"small","",label);add(card,"strong","",value)});
+  note(p,"점수의 진위와 세부 평가 항목·배점은 원문/기관 통보 근거가 있어야만 확정할 수 있습니다.");
+ }else if(tab==="retro"){
+  title(p,"수주·미선정 회고");note(p,"참여 포기·미제출·미선정 원인을 서로 다르게 관리하여 다음 공고의 판단에 활용하는 화면입니다.");
+  form(p,[
+   {label:"미선정/실패 원인 구분",key:"lossReason",kind:"select",options:[["unknown","미확인"],["not-bid","미참여(내부 결정)"],["no-submit","기한/서류 누락 수기 기록"],["technical","기술평가 개선 필요"],["price","가격 평가 경쟁력 검토"],["eligibility","자격·증빙 문제 확인 필요"],["other","기타(수기)"]]},
+   {label:"개선사항/배운 점",key:"improvements",kind:"textarea",wide:true},
+   {label:"다음 공고 대응 행동",key:"nextAction",kind:"textarea",wide:true}
+  ],r,v=>Object.assign(r,v),null,"회고 임시 적용");
+  title(p,"향후 데이터 분석 방향");list(p,["Bid/No-Bid별 사유와 참여율/제출완료율(실제 기록이 있을 때)","실제 발표된 점수의 분포와 기관·분야별 평가 경향","내부 회고 결과로 다음 공고의 사전 확인사항 개선"]);
+ }
+}
+function renderInsights(){
+ const bid=notices.filter(n=>getRecord(n.id).decision==="bid").length,no=notices.filter(n=>getRecord(n.id).decision==="no-bid").length,won=notices.filter(n=>getRecord(n.id).companyResult==="won").length,lost=notices.filter(n=>getRecord(n.id).companyResult==="lost").length;
+ $("reportBid").textContent=String(bid);$("reportNoBid").textContent=String(no);$("reportWin").textContent=String(won);$("reportLoss").textContent=String(lost);
+ const tbody=$("reportRows");tbody.replaceChildren();notices.forEach(n=>{const r=getRecord(n.id);const tr=add(tbody,"tr");const a=add(tr,"td");const btn=add(a,"button","row-link",n.title);btn.addEventListener("click",()=>open(n.id,"retro"));add(tr,"td","",statusBadge(r.decision));add(tr,"td","",statusBadge(r.companyResult));add(tr,"td","",r.techScore===""?"미확인":r.techScore+" / "+r.techMax);add(tr,"td","",r.priceScore===""?"미확인":r.priceScore+" / "+r.priceMax);add(tr,"td","",r.improvements||"기록 없음")});
+}
+function render(){
+ const name={dashboard:"진행 대시보드",records:"공고별 관리",insights:"결과·회고"};
+ $("breadcrumb").textContent=name[route];
+ $("screenTitle").textContent={dashboard:"공고부터 수주 분석까지",records:"공고별 상세 및 진행 관리",insights:"결과와 회고를 한곳에서"}[route];
+ $("screenDesc").textContent={dashboard:"발굴한 공고의 참여 결정과 제출·결과를 한곳에서 관리하는 화면 시안입니다.",records:"공고별 참여·제출·선정·평가·회고 내용을 직접 입력해보세요.",insights:"입찰 기록과 개선사항을 한눈에 검토하는 시안입니다."}[route];
+ ["dashboard","records","insights"].forEach(x=>$(x).classList.toggle("hidden",route!==x));
+ document.querySelectorAll("[data-route]").forEach(b=>b.classList.toggle("active",b.dataset.route===route));
+ renderDashboard();renderRecords();renderInsights();
+}
+const selected=$("selectedNotice");notices.forEach(n=>{const o=el("option","",n.title);o.value=n.id;selected.append(o)});
+selected.addEventListener("change",()=>{current=selected.value;tab="overview";clearToast();render()});
+document.querySelectorAll("[data-route]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.route)));
+["search","category","decisionFilter"].forEach(id=>$(id).addEventListener(id==="search"?"input":"change",renderDashboard));
+$("reset").addEventListener("click",reset);$("loadSample").addEventListener("click",seed);
+const query=new URLSearchParams(location.search),requested=query.get("notice");if(requested&&notices.some(n=>n.id===requested)){current=requested;route="records"}
+render();
+</script>
+</body></html>

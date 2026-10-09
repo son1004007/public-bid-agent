@@ -36,4 +36,4 @@ jobs:
       - name: Static publishing preview syntax and boundaries
         run: python scripts/check_ui_preview.py
       - name: Verify standalone preview included in build
-        run: test -f frontend/dist/ui-review.html && test -f frontend/dist/bid-detail-review.html
+        run: test -f frontend/dist/ui-review.html && test -f frontend/dist/bid-detail-review.html && test -f frontend/dist/bid-management-preview.html

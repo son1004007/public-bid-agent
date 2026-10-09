@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Public Bid Agent - 상세·입찰 관리 UI 검증</title>
+<title>Public Bid Agent - 상세·입찰 관리 UI 검증 (구버전)</title>
 <style>
 :root{font:15px/1.6 system-ui,-apple-system,'Malgun Gothic',sans-serif;background:#f5f7fb;color:#1b2b45}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}
 a{color:#2462b8;text-decoration:none}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #86b2fb;outline-offset:2px}
@@ -15,7 +15,7 @@ footer{font-size:11px;text-align:center;color:#8ea0b4;margin-top:30px}
 @media(max-width:850px){.grid{grid-template-columns:1fr}.side{position:static}.side nav{display:flex;overflow-x:auto}.side button{width:auto;white-space:nowrap}.details{grid-template-columns:1fr 1fr}}
 @media(max-width:540px){.main{padding:18px 12px}.top{padding:14px}.fields,.details{grid-template-columns:1fr}.panel{padding:16px}h1{font-size:22px}.tabs button{font-size:11px;padding:10px 8px}.metric strong{font-size:16px}}
 </style></head>
-<body><header class="top"><div><strong>Public Bid Agent</strong><small> / 입찰 상세·수주관리 설계 검증</small></div><a href="ui-review.html">← 공고 목록으로</a></header>
+<body><header class="top"><div><strong>Public Bid Agent</strong><small> / 기존 상세 시안</small></div><a href="bid-management-preview.html">새 입찰관리 화면 열기 →</a><a href="ui-review.html">← 공고 목록으로</a></header>
 <main class="main"><div class="eyebrow">DESIGN VALIDATION · SYNTHETIC DEMO</div><h1 id="title">공고 상세 검토</h1><p id="sub" class="sub"></p>
 <div class="disclaimer"><strong>합성 화면입니다.</strong> 실제 공고, 투찰 이력, 수주 여부, 평가 점수, 업체 정보가 아닙니다. 기록은 이 탭의 메모리에만 유지되며 서버 저장·공식 조회를 수행하지 않습니다.</div>
 <div class="grid"><aside class="panel side"><h2>입찰 진행 관리</h2><p class="small">다른 합성 공고를 선택할 수 있습니다.</p><select aria-label="합성 공고 선택" id="pick" style="width:100%;padding:9px;margin-bottom:16px"></select><nav id="nav"></nav><div class="box warning">진행 상태는 사용자 수기 입력 시안입니다. 나라장터 제출 확인을 자동 처리하지 않습니다.</div></aside><section class="panel"><div class="meta"><span class="pill">합성 공고</span><span class="pill bad">실제 접수 상태 미확인</span></div><div class="tabs" id="tabs"></div><div id="content" aria-live="polite"></div></section></div>

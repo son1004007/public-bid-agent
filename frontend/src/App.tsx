@@ -54,6 +54,7 @@ export function App() {
   return (
     <main className="page">
       <header className="hero">
+        <p><a href="/bid-management-preview.html" style={{color: '#fff', fontWeight: 800}}>새 입찰 진행관리 화면 열기 →</a></p>
         <div className="eyebrow">PUBLIC BID AGENT / DEVELOPMENT PREVIEW</div>
         <h1>공공 AI·SW 사업 탐색</h1>
         <p>공고 탐색과 근거 기반 적합성 분석을 개발하는 포트폴리오입니다.</p>

@@ -68,3 +68,23 @@ with tempfile.TemporaryDirectory() as directory:
     script.write_text(detail_parser.scripts[0], encoding="utf-8")
     subprocess.run(["node", "--check", str(script)], check=True, timeout=20)
 print("Bid detail publishing static/syntax check: PASS")
+
+
+# 2026-10-09 실제 UI 우선 검증: 입찰 참여/제출물 분리/낙찰·계약/평가/회고 시안.
+workflow_path = Path(__file__).resolve().parents[1] / "frontend/public/bid-management-preview.html"
+workflow_source = workflow_path.read_text(encoding="utf-8")
+workflow_parser = PreviewParser()
+workflow_parser.feed(workflow_source)
+assert len(workflow_parser.scripts) == 1, "workflow preview must have one inline JS"
+assert not any(attrs.get("src") or attrs.get("href") for _, attrs in workflow_parser.links), "workflow preview has external assets"
+for marker in ["Bid / No-Bid", "가격입찰서", "기술제안서", "접수증", "미확인", "계약", "점수", "회고", "id=\"boardRows\"", "id=\"detailBody\""]:
+    assert marker in workflow_source, f"workflow UI marker missing: {marker}"
+script_text = workflow_parser.scripts[0]
+for prohibited in ["localStorage", "sessionStorage", "document.cookie", "fetch(", "XMLHttpRequest", "sendBeacon", "innerHTML"]:
+    assert prohibited not in script_text, f"workflow mock has prohibited I/O: {prohibited}"
+with tempfile.TemporaryDirectory() as directory:
+    script_path = Path(directory) / "workflow.js"
+    script_path.write_text(script_text, encoding="utf-8")
+    subprocess.run(["node", "--check", str(script_path)], check=True, timeout=20)
+
+print("Bid management UI publishing static/syntax check: PASS")
