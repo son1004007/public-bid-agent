@@ -37,3 +37,14 @@ jobs:
         run: python scripts/check_ui_preview.py
       - name: Verify standalone preview included in build
         run: test -f frontend/dist/ui-review.html && test -f frontend/dist/bid-detail-review.html && test -f frontend/dist/bid-management-preview.html
+      - name: Package offline UI preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: bid-management-ui-preview
+          path: |
+            frontend/dist/ui-review.html
+            frontend/dist/bid-detail-review.html
+            frontend/dist/bid-management-preview.html
+          if-no-files-found: error
+          retention-days: 14
+
