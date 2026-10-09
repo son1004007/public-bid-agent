@@ -21,7 +21,7 @@
 - 저장소: `public-bid-agent`
 - 서비스명: Public Bid Agent
 - 목적: 공개 AI/SW 입찰공고를 검색하고 참가조건과 기술 적합성을 원문 근거로 분석하는 웹서비스
-- 상태: 애자일 반복 개발로 전환 / Sprint 1 구현 준비 (아직 코드·테스트·배포 없음)
+- 상태: 애자일 Sprint 1 기능 구현 중 / 합성 공고 검색·상세 코드 작성, 일부 로컬 API 테스트 실행 / 독립 최종 검수·공개 배포 미완료
 
 ## 2. 필수 문서 확인 순서
 
@@ -37,7 +37,8 @@
 10. `docs/04-operation-and-deployment.md`
 11. `docs/05-coding-standards.md`
 12. `docs/06-source-layout.md`
-13. 작업 관련 공통 표준과 ADR, 실제 코드, 테스트, 최신 GitHub 증거
+13. [현재 구현 지속 지시서](docs/implementation/CONTINUE_IMPLEMENTATION_PROMPT_2026-10-09.md)와 [Sprint 1 실행안내](docs/implementation/SPRINT1_RUNBOOK.md)
+14. 작업 관련 공통 표준과 ADR, 실제 코드, 테스트, 최신 GitHub 증거
 
 ## 3. 증거와 작업 순서
 

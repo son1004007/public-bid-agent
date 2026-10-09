@@ -1,0 +1,66 @@
+[
+  {
+    "id": "demo-ai-001",
+    "title": "[합성] 공공 AI 업무지원 서비스 기획 및 구현",
+    "organization": "가상 공공기관 A",
+    "category": "AI",
+    "summary": "문서 기반 검색·질의응답 서비스 구축을 가정한 데모 공고입니다.",
+    "technologies": [
+      "Python",
+      "FastAPI",
+      "RAG"
+    ],
+    "source_type": "SYNTHETIC_FIXTURE",
+    "source_url": null,
+    "submission_status": "UNKNOWN",
+    "source_freshness": "UNKNOWN"
+  },
+  {
+    "id": "demo-sw-002",
+    "title": "[합성] 행정 업무 웹서비스 고도화",
+    "organization": "가상 공공기관 B",
+    "category": "SW",
+    "summary": "기존 시스템과 연계하는 웹 API 개발을 가정한 데모 공고입니다.",
+    "technologies": [
+      "Java",
+      "Spring",
+      "REST API"
+    ],
+    "source_type": "SYNTHETIC_FIXTURE",
+    "source_url": null,
+    "submission_status": "UNKNOWN",
+    "source_freshness": "UNKNOWN"
+  },
+  {
+    "id": "demo-data-003",
+    "title": "[합성] 공공 데이터 처리 플랫폼 시범 구축",
+    "organization": "가상 공공기관 C",
+    "category": "DATA",
+    "summary": "데이터 수집과 검증 파이프라인을 가정한 데모 공고입니다.",
+    "technologies": [
+      "Python",
+      "PostgreSQL",
+      "ETL"
+    ],
+    "source_type": "SYNTHETIC_FIXTURE",
+    "source_url": null,
+    "submission_status": "UNKNOWN",
+    "source_freshness": "UNKNOWN"
+  },
+  {
+    "id": "demo-ai-004",
+    "title": "[합성] AI 문서 분류 자동화 실증",
+    "organization": "가상 공공기관 D",
+    "category": "AI",
+    "summary": "문서 분류 모델과 검토 화면을 가정한 데모 공고입니다.",
+    "technologies": [
+      "AI",
+      "TypeScript",
+      "FastAPI"
+    ],
+    "source_type": "SYNTHETIC_FIXTURE",
+    "source_url": null,
+    "submission_status": "UNKNOWN",
+    "source_freshness": "UNKNOWN"
+  }
+]

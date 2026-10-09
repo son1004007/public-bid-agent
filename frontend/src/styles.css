@@ -1,0 +1,26 @@
+:root { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; color: #15233c; background: #f5f7fb; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.page { max-width: 1080px; padding: 36px 20px 70px; margin: auto; }
+.hero { padding: 44px 32px; border-radius: 18px; background: #132849; color: #fff; margin-bottom: 22px; }
+.eyebrow { color: #a5c8fd; font-size: 12px; letter-spacing: .08em; font-weight: 700; }
+h1 { font-size: clamp(28px, 4vw, 42px); margin: 14px 0; }
+.hero p { color: #d5e1f0; }
+.notice { border-radius: 10px; padding: 14px 16px; margin-top: 24px; color: #15233c; background: #f9eacb; line-height: 1.6; }
+.panel { padding: 28px; margin-bottom: 18px; border: 1px solid #dbe3ee; border-radius: 14px; background: white; }
+h2 { margin: 0 0 20px; font-size: 22px; }
+.search-form { display: grid; grid-template-columns: 1fr 180px auto; gap: 12px; align-items: end; }
+label { display: flex; flex-direction: column; gap: 8px; font-weight: 600; }
+input, select { width: 100%; padding: 11px; border: 1px solid #9fb0c5; border-radius: 8px; font: inherit; background: white; }
+button { padding: 12px 18px; border: none; border-radius: 8px; background: #1462cd; color: white; font: inherit; font-weight: 700; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #62a6ff; outline-offset: 2px; }
+button.secondary { border: 1px solid #bed1eb; background: #edf5ff; color: #17467e; }
+.section-title { display: flex; gap: 12px; justify-content: space-between; align-items: baseline; }
+.cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.card { border: 1px solid #dbe3ee; border-radius: 12px; padding: 22px; }
+.card h3 { margin: 8px 0; font-size: 19px; }.card p { color: #53647b; line-height: 1.65; }
+.category { font-size: 13px; font-weight: 700; color: #236bc3; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 15px 0; }.chips span { border-radius: 5px; background: #ecf0f7; padding: 5px 8px; font-size: 12px; }
+dl { display: grid; grid-template-columns: 160px 1fr; gap: 12px; line-height: 1.6; }dt { font-weight: 700; }dd { margin: 0; }
+footer { color: #6a7485; padding: 12px; text-align: center; font-size: 13px; }
+@media (max-width: 720px) { .search-form, .cards { grid-template-columns: 1fr; } .hero { padding: 30px 22px; } .panel { padding: 20px; } dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 12px; } }

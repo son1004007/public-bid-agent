@@ -23,10 +23,10 @@ React/TypeScript, FastAPI, LangGraph, 필요한 범위의 LangChain, PostgreSQL/
 
 ## 현재 진행 단계
 
-- 2026-10-09부터 애자일 반복 개발을 작업 기준으로 적용한다. 현재는 Sprint 1 착수 준비이며 구현 코드는 없다.
+- 2026-10-09부터 애자일 반복 개발을 적용하며, Sprint 1 합성 공고 검색/상세 FastAPI + React/TypeScript 소스와 API 테스트를 작업 브랜치에서 구현했다. 최종 독립 검수·공개 배포와 실공고 API 연동은 아직 아니다.
 - Codex R1~R4 설계 검수를 실시했고 R4 지적사항을 문서에 보완했지만, 해당 변경에 대한 후속 독립 재검수·런타임 검증은 실시하지 않았다.
 - 전체 설계 재검수를 반복하는 대신 실제 공고 검색과 웹 화면을 작은 기능 단위로 구현·테스트하고 위험에 맞춰 검수한다.
-- 실제 코드·인증·공공 API 연결·모델 호출·배포는 완료되지 않았다. 상세 실행 기준은 `docs/07-agile-development-workflow.md`와 `TASKS.md`를 따른다.
+- 인증·공공 API 연결·모델 호출·배포는 완료되지 않았다. 합성 fixture API 코드가 작성되었다고 외부 실공고가 서비스 중인 것은 아니다. 상세 실행 기준은 `docs/07-agile-development-workflow.md`와 `TASKS.md`를 따른다.
 
 ## 모델 인증 경계
 

@@ -1,55 +1,49 @@
 # 현재 개발 상태
 
 - 기준일: 2026-10-09
-- 저장소: `son1004007/public-bid-agent` (공개, Apache-2.0)
-- 작업 방식: **애자일 반복 개발 (작은 사용자 기능 구현 → 테스트 → 위험에 비례한 독립 검수 → 개선)**
-- 현재 단계: **Sprint 1 준비 / 실제 코드 구현 미착수**
-- 코드 구현: NOT RUN
-- 자동화 테스트/CI: NOT RUN
-- 실제 API·Google 로그인·AI 모델 호출: NOT RUN
-- 공개 배포: NOT RUN
-- 운영 보안 및 법적 이용조건 검증: NOT RUN
+- 대상: son1004007/public-bid-agent
+- 작업 방식: 애자일 반복 개발 / 기능별 설계·테스트·독립 검수
+- 개발 브랜치: feat/sprint1-search-demo
+- 현재 변경: **Sprint 1 합성 공고 검색/상세 최소 앱의 코드 구현 (IMPLEMENTED_UNVERIFIED)**
+- main 배포/공개 서비스: 변경 없음 / 미배포
+- 인증·나라장터 실제 API 호출·PDF·원격 AI: 미구현 / 비활성
+- 원본 데이터: 합성 fixture 4건. 실제 공고 아님, 접수 및 최신 상태 UNKNOWN.
 
-## 설계 검수 현황
+## 실제 산출물
 
-- AGY/Gemini 1차 및 Codex 최초·R2·R3·R4 문서 설계 검수 기록이 `docs/reviews/`에 존재한다.
-- Codex R4 원시 발견사항: MAJOR 6 / MINOR 2 / QUESTION 2, 제한적 비공개 PoC 가능, 공개 서비스 HOLD.
-- R4 지적사항 관련 설계 수정이 `main`에 반영되었으나 **수정된 설계 전체에 대한 별도 R5 독립 재검수 및 실제 실행 검증은 완료되지 않았다**.
-- 이 검수 이력은 위험 백로그로 유지한다. **미구현 기능의 배포 위험을 근거 없이 제거하지 않되, 모든 미래 기능의 설계 승인까지 구현을 무기한 보류하지 않는다.**
-- 2026-10-09 사용자의 명시적인 결정으로 워터폴식 전면 설계 검수 선행 방식에서 애자일 개발로 전환했다.
+- backend/app/main.py: GET /api/health, GET /api/notices, GET /api/notices/{notice_id}
+- backend/app/repository.py, schemas.py, data/sample_notices.json: 검증된 합성 공고 스키마/읽기 전용 검색
+- backend/tests/test_api.py, test_repository.py: 정상, 0건, 404, 422, fixture 오류 503, 출처·상태 불변조건
+- frontend/src/: React/TypeScript 검색/필터/상세·에러·합성 데이터 표시
+- .github/workflows/sprint1-ci.yml: Python 테스트 + 프런트엔드 typecheck/build 워크플로 작성
+- docs/implementation/SPRINT1_RUNBOOK.md: 개발 실행 및 검증 방법
+- docs/implementation/CONTINUE_IMPLEMENTATION_PROMPT_2026-10-09.md: 사용자 원문 프롬프트와 다른 AI용 인수인계 지시
 
-## 다음 작업: Sprint 1
+## 수행한 검증
 
-1. React/TypeScript + FastAPI 최소 실행 가능한 프로젝트 구조 생성
-2. 합성 fixture 기반 공고 목록/상세 API와 화면을 수직 연결
-3. 나라장터 공식 입찰공고 API의 실제 호출 조건·필드·상태·첨부 형식을 확인하고 확인된 범위부터 어댑터 구현
-4. 정상/0건/API 장애/변조된 응답/정정·마감 불명확 상태에 대한 테스트 및 최소 CI
-5. 실행 결과를 근거로 문서·백로그 갱신, 해당 변경 단위 독립 검수
+- 로컬 Python 3.13.5 / FastAPI 0.128.2 / pytest 9.0.2 / httpx 0.28.1: backend pytest **11 PASS** (2026-10-09, 별도 실행환경).
+- JSON 합성 fixture: 4건, 중복 ID 0.
+- 본 실행환경에서 npm registry DNS EAI_AGAIN 발생: frontend npm 설치/실제 typecheck/build **NOT RUN**. GitHub Actions 환경에서 추가 검증해야 한다.
+- GitHub Actions의 실제 job 성공 여부는 실행 후 해당 workflow run으로 검증한다. 파일 추가는 CI 통과가 아니다.
+- 별도의 AGY/Gemini 최종 독립 검수는 **NOT RUN**. 공통 REVIEW_POLICY의 REVIEW_DEBT로 간주하고 아직 본 변경을 main에 합치거나 완료/릴리스로 선언하지 않는다.
 
-완료 전에는 외부 사용자가 실제 공개된 입찰공고를 검색할 수 있다고 표현하지 않는다.
+## 기존 리뷰 및 남은 게이트
 
-## 기능별 활성화 조건
+- 기존 설계 검수 Codex R1~R4 기록과 ADR-001~008은 유지하며, 현재 활성 기능에 해당하는 위험부터 처리한다.
+- 초기 합성 fixture 앱만 구현했다. 외부 API/로그인/개인 데이터/AI/공개 배포는 추가 테스트·검수·법적 조건 확인 없이 활성화하지 않는다.
+- 독립 검수 입력은 이 브랜치의 실제 커밋과 테스트 증거다. 이전 검수 원문을 첫 리뷰 결론으로 주입하지 않는다.
 
-- 로컬 합성 fixture 개발: 즉시 진행 가능. 실제 공공 API 자료로 오인 표시 금지.
-- 실제 공식 API 사용: 제공 조건·응답 스키마·인증정보 저장·요청 제한 확인 후.
-- PDF 다운로드/파싱: 출처·재이용 조건 및 파일/파서 안전 경계 구현·검증 후.
-- Google OIDC/사용자별 데이터: 실제 OAuth 계약·소유권·세션·CSRF/삭제 테스트 후 공개.
-- 실제 원격 LLM: 공식 사용 자격·모델 기능·비용/동의/격리 검증 전 비활성.
-- 대외 공개 배포: 활성 기능 전체의 필수 E2E·보안·독립 검수 및 사용자 승인 이후.
+## 다음 우선순위
 
-## 열린 기술 검증
+1. GitHub Actions CI 실제 실행/결과 확인 후 실패 시 수정 및 재검증.
+2. 논리적 Sprint 1 변경에 대한 적격 독립 검수 및 finding reconciliation.
+3. 검수·테스트 결과에 맞춰 main 통합 여부 결정.
+4. 공식 나라장터 API 호출 조건과 조회/정정/첨부 실제 데이터 계약을 확인해 후속 adapter 단위 구현.
+5. 브라우저 수동 UX 검증, 프런트엔드 자동 테스트 보강, API pagination/실데이터 정규화 계획.
 
-- 나라장터 공고 자연키·정정·취소·첨부 실제 API 표본
-- Google OIDC 최소 scope의 공식 지원 및 실제 로그인 브라우저 E2E
-- 공개 원격 ChatGPT/Codex 사용권과 실제 지원 요청 파라미터·비용 한계
-- 법적·행정적 참가자격(공식 검증)과 기술 프로필 비교(자기신고)의 UX 분리
-- 대상 공고의 PDF/HWP/HWPX 등 파일 형식 분포, 안전한 처리 범위
-- 코드·테스트·CI 및 실제 서비스 운영 증거
+## 문서
 
-## 작업 규칙과 기록
-
-- [애자일 실행 기준](docs/07-agile-development-workflow.md)
-- [스프린트 백로그](TASKS.md)
-- [독립 리뷰 정책](https://github.com/son1004007/personal-engineering-handbook/blob/main/REVIEW_POLICY.md)
-- [Codex R4 리뷰 원문](docs/reviews/2026-10-08-codex-r4-raw.md)
-- [설계 의사결정](docs/adr/README.md)
+- [작업 지속 프롬프트](docs/implementation/CONTINUE_IMPLEMENTATION_PROMPT_2026-10-09.md)
+- [Sprint 1 실행 지침](docs/implementation/SPRINT1_RUNBOOK.md)
+- [작업 목록](TASKS.md)
+- [애자일 기준](docs/07-agile-development-workflow.md)

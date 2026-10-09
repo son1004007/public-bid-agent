@@ -1,7 +1,7 @@
 # 공공 AI 입찰 분석 에이전트 (Public Bid Agent)
 
-> **프로젝트 상태: 애자일 반복 개발 전환 / Sprint 1 구현 준비**  
-> 기존 Codex R1~R4 설계 지적사항은 위험 백로그로 보존합니다. 작은 기능을 구현·테스트·독립 검수하면서 설계를 개선합니다. 현재 구현 코드·실제 AI 추론·테스트·공개 배포는 완료되지 않았습니다.
+> **프로젝트 상태: 애자일 Sprint 1 개발 브랜치 구현 중 (공개 배포 미완료)**  
+> React/TypeScript + FastAPI 합성 공고 검색·상세 조회 코드와 pytest 테스트가 작성되었습니다. 로컬 백엔드 테스트 11개는 통과했으나 프런트엔드 빌드·별도 독립 검수·공개 배포는 미완료입니다. 실제 나라장터 API 및 AI 추론은 아직 연결하지 않았습니다.
 
 ## 프로젝트 소개
 
@@ -87,7 +87,7 @@ AI/SW 관련 공고 선별
 - 회사·고객사의 비공개 코드, 데이터, 인증정보를 사용하지 않습니다.
 - 구현 예정, 구현 완료, 테스트 통과, 실제 배포 상태를 구분합니다.
 
-현재 Sprint 1은 **React + FastAPI + 합성 fixture 공고 검색/상세 UI + 공식 API 구조 검증 + 최소 CI**입니다. 이후 원문·기술 적합성·AI 연동·사용자 서비스화를 필요한 순서로 확장합니다. 로그인·외부 AI 추론·개인정보를 사용하는 기능은 해당 위험 검증 후 공개합니다.
+현재 Sprint 1은 **React + FastAPI + 합성 fixture 공고 검색/상세 UI + 공식 API 구조 검증 + 최소 CI**입니다. 개발 브랜치 구현 내용과 재현 절차는 [Sprint 1 실행 문서](docs/implementation/SPRINT1_RUNBOOK.md)에서 확인할 수 있으며, [다른 채팅·AI용 지속 지시서](docs/implementation/CONTINUE_IMPLEMENTATION_PROMPT_2026-10-09.md)에 사용자 요구 원문을 보존합니다. 이후 원문·기술 적합성·AI 연동·사용자 서비스화를 필요한 순서로 확장합니다. 로그인·외부 AI 추론·개인정보를 사용하는 기능은 해당 위험 검증 후 공개합니다.
 
 자세한 개발 규칙은 [AGENTS.md](AGENTS.md), [애자일 실행 기준](docs/07-agile-development-workflow.md), [현재 백로그](TASKS.md), [코드 작성 표준](docs/05-coding-standards.md)을 참고할 수 있습니다.
 
