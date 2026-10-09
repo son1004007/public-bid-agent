@@ -1,7 +1,7 @@
 # 공공 AI 입찰 분석 에이전트 (Public Bid Agent)
 
 > **프로젝트 상태: 애자일 Sprint 1 개발 브랜치 구현 중 (공개 배포 미완료)**  
-> React/TypeScript + FastAPI 합성 공고 검색·상세 조회 코드와 pytest 테스트가 작성되었습니다. 로컬 백엔드 테스트 11개는 통과했으나 프런트엔드 빌드·별도 독립 검수·공개 배포는 미완료입니다. 실제 나라장터 API 및 AI 추론은 아직 연결하지 않았습니다.
+> React/TypeScript + FastAPI 합성 공고 검색·상세 조회 코드와 pytest 테스트가 작성되었습니다. 로컬 백엔드 테스트 11개와 GitHub Actions 백엔드·프런트엔드 typecheck/build는 통과했습니다. 별도 독립 최종 검수·브라우저 E2E·공개 배포는 미완료입니다. 실제 나라장터 API 및 AI 추론은 아직 연결하지 않았습니다.
 
 ## 프로젝트 소개
 

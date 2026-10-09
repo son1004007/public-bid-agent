@@ -55,3 +55,9 @@ Windows PowerShell:
 ## 검수 상태
 
 테스트와 CI의 실제 결과는 CURRENT_STATE.md 및 GitHub Actions에서 확인한다. 기능의 독립 최종 리뷰를 수행하지 않았다면 REVIEWED/RELEASED로 표시하지 않는다.
+
+## 2026-10-09 확인된 CI 실행
+
+- Push: https://github.com/son1004007/public-bid-agent/actions/runs/37885616577 — backend/frontend success.
+- PR: https://github.com/son1004007/public-bid-agent/actions/runs/37885643254 — success.
+- CI는 Python 3.12 + Node 22 환경에서 API 테스트와 프런트엔드 typecheck/build를 수행했다. 실제 브라우저 E2E 및 독립 최종 리뷰는 별도 진행해야 한다.

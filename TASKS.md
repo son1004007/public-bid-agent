@@ -26,7 +26,8 @@
 - [ ] 확인된 공식 API 범위에서 읽기 전용 어댑터 연결 (비밀 키는 서버만 보관)
 - [ ] 공고 ID/관측 시각/마감 상태 불명확성과 실패를 구분
 - [x] API 정상/오류/0건 pytest 11개 로컬 PASS 및 GitHub Actions 설정 파일 작성
-- [ ] frontend typecheck/build 실실행, CI run PASS 및 브라우저 UX/경쟁 요청 회귀 검증
+- [x] GitHub Actions push/PR에서 frontend TypeScript typecheck/build 및 backend pytest job PASS (runs 37885616577, 37885643254)
+- [ ] 브라우저 UX/경쟁 요청 회귀 검증, 프런트엔드 자동 테스트 추가 및 lockfile/npm ci 재현성
 - [x] 로컬 backend pytest 11 PASS 근거 및 미검증 범위 기록
 - [ ] Sprint 1 논리적 변경 단위 독립 검수/조정 (REVIEW_DEBT, main 통합 전 필요)
 - [x] README/상태/인수인계 문서에 합성 앱 구현·테스트·미검증 사항 기록
