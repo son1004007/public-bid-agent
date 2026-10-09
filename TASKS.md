@@ -31,6 +31,7 @@
 - [ ] 두 AI 교차 반론 및 LangGraph 체크포인트/사람 승인 기반 실제 상태 그래프 구현
 - [x] PDF/Excel/HWPX 추출·스캔 PDF 한국어 OCR + .HWP 읽기 의존성 코드 추가, 서브프로세스 기본 격리·형식/압축 제한 및 출처별 추출 메타데이터
 - [x] HWP 5.x 실제 생성·바이너리 재추출, XLS 생성·읽기 CI PASS (37932735254), 로컬 한국어 PDF OCR PASS
+- [x] PR CI run 37933016608: HWP5·XLS·XLSX·HWPX·PDF 한국어 OCR 포함 19/19 PASS
 - [ ] 실제 기관별 HWP/HWPX·Excel·스캔 PDF 자료의 정확도/표·숫자 재현율 검증
 - [ ] 파일/파서 OS 샌드박스 강화, 정정 공고·원문 위치 및 출처 문단 검증
 - [ ] 실제 운영/계정별 Codex·Claude 구독 이용 조건 확인·계정 인증 고도화
