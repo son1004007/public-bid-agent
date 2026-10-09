@@ -52,3 +52,19 @@ with tempfile.TemporaryDirectory() as directory:
     subprocess.run(["node", "--check", str(js)], check=True, timeout=20)
 
 print("UI publishing static/syntax check: PASS")
+
+
+# 두 번째 세부 페이지는 실제 입찰 제출·점수 기록이 아닌 브라우저 목업이다.
+detail_path = Path(__file__).resolve().parents[1] / "frontend/public/bid-detail-review.html"
+detail_source = detail_path.read_text(encoding="utf-8")
+detail_parser = PreviewParser()
+detail_parser.feed(detail_source)
+assert len(detail_parser.scripts) == 1, "detail page must have one inline script"
+assert not any(attrs.get("src") or attrs.get("href") for _, attrs in detail_parser.links), "detail page external asset"
+for marker in ["제출", "점수", "미확인", "합성", "id=\"content\"", "id=\"tabs\""]:
+    assert marker in detail_source, f"detail page missing {marker}"
+with tempfile.TemporaryDirectory() as directory:
+    script = Path(directory) / "detail.js"
+    script.write_text(detail_parser.scripts[0], encoding="utf-8")
+    subprocess.run(["node", "--check", str(script)], check=True, timeout=20)
+print("Bid detail publishing static/syntax check: PASS")

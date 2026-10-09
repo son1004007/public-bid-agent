@@ -39,6 +39,13 @@
 
 이후 새 채팅/AI는 추가 백엔드 작업보다 `frontend/public/ui-review.html` 시안을 먼저 사용자에게 제시하고 `docs/ui/SCREEN_REVIEW_GUIDE.md`에 따라 피드백을 받는다. 단순 GitHub 파일을 만든 것만으로 화면 설계 승인이 완료되었다고 주장하면 안 된다. 다른 GitHub 저장소의 재사용 작업 기준은 `personal-engineering-handbook` 제안 PR #1이며 독립 검수/승인 전 상태로 유지한다.
 
+## 최신 사용자 피드백: 공고 상세와 제출·수주·점수 관리
+
+- 사용자는 목록 작동을 확인했으나 공고 안의 세부 화면이 불충분하다고 지적했다. 화면/기능을 일부라도 우선 퍼블리싱해야 한다.
+- 목록에서 `frontend/public/bid-detail-review.html` 상세 시안으로 연결한다. 6개 탭과 수기 제출/점수/수주 이력 조작을 구현하되 실데이터 연결은 계속 보류한다.
+- 공식 정보 제공 범위와 기업 입찰관리 실무는 `docs/research/2026-10-09-bid-lifecycle-management.md`에 정리했다. 공개 API의 낙찰정보와 회사별 제출 사실/평가 점수는 구분한다.
+- 다른 채팅/AI도 기존 UI 단계를 먼저 사용자에게 검증받고 후속 백엔드 요구사항을 추출한다. 입찰 참여·수주 여부를 근거 없이 자동 확정하지 않는다.
+
 ## 스프린트 및 다음 실행
 
 - **현재 P0:** 백엔드와 독립적인 화면 퍼블리싱/사용자 설계 검토. `frontend/public/ui-review.html` 및 `docs/ui/SCREEN_REVIEW_GUIDE.md`를 우선한다.

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Public Bid Agent - 상세·입찰 관리 UI 검증</title>
+<style>
+:root{font:15px/1.6 system-ui,-apple-system,'Malgun Gothic',sans-serif;background:#f5f7fb;color:#1b2b45}*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}
+a{color:#2462b8;text-decoration:none}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #86b2fb;outline-offset:2px}
+.top{background:#122c54;color:white;padding:18px max(calc((100vw - 1180px)/2),24px);display:flex;align-items:center;justify-content:space-between;gap:14px}.top a{color:white;font-size:13px}.top small{color:#adc7ea}
+.main{max-width:1180px;margin:0 auto;padding:28px 22px 80px}.eyebrow{font-size:11px;font-weight:800;color:#4177c6;letter-spacing:1px}h1{font-size:27px;line-height:1.35;margin:7px 0}h2{font-size:18px;margin:0 0 14px}h3{font-size:15px;color:#284568;margin:20px 0 10px}.sub{font-size:13px;color:#70819a;margin:5px 0 18px}.disclaimer{padding:14px 17px;background:#fff0d6;color:#785717;border:1px solid #f0d49d;border-radius:10px;margin:18px 0;font-size:12px}
+.grid{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;align-items:start}.panel{border:1px solid #e1e7f0;background:#fff;border-radius:12px;padding:22px;min-width:0}.side{position:sticky;top:15px}.side button{border:0;background:transparent;text-align:left;padding:10px 12px;color:#526780;border-radius:8px;display:block;width:100%;font-weight:650}.side button.active{background:#e8f0fd;color:#1d5cbb}.side .small{font-size:11px;color:#8696ad}
+.meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px}.pill{background:#eaf3ff;border-radius:6px;padding:4px 8px;color:#2f63aa}.pill.bad{background:#fff1d8;color:#906420}
+.details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0}.kv{padding:13px;border:1px solid #e2eaf4;border-radius:9px;background:#fbfcff}.kv small{display:block;color:#7b8ca4;font-size:11px}.kv strong{font-size:14px;color:#274260}.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0;border-bottom:1px solid #e2e8f1}.tabs button{border:0;border-bottom:3px solid transparent;background:transparent;padding:11px 12px;font-size:12px;color:#64758f}.tabs button.active{border-color:#2c6cc7;color:#1f56a5;font-weight:800}
+.box{background:#f5f8fd;border:1px solid #dfebf8;border-radius:9px;padding:14px;margin:13px 0;font-size:12px;color:#52677f}.warning{background:#fff7e9;border-color:#ecd9a7;color:#835f24}.ok{background:#ecf8f0;border-color:#b8e2c6;color:#286646}.muted{color:#71839c;font-size:12px}.list{padding-left:19px;color:#526984;font-size:13px;line-height:2}.steps{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}.steps span{background:#edf2fa;border-radius:7px;padding:8px 10px;font-size:11px;color:#526c8e}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.fields label{font-weight:700;font-size:12px;color:#496080;display:flex;flex-direction:column;gap:6px}.fields input,.fields select,.fields textarea{width:100%;padding:10px;border:1px solid #cfdcec;border-radius:8px;background:white;color:#20334c}.fields .full{grid-column:1/-1}.action{margin:16px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.primary{border:0;border-radius:8px;background:#2866c8;color:white;padding:10px 15px;font-weight:800;font-size:12px}.minor{border:1px solid #cfdff2;background:white;border-radius:8px;color:#3268ac;padding:9px 14px;font-size:12px}.metrics{display:flex;gap:14px;flex-wrap:wrap}.metric{flex:1;background:#edf5ff;padding:13px;border-radius:9px}.metric strong{display:block;font-size:20px}.audit{border-top:1px solid #e5ebf4;padding-top:14px;margin-top:20px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px solid #e5ebf3;text-align:left;padding:11px 6px}th{color:#72829b;font-size:11px}td{color:#3c5271}.empty{padding:25px;color:#7084a1;background:#f6f8fd;border-radius:8px}
+footer{font-size:11px;text-align:center;color:#8ea0b4;margin-top:30px}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.side{position:static}.side nav{display:flex;overflow-x:auto}.side button{width:auto;white-space:nowrap}.details{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.main{padding:18px 12px}.top{padding:14px}.fields,.details{grid-template-columns:1fr}.panel{padding:16px}h1{font-size:22px}.tabs button{font-size:11px;padding:10px 8px}.metric strong{font-size:16px}}
+</style></head>
+<body><header class="top"><div><strong>Public Bid Agent</strong><small> / 입찰 상세·수주관리 설계 검증</small></div><a href="ui-review.html">← 공고 목록으로</a></header>
+<main class="main"><div class="eyebrow">DESIGN VALIDATION · SYNTHETIC DEMO</div><h1 id="title">공고 상세 검토</h1><p id="sub" class="sub"></p>
+<div class="disclaimer"><strong>합성 화면입니다.</strong> 실제 공고, 투찰 이력, 수주 여부, 평가 점수, 업체 정보가 아닙니다. 기록은 이 탭의 메모리에만 유지되며 서버 저장·공식 조회를 수행하지 않습니다.</div>
+<div class="grid"><aside class="panel side"><h2>입찰 진행 관리</h2><p class="small">다른 합성 공고를 선택할 수 있습니다.</p><select aria-label="합성 공고 선택" id="pick" style="width:100%;padding:9px;margin-bottom:16px"></select><nav id="nav"></nav><div class="box warning">진행 상태는 사용자 수기 입력 시안입니다. 나라장터 제출 확인을 자동 처리하지 않습니다.</div></aside><section class="panel"><div class="meta"><span class="pill">합성 공고</span><span class="pill bad">실제 접수 상태 미확인</span></div><div class="tabs" id="tabs"></div><div id="content" aria-live="polite"></div></section></div>
+<footer>UI PUBLISHING ONLY · NO OFFICIAL SUBMISSION VERIFICATION · NO PERSISTENCE · NO AI</footer></main>
+<script>
+/** 파일 설계 계약: 사용자 화면 설계 검증용, 완전 합성 데이터. 소유권·공고번호·점수는 공식 자료 아님.
+ * 입력/출력: 공고 선택/탭/수기 제출 및 점수 -> 임시 메모리 상태. 서버·storage/외부 네트워크 요청 없음.
+ * 검증: 점수 0 <= 실제 값 <= 해당 만점. 미공개 점수를 0점으로 처리하지 않음.
+ */
+const samples=[
+{id:'m1',org:'가상 공공기관 A',name:'[합성] 공공기관 AI 업무지원 플랫폼 구축',cat:'AI',tech:['Python','FastAPI','RAG'],requirements:['업무문서 검색과 AI 질의응답 인터페이스','기존 업무 시스템 API 연계','개인정보·보안 검토'],budget:'미확인',deadline:'미확인'},
+{id:'m2',org:'가상 공공기관 B',name:'[합성] 행정 포털 서비스 기능 개선',cat:'SW',tech:['Java','Spring','REST API'],requirements:['기존 행정 포털 API 개선','접근권한과 오류 처리','화면 사용자 경험 개선'],budget:'미확인',deadline:'미확인'},
+{id:'m3',org:'가상 공공기관 C',name:'[합성] 공공 데이터 수집·검증 플랫폼',cat:'DATA',tech:['Python','PostgreSQL','ETL'],requirements:['공공데이터 수집','데이터 정합성 검증','오류 및 재처리 이력 관리'],budget:'미확인',deadline:'미확인'}];
+const sections=[['overview','기본정보'],['eligibility','참가자격'],['rfp','제안서·평가'],['submit','제출 관리'],['result','낙찰·평가점수'],['pipeline','진행 이력']];
+const $=id=>document.getElementById(id);const element=(name,cls,txt)=>{const e=document.createElement(name);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e};const memo=new Map();const query=new URLSearchParams(location.search);let current=samples.some(x=>x.id===query.get('notice'))?query.get('notice'):'m1',view='overview';
+function record(){if(!memo.has(current))memo.set(current,{decision:'consider',stage:'identified',submission:'unknown',checkedAt:'',receiptMemo:'',result:'unknown',winningVendor:'',tech:'',techMax:'',price:'',priceMax:'',source:'none',note:''});return memo.get(current)}
+function add(parent,tag,cls,txt){let e=element(tag,cls,txt);parent.append(e);return e}
+function paragraph(p,t){add(p,'p','',t)}function tip(p,t,cls='box'){add(p,'div',cls,t)}function list(p,lines){let ul=add(p,'ul','list');lines.forEach(t=>add(ul,'li','',t))}
+function grid(p,fields){const g=add(p,'div','details');fields.forEach(([k,v])=>{const d=add(g,'div','kv');add(d,'small','',k);add(d,'strong','',v)})}
+function field(parent,label,key,type,options){const l=add(parent,'label','',label),r=record();let input;
+ if(type==='select'){input=element('select');options.forEach(([val,text])=>{const o=element('option','',text);o.value=val;input.append(o)})}
+ else{input=element(type==='textarea'?'textarea':'input');if(type!=='textarea')input.type=type}
+ input.name=key;input.value=r[key];l.append(input);return input}
+function form(p,keys,submitText,validator){const form=add(p,'form','fields');form.noValidate=true;keys.forEach(o=>{const wrap=add(form,'div',o.full?'full':'');field(wrap,o.label,o.key,o.type,o.options||[])});const action=add(form,'div','action full');const save=add(action,'button','primary',submitText);save.type='submit';form.addEventListener('submit',e=>{e.preventDefault();const vals=Object.fromEntries(new FormData(form).entries());const error=validator(vals);if(error){tip(p,error,'box warning');return}Object.assign(record(),vals);render();tip($('content'),'현재 화면에서만 임시 기록했습니다. 공식 자료 확인이나 서버 저장이 아닙니다.','box ok')})}
+function render(){
+ const n=samples.find(x=>x.id===current),r=record();$('title').textContent=n.name;$('sub').textContent=n.org+' · '+n.cat+' · '+n.id.toUpperCase()+' (합성 식별자)';
+ $('pick').value=current;
+ const nav=$('nav'),tabs=$('tabs');nav.replaceChildren();tabs.replaceChildren();
+ sections.forEach(([key,label])=>{[nav,tabs].forEach(root=>{const b=add(root,'button',view===key?'active':'',label);b.type='button';b.addEventListener('click',()=>{view=key;render()})})});
+ const p=$('content');p.replaceChildren();
+ if(view==='overview'){
+  add(p,'h2','','공고 기본정보');tip(p,'공식 나라장터 정보 및 첨부 문서가 아직 연결되지 않았습니다. 모든 수치는 미확인으로 표시됩니다.','box warning');
+  grid(p,[['발주 기관',n.org],['사업 분야',n.cat],['공고 번호',n.id+' (합성)'],['예산',n.budget],['접수 마감',n.deadline],['공고 변경차수','확인 전']]);
+  add(p,'h3','','목표 기능 예시');list(p,n.requirements);
+  add(p,'h3','','기술 키워드');paragraph(p,n.tech.join(' · '));
+  add(p,'h3','','향후 공식 공고 연결');list(p,['나라장터 공고번호, 정정차수, 공고일·마감일','최신 공고문, 제안요청서/첨부 문서 원문 링크','기관, 예산, 사업기간, 참가제한과 개찰 관련 번호']);
+ }else if(view==='eligibility'){
+  add(p,'h2','','입찰 참가자격 검토');tip(p,'기업 기술역량의 적합도와 법적 참가자격 충족은 다릅니다. 공식 원문·증빙을 확인하지 않은 자격은 모두 미확인입니다.','box warning');
+  grid(p,[['나라장터 등록','미검증'],['제한 업종·지역','미검증'],['기술적 관련성','분석 전'],['입찰 제출 가능 여부','미확인']]);
+  add(p,'h3','','확인 항목 예시');list(p,['공고문과 정정공고의 업종·지역·실적·자격 요건','증빙 유효기간, 공동수급 허용 여부','참가신청·가격/기술제안서 마감과 제출 방식']);
+  add(p,'h3','','합성 기술 요구사항');list(p,n.requirements);
+ }else if(view==='rfp'){
+  add(p,'h2','','제안서와 평가 기준');tip(p,'평가 항목과 배점은 공고별 RFP로 확인해야 합니다. 여기에는 임의의 배점을 넣지 않았습니다.');
+  grid(p,[['정량 평가 배점','원문 미확인'],['정성 평가 배점','원문 미확인'],['가격 평가 배점','원문 미확인'],['평가 방식','원문 미확인']]);
+  add(p,'h3','','제안서 제출 체크리스트');list(p,['최신 공고/정정사항 및 제안요청서 읽음','기술 제안서, 가격서, 기업 증빙 항목 확인','필수 요건 대응표와 실제 제출 파일 최종 검증','나라장터 또는 발주기관 전자 제출 후 접수증 확인']);
+  tip(p,'화면의 체크리스트는 예시입니다. 정식 서비스에서는 RFP 원문 버전과 출처·페이지를 연결할 예정입니다.');
+ }else if(view==='submit'){
+  add(p,'h2','','제출 여부 및 접수 확인');tip(p,'제출 상태는 회사 담당자가 확인하여 기록하는 정보입니다. 공개 개찰/낙찰 API만으로 우리 회사의 제출 여부가 입증되지는 않습니다.','box warning');
+  const decisions=[['consider','검토 중'],['bid','참여 결정'],['no-bid','참여하지 않음']];
+  form(p,[
+   {label:'입찰 참여 결정',key:'decision',type:'select',options:decisions},
+   {label:'업무 진행 단계',key:'stage',type:'select',options:[['identified','공고 발견'],['reviewing','참가요건 검토'],['proposal','제안서 준비'],['submitted','제출 관련 기록'],['closed','결과 확인']]},
+   {label:'제출 상태 (수기)',key:'submission',type:'select',options:[['unknown','미확인'],['not-submitted','미제출'],['self-reported','제출했다고 기록 (증빙 미검증)'],['receipt-sighted','담당자가 접수증 확인했다고 기록']]},
+   {label:'제출 확인 일시',key:'checkedAt',type:'datetime-local'},
+   {label:'접수증 확인 메모 (번호/기밀 원문 입력 금지)',key:'receiptMemo',type:'text',full:true},
+   {label:'검토 의견',key:'note',type:'textarea',full:true}
+  ],'제출 기록 임시 적용',v=>String(v.receiptMemo).length>100||String(v.note).length>400?'메모 입력 길이를 줄여주세요.':null);
+  add(p,'h3','','제출 확인의 증빙 단계');list(p,['자기 신고: 제출했다고 담당자가 기록 (외부 검증 없음)','접수증 확인: 나라장터 로그인 후 접수 완료 화면/접수증을 사람이 확인','향후 공식 연동: 권한이 있는 경우에만 제공 가능한 API 및 접수 이력 접근조건을 별도 확인']);
+  tip(p,'개인정보, 접수증 실제 번호, 회사 기밀·제안서 원문을 이 공개 데모에 입력하지 마세요.','box warning');
+ }else if(view==='result'){
+  add(p,'h2','','낙찰·평가 점수 관리');tip(p,'결과와 점수는 공식 공개/기관 통보/회사 내부 기록을 구분합니다. 미공개 점수는 0점이 아닌 미확인입니다.','box warning');
+  form(p,[
+   {label:'결과 상태 (수기)',key:'result',type:'select',options:[['unknown','미확인'],['won','수주 기록 (미검증)'],['lost','미선정 기록 (미검증)'],['no-result','유찰·취소 등'] ]},
+   {label:'점수 정보 출처',key:'source',type:'select',options:[['none','미확인'],['public','공식 공개자료 확인했다고 기록'],['notice','기관 개별 통보 확인했다고 기록'],['internal','내부 수기자료']]},
+   {label:'기술점수',key:'tech',type:'number'},{label:'기술 만점',key:'techMax',type:'number'},
+   {label:'가격점수',key:'price',type:'number'},{label:'가격 만점',key:'priceMax',type:'number'},
+   {label:'공개된 낙찰업체(확인 시만 기재)',key:'winningVendor',type:'text',full:true}
+  ],'결과·점수 임시 적용',v=>{
+   if(String(v.winningVendor).length>100)return '업체명 입력 길이를 줄여주세요.';
+   for(const [a,b] of [['tech','techMax'],['price','priceMax']]){const x=String(v[a]),m=String(v[b]);if(Boolean(x)!==Boolean(m))return '점수와 해당 만점을 함께 입력하세요.';if(x!==''&&(!Number.isFinite(+x)||!Number.isFinite(+m)||+x<0||+m<=0||+x>+m))return '평가 점수는 0 이상이고 만점 이하이어야 합니다.'}return null
+  });
+  const good=r.tech!==''&&r.techMax!==''&&r.price!==''&&r.priceMax!=='';
+  const g=add(p,'div','metrics');for(const [label,v] of [['기술평가',r.tech!==''?r.tech+' / '+r.techMax:'미확인'],['가격평가',r.price!==''?r.price+' / '+r.priceMax:'미확인'],['점수 합계',good?String(+r.tech+(+r.price))+' / '+String(+r.techMax+(+r.priceMax)):'미확인']]){const c=add(g,'div','metric');add(c,'small','',label);add(c,'strong','',v)}
+  add(p,'h3','','향후 공식 결과 조회');list(p,['낙찰정보서비스: 개찰결과, 낙찰자, 개찰순위 (공개되는 범위)','계약정보서비스/계약과정통합공개서비스: 계약 체결 및 진행 단계','회사 제출 사실: 공개 결과와 별개로 나라장터 로그인 이력·접수증 확인','세부 기술점수: 기관별로 공개되거나 통보받은 경우에만 기록']);
+ }else if(view==='pipeline'){
+  add(p,'h2','','공고 발견부터 수주·미선정까지');const d=add(p,'div','steps');['발굴','참여 판단','제안서 준비','제출 확인','평가·개찰','수주/미선정·회고'].forEach(t=>add(d,'span','',t));
+  const matrix=add(p,'table');const head=add(matrix,'tr');['공고(합성)','진행 단계','제출 상태','결과'].forEach(t=>add(head,'th','',t));
+  samples.forEach(n=>{const z=memo.get(n.id)||{stage:'identified',submission:'unknown',result:'unknown'};const tr=add(matrix,'tr');add(tr,'td','',n.name);add(tr,'td','',z.stage);add(tr,'td','',z.submission);add(tr,'td','',z.result)});
+  add(p,'h3','','추적할 실무 지표');list(p,['공고 발견 → 참여 결정 비율 및 미참여 사유','참여 결정 → 제출 완료율, 제출 누락·지연','제출 → 수주/미선정/유찰 비율','기술/가격 항목별 점수 추이 (자료 있는 건만)','실패 원인·기관별 대응 전략과 다음 입찰 개선점']);
+  tip(p,'실제 CRM 및 RFP 관리 서비스들은 Bid/No-Bid, 담당자, 기한, 제출, 수주/미선정, 평가 회고를 이력으로 관리합니다.');
+ }
+}
+const pick=$('pick');samples.forEach(n=>{const o=element('option','',n.name);o.value=n.id;pick.append(o)});pick.addEventListener('change',()=>{current=pick.value;history.replaceState(null,'','?notice='+encodeURIComponent(current));render()});
+render();
+</script></body></html>
