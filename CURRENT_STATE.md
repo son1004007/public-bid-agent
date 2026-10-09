@@ -196,3 +196,11 @@
 - 실제 HTTP `/api/new` → `/api/save` → `/api/analyze` (`providers=[codex],consent=true`) 성공, 약 21.2초. Codex 결과 `status=success`, `recommendation=hold`, Gate 8개 / Factor 12개, `ai_draft` 생성과 로컬 JSON 저장 확인. LangGraph `cross_review.status=single_or_failed`; 사용자 결정 `undecided` 보존.
 - 테스트 서버 8769 중지. 실사용 로컬 서버 8765 실행, 바탕화면 `Public Bid Agent (Local)` 런처 별도 설치, HTTP 200 및 loopback 127.0.0.1 확인. 실사용 데이터 `%LOCALAPPDATA%\\PublicBidAgent\\Lab\\user-json\\cases.json`, 테스트 데이터는 별도 `codex-synthetic-test-data`.
 - 실제 Claude 및 2-AI 교차검토 E2E 미수행, 보안 독립 최종 검수/회사 실무 문서 OCR 정확도 미완료. 대외 운영 또는 main 병합하지 않음.
+
+## 2026-10-10 실제 공고 수기 표본과 평가 입력
+
+- 나라장터 공고 3건 메타데이터/전재문을 공개 재게시 서비스에서 수기 확인: `R26BK01745574-000`, `R26BK01747372-000`, `R26BK01759604-001`.
+- 공식 나라장터 공고 첨부 직접 다운로드 시 회사 노트북/컨테이너 환경에서 403 또는 접속 오류로 원본 검증 불가. 해당 자료는 `source_quality=third_party_republication`이며, 공고/원문 사실과 가상 업체 내부 상태를 별도로 기록.
+- 가상의 부서 능력/법적 등록/인력/원가가 다른 시나리오 4개 작성. 모든 '가상 기업'은 사용자 실제 재직 부서에 관한 사실 진술이 아니다.
+- 검증 fixture: `local_app/fixtures/public_tenders_2026_10_10.json`. 공고 원문 전재의 LLM 사업은 AI 코어 RAG 구현이 **과업 제외**, 운영·서비스 연동이 주로 요구됨. 하나의 재게시 출처에서 입찰마감 14:00 vs 공고 메타데이터 10:00 충돌하여 더 빠른 10:00으로 일단 가정하고 확인 필요.
+- 현시점에는 아직 실제 공고의 Codex 판단 검증 결과를 작성하지 않음. 정상 호출 및 결과 비교를 수행한 뒤 채운다.

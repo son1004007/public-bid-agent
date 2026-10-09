@@ -76,3 +76,7 @@ Windows에서는 npm의 `codex` 쉘 스크립트를 Python subprocess로 직접 
 ### Codex 단독 실제 검증 이력
 
 2026-10-10 Windows 합성 입찰 HTTP E2E에서 Codex CLI 로그인으로 1회 분석 성공: Gate 8개, Factor 12개, 추천 `hold`, 사용자 결정 `undecided` 유지, JSON 저장 확인. 회사 자료는 사용하지 않았습니다. 현재 개발 브랜치에는 이 테스트의 인증키나 업무 자료가 포함되지 않습니다. `TD-kiseok` 장치에만 사용자 바탕화면 `Public Bid Agent (Local)` 바로가기가 있으며, 이 바로가기는 GitHub 배포물에는 포함되지 않습니다.
+
+### 실제 공고 수기 검증용 샘플
+
+`fixtures/public_tenders_2026_10_10.json`은 2026-10-10 기준 공개된 **공고 3건**(LLM Agent 운영지원, AI·SW 과학 시뮬레이션 34종, AI 서비스 실증 클라우드 고도화)과 명시적인 **가상 부서 4개 조건**을 담습니다. 공식 RFP 원본을 직접 내려받은 것이 아니므로 공고 출처·마감 상충과 미확인 자격을 단정하지 않아야 합니다. 실회사 내부 데이터로 착각하지 마세요.

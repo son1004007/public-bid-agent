@@ -123,3 +123,7 @@ Claude Code 구독이 없더라도 Codex CLI 로그인만으로 독립 영향인
 회사 노트북의 **합성 공고만** 사용한 기능 확인: Windows + Python 3.12 + Codex CLI 0.154.0, ChatGPT 인증. `-m gpt-5.6-terra`와 `--ephemeral --ignore-user-config --ignore-rules --sandbox read-only`로 한 차례 모델 요청, `/api/analyze` 성공. JSON에 필수 Gate **8개**, 비교 인자 **12개**, 권고 `hold`, `ai_draft`, `cross_review.status=single_or_failed` 기록 확인. 사람의 `decision=undecided` 유지 확인, 모델 응답 **21.2초**. 실제 Claude 연동/교차반론은 수행하지 않음.
 
 해당 Windows 사용자에게 로컬 전용 시작 바로가기 `Public Bid Agent (Local)`를 만들었으며 `http://127.0.0.1:8765/` 접근 성공. 바탕화면 바로가기는 배포 소스가 아니라 **해당 노트북의 편의 실행 설정**입니다. 앱 업무 JSON과 테스트 JSON의 위치를 분리했고 바인딩은 `127.0.0.1`로 한정합니다. 개인 Codex 설정은 변경하지 않았습니다.
+
+## 공개된 실제 입찰공고 3건을 이용한 MVP 검증 (2026-10-10)
+
+`local_app/fixtures/public_tenders_2026_10_10.json`에는 공개 입찰공고 **3건의 수기 전사 정보**와 **실제 회사가 아닌 가상 부서 4개 시나리오**를 저장합니다. [공고/업체 개인정보 및 재현성 검증](local_app/test_public_tenders.py)은 소스 URL과 공고번호/마감/가정 자료의 구분을 확인합니다. 공식 나라장터 원본 첨부 다운로드는 403 오류여서 직접 검증하지 못했으므로, 전재문·메타데이터 출처를 명시하고 실제 입찰 전 정정/마감 확인이 필수입니다. **실제 어니컴 부서의 인력·등록 자격·실적은 입력하거나 추정하지 않았습니다.** 이 자료는 실제 낙찰 확률의 정답 데이터가 아닙니다.

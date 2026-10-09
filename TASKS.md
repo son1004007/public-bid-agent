@@ -180,3 +180,11 @@
 - [x] 회사 노트북 Windows Codex 합성 분석 결과 수신, Gate 8/Factor 12, JSON 저장까지 HTTP E2E 성공 (약 21.2초)
 - [x] Windows 사용자 전용 로컬 바탕화면 런처 및 127.0.0.1:8765 접속 검증
 - [ ] 사용자 실문서 정확도와 독립 최종 보안 검수
+
+## 2026-10-10 실제 공고 MVP 판정 검증
+
+- [x] 실제 입찰공고 수기 3건 / 가상 부서 조건 4개 fixture 정리, 원본 출처/상충 마감/미확인 표시
+- [ ] 같은 실공고에 다른 가상 부서 상태를 적용한 Codex 결과 비교 및 재현성
+- [ ] AI 추천과 Gate 실패/미확인 불일치에 대한 deterministic guard / 검증 기록
+- [ ] 사용자 로컬 JSON UI 시나리오 수동 검증 및 독립 AGY+Codex 소스 검수
+- [ ] MVP 핵심 Gate 모두 PASS 시에만 Draft PR main merge
