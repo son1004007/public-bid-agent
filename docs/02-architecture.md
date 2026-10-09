@@ -181,3 +181,7 @@ LLM이 돌려준 citation ID는 서버가 존재 여부·원문 버전·해당 �
 - 장기 실행은 [ADR-007](adr/ADR-007-analysis-state-evaluation.md)의 run/user/day/provider/day/service/day DB 원자 예산 예약을 통과한 경우에만 외부 도구·모델을 호출한다.
 - HTTPS edge/CDN은 사용자별 profile/run/citation/export를 공유 캐시하지 않고 SSE에는 streaming cache·buffering 제한을 적용한다([ADR-001](adr/ADR-001-auth-session-ownership.md), [ADR-005](adr/ADR-005-hosting-operations.md)).
 - 계정 삭제 시 외부 provider에 이미 보낸 요청은 provider 정책에 따라 취소를 시도하며, 늦은 결과의 로컬 기록을 차단하고 외부 보존 상태는 별도 안내한다([ADR-008](adr/ADR-008-profile-privacy.md)).
+
+## 2026-10-10 단일 AI 분석 경로
+
+Codex 1개가 선택된 경우 LangGraph는 independent_analysis에서 1회 호출하며, peer_critique에서 실행을 생략하고 comparison은 `single_or_failed`로 표시합니다. 사람 검증 상태와 최종 참여 결정은 변화하지 않습니다. Windows npm 경로는 `codex.cmd`, 호출 모델은 ChatGPT 인증 Codex용 `gpt-5.6-terra`이며 개인정보/회사업무 정보는 동의 후 전송합니다.

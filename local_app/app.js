@@ -48,7 +48,9 @@ function render(){
  });
  const peer=active.cross_review||{};
  if(peer.status){
-   const summary=["교차검토: "+peer.status,"의견 일치 "+(peer.agreements||[]).length+"건 · 이견 "+(peer.disagreements||[]).length+"건",peer.notice||""];
+   const summary=peer.status==="single_or_failed"?
+     ["단독 AI 분석 (두 모델 교차검토 아님)",peer.notice||"원문 검증이 필요합니다."]:
+     ["두 AI 교차검토: "+peer.status,"의견 일치 "+(peer.agreements||[]).length+"건 · 이견 "+(peer.disagreements||[]).length+"건",peer.notice||""];
    (peer.disagreements||[]).slice(0,10).forEach(d=>summary.push(d.category+" / "+d.key+" : "+JSON.stringify(Object.fromEntries((peer.participants||[]).map(p=>[p,d[p]])))));
    (peer.participants||[]).forEach(p=>{
      const critique=peer.critiques?.[p];
@@ -134,7 +136,11 @@ el("analyze").addEventListener("click",()=>act(async()=>{
  const saved=await api("save",{id:active.id,prompt:el("prompt").value});
  active=saved.case;
  const v=await api("analyze",{id:active.id,providers,consent:true});
- active=v.case;render();message("LangGraph 교차검토 실행이 끝났습니다. 이견을 확인하고 최종 참여 여부는 사용자가 선택하세요. AI 초안은 미검증입니다.");
+ active=v.case;render();
+ const ok=providers.filter(p=>active.ai_reports?.[p]?.status==="success");
+ message(ok.length===0?"선택한 AI의 분석이 실패했습니다. 모델별 오류를 확인하세요.":
+  providers.length===1?"Codex 단독 분석 완료: 원문·증빙을 확인한 뒤 초안을 적용하세요. 교차검토는 수행하지 않았습니다.":
+  "분석 완료: 모델별 의견과 이견을 확인하세요. 사용자 최종 결정은 별도입니다.");
 }));
 el("adopt").addEventListener("click",()=>act(async()=>{
  const draft=active.ai_draft;if(!draft||!draft.gates)throw Error("적용할 AI 초안이 없습니다");

@@ -169,19 +169,40 @@ def model_json(value):
   if start<0 or end<=start: raise ValueError("AI가 JSON 객체를 반환하지 않음")
   return json.loads(value[start:end+1])
 
+def cli_executable(name, windows=None):
+ """Windows npm의 확장자 없는 스크립트 대신 실행 가능한 codex.cmd를 선택."""
+ if name not in ("codex","claude"):
+  raise ValueError("지원하지 않는 AI 제공자")
+ if windows is None:
+  windows=os.name=="nt"
+ if windows and name=="codex":
+  return shutil.which("codex.cmd") or shutil.which("codex.exe")
+ if windows and name=="claude":
+  return shutil.which("claude.exe") or shutil.which("claude.cmd")
+ return shutil.which(name)
+
+
 def call_cli(name,input_text):
- exe=shutil.which(name)
- if not exe: return {"status":"unavailable","error":name+" CLI 미설치"}
- args=([exe,"exec","--sandbox","read-only","--skip-git-repo-check","-"]
-       if name=="codex" else [exe,"-p","--tools","","--max-turns","1","--output-format","text"])
+ exe=cli_executable(name)
+ if not exe:
+  return {"status":"unavailable","error":name+" CLI 실행 파일이 없습니다"}
+ args=([exe,"exec","--ephemeral","--ignore-user-config","--ignore-rules",
+        "-m","gpt-5.6-terra","--sandbox","read-only","--skip-git-repo-check","-"]
+       if name=="codex" else
+       [exe,"-p","--tools","","--max-turns","1","--output-format","text"])
  try:
   with tempfile.TemporaryDirectory(prefix="bid-cli-") as folder:
    out=subprocess.run(args,input=input_text,cwd=folder,capture_output=True,
                       text=True,timeout=120,check=False)
-  if out.returncode: return {"status":"error","error":"CLI 종료 코드 "+str(out.returncode)+". 로컬 로그인 확인 필요"}
+  if out.returncode:
+   return {"status":"error","error":name+" CLI 종료 코드 "+str(out.returncode)+". 계정 모델 권한·로그인 상태를 확인하세요"}
   return {"status":"success","result":normalize(model_json(out.stdout[:120000]))}
- except subprocess.TimeoutExpired: return {"status":"error","error":"모델 실행 시간 초과 120초"}
- except (ValueError,json.JSONDecodeError) as e: return {"status":"error","error":str(e)[:130]}
+ except subprocess.TimeoutExpired:
+  return {"status":"error","error":"모델 응답이 120초를 초과했습니다"}
+ except OSError as e:
+  return {"status":"error","error":name+" 실행 OS 오류("+str(getattr(e,"winerror",None) or getattr(e,"errno","unknown"))+"). CLI 설치 상태를 확인하세요"}
+ except (ValueError,json.JSONDecodeError) as e:
+  return {"status":"error","error":"모델 JSON 응답 해석 실패: "+str(e)[:130]}
 
 def summary(case):
  g=case["gates"]; f=case["factors"]

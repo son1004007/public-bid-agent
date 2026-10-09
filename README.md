@@ -112,3 +112,7 @@ python scripts/check_documentation_sync.py
 - 미완료: 기관별 실제 HWP/RFP OCR 정확도, 완전한 파일 파서 샌드박스, LangGraph 영속 체크포인트/재개, 정식 RAG, 실제 두 모델 CLI 인증/출력 E2E, 독립 최종 보안 검수와 사용자 UI 승인.
 - 검수 전 개발 브랜치 `feat/sprint1-search-demo` 및 [Draft PR #1](https://github.com/son1004007/public-bid-agent/pull/1) 유지. 사용자 승인 없는 운영 배포/`main` 병합은 진행하지 않습니다.
 > CI 의존성 계약: 각 Python 패키지는 `local_app/requirements.txt`에 한 줄씩 기록합니다. 2026-10-09 LangGraph 추가 시 줄바꿈 오류를 검사하고 수정했습니다.
+
+## 2026-10-10 Codex 단독 실행 모드
+
+Claude Code 구독이 없더라도 Codex CLI 로그인만으로 독립 영향인자 분석 1회 → 미검증 초안 → 사용자 수정/원문 대조 → 최종 Bid/No-Bid를 수행합니다. 단일 AI는 교차검토가 아니므로 합의한 것처럼 표시하지 않습니다. Windows npm 설치는 확장자 없는 `codex`가 아닌 `codex.cmd`를 실행합니다. 계정 기본 모델이 Codex에서 지원되지 않을 수 있으므로 이 로컬 앱은 `gpt-5.6-terra`를 명시하고, `--ephemeral --ignore-user-config --ignore-rules --sandbox read-only`로 실행합니다. 모델 접근 권한은 계정/버전마다 다르므로 실패 시 UI에서 오류를 확인합니다.

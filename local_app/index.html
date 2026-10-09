@@ -66,10 +66,10 @@ textarea{min-height:105px;resize:vertical}
 <input id="file" type="file" accept=".txt,.md,.csv,.json,.pdf,.docx,.xlsx,.xls,.xlsm,.hwp,.hwpx"></label><div><p class="muted">파일 바이너리는 보관하지 않고 로컬에서 추출한 텍스트만 JSON에 기록합니다. 최대 10 MiB/파일, 6개 파일, PDF 40페이지·OCR 12페이지. 한국어 Tesseract 언어팩 필요. 수식은 저장된 계산값을 사용하며 매크로는 실행하지 않습니다. OCR 및 추출 누락은 경고로 표시합니다.</p><ul id="docs" class="doc-list"></ul></div></div>
 </section>
 <section class="card"><div class="card-head"><h2>1. AI가 영향인자 초안 작성</h2><span class="status">선택해서 명시적 전송</span></div>
-<div class="actions"><label><input id="codex" type="checkbox" checked style="width:auto"> Codex CLI</label><label><input id="claude" type="checkbox" style="width:auto"> Claude Code CLI</label></div>
+<div class="actions"><label><input id="codex" type="checkbox" checked style="width:auto"> Codex CLI (기본: 단독 분석 가능)</label><label><input id="claude" type="checkbox" style="width:auto"> Claude Code CLI (구독·로그인 가능한 경우에만 선택)</label></div>
 <label style="flex-direction:row;align-items:flex-start;gap:9px;margin:12px 0"><input id="consent" type="checkbox" style="width:auto;margin-top:4px"><span>선택한 AI 제공자에게 이 공고의 프롬프트와 문서 텍스트를 전송하는 데 동의합니다.</span></label>
 <div class="actions"><button id="analyze" class="btn primary">AI 영향인자 추출 실행</button><button id="adopt" class="btn">AI 초안 적용 (수정 가능)</button></div>
-<p class="muted">실행 전에 내 PC에 Codex / Claude CLI를 설치하고 각 계정으로 로그인해야 합니다. 설치되어 있지 않거나 로그인할 수 없으면 결과가 생성되지 않습니다. 두 CLI를 선택하면 독립 검토 결과를 표시하며, 두 모델이 성공하면 LangGraph가 상대 의견을 한 번씩 재검토하고 이견을 비교합니다. 이 작업은 모델당 최대 2번 요청할 수 있으며 별도 비용·사용량이 발생할 수 있습니다. 실제 사용자의 최종 결정은 변경되지 않습니다.</p>
+<p class="muted">Codex만 로그인된 경우에도 분석할 수 있습니다. 이때 Codex 1회 분석·수기 검증·사용자 결정만 수행하고 두 AI 합의를 표시하지 않습니다. Codex는 ChatGPT 인증 CLI의 지원 모델을 별도로 지정합니다. Claude는 선택적입니다. 실행 전에 사용할 CLI를 설치하고 로그인해야 합니다. 설치되어 있지 않거나 로그인할 수 없으면 결과가 생성되지 않습니다. 두 CLI를 선택하면 독립 검토 결과를 표시하며, 두 모델이 성공하면 LangGraph가 상대 의견을 한 번씩 재검토하고 이견을 비교합니다. 이 작업은 모델당 최대 2번 요청할 수 있으며 별도 비용·사용량이 발생할 수 있습니다. 실제 사용자의 최종 결정은 변경되지 않습니다.</p>
 <div class="ai" id="opinions"></div><div class="note" id="crossReview" role="status">교차검토 실행 전입니다.</div>
 </section>
 <section class="card"><div class="card-head"><h2>2. 필수 참가조건 확인</h2><span class="status">Hard Gate 8개</span></div>

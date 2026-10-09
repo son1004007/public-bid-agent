@@ -66,3 +66,9 @@ python scripts/check_documentation_sync.py
 
 **앱 코드/사용법/의존성 변경 커밋마다 루트 `README.md`와 이 README를 함께 갱신**합니다. GitHub CI에서 `scripts/check_documentation_sync.py`가 이를 확인합니다. 전체 아키텍처/패키지 변경 시 `docs/02-architecture.md`, `docs/DEPENDENCIES_AND_LICENSES.md`, `CURRENT_STATE.md`도 갱신합니다.
 > `requirements.txt`는 각 패키지/버전을 별도의 줄로 표기하며, LangGraph·LangChain Core 설치 결과를 CI에서 확인합니다.
+
+## Claude 없이 Codex만 사용하기
+
+Codex CLI 로그인(`codex login status`) 상태에서 화면의 Codex만 선택하고 Claude는 체크하지 않습니다. 자료를 등록하고 외부 제공자 전송에 동의한 뒤 AI 분석을 누르면 Codex를 1회 호출합니다. 근거 없는 값은 미검증으로 보관하며 사용자가 최종 결정을 내립니다. 이 모드에서는 교차검토가 없습니다.
+
+Windows에서는 npm의 `codex` 쉘 스크립트를 Python subprocess로 직접 실행하면 WinError 193이 발생하므로 `codex.cmd`를 사용합니다. 실행 명령은 `codex.cmd exec --ephemeral --ignore-user-config --ignore-rules -m gpt-5.6-terra --sandbox read-only --skip-git-repo-check -`입니다. 이 모델 지정은 앱 내부 호출에만 적용하고, 개인 Codex 설정 파일은 수정하지 않습니다.

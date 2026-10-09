@@ -180,3 +180,10 @@
 - UI에는 모델별 의견과 교차검토 이견/근거를 표시. 실제 모델 계정 연동/외부 요청 성공은 사용자 PC에서 검증 필요.
 - 전체 구조/실행방법 루트 README에 기록, 코드 변경 커밋 시 루트·로컬 README 동시 갱신 CI 차단 규칙 적용 (`scripts/check_documentation_sync.py`).
 - 새 테스트 결과/CI 상태는 해당 SHA의 실제 run 확인 후 표기, 독립 보안·사용자 최종 승인 미완료.
+
+## 2026-10-10 Codex 전용 검증 개발
+
+- Claude Code 유료 계정이 없는 환경을 지원하도록 Codex 단독 분석 모드 명확화. 기존 LangGraph의 단일 공급자 경로를 사용, 교차검토 상태는 만들어내지 않음.
+- 회사 노트북 실제 테스트에서 Windows `shutil.which('codex')`가 npm extensionless shim을 선택해 WinError 193 확인. `codex.cmd` 사용으로 수정.
+- 이어진 실제 CLI에서는 개인 기본 모델 `gpt-6.1-sol`이 ChatGPT 구독 인증 Codex에서 지원되지 않음을 확인. 사용자 설정을 변경하지 않고 프로젝트 호출에 `-m gpt-5.6-terra` 명시 및 임시 세션 `--ephemeral` 적용.
+- 실제 Codex 호출·AI JSON 생성/저장 E2E는 별도 시험 결과 확인 필요. 회사 정보 없이 합성 입찰만 사용.

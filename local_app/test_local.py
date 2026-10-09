@@ -63,6 +63,42 @@ class LogicTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             app.update_case(obj, {"factors": {"technical": {"score": 10, "evidence": "X", "verified": True}}})
 
+
+    def test_windows_codex_cmd_selected_instead_of_npm_shim(self):
+        from unittest.mock import patch
+        def exe(name):
+            return {"codex": r"C:\\Temp\\codex", "codex.cmd":r"C:\\Temp\\codex.cmd",
+                    "claude.exe":r"C:\\Temp\\claude.exe"}.get(name)
+        with patch.object(app.shutil, "which", side_effect=exe):
+            self.assertTrue(app.cli_executable("codex", windows=True).endswith("codex.cmd"))
+            self.assertTrue(app.cli_executable("claude", windows=True).endswith("claude.exe"))
+            self.assertTrue(app.cli_executable("codex", windows=False).endswith("codex"))
+
+    def test_codex_only_command_and_json_result(self):
+        import subprocess
+        from unittest.mock import patch
+        proc=subprocess.CompletedProcess([],0,stdout='{"recommendation":"hold","reason":"자료 부족"}',stderr="")
+        with patch.object(app,"cli_executable",return_value="codex.cmd"):
+            with patch.object(app.subprocess,"run",return_value=proc) as run:
+                result=app.call_cli("codex","합성 입찰")
+        self.assertEqual(result["status"],"success")
+        self.assertEqual(result["result"]["recommendation"],"hold")
+        self.assertFalse(result["result"]["gates"]["eligibility"]["verified"])
+        args=run.call_args.args[0]
+        self.assertEqual(args[0],"codex.cmd")
+        self.assertEqual(args[args.index("-m")+1],"gpt-5.6-terra")
+        self.assertIn("--sandbox",args)
+        self.assertIn("read-only",args)
+        self.assertIn("--ephemeral",args)
+
+    def test_cli_os_error_returns_failure_not_http_500(self):
+        from unittest.mock import patch
+        with patch.object(app,"cli_executable",return_value="codex.cmd"):
+            with patch.object(app.subprocess,"run",side_effect=OSError(193,"Bad executable")):
+                result=app.call_cli("codex","합성 자료")
+        self.assertEqual(result["status"],"error")
+        self.assertNotIn("Traceback",result["error"])
+
     def test_file_whitelist(self):
         self.assertEqual(app.ingest("example.md", "가상 자료".encode()), "가상 자료")
         with self.assertRaises(ValueError): app.ingest("config.py", b"print('hello')")
