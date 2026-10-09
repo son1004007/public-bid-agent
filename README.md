@@ -1,7 +1,17 @@
 # 공공 AI 입찰 분석 에이전트 (Public Bid Agent)
 
-> **프로젝트 상태: 애자일 Sprint 1 개발 브랜치 구현 중 (공개 배포 미완료)**  
+> **프로젝트 상태: UI 퍼블리싱 우선 설계 검증 단계 (사용자 화면 승인 전)**  
 > React/TypeScript + FastAPI 합성 공고 검색·상세 조회 코드와 pytest 테스트가 작성되었습니다. 로컬 백엔드 테스트 11개와 GitHub Actions 백엔드·프런트엔드 typecheck/build는 통과했습니다. 별도 독립 최종 검수·브라우저 E2E·공개 배포는 미완료입니다. 실제 나라장터 API 및 AI 추론은 아직 연결하지 않았습니다.
+
+## UI 화면 검증 우선 (2026-10-09 사용자 결정)
+
+현재는 백엔드 기능 추가 구현보다 **실제로 조작 가능한 퍼블리싱 화면을 먼저 제작·검토**합니다. 화면 검증을 통해 탐색 동선, 중요 정보, 빈 결과/오류, 모바일 사용성을 확인한 후 API/DB·인증·AI 기능의 상세 설계를 보완합니다.
+
+- [독립 실행 퍼블리싱 시안](frontend/public/ui-review.html): 실제 서버 없이 열 수 있는 합성 공고 8건 탐색/상세/보관함 화면
+- [화면 검증 가이드](docs/ui/SCREEN_REVIEW_GUIDE.md): 시연 순서 및 사용자 피드백 체크리스트
+- 현재 사용자 검토 상태: `UI_PROPOSED` / `USER_FEEDBACK_PENDING`. 기능 구현·보안 승인·서비스 배포와 별개.
+- 기존 FastAPI + React 코드는 보존하되 **추가 백엔드 구현보다 UI 검증·수정이 우선**입니다.
+- 공통 재사용 규칙은 [personal-engineering-handbook Draft PR #1](https://github.com/son1004007/personal-engineering-handbook/pull/1)에 독립 검수 대기 상태로 제안되었습니다.
 
 ## 프로젝트 소개
 
