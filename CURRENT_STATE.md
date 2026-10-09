@@ -79,3 +79,11 @@
 - 시안 조작: `가상 진행 사례 채우기`, `시안 초기화`; 브라우저 새로고침 시 자료가 사라진다. 회사 비공개 정보·실제 입찰 서류 입력 불가.
 - **검증 상태:** UI 소스 작성, GitHub PR CI/실제 브라우저 동작 및 모바일 QA 결과는 최신 실행 증거로 별도 판단. 사용자 화면 승인 및 AGY 독립 최종 검수는 여전히 `NOT RUN` / `UI_PROPOSED`.
 - 다음 작업: 화면의 검색, 참여 결정, 서류별 제출/접수, 점수 검증, 결과/회고, 모바일 동선에 대한 사용자 검증 → UI 수정 → 필요 데이터/API 계약 설계.
+
+## 2026-10-09 통합 입찰관리 UI CI 및 브라우저 검증 결과
+
+- GitHub Actions PR run [37904121398](https://github.com/son1004007/public-bid-agent/actions/runs/37904121398): frontend 타입 검사·Vite 빌드·3개 정적 HTML 검사 및 기존 backend pytest 모두 **PASS**.
+- GitHub Actions 아티팩트: `bid-management-ui-preview` (ID `11603641894`) / 외부 운영 배포가 아닌 다운로드 가능한 HTML 묶음.
+- HTML 3개를 CI 아티팩트에서 확보해 로컬 Chromium Playwright로 직접 시나리오 검증 **17/17 PASS**. 검사 항목: 8건 목록/집계, 가상 사례, 미참여 사유 필수, 제안서 접수 증빙 필수, 제안서/가격서 상태 독립, 점수 범위 및 출처, 회고 반영, 초기화, 콘솔 페이지 오류 0, 390px 모바일 가로 넘침 없음, 기존 목록의 새 화면 연결.
+- Chromium은 HTML 문서를 `page.set_content`로 로딩해 가상 사용자 조작을 확인했으며 로컬 HTTP 서버/공개 배포를 수행하지 않았다. 브라우저 E2E 전체 경로/Google OIDC/실제 나라장터/인증·권한은 테스트하지 않았다.
+- **UI 사용자 직접 검수: PENDING, 독립 최종 의미 검수: NOT RUN (REVIEW_DEBT)**. Draft PR #1 유지, `main` 병합 및 공개 운영 배포 미실행.

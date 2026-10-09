@@ -111,3 +111,9 @@
 - 미구현: 나라장터 로그인/투찰 확인, 실제 접수증 검증, 실시간 API, 서버 저장, 역할/권한, 실사용자 점수 자동 연동.
 - 실제 사용자 데이터/민감 접수번호는 데모에 입력하지 않는다.
 - 사용자 승인 전: `UI_PROPOSED / USER_FEEDBACK_PENDING`, 독립 코드 최종 검수 전: `REVIEW_DEBT`.
+
+## 최신 검증 증거 (2026-10-09)
+
+- [GitHub PR CI](https://github.com/son1004007/public-bid-agent/actions/runs/37904121398): Python 테스트, 프런트엔드 빌드, 퍼블리싱 HTML JS 정적 검사, 다운로드 아티팩트 작성 성공.
+- CI 아티팩트 `bid-management-ui-preview`에 목록, 이전 상세, 최신 통합 관리 HTML 3개를 제공한다. PC/모바일 브라우저에서 파일 자체를 열어 검토 가능하다.
+- Playwright Chromium 브라우저 시뮬레이션 17개 조작 PASS (코드 버전 `cbc397156ccec3b1c92cc50c206c74fec9f2d7a0`), 페이지 JS 오류 0, 모바일 가로 넘침 없음. 다만 사용자의 업무 적합성 평가는 **완료되지 않았다**.
