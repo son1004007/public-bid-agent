@@ -63,6 +63,7 @@ function renderInputs(){
   select.value=current.status;st.append(select);
   const ev=make("label","출처·근거(원문 조항/증빙)");const input=make("input");input.maxLength=400;input.dataset.gateEvidence=key;input.value=current.evidence;ev.append(input);
   const verify=make("label","내가 확인함");verify.className="verify";const cb=make("input");cb.type="checkbox";cb.dataset.gateVerify=key;cb.checked=current.verified;verify.prepend(cb);
+  [select,input].forEach(e=>e.addEventListener("input",()=>{cb.checked=false}));
   layout.append(st,ev,verify);item.append(layout);gg.append(item);
  });
  factors.forEach(([key,title,weight])=>{
@@ -73,6 +74,7 @@ function renderInputs(){
   select.value=current.score===null?"":String(current.score);st.append(select);
   const ev=make("label","출처·판단 근거");const input=make("input");input.maxLength=400;input.dataset.factorEvidence=key;input.value=current.evidence;ev.append(input);
   const verify=make("label","내가 확인함");verify.className="verify";const cb=make("input");cb.type="checkbox";cb.dataset.factorVerify=key;cb.checked=current.verified;verify.prepend(cb);
+  [select,input].forEach(e=>e.addEventListener("input",()=>{cb.checked=false}));
   layout.append(st,ev,verify);item.append(layout);ff.append(item);
  });
 }
