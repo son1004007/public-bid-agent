@@ -46,6 +46,16 @@ function render(){
   }else article.append(make("p",report.status+": "+(report.error||"결과 없음")));
   opinions.append(article);
  });
+ const peer=active.cross_review||{};
+ if(peer.status){
+   const summary=["교차검토: "+peer.status,"의견 일치 "+(peer.agreements||[]).length+"건 · 이견 "+(peer.disagreements||[]).length+"건",peer.notice||""];
+   (peer.disagreements||[]).slice(0,10).forEach(d=>summary.push(d.category+" / "+d.key+" : "+JSON.stringify(Object.fromEntries((peer.participants||[]).map(p=>[p,d[p]])))));
+   (peer.participants||[]).forEach(p=>{
+     const critique=peer.critiques?.[p];
+     summary.push(p+" 상대 의견 재검토: "+(critique?.status||"실행 안 됨")+(critique?.result?" · "+(critique.result.reason||""):""));
+   });
+   el("crossReview").textContent=summary.join("\n");
+ }else el("crossReview").textContent="교차검토 실행 전입니다.";
  renderInputs();
  el("decision").value=active.decision;el("reason").value=active.reason;
  const gateFail=gates.filter(([key])=>active.gates[key].verified&&active.gates[key].status==="fail").map(x=>x[1]);
@@ -124,7 +134,7 @@ el("analyze").addEventListener("click",()=>act(async()=>{
  const saved=await api("save",{id:active.id,prompt:el("prompt").value});
  active=saved.case;
  const v=await api("analyze",{id:active.id,providers,consent:true});
- active=v.case;render();message("AI 응답 확인이 끝났습니다. 실패/미설치일 경우 모델별 메시지를 확인하세요. AI 제안은 아직 사람이 검증하지 않았습니다.");
+ active=v.case;render();message("LangGraph 교차검토 실행이 끝났습니다. 이견을 확인하고 최종 참여 여부는 사용자가 선택하세요. AI 초안은 미검증입니다.");
 }));
 el("adopt").addEventListener("click",()=>act(async()=>{
  const draft=active.ai_draft;if(!draft||!draft.gates)throw Error("적용할 AI 초안이 없습니다");

@@ -151,3 +151,11 @@ TypeScript/TSX 예시:
 - HWP 계열은 Apache-2.0 `python-hwpx` 또는 HWPX OWPML XML 파서 기준. AGPL3 `pyhwp`는 공개 저장소의 기본 의존성으로 추가하지 않음.
 - 이미지 스캔 PDF는 사용자 PC에 Tesseract와 `kor` 언어팩이 있을 때 로컬 OCR만 수행. AI 공급자로의 자료 전송은 별도 사용자 동의 뒤 실행.
 - AI가 OCR 문자를 완전/정확하다고 가정하지 않으며 입찰자격/마감/평가점수는 최종 원문 대조 필요.
+
+## 최신 필수 규칙: README 동기화 및 승인된 개발 버전 (2026-10-09)
+
+- Python 기준 실행/CI 환경은 **CPython 3.12.x**이며 `.python-version` 및 README 설치 문서에 일치시킨다. 새 버전 공식/CI 검증 후에만 지원 범위를 바꾼다.
+- **코드/패키지/UI/API 계약 수정 커밋마다 루트 `README.md`와 `local_app/README.md`를 같은 커밋에서 동기화한다.** `scripts/check_documentation_sync.py`가 GitHub CI에서 검증한다. 문서의 실제 정확성은 별도 코드 검토 대상으로 둔다.
+- 구조/의존성 변경 시 `docs/02-architecture.md`, `docs/DEPENDENCIES_AND_LICENSES.md`, `CURRENT_STATE.md`, `TASKS.md`의 해당 부분도 갱신한다.
+- 로컬 LangGraph: 독립 모델 2개 -> 상대 의견 검토 각 1회 -> 이견 비교; 사용자 최종 결정은 변경하지 않는다. 외부 모델 전송에 매번 명시적 동의가 필요하다.
+- 모델별 CLI 인증, 외부 계약, OCR/문서 악성 입력, 하위 의존성/바이너리 재배포 고지는 코드 라이선스 호환성과 별도 검증한다.

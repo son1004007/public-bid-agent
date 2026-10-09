@@ -5,4 +5,5 @@ xlrd>=2.0.2,<3
 pypdfium2>=4.30,<6
 Pillow>=11,<13
 pytesseract>=0.3.13,<1
-python-hwpx>=6.6,<7
+python-hwpx>=6.6,<7langgraph>=1.2.14,<1.3
+langchain-core>=1.4.7,<2

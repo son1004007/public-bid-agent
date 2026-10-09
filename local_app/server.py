@@ -6,6 +6,7 @@
 불변: AI가 법적 자격·낙찰률/사용자 최종결정을 확정하거나 덮어쓰지 않는다.
 """
 import base64
+import copy
 import io
 import json
 import os
@@ -78,7 +79,7 @@ def create_case(title):
   "created":now(),"prompt":"","documents":[],
   "gates":{key:{"status":"unknown","evidence":"","verified":False} for key,_ in GATES},
   "factors":{key:{"score":None,"evidence":"","verified":False} for key,_,_ in FACTORS},
-  "ai_reports":{},"ai_draft":{},"decision":"undecided","reason":"","history":[]
+  "ai_reports":{},"ai_draft":{},"cross_review":{},"decision":"undecided","reason":"","history":[]
  }
 
 def find_case(data,ident):
@@ -256,6 +257,36 @@ class Handler(BaseHTTPRequestHandler):
     raise ValueError("본문 JSON 최대 4MB")
    payload=json.loads(self.rfile.read(size))
    if not isinstance(payload,dict): raise ValueError("JSON 객체만 지원")
+   if self.path=="/api/analyze":
+    providers=payload.get("providers")
+    if (not isinstance(providers,list) or not providers or len(providers)>2
+        or set(providers)-{"codex","claude"} or len(set(providers))!=len(providers)):
+     raise ValueError("codex/claude 중 하나 또는 둘만 선택")
+    if payload.get("consent") is not True:
+     raise ValueError("AI 제공자에게 전송 동의 필요")
+    with LOCK:
+     data=load()
+     case=find_case(data,payload.get("id"))
+     if case is None: raise ValueError("알 수 없는 공고 ID")
+     if not case["prompt"].strip() and not case["documents"]:
+      raise ValueError("분석할 문서/설명 없음")
+     # 외부 호출 동안 다른 사용자가 로컬 UI를 사용할 수 있도록 잠금을 풀되,
+     # 원문이 변한 경우 오래된 분석 결과 저장을 거부한다.
+     snapshot=copy.deepcopy(case)
+    from cross_review import execute_cross_review
+    result=execute_cross_review(prompt_for(snapshot),providers,call_cli)
+    with LOCK:
+     data=load()
+     case=find_case(data,payload.get("id"))
+     if case is None: raise ValueError("공고가 삭제되었습니다")
+     if case["prompt"]!=snapshot["prompt"] or case["documents"]!=snapshot["documents"]:
+      return self.respond({"error":"분석 중 원문이 변경되었습니다. 다시 실행하세요"},409)
+     case["ai_reports"]={p:{**v,"at":now()} for p,v in result["independent"].items()}
+     case["cross_review"]={**result["comparison"],"critiques":result["critiques"],"at":now()}
+     ok=[p for p in providers if case["ai_reports"][p].get("status")=="success"]
+     case["ai_draft"]=case["ai_reports"][ok[0]]["result"] if ok else {}
+     persist(data)
+     return self.respond({"ok":True,"case":case,"summary":summary(case)})
    with LOCK:
     data=load()
     if self.path=="/api/new":
@@ -275,19 +306,6 @@ class Handler(BaseHTTPRequestHandler):
                                 "method":extracted["method"],"warnings":extracted["warnings"],
                                 "truncated":extracted["truncated"],"characters":extracted["characters"],
                                 "added":now()})
-     elif self.path=="/api/analyze":
-      providers=payload.get("providers")
-      if not isinstance(providers,list) or not providers or len(providers)>2 or set(providers)-{"codex","claude"} or len(providers)!=len(set(providers)):
-       raise ValueError("codex/claude 중 하나 또는 둘만 선택")
-      if payload.get("consent") is not True: raise ValueError("AI 제공자에게 전송 동의 필요")
-      if not case["prompt"].strip() and not case["documents"]: raise ValueError("분석할 문서/설명 없음")
-      input_text=prompt_for(case)
-      for provider in providers:
-       case["ai_reports"][provider]={**call_cli(provider,input_text),"at":now()}
-      for provider in providers:
-       if case["ai_reports"][provider]["status"]=="success":
-        case["ai_draft"]=case["ai_reports"][provider]["result"]
-        break
      elif self.path=="/api/decide":
       decision=payload.get("decision")
       if decision not in ("undecided","bid","hold","no_bid"): raise ValueError("결정 값 오류")

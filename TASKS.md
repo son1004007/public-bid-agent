@@ -6,6 +6,19 @@
 - `[x]`는 문서 작성/수정 같은 해당 작업의 완료만 뜻하며, 코드 실행·제품 기능 완료를 뜻하지 않는다.
 - 세부 완료 조건 및 검수 부채는 [애자일 개발 기준](docs/07-agile-development-workflow.md)을 따른다.
 
+## 최신: Python 3.12·라이선스·LangGraph 및 README 연동 (2026-10-09)
+
+- [x] CI Python 3.12 기준과 `.python-version`/설치 가이드 일치
+- [x] 주요 직접 패키지와 Tesseract/PDFium/React 라이선스 및 재배포 조건 공식 근거 문서화
+- [x] 루트 README에 실사용 아키텍처·설치·데이터/보안/AI 경계·실행 절차·테스트 정리
+- [x] 코드 변경 시 루트/로컬 README 동시 갱신 CI 게이트 추가
+- [x] LangGraph 독립분석/상대 한 차례 검토/의견 비교 구현 및 사용자 최종 결정 분리
+- [ ] 신규 그래프/README 동기화/원본 변경 경합 CI·브라우저 검사 결과 확인
+- [ ] 실제 사용자 PC Codex+Claude CLI 인증 후 외부 전송 동의·JSON 결과 재현
+- [ ] 라이선스 전체 전이 의존성 SBOM/배포 바이너리 NOTICE 확인 (운영 공개 전 필수)
+- [ ] LangGraph 영속 checkpointer, Human-in-the-loop 내장 interrupt/재개, RAG/citation 의미검증, 인증/타임아웃·CLI 토큰 제약
+- [ ] 독립 보안·설계 최종 검수 (REVIEW_DEBT), 사용자 UI 승인
+
 ## 완료된 설계·준비 작업
 
 - [x] 공개 GitHub 저장소/Apache-2.0 라이선스 및 제3자 데이터 조건 구분

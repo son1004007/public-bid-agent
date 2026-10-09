@@ -170,3 +170,13 @@
 - `python -m unittest discover -s local_app -p 'test_*.py' -v`: **19 PASS / 0 SKIP**. 한국어 Tesseract 설치 후 스캔 PDF OCR, HWP 5.x 바이너리 생성/재추출, XLS 및 XLSX, HWPX, PDF, HTTP 파일 저장, ZIP 압축 제약 포함.
 - CI의 `local-python-bid-agent` 산출물에 실행 코드, 의존성, README, 테스트 파일 모두 포함.
 - 실제 기관별 대용량 RFP의 일부 이미지/복잡한 표, OCR 숫자 인식 정확도, 사용자 로컬 Codex/Claude CLI 계정 인증은 미검증. OS sandbox·AGY 독립 보안검수, 사용자 화면 승인, main 병합 및 인터넷 운영 배포도 별도 게이트.
+
+## 2026-10-09 Python/라이선스 점검 및 로컬 2-AI 그래프
+
+- 기준 인터프리터: CPython 3.12.x. GitHub Actions 3.12, `.python-version` 3.12, 루트/로컬 README 가상환경 명령 통일. 3.12.15 보안 릴리스는 source-only로 Windows 바이너리 설치 가이드는 공식 가용성 주의.
+- 직접 의존성 Apache-2.0 호환성 점검: BSD/MIT/Apache-2.0/PIL MIT-CMU. PDFium 포함 패키지/전이 의존성 재배포 NOTICE는 별도 게이트. 공식 링크 `docs/DEPENDENCIES_AND_LICENSES.md`.
+- `local_app/cross_review.py`에 실제 LangGraph StateGraph 독립 분석 → 상대 의견 재검토 최대 1회씩 → 기계적 이견/공통점 비교 로직 추가. LangChain Core ChatPromptTemplate 활용.
+- `/api/analyze`는 사용자 동의 검증 후 그래프 실행. 분석 중 JSON 파일 lock을 놓고, 원문이 변경된 경우 오래된 결과를 거부. AI 결과는 미검증 초안이며 사용자 최종 결정 자동 변경 금지.
+- UI에는 모델별 의견과 교차검토 이견/근거를 표시. 실제 모델 계정 연동/외부 요청 성공은 사용자 PC에서 검증 필요.
+- 전체 구조/실행방법 루트 README에 기록, 코드 변경 커밋 시 루트·로컬 README 동시 갱신 CI 차단 규칙 적용 (`scripts/check_documentation_sync.py`).
+- 새 테스트 결과/CI 상태는 해당 SHA의 실제 run 확인 후 표기, 독립 보안·사용자 최종 승인 미완료.

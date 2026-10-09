@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -30,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -39,6 +43,8 @@ jobs:
       - name: Typecheck and build
         working-directory: frontend
         run: npm run build
+      - name: README synchronization gate
+        run: python scripts/check_documentation_sync.py
       - name: Local app JavaScript syntax
         run: node --check local_app/app.js
       - name: Static publishing preview syntax and boundaries
@@ -64,6 +70,7 @@ jobs:
           name: local-python-bid-agent
           path: |
             local_app/server.py
+            local_app/cross_review.py
             local_app/extractors.py
             local_app/index.html
             local_app/app.js
@@ -72,5 +79,8 @@ jobs:
             local_app/test_extractors.py
             local_app/README.md
             local_app/test_local.py
+            local_app/test_cross_review.py
+            docs/DEPENDENCIES_AND_LICENSES.md
+            README.md
           if-no-files-found: error
           retention-days: 14

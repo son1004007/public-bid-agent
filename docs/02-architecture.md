@@ -1,3 +1,46 @@
+# Public Bid Agent 아키텍처 및 구현 경계
+
+> 최신 구조는 프로젝트 루트 [README.md](../README.md)의 2절을 먼저 읽습니다. 이 문서는 상세 구조와 미완료 게이트를 설명합니다. 기준일: 2026-10-09.
+
+## 1. 실제 구현: 개인 컴퓨터 로컬 우선 구조
+
+- **UI**: 사용자 PC 브라우저에서 로컬 `http://127.0.0.1:8765/`로 접속하는 HTML/JavaScript.
+- **서버**: `local_app/server.py` 표준 Python HTTP 서버. Host 검증/Origin/CSRF, JSON 파일 원자 저장.
+- **파일**: 최대 10MiB 인입 → 로컬 `extractors.py` 별도 프로세스/포맷 검사/리소스 상한 → 텍스트·오류/한도 메타데이터 반환. OCR은 로컬 Tesseract+한국어 모델 사용.
+- **분석**: 사용자가 동의한 provider 목록만 LangGraph StateGraph로 실행.
+  1. `independent_analysis`: Codex/Claude CLI의 독립 JSON 분석. 한 모델도 실패했다면 가짜 결과 생성 금지.
+  2. `peer_critique`: 모두 성공했을 때만 다른 AI의 JSON을 비신뢰 주장으로 취급해 모델별 최대 한 차례 재검토.
+  3. `evidence_comparison`: 각 원문 관련 Gate/평점/참여 의견의 값 일치·불일치 목록 및 검증 필요 상태 기계적 추출. 일치해도 참이라는 확증 아님.
+- **사람**: AI 결과는 기본 `verified=false`인 영향인자 초안. 사용자가 원문을 확인한 값만 수동 확정. 참여/보류/미참여는 사용자만 결정.
+- **저장소**: `~/.public-bid-agent-local/cases.json` (앱의 업무 데이터만). 업로드 원본은 영구 보관하지 않으나 추출 텍스트는 저장됨. 선택된 모델 CLI 자체 로그/보관은 별도 영역.
+- **정확성**: AI/규칙 결과 `Y1`과 실제 사용자 결정 `Y2`, 실제 입찰·낙찰 결과 `Y3`는 다른 종속변수로 취급. 현재 8개 Hard Gate, 12개 Soft Factor 가중치는 시험용이며 수주 확률이 아님.
+
+## 2. 서비스 경계 및 보안 고려
+
+- 인증: 로컬 단일 사용자 실행에 한정. 외부 웹서비스 인증/OAuth, 사용자별 원격 구독 동의는 미구현.
+- 모델 외부 전송: 사용자 동의 **후에만** CLI 실행. 프롬프트/파일 추출 내용은 업체 서비스로 송신됨. 기업 비공개 자료에는 별도 회사 정책·승인이 필요.
+- 문서와 모델의 출력은 모두 비신뢰 데이터. 자동 원문 의미 검증·법적 적격 확정·계약 자동 체결 없음.
+- 로컬 JSON 평문/AI CLI 캐시 저장은 PC 사용자의 백업·암호화 대상. OS sandbox 완전 격리나 모델 API 비용·계약 보호 미구현.
+- LangGraph **이번 구현**은 상태 단계 조정이며 **영속 checkpointer/Human-in-the-loop 내장 interrupt, 공식 API를 이용한 RAG와 비동기 작업큐는 추후 구현**. 사용자 결정은 현재 별도 HTTP 입력으로 반영.
+
+## 3. 기존 React/FastAPI 설계 자산 (별도)
+
+- `frontend/` React/TypeScript/Vite: 합성 공고 목록·입찰관리·AI 계정 선택 퍼블리싱 시안. 실제 Codex/Claude OAuth 연결 아님.
+- `backend/` FastAPI: 합성 공고 조회 API와 테스트. 로컬 앱의 저장소/JSON을 사용하는 통합 배포 서비스 아님.
+- 향후 공개 서비스 후보: React → FastAPI BFF (실사용자 인증) → 공공 입찰 공식 API/문서 격리 파서 → RAG → LangGraph 검토 → PostgreSQL. 사용자 요구의 **로컬 전용 데이터**와 충돌하지 않도록 별도 합의 전 운영 전환하지 않음.
+
+## 4. 갱신과 검수 게이트
+
+코드·라이브러리·API 변경이 있는 커밋마다 루트 및 `local_app/README.md` 동반 갱신을 CI로 강제합니다. 이 문서의 실제 구조와 코드도 동기화해야 합니다. [라이선스 검토](DEPENDENCIES_AND_LICENSES.md)의 SPDX/재배포 고지 의무를 확인합니다.
+
+필요한 다음 검증: 실제 사용자 PC CLI 인증/2모델 요청, LangGraph 오류/타임아웃/문서 변경경합, 파서 샌드박스, 원문 citation 의미검사, 영속 상태 재개/취소, 실제 RFP OCR 평가, GitHub 독립 최종 코드 검수.
+
+---
+
+## 이전 공공 웹서비스 목표 아키텍처 (참고·미구현)
+
+다음 내용은 초기 React/FastAPI 중심의 장기 설계 기준선입니다. **현재 로컬 앱의 구현 현황을 설명하지 않으며**, 실제 공개 배포/Google 인증/PostgreSQL/RAG 전환에 관한 새로운 승인 없이는 적용하지 않습니다.
+
 # 02 아키텍처 설계
 
 ## 현재 상태
