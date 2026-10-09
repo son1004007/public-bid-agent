@@ -91,6 +91,17 @@ td small{color:#8998ab}.row-link{border:0;background:none;color:#205fbf;text-ali
 .submission-box h3{margin:0 0 12px}.submission-box .fields{grid-template-columns:1fr}
 .score-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .score{background:#f0f5fd;border:1px solid #dfeaf9;border-radius:10px;padding:15px}
+.factor-row{border:1px solid #dbe6f2;border-radius:11px;background:#fbfcff;padding:16px;margin:11px 0}
+.factor-row-head{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.factor-row-head strong{font-size:13px;color:#2d486b}.factor-row-head small{color:#8394a9;font-size:11px}
+.factor-controls{display:grid;grid-template-columns:170px 180px minmax(0,1fr);gap:10px;align-items:end}
+.factor-controls label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:#55708f;font-weight:800}
+.factor-controls input,.factor-controls select{border:1px solid #cbd8e8;border-radius:8px;padding:9px 10px;color:#27415f;max-width:100%;min-width:0}
+.factor-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:13px 0}
+.factor-progress div{border:1px solid #dde7f4;border-radius:9px;background:#f1f6ff;padding:12px}
+.factor-progress small{display:block;color:#7690ab;font-size:11px}.factor-progress strong{display:block;color:#285483;font-size:19px}
+.factor-guard{background:#fff8e9;color:#805e22;border-left:3px solid #e4b35e;padding:11px 14px;border-radius:6px;font-size:12px;margin:14px 0}
+@media(max-width:700px){.factor-controls{grid-template-columns:1fr}.factor-progress{grid-template-columns:1fr 1fr}}
 .score small{color:#6983a2;font-size:11px}.score strong{display:block;font-size:22px;font-variant-numeric:tabular-nums}
 .list{padding-left:21px;color:#4f6685;font-size:13px;line-height:2}
 .hidden{display:none!important}
@@ -163,14 +174,40 @@ const notices=[
 {id:"m7",category:"SW",title:"[합성] 사용자 인증·업무 연계 고도화",org:"가상 공공기관 G",tags:["Security","Spring","OAuth"],needs:["권한 검토","인증 연계","사용자 이력"]},
 {id:"m8",category:"AI",title:"[합성] 민원 AI 답변 보조 시스템",org:"가상 공공기관 H",tags:["LLM","RAG","Python"],needs:["답변 근거 표시","최신성 검증","담당자 검토"]}
 ];
-const TABS=[["overview","공고 개요"],["decision","참여 결정"],["submission","제출 확인"],["outcome","낙찰·계약"],["score","평가 점수"],["retro","회고"]];
+const TABS=[["overview","공고 개요"],["factors","영향인자 평가"],["decision","참여 결정"],["submission","제출 확인"],["outcome","낙찰·계약"],["score","평가 점수"],["retro","회고"]];
 const $=id=>document.getElementById(id);
 const el=(tag,cls,txt)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(txt!==undefined)x.textContent=txt;return x};
 const add=(p,tag,cls,txt)=>{const x=el(tag,cls,txt);p.append(x);return x};
 const states=new Map();
 let route="dashboard",tab="overview",current="m1";
 function newSubmission(){return {required:"unknown",status:"unknown",evidence:"none",verifiedAt:""}}
-function newRecord(){return {decision:"undecided",noBidReason:"",owner:"",internalDeadline:"",stage:"identified",decisionNote:"",technical:newSubmission(),price:newSubmission(),opening:"unknown",winnerName:"",companyResult:"unknown",contract:"unknown",resultSource:"unknown",techScore:"",techMax:"",priceScore:"",priceMax:"",scoreSource:"unknown",lossReason:"unknown",improvements:"",nextAction:""}}
+const GATE_FACTORS=[
+ {key:"eligibility",name:"공고별 참가자격·입찰 등록",detail:"공고 원문에 명시된 공통·제한적격 충족 여부"},
+ {key:"certification",name:"업종·면허·인증 요건",detail:"입찰에 명시된 증빙만 확인, 요구되지 않으면 해당 없음"},
+ {key:"references",name:"필수 실적·핵심인력·재무 요건",detail:"실적증명서, 투입인력, 요구된 경영상태 기준"},
+ {key:"consortium",name:"공동수급·하도급 및 참여 제한",detail:"필요한 경우 공동수급 허용 여부와 배제 사유 확인"},
+ {key:"schedule",name:"제안서·가격서 제출 마감/방법",detail:"실제 제출에 필요한 시간 및 서류 확보 가능"},
+ {key:"contract",name:"수행·보안·계약상 치명적 제한",detail:"수행 장소, 보안 인증, 책임·지체상금 등 수용 가능한지"}
+];
+const SCORE_FACTORS=[
+ {key:"technology",name:"기술 적합성",weight:20,detail:"요구 기능을 구현하고 검증할 수 있는가"},
+ {key:"pastPerformance",name:"유사 사업 실적",weight:15,detail:"공고 성격·발주기관과 관련된 입증 가능한 실적"},
+ {key:"staffCapacity",name:"가용 인력·수행 역량",weight:15,detail:"핵심 인력 확보, 일정 준수, 협력사 실행 가능성"},
+ {key:"economics",name:"수익성·현금흐름",weight:15,detail:"예상 원가와 투찰 준비 비용을 고려한 경제성"},
+ {key:"competition",name:"경쟁 우위",weight:10,detail:"경쟁자·기존 사업자·차별화 요소 (불명이면 미확인)"},
+ {key:"strategy",name:"전략·고객 적합성",weight:10,detail:"사업 방향과 고객사 요구의 일치 여부"},
+ {key:"readiness",name:"제안 준비 여력",weight:10,detail:"RFP 이해와 제출 기한 내 제안 품질 확보"},
+ {key:"risk",name:"위험 통제 가능성",weight:5,detail:"기술/운영/계약 위험이 낮고 통제 가능할수록 높은 점수"}
+];
+function newFactorRow(){return {status:"unknown",source:"unknown",note:""}}
+function newScoreRow(){return {score:"",source:"unknown",note:""}}
+function newFactorRecord(){return {
+ gates:Object.fromEntries(GATE_FACTORS.map(f=>[f.key,newFactorRow()])),
+ scores:Object.fromEntries(SCORE_FACTORS.map(f=>[f.key,newScoreRow()])),
+ estimatedRevenue:"",estimatedDeliveryCost:"",estimatedBidCost:"",
+ technicalWeight:"",priceWeight:"",assumptions:"",saved:false
+}}
+function newRecord(){return {factors:newFactorRecord(),decision:"undecided",noBidReason:"",owner:"",internalDeadline:"",stage:"identified",decisionNote:"",technical:newSubmission(),price:newSubmission(),opening:"unknown",winnerName:"",companyResult:"unknown",contract:"unknown",resultSource:"unknown",techScore:"",techMax:"",priceScore:"",priceMax:"",scoreSource:"unknown",lossReason:"unknown",improvements:"",nextAction:""}}
 function getRecord(id=current){if(!states.has(id))states.set(id,newRecord());return states.get(id)}
 function notice(){return notices.find(n=>n.id===current)||notices[0]}
 function statusBadge(v){const names={undecided:"미결정",bid:"참여 결정","no-bid":"미참여",unknown:"미확인","self-reported":"제출 주장(수기)","receipt-sighted":"접수증 확인(수기)",submitted:"제출 수기 기록",won:"수주 수기 기록",lost:"미선정 수기 기록","no-result":"유찰·취소 확인 필요",identified:"공고 발굴",review:"요건 검토",proposal:"제안서 준비",opening:"개찰",result:"결과 확인",yes:"필수(가정)",no:"대상 아님(가정)"};return names[v]||"미확인"}
@@ -224,6 +261,135 @@ function renderDashboard(){
  add(tr,"td","",submissionSummary(r));add(tr,"td","",statusBadge(r.companyResult));
  const link=add(tr,"td");const btn=add(link,"button","row-link","상세 관리 →");btn.type="button";btn.addEventListener("click",()=>open(n.id))});
 }
+
+/** 결정 지원 정보: 추정 수치와 실제 수주 확률을 혼동하지 않도록 미확인/미충족을 독립 처리한다. */
+function factorProjection(r){
+ const f=r.factors||newFactorRecord(),gates=GATE_FACTORS.map(x=>f.gates[x.key]);
+ const missingGate=gates.filter(x=>x.status==="unknown").length;
+ const unmet=gates.filter(x=>x.status==="fail").length;
+ const ratings=SCORE_FACTORS.map(x=>({weight:x.weight,...f.scores[x.key]}));
+ const done=ratings.filter(x=>x.score!=="").length;
+ const eligible=unmet===0&&missingGate===0;
+ const index=eligible&&done===SCORE_FACTORS.length?Math.round(ratings.reduce((sum,x)=>sum+Number(x.score)*x.weight/5,0)):null;
+ let label="입력 전",reason="필수조건과 평가 항목을 입력해 주세요.";
+ if(unmet){label="필수조건 미충족 입력";reason="미충족 항목을 원문·담당자와 확인하고 해결 가능성(예: 허용된 공동수급)을 검토하세요."}
+ else if(missingGate){label="필수조건 확인 필요";reason="충족 여부가 확인되지 않은 항목이 있으므로 참여 권고 점수를 확정하지 않습니다."}
+ else if(done<SCORE_FACTORS.length){label="정성 평가 미완료";reason="임의로 미확인 값을 0점 처리하지 않고 분석을 보류합니다."}
+ else{label=index>=75?"참여 검토 후보":index>=55?"추가 검토 후보":"미참여·개선 검토 후보";
+ reason="가중치/기준선은 검증되지 않은 화면 예시입니다. 통계적 수주 확률이나 법적 적격 판정이 아닙니다."}
+ return {label,reason,missingGate,unmet,done,index};
+}
+function showFactorProjection(p,r){
+ const z=factorProjection(r),f=r.factors;
+ title(p,"사전 영향인자 확인 상태");
+ const summary=add(p,"div","factor-progress");
+ for(const [label,value] of [["필수조건 확인",String(GATE_FACTORS.length-z.missingGate)+"/"+GATE_FACTORS.length],["평가항목 입력",z.done+"/"+SCORE_FACTORS.length],["예시 가중지표",z.index===null?"미산출":z.index+"/100"]]){
+ const cell=add(summary,"div");add(cell,"small","",label);add(cell,"strong","",value)}
+ note(p,z.label+" — "+z.reason,z.unmet||z.missingGate?"warning":"info");
+ if(!f.saved)paragraph(p,"아직 입력·저장된 영향인자가 없습니다. 실제 입찰 참여 자격을 확인한 상태가 아닙니다.");
+ const ai=add(p,"div","submission-grid");
+ for(const [name,detail] of [["Codex 분석","실제 모델 미연결: 독립 의견 없음"],["Claude 분석","실제 모델 미연결: 독립 의견 없음"]]){
+ const b=add(ai,"div","submission-box");title(b,name);paragraph(b,detail)}
+ paragraph(p,"향후 두 AI는 이 평가 입력의 스냅샷과 동일한 RFP 근거를 검토합니다. 각 의견·반론·근거를 따로 표시하고 사용자 최종 결정은 별도로 기록합니다.");
+}
+function factorSelect(parent,label,options,currentValue){
+ const w=add(parent,"label");add(w,"span","",label);
+ const s=add(w,"select");options.forEach(([value,text])=>{const option=add(s,"option","",text);option.value=value});
+ s.value=currentValue;s.setAttribute("aria-label",label);return s
+}
+function factorText(parent,label,currentValue){
+ const wrap=add(parent,"label");add(wrap,"span","",label);
+ const x=add(wrap,"input");x.type="text";x.maxLength=180;x.value=currentValue;x.setAttribute("aria-label",label);return x
+}
+function factorNumber(parent,label,currentValue){
+ const wrap=add(parent,"label");add(wrap,"span","",label);
+ const x=add(wrap,"input");x.type="number";x.min="0";x.step="0.01";x.value=currentValue;x.setAttribute("aria-label",label);return x
+}
+function renderFactorInputs(p,r){
+ const existing=r.factors||newFactorRecord();
+ title(p,"공고별 참여 판단 독립변수 (입력 시안)");
+ note(p,"공고별 요구조건이 다릅니다. 아래 항목은 모든 입찰에 적용되는 법적 필수사항 목록이 아니라 확인용 체크리스트입니다. '미확인'과 '해당 없음'을 구분하고, 입력한 근거를 AI 의견과 함께 보관하도록 설계합니다.","warning");
+ const heading=add(p,"div","factor-progress");
+ const before=factorProjection(r);
+ for(const [label,value] of [["필수조건 확인",String(GATE_FACTORS.length-before.missingGate)+"/"+GATE_FACTORS.length],["정성평가 입력",before.done+"/"+SCORE_FACTORS.length],["권고 지표",before.index===null?"미산출":before.index+"/100"]]){
+  const b=add(heading,"div");add(b,"small","",label);add(b,"strong","",value)}
+ const root=add(p,"form");root.noValidate=true;
+ title(root,"1. 필수 참가·제출조건 (Gate)");
+ paragraph(root,"미충족이 있으면 점수를 계산해 입찰을 정당화하지 않습니다. 모든 충족/미충족/해당없음은 반드시 출처 유형을 지정합니다.");
+ const gates={};
+ for(const x of GATE_FACTORS){
+  const old=existing.gates[x.key];
+  const row=add(root,"div","factor-row");const heading=add(row,"div","factor-row-head");
+  add(heading,"strong","",x.name);add(heading,"small","",x.detail);
+  const controls=add(row,"div","factor-controls");
+  const status=factorSelect(controls,x.name+" 확인상태",[
+  ["unknown","미확인"],["pass","충족(수기)"],["fail","미충족(수기)"],["na","해당 없음(원문 확인)"]],old.status);
+  const source=factorSelect(controls,x.name+" 근거 종류",[
+  ["unknown","근거 없음"],["notice","공고문/RFP 조항 확인"],["agency","발주기관 안내 확인"],["internal","내부 증빙·담당자 수기"]],old.source);
+  const detail=factorText(controls,x.name+" 근거 메모 / 조항",old.note);
+  gates[x.key]={status,source,detail};
+ }
+ title(root,"2. 수행·경쟁력 요인 (가중 평가)");
+ paragraph(root,"각 항목은 1~5의 자체 평가이며, 높을수록 긍정적입니다. 가중치는 화면 시연을 위한 예시(합계 100)이고, 수주 확률로 해석하지 않습니다.");
+ const scores={};
+ for(const x of SCORE_FACTORS){
+  const old=existing.scores[x.key];const row=add(root,"div","factor-row");const h=add(row,"div","factor-row-head");
+  add(h,"strong","",x.name+" · 예시 가중치 "+x.weight+"%");add(h,"small","",x.detail);
+  const controls=add(row,"div","factor-controls");
+  const rating=factorSelect(controls,x.name+" 자체 평점",[
+    ["","미확인"],["1","1 - 매우 낮음"],["2","2 - 낮음"],["3","3 - 보통"],["4","4 - 높음"],["5","5 - 매우 높음"]],old.score);
+  const source=factorSelect(controls,x.name+" 근거 유형",[
+    ["unknown","근거 없음"],["notice","공고문/RFP"],["agency","발주기관 공개/통보"],["internal","내부 예측·수기"]],old.source);
+  const detail=factorText(controls,x.name+" 산정 근거",old.note);scores[x.key]={rating,source,detail};
+ }
+ title(root,"3. 투입 비용과 공고별 평가 배점 (선택)");
+ paragraph(root,"금액 단위는 만 원입니다. 금액은 임의 입력 예시이며 수익 전망·낙찰가격을 예측하지 않습니다.");
+ const money=add(root,"div","fields");
+ const revenue=factorNumber(money,"예상 계약 매출액 (만원)",existing.estimatedRevenue);
+ const cost=factorNumber(money,"예상 수행 원가 (만원)",existing.estimatedDeliveryCost);
+ const bidCost=factorNumber(money,"제안·투찰 준비 비용 (만원)",existing.estimatedBidCost);
+ const techWeight=factorNumber(money,"공고상 기술평가 배점 (%)",existing.technicalWeight);
+ const priceWeight=factorNumber(money,"공고상 가격평가 배점 (%)",existing.priceWeight);
+ const assumptionBox=add(money,"label","wide");add(assumptionBox,"span","","가정/확인할 출처 (합성 예시만)");
+ const assumption=add(assumptionBox,"textarea");assumption.maxLength=400;assumption.value=existing.assumptions;
+ const actions=add(root,"div","inline-actions");const save=add(actions,"button","btn primary","영향인자 평가 기록 적용");save.type="submit";
+ const result=add(p,"div","factor-guard",before.label+" — "+before.reason);
+ root.addEventListener("submit",event=>{
+  event.preventDefault();
+  const next=newFactorRecord(),error=[];
+  for(const x of GATE_FACTORS){
+   const c=gates[x.key];
+   const v={status:c.status.value,source:c.source.value,note:c.detail.value.trim()};
+   if(v.status!=="unknown"&&(v.source==="unknown"||!v.note))error.push(x.name+": 확인 상태 변경 시 출처 유형과 근거 메모를 입력해야 합니다.");
+   next.gates[x.key]=v
+  }
+  for(const x of SCORE_FACTORS){
+   const c=scores[x.key];const v={score:c.rating.value,source:c.source.value,note:c.detail.value.trim()};
+   if(v.score!==""&&(v.source==="unknown"||!v.note))error.push(x.name+": 평점 입력 시 근거 유형과 설명이 필요합니다.");
+   next.scores[x.key]=v
+  }
+  const fields={estimatedRevenue:revenue,estimatedDeliveryCost:cost,estimatedBidCost:bidCost,technicalWeight:techWeight,priceWeight:priceWeight};
+  Object.entries(fields).forEach(([key,input])=>{
+    const v=input.value.trim();if(v!==""&&(!Number.isFinite(Number(v))||Number(v)<0||Number(v)>1000000000))error.push("금액/배점은 0 이상의 유한한 숫자 범위로 입력해 주세요.");
+    next[key]=v
+  });
+  if(next.technicalWeight!==""&&Number(next.technicalWeight)>100||next.priceWeight!==""&&Number(next.priceWeight)>100)error.push("공고상 평가 배점은 0~100 사이여야 합니다.");
+  if(next.technicalWeight!==""&&next.priceWeight!==""&&Math.abs(Number(next.technicalWeight)+Number(next.priceWeight)-100)>0.00001)error.push("기술/가격 배점의 합계는 100이어야 합니다. 공고별 실제 평가구조는 별도 확인이 필요합니다.");
+  next.assumptions=assumption.value.trim();
+  if(error.length){result.textContent=error[0];toast(error[0],true);return}
+  next.saved=true;r.factors=next;
+  renderRecords();toast("영향인자 수기 입력을 이 페이지 메모리에만 반영했습니다. AI 모델 실행·법적 자격 확정·낙찰 예측은 아닙니다.")
+ });
+ const complete=[existing.estimatedRevenue,existing.estimatedDeliveryCost,existing.estimatedBidCost].every(x=>x!=="");
+ if(complete){
+  const rev=Number(existing.estimatedRevenue),cost=Number(existing.estimatedDeliveryCost)+Number(existing.estimatedBidCost);
+  paragraph(p,"수기 예상 이익(만원): "+String(rev-cost)+" · 예상 이익률: "+(rev>0?(100*(rev-cost)/rev).toFixed(1)+"%":"계산 불가 (매출 0)").toString()+" (검증되지 않은 가정)");
+ }
+ title(p,"4. AI 교차검토에 넘길 결과");
+ showFactorProjection(p,r);
+ const button=add(p,"button","btn primary","사용자 최종 결정 화면 →");button.type="button";button.addEventListener("click",()=>{tab="decision";renderRecords()});
+}
+
 function renderRecords(){
  const selected=$("selectedNotice");selected.value=current;
  const n=notice();$("detailTitle").textContent=n.title;$("detailOrg").textContent=n.org+" · 합성 식별자 "+n.id.toUpperCase()+" · 실제 공고 아님";$("detailCategory").textContent=n.category;
@@ -234,9 +400,13 @@ function renderRecords(){
   grid(p,[["발주기관",n.org],["분야",n.category],["공고번호",n.id.toUpperCase()+" (합성)"],["실제 마감일","미확인"],["공고 변경차수","미확인"],["공식 참가자격","미검증"]]);
   title(p,"사업 요구사항 (합성 시나리오)");list(p,n.needs);
   title(p,"화면 확정 후 연동할 데이터");list(p,["최신 공고문/정정공고 및 입찰참가자격과 증빙","기술제안서·가격입찰서의 실제 필수 여부와 제출 경로","개찰 결과·낙찰업체·계약 공개정보(서로 다른 출처로 확인)"]);
-  const a=add(p,"div","inline-actions");const b=add(a,"button","btn primary","참여 결정 화면 →");b.type="button";b.addEventListener("click",()=>{tab="decision";renderRecords()});
+  const a=add(p,"div","inline-actions");const b=add(a,"button","btn primary","영향인자 평가 먼저 입력 →");b.type="button";b.addEventListener("click",()=>{tab="factors";renderRecords()});
+ }else if(tab==="factors"){
+  renderFactorInputs(p,r);
  }else if(tab==="decision"){
-  title(p,"Bid / No-Bid 참여 판단");note(p,"참여 판단은 내부 수기 입력이며 입찰 자격·기술 적합성 공식 인증이 아닙니다.","warning");
+  title(p,"Bid / No-Bid 참여 판단");note(p,"AI의 권고·평가 점수와 실제 사용자의 결정은 구별됩니다. 모든 평가 항목의 판단 권한은 사용자에게 있습니다.","warning");
+  showFactorProjection(p,r);
+  const factorButton=add(p,"button","btn","영향인자 수정 / 근거 확인 →");factorButton.type="button";factorButton.addEventListener("click",()=>{tab="factors";renderRecords()});
   form(p,[
    {label:"참여 결정",key:"decision",kind:"select",options:[["undecided","검토 중"],["bid","참여하기로 결정"],["no-bid","참여하지 않기로 결정"]]},
    {label:"진행 단계",key:"stage",kind:"select",options:[["identified","공고 발굴"],["review","요건 검토"],["proposal","제안서 준비"],["submitted","제출 기록"],["opening","개찰 확인"],["result","결과 확인"]]},

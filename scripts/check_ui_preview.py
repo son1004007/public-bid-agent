@@ -107,3 +107,9 @@ with tempfile.TemporaryDirectory() as directory:
     subprocess.run(["node", "--check", str(script)], check=True, timeout=20)
 
 print("Personal Codex account preview syntax/security-static check: PASS")
+
+
+# 2026-10-09 입찰 영향인자 UI 계약 (필수조건과 비교요인 구분 및 임의 수주확률 금지).
+for item in ["영향인자 평가", "const GATE_FACTORS", "const SCORE_FACTORS", "function factorProjection(", "function renderFactorInputs(", "미확인", "접수", "공고상 기술평가 배점", "Codex 분석", "Claude 분석"]:
+    assert item in workflow_source, f"factor input UI missing: {item}"
+assert len(workflow_parser.scripts) == 1

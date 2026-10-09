@@ -86,3 +86,10 @@
 - 기존 백엔드 우선순위보다 화면 설계 검증을 먼저 한다. `frontend/public/ai-account-preview.html`은 실제 인증 없는 **합성 계정 선택 UI**다. 진짜 계정·토큰을 받지 않는다.
 - OpenAI 공식 자료의 OSS 로컬 앱 선택, 원격 호스팅 제한, PKCE/nonce/state/ID 토큰/워크스페이스·계정 바인딩, token sharing permission/usage, 재연결/연결 해제 정책을 `docs/research/2026-10-09-chatgpt-account-integration.md`에서 읽는다.
 - 실제 공개 서비스용 승인이 확인되지 않으면 `Continue with ChatGPT`를 유효 로그인 버튼으로 활성화하거나 API 키·OAuth 인증 우회 경로를 구현하지 않는다. `BLOCKED`는 실제 연결 부분만, 화면 개발은 계속 가능하다.
+
+## 사용자 추가 요구: AI 의사결정의 독립변수 입력
+
+- AI 두 모델이 추론 전에 사용할 회사·공고별 입찰 판단 변수의 입력 화면을 만든다. `docs/design/BID_NO_BID_FACTORS.md`가 정의와 초기 UI 구현의 기준.
+- Y1(권고)·Y2(사용자 결정)·Y3(실제 낙찰)을 혼동하지 않는다. 점수 지표를 수주확률로 포장하지 않는다.
+- `frontend/public/bid-management-preview.html`에 `영향인자 평가` 탭으로 구현하며, 수기·가상 데이터 외 실제 회사 비밀을 사용하지 않는다.
+- 필수 자격/마감/계약 조건은 Hard gate, 기술·실적·역량·경제성·경쟁·전략·준비·위험은 Soft factors로 분리하고 미확인과 출처를 기록한다. AI는 독립 의견·반론·근거를 보여주는 후속 LangGraph 구현으로 이어간다.
