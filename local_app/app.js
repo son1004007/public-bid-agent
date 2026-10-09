@@ -46,6 +46,19 @@ function render(){
   }else article.append(make("p",report.status+": "+(report.error||"결과 없음")));
   opinions.append(article);
  });
+ const adviser=active.decision_support||{};
+ el("decisionSupport").replaceChildren();
+ if(adviser.status){
+   const h=make("strong",(adviser.title||"판단 보조") + " (법적 적격·수주확률 판단 아님)");
+   const details=make("p",adviser.basis||"");
+   el("decisionSupport").append(h,details);
+   (adviser.flags||[]).slice(0,12).forEach(v=>{
+     const x=make("p",v.name+": "+(v.evidence||"추가 근거가 필요합니다"));
+     el("decisionSupport").append(x);
+   });
+ }else{
+   el("decisionSupport").textContent="AI 분석 전입니다. 원문·자격·인력·비용 근거를 확인하세요.";
+ }
  const peer=active.cross_review||{};
  if(peer.status){
    const summary=peer.status==="single_or_failed"?

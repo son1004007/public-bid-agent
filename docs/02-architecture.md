@@ -185,3 +185,7 @@ LLM이 돌려준 citation ID는 서버가 존재 여부·원문 버전·해당 �
 ## 2026-10-10 단일 AI 분석 경로
 
 Codex 1개가 선택된 경우 LangGraph는 independent_analysis에서 1회 호출하며, peer_critique에서 실행을 생략하고 comparison은 `single_or_failed`로 표시합니다. 사람 검증 상태와 최종 참여 결정은 변화하지 않습니다. Windows npm 경로는 `codex.cmd`, 호출 모델은 ChatGPT 인증 Codex용 `gpt-5.6-terra`이며 개인정보/회사업무 정보는 동의 후 전송합니다.
+
+## 2026-10-10 참여 판단 Y1 품질·검증 경계
+
+`cross_review.py`의 모델 원문 의견과 `decision_support.py`의 결정적 보수적 규칙 위험 분류를 분리합니다. `ai_reports[*]`와 `ai_draft`는 미검증 모델 추출, `decision_support`는 Hard Gate 실패/미확인/사용자 충돌 위험, `decision`은 오직 사용자만 갱신합니다. 사용자 보정(`/api/save`) 뒤에도 보수적 검증 분류가 다시 계산됩니다. 위험 분류는 법적 적격, 수주확률, 실제 계약 행위를 뜻하지 않습니다.

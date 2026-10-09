@@ -184,7 +184,8 @@
 ## 2026-10-10 실제 공고 MVP 판정 검증
 
 - [x] 실제 입찰공고 수기 3건 / 가상 부서 조건 4개 fixture 정리, 원본 출처/상충 마감/미확인 표시
-- [ ] 같은 실공고에 다른 가상 부서 상태를 적용한 Codex 결과 비교 및 재현성
-- [ ] AI 추천과 Gate 실패/미확인 불일치에 대한 deterministic guard / 검증 기록
+- [x] 실제 공고 3건/가상 부서 조건 4개 Codex 실제 실행 성공; 모든 권고 hold, 중간 Gate 실패/미확인 차이를 검출 (2026-10-10)
+- [x] 미검증 Gate failure/unknown 및 사용자 충돌, AI reason 누락을 구별하는 보수적 deterministic decision_support와 UI 구현
+- [ ] 최신 변경의 테스트/독립 코드 검수 및 메인 병합 전 게이트
 - [ ] 사용자 로컬 JSON UI 시나리오 수동 검증 및 독립 AGY+Codex 소스 검수
 - [ ] MVP 핵심 Gate 모두 PASS 시에만 Draft PR main merge

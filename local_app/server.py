@@ -23,6 +23,8 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from decision_support import advise as advise_bid
+
 GATES = [
  ("eligibility","입찰 등록·업종 적격성"),("licenses","면허·인증·보험·보증"),
  ("track_record","공고상 필수 실적"),("resources","필수 인력·재무"),
@@ -79,7 +81,7 @@ def create_case(title):
   "created":now(),"prompt":"","documents":[],
   "gates":{key:{"status":"unknown","evidence":"","verified":False} for key,_ in GATES},
   "factors":{key:{"score":None,"evidence":"","verified":False} for key,_,_ in FACTORS},
-  "ai_reports":{},"ai_draft":{},"cross_review":{},"decision":"undecided","reason":"","history":[]
+  "ai_reports":{},"ai_draft":{},"decision_support":{},"cross_review":{},"decision":"undecided","reason":"","history":[]
  }
 
 def find_case(data,ident):
@@ -306,6 +308,7 @@ class Handler(BaseHTTPRequestHandler):
      case["cross_review"]={**result["comparison"],"critiques":result["critiques"],"at":now()}
      ok=[p for p in providers if case["ai_reports"][p].get("status")=="success"]
      case["ai_draft"]=case["ai_reports"][ok[0]]["result"] if ok else {}
+     case["decision_support"]=advise_bid(case)
      persist(data)
      return self.respond({"ok":True,"case":case,"summary":summary(case)})
    with LOCK:
@@ -316,7 +319,9 @@ class Handler(BaseHTTPRequestHandler):
     else:
      case=find_case(data,payload.get("id"))
      if case is None: raise ValueError("알 수 없는 공고 ID")
-     if self.path=="/api/save": update_case(case,payload)
+     if self.path=="/api/save":
+      update_case(case,payload)
+      case["decision_support"]=advise_bid(case)
      elif self.path=="/api/file":
       if len(case["documents"])>=6: raise ValueError("문서는 6개까지")
       name=text_value(payload.get("name",""),120)
