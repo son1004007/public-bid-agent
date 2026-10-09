@@ -213,3 +213,12 @@
 - R26BK01759604-001 가상 클라우드팀: RFP 미확인으로 필수 Gate 모두 unknown, 평가인자 점수 0/12, 보류.
 - 따라서 단순 model.recommendation으로는 참가 결격 위험과 증빙 부족을 차별화하지 못하는 결함 확인, `local_app/decision_support.py` 보수적 위험표시와 모델 사유 누락 감지/사용자 보정 후 재산정 도입.
 - 미해결: 공식 G2B 원문 403(전재 자료 근거 한계), 모델 사유 빈값, 과거 낙찰 데이터 부재로 실제 '수주 확률' 예측 불가. 정식 독립 검수와 main 병합은 별도 판단.
+
+## 2026-10-10 최신: 수기 공고 분석 완주 / MERGE HOLD
+
+- 실제 공고 3건(수기 전사), 가상 회사·부서 조건 4개, 사용자 PC Codex AI 실행 4/4 SUCCESS. 결과 Y1 raw hold 4, 참고 Gate 위험: provisional no-bid 2 / 추가 증빙 hold 2, 사용자 Y2 undecided 4. 모델별 사유 문자열 전부 공란으로 안전 경고 노출.
+- `decision_support.py` UI 및 백엔드 GET/POST 로컬 HTTP 재검증 4/4 PASS, 36개 Python 회귀 테스트, GitHub CI run 37997843667 SUCCESS.
+- 사용자용 Windows 로컬앱 8765 `[검증 사례·실제공고/가상 업체]` 4개 데이터 이관, JSON 백업 수행 후 HTTP 200/4건/127.0.0.1 확인. 실제 사용자 회사 데이터는 사용하지 않음.
+- 공공 공고의 공식 원본 첨부 403, 재게시 마감 충돌, Codex 판단 근거 부족 및 AI 원시 reason 누락 한계 남음.
+- AGY/Gemini 및 Codex의 독립 최종 코드 검수가 원격 read-only command 권한 차단으로 미완료. 별도 유효 review 결과 없음. 글로벌 정책상 `REVIEW_DEBT / MERGE HOLD`로 남기며 위험 권한 우회 금지.
+- 상세 재현 기록: `docs/reviews/MVP_PUBLIC_BID_E2E_2026-10-10.md`. 다음 작업: 안전한 독립 검수 해결→필요시 수정/재검수→main 병합→자동 수집 Sprint.

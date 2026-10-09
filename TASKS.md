@@ -187,5 +187,7 @@
 - [x] 실제 공고 3건/가상 부서 조건 4개 Codex 실제 실행 성공; 모든 권고 hold, 중간 Gate 실패/미확인 차이를 검출 (2026-10-10)
 - [x] 미검증 Gate failure/unknown 및 사용자 충돌, AI reason 누락을 구별하는 보수적 deterministic decision_support와 UI 구현
 - [ ] 최신 변경의 테스트/독립 코드 검수 및 메인 병합 전 게이트
-- [ ] 사용자 로컬 JSON UI 시나리오 수동 검증 및 독립 AGY+Codex 소스 검수
-- [ ] MVP 핵심 Gate 모두 PASS 시에만 Draft PR main merge
+- [x] 실제 공고 3건·가상 업체 조건 4건 E2E, 사용자 로컬 JSON에 데모 이관 / 백업 및 HTTP UI 확인
+- [ ] AGY/Gemini + Codex **독립 최종 검수 BLOCKED_BY_TOOL_PERMISSION** 해결, findings 교정/재검수 (병합 차단)
+- [ ] 직접 공식 공고 원문 확보, 정정·마감/자격 조건 충돌 재검증
+- [ ] MVP 사용자·보안·독립 검수 Gate 완료 후 Draft PR main merge (2026-10-10 기준 HOLD)
