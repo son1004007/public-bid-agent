@@ -21,33 +21,38 @@
 - 저장소: `public-bid-agent`
 - 서비스명: Public Bid Agent
 - 목적: 공개 AI/SW 입찰공고를 검색하고 참가조건과 기술 적합성을 원문 근거로 분석하는 웹서비스
-- 상태: 설계 단계
+- 상태: 애자일 반복 개발로 전환 / Sprint 1 구현 준비 (아직 코드·테스트·배포 없음)
 
 ## 2. 필수 문서 확인 순서
 
 1. `AGENTS.md`
 2. `AI_CONTEXT.md`
 3. `CURRENT_STATE.md`
-4. `docs/00-project-context.md`
-5. `docs/01-requirements.md`
-6. `docs/02-architecture.md`
-7. `docs/03-test-plan.md`
-8. `docs/04-operation-and-deployment.md`
-9. `docs/05-coding-standards.md`
-10. `docs/06-source-layout.md`
-11. 작업 관련 공통 표준과 ADR, 실제 코드, 테스트, 최신 GitHub 증거
+4. `TASKS.md`
+5. `docs/07-agile-development-workflow.md`
+6. `docs/00-project-context.md`
+7. `docs/01-requirements.md`
+8. `docs/02-architecture.md`
+9. `docs/03-test-plan.md`
+10. `docs/04-operation-and-deployment.md`
+11. `docs/05-coding-standards.md`
+12. `docs/06-source-layout.md`
+13. 작업 관련 공통 표준과 ADR, 실제 코드, 테스트, 최신 GitHub 증거
 
 ## 3. 증거와 작업 순서
 
 확인 상태는 `CONFIRMED`, `INFERRED`, `UNKNOWN`, `CONFLICT`로 구분합니다. 구현·테스트·배포하지 않은 기능을 완료로 표시하지 않습니다.
 
 ```text
-현황 확인 -> 요구사항 확인 -> 충돌 조정 -> 계획
--> 독립 설계 리뷰 -> 구현 -> 검증
--> 독립 최종 리뷰 -> 문서 갱신 -> 보고
+현황/백로그 확인 -> 작은 사용자 기능(수직 슬라이스) 선택
+-> 필요한 범위만 설계 및 위험 확인 -> 코드 + 테스트 작성
+-> 실행 증거 확인 -> 논리적 변경 단위 독립 검수
+-> 지적사항 수정/재검증 -> 문서·백로그 갱신 -> 다음 반복
 ```
 
-공개 서비스, 인증, 외부 API, AI 판단, 저장 데이터, 인증정보가 관련되므로 중요한 설계 변경은 공통 정책에 따른 독립 검토가 필요합니다.
+**이 프로젝트는 워터폴식 일괄 설계 승인 방식이 아니라 애자일 반복 개발을 기본으로 합니다.** 기존 ADR은 설계 기준선과 위험 목록이며, 모든 미래 기능의 사전 구현 승인 조건이 아닙니다. 비공개 로컬 실행과 검증용 fixture 개발은 즉시 진행할 수 있고, 실제 외부 연동·인증·AI 호출·개인정보 처리·공개 서비스 활성화는 해당 기능의 안전 게이트를 충족한 뒤 진행합니다.
+
+개발 중 작은 수정마다 독립 검수를 다시 받지 않습니다. 다만 중요한 설계는 공통 정책에 따른 사전 독립 검토, 의미 있는 논리적 변경 단위는 완료 판정 전 독립 최종 검수를 수행합니다. 개인 프로젝트의 AGY/Gemini 검수 의무와 불가 시 검수 부채 처리 등은 `personal-engineering-handbook/REVIEW_POLICY.md`를 따릅니다. 독립 검수가 없으면 구현 진행과 완료·출시 판정을 구분합니다.
 
 ## 4. 구현 및 보안 규칙
 
@@ -112,4 +117,4 @@ TypeScript/TSX 예시:
 
 ## 7. Git 및 완료 기준
 
-커밋 접두어는 `docs:`, `feat:`, `fix:`, `test:`, `refactor:`, `chore:`를 사용합니다. 필요한 실제 검증과 독립 리뷰가 완료되지 않으면 기능 완료로 표시하지 않습니다.
+커밋 접두어는 `docs:`, `feat:`, `fix:`, `test:`, `refactor:`, `chore:`를 사용합니다. `PLANNED` / `IN_PROGRESS` / `IMPLEMENTED_UNVERIFIED` / `VERIFIED` / `REVIEWED` / `RELEASED`를 구별합니다. 작업 도중 공개 소스코드를 GitHub에 기록할 수 있지만 이것이 운영 배포 승인이나 기능 완료를 의미하지는 않습니다. 주요 위험과 미완료 검수는 `TASKS.md`에 남깁니다. 사용자 합의 없는 일괄 설계 재검수 루프는 구현을 차단하지 않으며, 실제 테스트·필수 독립 검수 없이 `REVIEWED`나 `RELEASED`로 표시하지 않습니다.

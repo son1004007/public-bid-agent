@@ -66,7 +66,8 @@ https://www.data.go.kr/data/15129437/openapi.do
 - 2단계: Google 로그인·다중 사용자 권한, 안전한 PDF 추출, 공고 개정/취소 처리와 근거 버전을 검증한다.
 - 3단계: 공식 허용된 LLM 사용 경로를 확보한 뒤 실제 사용자 대상 AI 분석, 평가, 공개 서비스를 완성한다.
 - 장기 목표의 React, FastAPI, LangGraph, RAG, MCP, SSE는 각 기술이 실제 사용자 경험에 필요한지 평가하며 도입한다. 서비스가 정상 동작하지 않는 상태에서 기술명만 구현했다고 주장하지 않는다.
-- [Codex 독립 리뷰 조정](reviews/2026-10-08-review-reconciliation.md)의 요구에 따라 보안·데이터·비용의 ADR 설계를 구현 전 확보한다.
+- **2026-10-09 사용자 결정: 애자일 방식으로 전환.** 기존 ADR과 [Codex 독립 리뷰 조정](reviews/2026-10-08-review-reconciliation.md)은 위험·설계 기준선으로 보존하고, 미구현 기능의 상세 배포 조건 때문에 현 단계의 비공개 구현을 중단하지 않는다.
+- 구현 → 테스트 → 독립 검수 → 개선을 기능 단위로 반복한다([애자일 실행 기준](07-agile-development-workflow.md)).
 
 ## 제약
 
