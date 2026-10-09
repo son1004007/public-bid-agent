@@ -22,7 +22,8 @@
 - [x] 브라우저 독립 실행 HTML 화면 제작: `frontend/public/ui-review.html`
 - [x] 합성 8건 / 탐색 / 상세 / 검토 보관함 / 0건·오류 시뮬레이션 UI 작성
 - [x] 화면 검증 기준 및 재현 방법: `docs/ui/SCREEN_REVIEW_GUIDE.md`
-- [ ] 실제 GitHub 퍼블리싱 파일의 CI/브라우저 검증 기록 확인
+- [x] 퍼블리싱 HTML JavaScript 문법/합성 데이터 안내/외부 자원 없는 상태 CI 검사 PASS (37894040200)
+- [ ] 실제 GitHub 퍼블리싱 파일의 브라우저 전체 사용성/모바일 검증 및 사용자 승인
 - [ ] **사용자 직접 화면 검토 및 설계 피드백** (UI_PROPOSED; 아직 UI_APPROVED 아님)
 - [ ] 피드백에 따라 화면 동선/정보 계층/요구사항·API 데이터 계약 수정
 - [ ] 검증된 시안을 React 실제 화면으로 정리 및 화면 테스트 보강

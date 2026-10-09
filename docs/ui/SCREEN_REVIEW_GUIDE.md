@@ -54,3 +54,10 @@
 ## 실제 기능·데이터 상태
 
 데모 공고 8건은 완전한 가상 자료다. 기술 관심도·접수 상태·참가 자격·AI 추론을 실제 평가했다고 주장하지 않는다. 사용자 입력·선택은 브라우저 화면 동안만 유지하며 서버로 전송하거나 별도로 저장하지 않는다. 소스가 공개돼 있어도 공식 공고문·비공개 고객 자료·API 키는 포함하지 않는다.
+
+## 자동 검증 증거 (2026-10-09)
+
+- GitHub Actions push: https://github.com/son1004007/public-bid-agent/actions/runs/37894035152 — PASS.
+- GitHub Actions PR: https://github.com/son1004007/public-bid-agent/actions/runs/37894040200 — PASS.
+- 검사: Node JavaScript 구문, 합성/미검증 안내, 외부 script/link/iframe URL 없음, Vite 빌드에 ui-review.html 포함.
+- 이는 사용자의 UX 판단이나 기능 최종 독립 검수를 대신하지 않는다. 화면 설계는 **UI_PROPOSED / USER_FEEDBACK_PENDING**.
