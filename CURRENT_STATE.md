@@ -187,3 +187,12 @@
 - 회사 노트북 실제 테스트에서 Windows `shutil.which('codex')`가 npm extensionless shim을 선택해 WinError 193 확인. `codex.cmd` 사용으로 수정.
 - 이어진 실제 CLI에서는 개인 기본 모델 `gpt-6.1-sol`이 ChatGPT 구독 인증 Codex에서 지원되지 않음을 확인. 사용자 설정을 변경하지 않고 프로젝트 호출에 `-m gpt-5.6-terra` 명시 및 임시 세션 `--ephemeral` 적용.
 - 실제 Codex 호출·AI JSON 생성/저장 E2E는 별도 시험 결과 확인 필요. 회사 정보 없이 합성 입찰만 사용.
+
+## 2026-10-10 회사 노트북 Codex 단독 실제 E2E 통과
+
+- 사용자 계정에 Claude Code 유료 사용권이 없어 Codex 단독 모드를 실제 시험. 합성 가상 입찰공고만 사용, 회사 업무 자료 전송 없음.
+- Windows Python 3.12 + Codex CLI 0.154.0 + ChatGPT 인증: 기존 npm `codex` 실행은 WinError 193, 기존 모델 `gpt-6.1-sol`은 Codex 인증에서 HTTP 400. 앱에서 `codex.cmd` + `gpt-5.6-terra` + read-only/ephemeral/user config 무시로 해결. 최소 JSON 원격 요청 직접 성공.
+- 개발 브랜치 `778e2b047c09b7d3a488c7a8aa452d4809039c78` 회사 노트북 `PublicBidAgent\\Lab`에 fast-forward, Python 로컬 unittest **27 PASS**, Node 구문 검사 PASS, GitHub Actions PR run `37987914612` SUCCESS.
+- 실제 HTTP `/api/new` → `/api/save` → `/api/analyze` (`providers=[codex],consent=true`) 성공, 약 21.2초. Codex 결과 `status=success`, `recommendation=hold`, Gate 8개 / Factor 12개, `ai_draft` 생성과 로컬 JSON 저장 확인. LangGraph `cross_review.status=single_or_failed`; 사용자 결정 `undecided` 보존.
+- 테스트 서버 8769 중지. 실사용 로컬 서버 8765 실행, 바탕화면 `Public Bid Agent (Local)` 런처 별도 설치, HTTP 200 및 loopback 127.0.0.1 확인. 실사용 데이터 `%LOCALAPPDATA%\\PublicBidAgent\\Lab\\user-json\\cases.json`, 테스트 데이터는 별도 `codex-synthetic-test-data`.
+- 실제 Claude 및 2-AI 교차검토 E2E 미수행, 보안 독립 최종 검수/회사 실무 문서 OCR 정확도 미완료. 대외 운영 또는 main 병합하지 않음.

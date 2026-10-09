@@ -177,5 +177,6 @@
 
 - [x] Claude 유료 구독 없이 Codex 단독 선택 가능, 교차검토 미실행 여부 사용자에게 표시
 - [x] Windows 확장자 없는 npm Codex shim WinError 193 수정 및 구독에서 지원하는 모델 명시
-- [ ] 회사 노트북에서 실제 Codex 합성 분석 결과 수신, JSON 저장까지 E2E 검증
+- [x] 회사 노트북 Windows Codex 합성 분석 결과 수신, Gate 8/Factor 12, JSON 저장까지 HTTP E2E 성공 (약 21.2초)
+- [x] Windows 사용자 전용 로컬 바탕화면 런처 및 127.0.0.1:8765 접속 검증
 - [ ] 사용자 실문서 정확도와 독립 최종 보안 검수

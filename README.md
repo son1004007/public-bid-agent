@@ -116,3 +116,10 @@ python scripts/check_documentation_sync.py
 ## 2026-10-10 Codex 단독 실행 모드
 
 Claude Code 구독이 없더라도 Codex CLI 로그인만으로 독립 영향인자 분석 1회 → 미검증 초안 → 사용자 수정/원문 대조 → 최종 Bid/No-Bid를 수행합니다. 단일 AI는 교차검토가 아니므로 합의한 것처럼 표시하지 않습니다. Windows npm 설치는 확장자 없는 `codex`가 아닌 `codex.cmd`를 실행합니다. 계정 기본 모델이 Codex에서 지원되지 않을 수 있으므로 이 로컬 앱은 `gpt-5.6-terra`를 명시하고, `--ephemeral --ignore-user-config --ignore-rules --sandbox read-only`로 실행합니다. 모델 접근 권한은 계정/버전마다 다르므로 실패 시 UI에서 오류를 확인합니다.
+
+
+### Windows 실환경 Codex 단독 테스트 (2026-10-10)
+
+회사 노트북의 **합성 공고만** 사용한 기능 확인: Windows + Python 3.12 + Codex CLI 0.154.0, ChatGPT 인증. `-m gpt-5.6-terra`와 `--ephemeral --ignore-user-config --ignore-rules --sandbox read-only`로 한 차례 모델 요청, `/api/analyze` 성공. JSON에 필수 Gate **8개**, 비교 인자 **12개**, 권고 `hold`, `ai_draft`, `cross_review.status=single_or_failed` 기록 확인. 사람의 `decision=undecided` 유지 확인, 모델 응답 **21.2초**. 실제 Claude 연동/교차반론은 수행하지 않음.
+
+해당 Windows 사용자에게 로컬 전용 시작 바로가기 `Public Bid Agent (Local)`를 만들었으며 `http://127.0.0.1:8765/` 접근 성공. 바탕화면 바로가기는 배포 소스가 아니라 **해당 노트북의 편의 실행 설정**입니다. 앱 업무 JSON과 테스트 JSON의 위치를 분리했고 바인딩은 `127.0.0.1`로 한정합니다. 개인 Codex 설정은 변경하지 않았습니다.
