@@ -44,7 +44,9 @@ HTML = Path(__file__).with_name("index.html")
 APP_JS = Path(__file__).with_name("app.js")
 LOCK = threading.RLock()
 TOKEN = secrets.token_urlsafe(32)
-LIMIT = 2*1024*1024
+LIMIT = 10*1024*1024
+MAX_POST = 15*1024*1024
+EXTRACTOR = Path(__file__).with_name("extractors.py")
 
 def now():
  return datetime.now(timezone.utc).isoformat()
@@ -86,23 +88,37 @@ def text_value(raw,limit):
  if not isinstance(raw,str): raise ValueError("문자열이 아닙니다")
  return raw[:limit]
 
-def ingest(name,raw):
- if len(raw)>LIMIT: raise ValueError("첨부 최대 2MB")
- ext=Path(name).suffix.lower()
- if ext in (".txt",".md",".csv",".json"): value=raw.decode("utf-8-sig")
- elif ext==".pdf":
-  try: from pypdf import PdfReader
-  except ImportError: raise ValueError("PDF에는 pip install pypdf 필요")
-  pdf=PdfReader(io.BytesIO(raw),strict=True)
-  if len(pdf.pages)>40 or pdf.is_encrypted: raise ValueError("PDF 40페이지 초과/암호화 미지원")
-  value="\n".join((p.extract_text() or "") for p in pdf.pages)
- elif ext==".docx":
-  try: from docx import Document
-  except ImportError: raise ValueError("DOCX에는 pip install python-docx 필요")
-  value="\n".join(p.text for p in Document(io.BytesIO(raw)).paragraphs)
- else: raise ValueError("txt,md,csv,json,pdf,docx 파일만 지원")
- if not value.strip(): raise ValueError("추출한 텍스트 없음. OCR/HWP는 미지원")
- return value[:44000]
+def ingest(name, raw):
+ # 하위 호환: 기존 로컬 테스트의 텍스트 추출 공개 함수.
+ from extractors import extract_document
+ return extract_document(name, raw)["text"]
+
+
+def extract_in_subprocess(name, raw):
+ """외부 문서 분석을 서버 프로세스와 분리. 프로세스 시간·자원 제한."""
+ if len(raw) > LIMIT:
+  raise ValueError("문서 원본은 최대 10MiB입니다")
+ kwargs = {}
+ if os.name == "posix":
+  def limit_resources():
+   import resource
+   resource.setrlimit(resource.RLIMIT_CPU, (80, 85))
+   resource.setrlimit(resource.RLIMIT_AS, (1024**3, 1024**3))
+  kwargs["preexec_fn"] = limit_resources
+ try:
+  result = subprocess.run([sys.executable, str(EXTRACTOR), name], input=raw,
+                          capture_output=True, timeout=90, check=False, **kwargs)
+ except subprocess.TimeoutExpired as e:
+  raise ValueError("문서 추출/한국어 OCR 90초 시간 제한 초과") from e
+ if result.returncode != 0:
+  raise ValueError("문서 추출 프로세스 오류. 형식 및 설치된 패키지를 확인하세요")
+ try:
+  extracted = json.loads(result.stdout.decode("utf-8"))
+ except (UnicodeError, json.JSONDecodeError) as e:
+  raise ValueError("문서 추출기 응답이 올바르지 않습니다") from e
+ if not extracted.get("ok"):
+  raise ValueError(str(extracted.get("error") or "문서 추출 실패")[:240])
+ return extracted
 
 def normalize(raw):
  if not isinstance(raw,dict): raise ValueError("AI 출력 JSON 객체 오류")
@@ -236,7 +252,7 @@ class Handler(BaseHTTPRequestHandler):
    return self.respond({"error":"출처/CSRF 검증 실패"},403)
   try:
    size=int(self.headers.get("Content-Length","0"))
-   if not 1<=size<=4*1024*1024 or self.headers.get("Content-Type","").split(";")[0]!="application/json":
+   if not 1<=size<=MAX_POST or self.headers.get("Content-Type","").split(";")[0]!="application/json":
     raise ValueError("본문 JSON 최대 4MB")
    payload=json.loads(self.rfile.read(size))
    if not isinstance(payload,dict): raise ValueError("JSON 객체만 지원")
@@ -252,9 +268,13 @@ class Handler(BaseHTTPRequestHandler):
      elif self.path=="/api/file":
       if len(case["documents"])>=6: raise ValueError("문서는 6개까지")
       name=text_value(payload.get("name",""),120)
-      raw=base64.b64decode(text_value(payload.get("base64",""),4*1024*1024),validate=True)
-      text=ingest(name,raw)
-      case["documents"].append({"name":Path(name).name,"text":text,"added":now()})
+      encoded=text_value(payload.get("base64",""), MAX_POST)
+      raw=base64.b64decode(encoded,validate=True)
+      extracted=extract_in_subprocess(name,raw)
+      case["documents"].append({"name":Path(name).name,"text":extracted["text"],
+                                "method":extracted["method"],"warnings":extracted["warnings"],
+                                "truncated":extracted["truncated"],"characters":extracted["characters"],
+                                "added":now()})
      elif self.path=="/api/analyze":
       providers=payload.get("providers")
       if not isinstance(providers,list) or not providers or len(providers)>2 or set(providers)-{"codex","claude"} or len(providers)!=len(set(providers)):

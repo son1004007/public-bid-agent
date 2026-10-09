@@ -66,7 +66,7 @@ class LogicTests(unittest.TestCase):
     def test_file_whitelist(self):
         self.assertEqual(app.ingest("example.md", "가상 자료".encode()), "가상 자료")
         with self.assertRaises(ValueError): app.ingest("config.py", b"print('hello')")
-        with self.assertRaises(ValueError): app.ingest("too-big.md", b"x"*(2*1024*1024+1))
+        with self.assertRaises(ValueError): app.ingest("too-big.md", b"x"*(10*1024*1024+1))
 
     def test_local_json_atomic_and_private_permissions(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -132,6 +132,24 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(result["case"]["decision"],"hold")
         self.assertEqual(len(result["case"]["history"]),1)
         self.assertIn("AI 데이터",app.load()["cases"][0]["prompt"])
+
+    def test_document_upload_persists_only_extracted_text(self):
+        import base64
+        from io import BytesIO
+        from zipfile import ZipFile
+        with BytesIO() as file:
+            with ZipFile(file,"w") as z:
+                z.writestr("Contents/section0.xml",'<hp:section xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph"><hp:p><hp:run><hp:t>가상 제안 공고</hp:t></hp:run></hp:p></hp:section>')
+            raw=file.getvalue()
+        _,created=self.post("/api/new",{"title":"HWPX 테스트"})
+        status,result=self.post("/api/file",{"id":created["case"]["id"],
+                            "name":"bid.hwpx","base64":base64.b64encode(raw).decode()})
+        self.assertEqual(status,200)
+        doc=result["case"]["documents"][0]
+        self.assertEqual(doc["text"],"가상 제안 공고")
+        self.assertEqual(doc["method"],"HWPX 문단/표 XML")
+        self.assertNotIn("base64",str(app.load()))
+        self.assertNotIn("application/hwp+zip",str(app.load()))
 
     def test_external_ai_requires_consent_and_real_cli(self):
         _,case=self.post("/api/new",{"title":"데모"})

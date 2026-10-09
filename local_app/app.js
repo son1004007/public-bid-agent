@@ -29,7 +29,11 @@ function render(){
  if(!active)return;
  el("caseTitle").textContent=active.title;el("prompt").value=active.prompt;
  const docs=el("docs");docs.replaceChildren();
- active.documents.forEach(d=>docs.append(make("li",d.name+" · 추출 "+d.text.length+"자")));
+ active.documents.forEach(d=>{
+   const info=d.name+" · 추출 "+d.text.length+"자"+(d.method?" · "+d.method:"");
+   const li=make("li",info);docs.append(li);
+   (d.warnings||[]).forEach(w=>{const warning=make("small","주의: "+w);warning.style.display="block";warning.style.color="#9c691f";li.append(warning)});
+  });
  const opinions=el("opinions");opinions.replaceChildren();
  ["codex","claude"].forEach(id=>{
   const article=make("article");article.append(make("h3",id==="codex"?"Codex 의견":"Claude 의견"));
@@ -102,11 +106,15 @@ el("savePrompt").addEventListener("click",()=>act(async()=>{
 }));
 el("file").addEventListener("change",()=>act(async()=>{
  const file=el("file").files[0];if(!file)return;
- if(file.size>2*1024*1024)throw Error("파일 최대 크기는 2MB입니다");
- const bytes=new Uint8Array(await file.arrayBuffer());let binary="";
- for(const byte of bytes)binary+=String.fromCharCode(byte);
- const v=await api("file",{id:active.id,name:file.name,base64:btoa(binary)});
- el("file").value="";active=v.case;render();message("파일의 추출 텍스트를 내 PC JSON에 저장했습니다. 외부 AI로 아직 전송하지 않았습니다.");
+ if(file.size>10*1024*1024)throw Error("파일 최대 크기는 10MiB입니다");
+ const bytes=new Uint8Array(await file.arrayBuffer());
+ const chunks=[];const size=24576;
+ for(let i=0;i<bytes.length;i+=size){
+   chunks.push(btoa(String.fromCharCode(...bytes.subarray(i,i+size))));
+ }
+ const v=await api("file",{id:active.id,name:file.name,base64:chunks.join("")});
+ el("file").value="";active=v.case;render();const d=active.documents[active.documents.length-1];
+ message("로컬 문서 추출 완료: "+(d.method||"텍스트")+". "+(d.warnings||[]).join(" / ")+" 외부 AI로 아직 전송하지 않았습니다.");
 }));
 el("analyze").addEventListener("click",()=>act(async()=>{
  const providers=[];if(el("codex").checked)providers.push("codex");if(el("claude").checked)providers.push("claude");
