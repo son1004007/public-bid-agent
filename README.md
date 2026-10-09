@@ -8,7 +8,7 @@
 최신 실행 계획: **개인 PC의 로컬 서버 + 로컬 JSON 파일 + 사용자 명시 동의 후 Codex/Claude CLI 실행**.
 백엔드 추가 구현을 금지하는 것이 아니라 로컬 MVP 경계를 먼저 검증합니다.
 
-- [로컬 앱 실행법과 보안 경계](local_app/README.md): Python 로컬 실행, txt/md/pdf/docx 파일 및 자유 프롬프트를 AI 판단 항목의 초안으로 변환.
+- [로컬 앱 실행법과 보안 경계](local_app/README.md): Python 로컬 실행, 자유 프롬프트와 **Excel(XLSX/XLS/XLSM), PDF/한국어 OCR, HWP/HWPX, DOCX, TXT/MD/CSV/JSON**을 추출해 영향인자 초안 생성 요청. 지원 파일은 각각 크기·문서 구조/추출 검증 수행.
 - 개인 데이터: 앱은 `~/.public-bid-agent-local/cases.json`에만 JSON을 기록. 외부 AI 선택 시 선택한 문서 내용은 공급자에게 전송됨.
 - 영향인자: Gate 8개 + 비교 인자 12개, AI 제안값은 미검증 상태로 사용자 수정/확정. 최종 결정은 사람이 남김.
 - 실제 Codex/Claude CLI 구동은 개인 컴퓨터에 해당 CLI·로그인/이용권한이 있을 때만 시도할 수 있음. GitHub CI는 모델을 호출하지 않음.

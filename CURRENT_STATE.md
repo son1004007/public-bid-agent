@@ -145,3 +145,14 @@
 - 업로드 PDF/DOCX는 아직 완전한 별도 샌드박스가 없으므로 신뢰 불가능한 문서 처리는 개발 단계. 실제 기밀 회사 자료 운영 사용은 승인·보안 검수 전 HOLD.
 - LangChain/RAG 및 LangGraph의 두 AI 상호 반론·상태 보존·중단/재개: **NOT IMPLEMENTED**. 현재는 독립 Codex/Claude 의견 요청과 사람 결정 분리용 MVP.
 - 사용자 직접 UI 승인 `UI_PROPOSED`, AGY/Gemini 독립 최종 검수 `NOT RUN / REVIEW_DEBT`, `main` 병합/운영 배포 금지.
+
+## 2026-10-09 실제 문서 형식 확장 구현
+
+- 사용자 요구: 기존 UI는 유지하고 구현 단계로 진입. Excel(.xlsx/.xlsm/.xls), 일반 및 스캔 PDF 한국어 OCR, HWP 5.x, HWPX 지원.
+- 코드: `local_app/extractors.py` (파일 형식 식별, ZIP 폭탄/크기/페이지 제한, PDF 텍스트+로컬 Tesseract OCR 자동 분기, Excel 시트별 셀 값, HWPX XML 본문, Apache-2.0 `python-hwpx`의 HWP 5.x 텍스트, DOCX 표 포함), `server.py` (별도 추출 subprocess + JSON 추출방식/경고 저장), `app.js`/`index.html` (UI 업로드 형식 및 경고 표시).
+- 지원 범위: 파일당 10 MiB, PDF 40페이지/OCR 12페이지, Excel 최대 24시트·2500행·90열, ZIP 총 해제 35MiB/최대 750개 엔트리, 파일당 추출 텍스트 44,000자. 문서 전체를 무제한 분석했다고 주장하지 않음.
+- OCR: Python 패키지 외에 Tesseract 실행 파일+한국어 `kor` 언어팩 사용자 PC 설치 필수. 모델 API를 통한 OCR이 아니라 **로컬 OCR**.
+- 구형 HWP: `python-hwpx>=6.6,<7`의 HWP 5.x 파서 사용. 암호화/배포용/DRM HWP, HWPX 이미지/수식 등 한계. AGPL `pyhwp`는 직접 의존성으로 포함하지 않음.
+- 코드/자동화: `local_app/test_extractors.py` 형식별 테스트, `local_app/test-requirements.txt` CI 테스트 의존성, 다운로드 아티팩트 업데이트.
+- 이 변경은 업로드 바이너리를 업무 JSON에 저장하지 않고 추출된 텍스트·방식·오류경고·잘림 여부만 기록한다. Codex/Claude AI 전송은 사용자 명시 동의 이후 별개 경로.
+- **검증 게이트:** GH CI 성공 여부/실 HWP·XLS 테스트는 실제 run evidence로 확인. 외부 악성 파일에 대한 완전한 OS 격리나 실제 사용자의 CLI 교차 검토/인증/정확도는 별도 미완료.

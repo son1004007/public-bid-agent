@@ -103,3 +103,12 @@
 - AI가 초안을 생성하여 수기 검증/오류 수정하도록 한다. AI 권고 Y1, 사람 선택 Y2, 실제 낙찰 Y3 구분.
 - 로컬 JSON 저장은 외부 공급자 inference 전송과 다르다. 동의 체크·선택한 공급자만 호출. 실제 Codex·Claude 로그인/작동은 사용자 PC에서만 검증 가능.
 - 비공개 원문 파서 격리, OAuth/CLI 자체 로그, 결과 근거 의미 검증, 사용량/약관, 독립 보안 검수는 아직 미완료이면 상태를 명확히 기록한다.
+
+## 2026-10-09 문서 형식 지원 및 실제 로컬 구현
+
+> 사용자 입력으로 엑셀이나 pdf ocr , hwp, hwpx도 지원해야해. 화면은 어느정도 된것같은데 구현을 시작해보면 어때?
+
+- 기존 로컬 앱에 문서 파서 `local_app/extractors.py`를 구현. Excel XLS/XLSX/XLSM, PDF OCR(Tesseract kor), HWP(유지보수 확인한 python-hwpx), HWPX(OWPML ZIP+XML), DOCX 등을 입력받아 초안용 텍스트를 추출한다.
+- 추출은 localhost 서버와 분리된 subprocess에서 실행, 실패는 사용자에게 명확한 메시지로 표시. 정상인 문서 내용을 AI가 신뢰할 만한 사실로 확정하는 것은 금지.
+- 로컬 개인 JSON 파일에 추출 정보/경고/잘림 여부만 보관하고 원본 바이너리는 영구 저장하지 않음. AI 제공자 전송은 명시 동의 후.
+- 현재 필수 구현/검증 증거: `local_app/test_extractors.py`, CI `local-python-bid-agent` 아티팩트, `local_app/README.md` 설치 가이드. 실제 로컬 HWP·XLS와 OCR 입력은 각 환경에서 재검증.

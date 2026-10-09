@@ -143,3 +143,11 @@ TypeScript/TSX 예시:
 ## 7. Git 및 완료 기준
 
 커밋 접두어는 `docs:`, `feat:`, `fix:`, `test:`, `refactor:`, `chore:`를 사용합니다. `PLANNED` / `IN_PROGRESS` / `IMPLEMENTED_UNVERIFIED` / `VERIFIED` / `REVIEWED` / `RELEASED`를 구별합니다. 작업 도중 공개 소스코드를 GitHub에 기록할 수 있지만 이것이 운영 배포 승인이나 기능 완료를 의미하지는 않습니다. 주요 위험과 미완료 검수는 `TASKS.md`에 남깁니다. 사용자 합의 없는 일괄 설계 재검수 루프는 구현을 차단하지 않으며, 실제 테스트·필수 독립 검수 없이 `REVIEWED`나 `RELEASED`로 표시하지 않습니다.
+
+## 2026-10-09 파일 형식 구현 기준
+
+- 사용자 요구에 따라 로컬 문서 추출은 Excel(XLS/XLSX/XLSM), PDF+한국어 OCR, HWP/HWPX, DOCX, TXT 등 지원을 목표로 함.
+- 파일 변환/파싱은 `local_app/extractors.py`의 별도 Python subprocess에서 수행. 크기/압축 폭탄/페이지 수/시간·메모리 제한, 업로드 JSON 원본 미보관, 추출 메타데이터·오류/잘림 표시.
+- HWP 계열은 Apache-2.0 `python-hwpx` 또는 HWPX OWPML XML 파서 기준. AGPL3 `pyhwp`는 공개 저장소의 기본 의존성으로 추가하지 않음.
+- 이미지 스캔 PDF는 사용자 PC에 Tesseract와 `kor` 언어팩이 있을 때 로컬 OCR만 수행. AI 공급자로의 자료 전송은 별도 사용자 동의 뒤 실행.
+- AI가 OCR 문자를 완전/정확하다고 가정하지 않으며 입찰자격/마감/평가점수는 최종 원문 대조 필요.

@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r backend/requirements-dev.txt
       - name: Install local document readers
-        run: python -m pip install -r local_app/requirements.txt
+        run: python -m pip install -r local_app/test-requirements.txt
       - name: Test standalone local JSON server
         run: python -m unittest discover -s local_app -p 'test_*.py' -v
       - name: Run backend tests
@@ -62,9 +62,12 @@ jobs:
           name: local-python-bid-agent
           path: |
             local_app/server.py
+            local_app/extractors.py
             local_app/index.html
             local_app/app.js
             local_app/requirements.txt
+            local_app/test-requirements.txt
+            local_app/test_extractors.py
             local_app/README.md
             local_app/test_local.py
           if-no-files-found: error
