@@ -294,3 +294,13 @@
 - Windows Chrome 19개 실제 클릭 체크 PASS: 공고 상세보기 부작용 없음, 자격조건 8/평가인자 12, 별도 판단 버튼·사유 입력·최종 불참기록, 목록 복귀/이력 유지.
 - Python 상세 시안 회귀 4 PASS, Node syntax PASS, 로컬 HTTP 200, GitHub push/PR run 38050935732/38050937747 SUCCESS. 기존 사용자 합성 사례 5건 유지.
 - [상세 보고서](docs/ui/DECISION_DETAIL_PREVIEW_E2E_2026-10-10.md) 참고. 사용자 UX 승인 및 독립 코드 리뷰는 여전히 미완료, main merge HOLD.
+
+## 2026-10-10 프로필 로컬 백엔드 연결 (구현 중)
+
+- 사용자 최신 지시: 퍼블리싱을 검토한 뒤 백엔드 구현으로 진행. 과거 `UI_APPROVED` 전 백엔드 확장 보류 규칙은 합성 로컬 프로필 수직 슬라이스에 한해 해제한다.
+- 대상 브랜치: `feat/sprint1-search-demo`, Draft PR #1. `main`은 미병합된 기존 설계 단계이며 여기에 구현 코드가 없다.
+- `local_app/decision_profiles.py`: 참여 판단 기준/12 가중치 2종의 입력 검증, 버전별 스냅샷, revision 경합 검사, 별도 `decision_profiles.json` 계약.
+- `local_app/server.py`: GET `/api/decision-profiles`, POST `/api/decision-profiles/save`(Host/Origin/CSRF, 400/409/503 구분, 원자 파일 저장).
+- `frontend/public/bid-decision-dashboard-preview.js`: 로컬앱 `/decision-preview`에서 저장/새로고침 복원, 독립 HTML 파일에서 메모리 시안 유지. 저장 충돌 시 이전 내용을 덮어쓰지 않고 재조회.
+- **범위 제한**: 공고 8개/판별/불참 이력은 계속 합성·메모리 시연, 실시간 자동수집/AI 호출 없음. 기존 회사 운영정보·공고 분석 JSON 변경 없음.
+- 최초 코드 작성 시 테스트 상태: `IMPLEMENTED_UNVERIFIED`. 이 기록은 CI 및 실행 증거 확인 전 사전 구현 상태다. 사용자 승인, 독립 AGY/Codex 코드 검수, 병합 및 공개 운영은 여전히 `NOT RUN / HOLD`.

@@ -42,13 +42,15 @@ class BidDecisionPreviewTests(unittest.TestCase):
   self.assertNotIn("b.addEventListener('click',()=>{selected=n.id;if(!n.rec)assess(n)",js)
   self.assertIn("const entries=logs.filter(x=>x.id===n.id)",js)
 
- def test_not_live_collection_model_or_storage(self):
+ def test_only_local_profile_persistence_not_live_collection_or_model(self):
   t=PAGE.read_text(encoding="utf-8")+"\n"+SCRIPT.read_text(encoding="utf-8")
   self.assertIn("합성 공고",t)
   self.assertIn("새로고침하면 초기화",t)
   self.assertNotIn("localStorage",t)
   self.assertNotIn("sessionStorage",t)
-  self.assertNotIn("fetch(",t)
+  self.assertIn("fetch(\x27/api/decision-profiles\x27",t)
+  self.assertIn("fetch(\x27/api/decision-profiles/save\x27",t)
+  self.assertIn("location.hostname!==\x27127.0.0.1\x27",t)
   self.assertNotIn("XMLHttpRequest",t)
   self.assertNotIn("WebSocket",t)
   self.assertIn("const seed=[",t)

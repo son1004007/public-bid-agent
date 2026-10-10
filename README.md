@@ -191,3 +191,9 @@ Windows 실제 Chrome 헤드리스 검사에서 로컬 서버의 `Content-Securi
 ## 상세보기 UI 검증 (2026-10-10)
 
 공고 목록→전체 상세(4탭)→참여 판단 시연→사유를 입력한 담당자 불참 결정→상세/이력 재조회 **Chrome 클릭 19개 항목 PASS**. 상세보기 클릭만으로 판단이 실행되지는 않습니다. [상세 화면 검증 보고서](docs/ui/DECISION_DETAIL_PREVIEW_E2E_2026-10-10.md). 현재 합성 시연만 제공하며 실제 API/모델·영구저장은 미구현입니다.
+
+## 로컬 의사결정 프로필 API (2026-10-10 개발 브랜치)
+
+`http://127.0.0.1:8765/decision-preview`에서 참여 기준 및 12개 영향인자 가중치를 저장하면 `~/.public-bid-agent-local/decision_profiles.json`에 버전 이력이 별도로 보관됩니다. GET `/api/decision-profiles`로 조회하고 POST `/api/decision-profiles/save`로 저장합니다. POST는 로컬 Origin/CSRF, `expected_revision` 낙관적 동시성 검사와 전체 가중치 100% 조건을 적용하며, 다른 창의 변경과 충돌하면 409를 반환합니다. 파일을 직접 열어 보거나 독립 시안을 실행하면 기존 화면 메모리 데모로 동작합니다. 기존 `cases.json`과 `operations.json`은 그대로 유지합니다.
+
+**이 API는 개인 PC 루프백 전용 시연입니다.** 합성 공고 목록/가상 판단/불참 이력은 아직 서버 저장되지 않으며 실제 공고 수집, Codex 호출, 법적 입찰 자격 검증, 대외 배포가 구현됐다는 뜻이 아닙니다. 이 기능의 독립 최종 코드 검수·사용자 UI 승인은 아직 완료되지 않았고 Draft PR 병합은 보류합니다.

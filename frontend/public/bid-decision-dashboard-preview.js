@@ -48,6 +48,59 @@ let logs=[
 const names={bid:'참여 검토',no_bid:'불참 검토',hold:'확인 보류',pending:'판단 대기'};
 let fullDetailTab='overview';
 let toastTimer;
+let profileConnection=null;
+
+/* 로컬 127.0.0.1 앱에서만 프로필 JSON 영속화. 파일로 여는 시안은 기존 메모리 모드 유지. */
+function applyStoredProfiles(state){
+ if(!state||!Number.isInteger(state.revision)||!Number.isInteger(state.policy_version)||!Number.isInteger(state.factor_version)
+   ||!state.policy||!state.weights||Object.keys(state.weights).length!==factors.length)throw Error('프로필 응답 계약 오류');
+ policy={...state.policy};weights={...state.weights};
+ policyVersion=state.policy_version;weightVersion=state.factor_version;
+ renderPolicy();renderVariables();renderNotices();
+ if(page==='full-detail')renderFullDetail();
+}
+async function loadStoredProfiles(){
+ if(location.protocol!=='http:'||location.hostname!=='127.0.0.1'||location.pathname!=='/decision-preview')return;
+ try{
+  const response=await fetch('/api/decision-profiles',{headers:{Accept:'application/json'},cache:'no-store'});
+  if(!response.ok)throw Error('HTTP '+response.status);
+  const body=await response.json();
+  if(body.storage!=='LOCAL_JSON'||typeof body.csrf!=='string')throw Error('로컬 저장 계약 오류');
+  applyStoredProfiles(body.profiles);
+  profileConnection={revision:body.profiles.revision,csrf:body.csrf};
+  byId('storageMode').textContent='두 프로필은 이 PC의 decision_profiles.json에 저장합니다. 가상 판단과 불참 이력은 화면 임시 상태입니다.';
+ }catch(error){
+  profileConnection=null;
+  notify('로컬 프로필 저장 연결을 확인하지 못했습니다. 변경 사항은 화면 임시 상태입니다.');
+ }
+}
+async function commitProfile(kind,value){
+ if(!profileConnection){
+  if(kind==='policy'){policy=value;policyVersion++;renderPolicy();}
+  else{weights=value;weightVersion++;renderVariables();}
+  notify('화면 임시 프로필을 변경했습니다. 파일로 연 시안은 새로고침 시 초기화됩니다.');
+  return;
+ }
+ const payload={expected_revision:profileConnection.revision,kind};
+ if(kind==='policy')payload.profile=value;
+ else payload.weights=value;
+ try{
+  const response=await fetch('/api/decision-profiles/save',{
+   method:'POST',credentials:'same-origin',
+   headers:{'Content-Type':'application/json','X-Local-CSRF':profileConnection.csrf},
+   body:JSON.stringify(payload)
+  });
+  if(!response.ok){
+   if(response.status===409){await loadStoredProfiles();throw Error('다른 창의 저장이 우선 적용됐습니다. 변경 내용을 확인하고 다시 저장하세요.');}
+   throw Error('프로필 저장 실패: HTTP '+response.status);
+  }
+  const body=await response.json();
+  if(!body.ok||body.storage!=='LOCAL_JSON')throw Error('서버 저장 응답 오류');
+  applyStoredProfiles(body.profiles);
+  profileConnection.revision=body.profiles.revision;
+  notify(kind==='policy'?'참여 판단 기준을 로컬 JSON에 버전 저장했습니다.':'영향인자 가중치를 로컬 JSON에 버전 저장했습니다.');
+ }catch(error){notify(error.message||'프로필 저장 오류. 기존 서버 값은 변경하지 않았습니다.');}
+}
 function notify(s){const t=byId('toast');t.textContent=s;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),4500);}
 function badge(key){return el('span','pill '+(key||'pending'),names[key]||names.pending);}
 function getNotice(){return notices.find(n=>n.id===selected);}
@@ -105,8 +158,13 @@ function renderDetail(){const n=getNotice(),panel=byId('detail');panel.replaceCh
  panel.append(reasonInput);const full=el('button','btn','전체 상세보기');full.addEventListener('click',()=>openFullDetail(n.id));actions.append(full,judge,decision);panel.append(actions);const note=el('p','muted','불참·보류 근거와 프로필 버전은 화면 시연 기록에만 남습니다. 새로고침하면 모두 초기화됩니다.');note.style.marginTop='13px';panel.append(note);
 }
 function renderPolicy(){byId('policyName').value=policy.name;byId('policyFit').value=policy.minFit;byId('policyMargin').value=policy.minMargin;byId('policyRequire').checked=policy.require;byId('policyOperations').checked=policy.ops;byId('policyProof').checked=policy.proof;byId('policyVersion').textContent='참여 판단 기준 v'+policyVersion+' · 가상 프로필';}
-function savePolicy(){const minFit=Number(byId('policyFit').value),minMargin=Number(byId('policyMargin').value),name=byId('policyName').value.trim();if(!name||!Number.isFinite(minFit)||minFit<0||minFit>100||!Number.isFinite(minMargin)||minMargin< -100||minMargin>100){notify('이름·기술점수(0~100)·예상 이익률(-100~100)을 확인하세요.');return;}
- policy={name,minFit,minMargin,require:byId('policyRequire').checked,ops:byId('policyOperations').checked,proof:byId('policyProof').checked};policyVersion++;renderPolicy();notify('참여 판단 기준 v'+policyVersion+'을 이 화면에 임시 저장했습니다. 과거 판단은 그대로 유지됩니다.');}
+function savePolicy(){
+ const minFit=Number(byId('policyFit').value),minMargin=Number(byId('policyMargin').value),name=byId('policyName').value.trim();
+ if(!name||!Number.isFinite(minFit)||minFit<0||minFit>100||!Number.isFinite(minMargin)||minMargin< -100||minMargin>100){
+  notify('이름·기술점수(0~100)·예상 이익률(-100~100)을 확인하세요.');return;
+ }
+ void commitProfile('policy',{name,minFit,minMargin,require:byId('policyRequire').checked,ops:byId('policyOperations').checked,proof:byId('policyProof').checked});
+}
 function renderVariables(){byId('gateVariables').replaceChildren();gates.forEach((g,i)=>{const c=el('div','callout');c.append(el('strong','',(i+1)+'. '+g[1]),el('p','muted','필요 근거: '+g[2]));byId('gateVariables').append(c);});const list=byId('factorWeights');list.replaceChildren();factors.forEach((f,i)=>{const row=el('div','weightRow');row.append(el('strong','',(i+1)+'. '+f[1]));const inp=el('input');inp.type='range';inp.min='0';inp.max='25';inp.step='1';inp.value=weights[f[0]];inp.dataset.weight=f[0];inp.setAttribute('aria-label',f[1]+' 가중치');const out=el('output','',inp.value+'%');inp.addEventListener('input',()=>{out.textContent=inp.value+'%';calcWeightTotal();});row.append(inp,out);list.append(row);});calcWeightTotal();}
 function calcWeightTotal(){let total=0;document.querySelectorAll('[data-weight]').forEach(n=>{total+=Number(n.value)});byId('weightTotal').textContent='합계 '+total+'%';byId('saveFactors').disabled=total!==100;byId('weightTotal').className='pill '+(total===100?'bid':'no_bid');}
 
@@ -263,7 +321,7 @@ byId('historyFilter').addEventListener('change',renderHistory);
 byId('assess-all').addEventListener('click',()=>{let count=0;notices.forEach(n=>{if(!n.rec){assess(n);count++}});renderNotices();notify(count+'개 합성 공고의 판별을 시연했습니다. 실제 Codex 호출 및 입찰 결정은 없습니다.');});
 function simulateCollect(){if(notices.some(n=>n.id==='DEMO-NEW-009')){notify('이미 가상 공고를 1건 추가했습니다. 새로고침 시 초기화됩니다.');return;}notices.unshift({id:'DEMO-NEW-009',title:'[합성] 지자체 AI 데이터 검색·분석 플랫폼',org:'가상 스마트행정센터',cat:'DATA',budget:'2.7억',end:'11.19',fit:87,margin:22,hard:'unknown',ops:false,exp:true,score:79,rec:null,final:null,reasons:[],checked:'화면 수집 시연 · 방금'});selected='DEMO-NEW-009';show('notices');renderNotices();notify('가상 공고 1건을 화면 목록에 추가했습니다. 실제 수집은 수행하지 않았습니다.');}
 byId('demo-collect').addEventListener('click',simulateCollect);byId('collect-action').addEventListener('click',simulateCollect);
-byId('savePolicy').addEventListener('click',savePolicy);byId('resetPolicy').addEventListener('click',()=>{policy={...policyDefault};policyVersion++;renderPolicy();notify('참여 판단 프로필을 이 화면에서 기본값으로 복원했습니다.');});
-byId('saveFactors').addEventListener('click',()=>{const next={};document.querySelectorAll('[data-weight]').forEach(x=>next[x.dataset.weight]=Number(x.value));if(Object.values(next).reduce((a,b)=>a+b,0)!==100){notify('평가요인 가중치 합계가 100%여야 합니다.');return;}weights=next;weightVersion++;notify('영향인자 프로필 v'+weightVersion+'을 화면에 임시 저장했습니다. 실제 AI 호출/결과 변경은 없습니다.');});
-byId('resetFactors').addEventListener('click',()=>{weights=Object.fromEntries(factors.map(v=>[v[0],v[2]]));weightVersion++;renderVariables();notify('기본 가중치 프로필로 복원했습니다.');});
-renderNotices();renderPolicy();renderVariables();
+byId('savePolicy').addEventListener('click',savePolicy);byId('resetPolicy').addEventListener('click',()=>{void commitProfile('policy',{...policyDefault});});
+byId('saveFactors').addEventListener('click',()=>{const next={};document.querySelectorAll('[data-weight]').forEach(x=>next[x.dataset.weight]=Number(x.value));if(Object.values(next).reduce((a,b)=>a+b,0)!==100){notify('평가요인 가중치 합계가 100%여야 합니다.');return;}void commitProfile('factors',next);});
+byId('resetFactors').addEventListener('click',()=>{void commitProfile('factors',Object.fromEntries(factors.map(v=>[v[0],v[2]])));});
+renderNotices();renderPolicy();renderVariables();void loadStoredProfiles();

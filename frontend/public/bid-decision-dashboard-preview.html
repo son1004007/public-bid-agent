@@ -3,7 +3,7 @@
 <meta name="description" content="Public Bid Agent - 공고 수집, 참여 판별 기준 및 영향인자 프로필, 불참 사유 퍼블리싱 시안">
 <title>Public Bid Agent | 공고 수집 및 참여판단 화면 시안</title>
 <style>
-/* 설계 계약: 서버/로그인/AI/수집 호출 없는 독립 화면. 모든 데이터는 합성·메모리 임시 저장이며, 사람 결정과 AI 권고를 분리한다. */
+/* 설계 계약: 합성 공고와 가상 판별. 로컬앱에서 두 프로필만 PC JSON에 버전 저장하고, 파일 직접 열기는 메모리 시연으로 유지한다. 실제 수집·AI·법적 판단 없음. */
 :root{font:14px/1.55 system-ui,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#23354d;background:#f4f6fa;font-synthesis:none}
 *{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #9dc7fb;outline-offset:2px}
@@ -132,13 +132,13 @@ label{font-size:12px;color:#526780;font-weight:720}label>input,label>select{disp
 <button data-view="policy"><span>☷</span> 참여 판단 프로필</button>
 <button data-view="variables"><span>◇</span> 영향인자 프로필</button>
 <button data-view="history"><span>▤</span> 참여·불참 이력</button>
-</nav><div class="side-bottom"><b>UI DESIGN PREVIEW</b><br>서버·계정·AI 연결 없음<br>수집/판단/프로필 저장은 이 화면에서만 시뮬레이션합니다.<br><a href="/">&larr; 기존 로컬 AI 분석 앱</a></div></aside>
+</nav><div class="side-bottom"><b>UI DESIGN PREVIEW</b><br>실제 계정·AI·공식 수집 미연결<br>로컬앱에서 판단 기준/가중치 프로필만 PC JSON에 저장합니다.<br><a href="/">&larr; 기존 로컬 AI 분석 앱</a></div></aside>
 <div class="main"><header class="topbar"><div class="breadcrumb">입찰 관리 / <strong id="breadcrumb">공고 목록</strong></div><div class="topright"><span><i class="dot"></i>실제 수집 미연동</span><span class="stage">시연용 합성 데이터</span></div></header>
 <div class="content">
 <section class="view active" id="view-notices">
 <div class="hgroup"><div><div class="eyebrow">BID OPPORTUNITY DASHBOARD</div><h1>AI·데이터 사업 공고</h1><p class="desc">수집한 사업을 한 곳에서 확인하고, 저장한 기준 프로필로 참여 여부를 검토합니다.</p></div>
 <div class="actions"><button class="btn" id="jump-collection">수집 설정</button><button class="btn primary" id="assess-all">판단 대기 공고 일괄 판별 시연</button></div></div>
-<div class="banner"><strong>화면 설계 검증</strong><span>현재 공고 8건은 전부 가상의 예시입니다. 정기 수집·Codex 분석·프로필 영구 저장·나라장터 제출은 연결되지 않았습니다. 버튼은 화면 동작만 시뮬레이션하며 실제 입찰 결정을 하지 않습니다.</span></div>
+<div class="banner"><strong>화면 설계 검증</strong><span id="storageMode">파일로 열면 프로필과 판단 이력은 화면 임시 상태입니다. 현재 공고 8건은 전부 가상 예시입니다. 로컬앱으로 접속할 때 판단기준/가중치 프로필만 PC JSON에 저장됩니다. 공고 수집·Codex 분석·판단 이력 저장·나라장터 제출은 미연결입니다. 실제 입찰 결정을 하지 않습니다.</span></div>
 <div class="kpis" id="kpis"></div>
 <div class="workgrid">
 <section class="card"><div class="sectionHead"><div><h2>수집 공고 목록</h2><p>공고별 판단 상태와 불참 사유까지 확인</p></div><div class="actions"><span class="muted" id="result-count"></span><button class="btn small" id="demo-collect">가상 수집 시연</button></div></div>
@@ -178,16 +178,16 @@ label{font-size:12px;color:#526780;font-weight:720}label>input,label>select{disp
 </section>
 <section class="view" id="view-policy">
 <div class="hgroup"><div><div class="eyebrow">DECISION POLICY PROFILE</div><h1>입찰 참여 판단 기준</h1><p class="desc">참여 추천·불참 검토·보류를 분류할 업무 기준을 프로필로 관리합니다.</p></div></div>
-<div class="banner"><strong>프로필 시안</strong><span>프로필 수정 후 '화면에 임시 저장'을 눌러야 가상 판단에 적용됩니다. 새로고침하면 초기화됩니다. 저장된 결과는 실제 AI 판단 또는 법적 참가자격 판정이 아닙니다.</span></div>
+<div class="banner"><strong>프로필 시안</strong><span>프로필을 수정하고 저장 버튼을 누르면 로컬앱에서는 PC JSON에 버전을 저장합니다. 파일 시안으로 열면 화면 임시 변경이며 새로고침하면 초기화됩니다. 가상 판단은 법적 자격 판정이 아닙니다.</span></div>
 <div class="profilegrid">
-<div class="card"><div class="panelTop"><div><h2>기본 참여 판단 프로필</h2><p class="muted" id="policyVersion"></p></div><span class="pill pending">화면 임시 저장</span></div>
+<div class="card"><div class="panelTop"><div><h2>기본 참여 판단 프로필</h2><p class="muted" id="policyVersion"></p></div><span class="pill pending">로컬/시안 프로필</span></div>
 <label>프로필 이름<input id="policyName" class="field" maxlength="50"></label>
 <div class="fieldset"><label>최소 가중 종합 적합도 (0~100)<input id="policyFit" class="field" type="number" min="0" max="100"></label><label>최소 예상 사업이익률 (%)<input id="policyMargin" class="field" type="number" min="-100" max="100"></label></div>
 <div class="stacked" style="margin-top:23px">
 <label class="toggleRow"><input id="policyRequire" type="checkbox"> 필수 참가자격이 미확인인 공고는 '보류'로 분류</label>
 <label class="toggleRow"><input id="policyOperations" type="checkbox"> 운영·상주 중심 공고는 '불참 검토'로 분류</label>
 <label class="toggleRow"><input id="policyProof" type="checkbox"> 필수 수행실적 불충족 시 '불참 검토'로 분류</label>
-</div><div class="actions" style="margin-top:25px"><button class="btn primary" id="savePolicy">프로필 화면에 임시 저장</button><button class="btn" id="resetPolicy">기본값 복원</button></div></div>
+</div><div class="actions" style="margin-top:25px"><button class="btn primary" id="savePolicy">프로필 저장</button><button class="btn" id="resetPolicy">기본값 복원</button></div></div>
 <div class="card"><h2>판단 우선순위</h2><p class="desc" style="margin:13px 0">이 프로필로 공고당 버튼을 누르면 아래 순서로 **참고 판단**을 계산합니다.</p><div class="stacked">
 <div class="callout"><strong>01. 필수조건 확인</strong>법적 등록·면허·실적 등의 명백한 불일치는 '불참 검토', 증빙 미확인은 '보류'로 구분합니다.</div>
 <div class="callout"><strong>02. 기술·인력·사업성</strong>기술 적합성, 내부 투입 여력, 원가 기반 수익성을 비교합니다.</div>
@@ -198,7 +198,7 @@ label{font-size:12px;color:#526780;font-weight:720}label>input,label>select{disp
 <div class="hgroup"><div><div class="eyebrow">INDEPENDENT VARIABLES PROFILE</div><h1>참여 영향인자 프로필</h1><p class="desc">필수 참가조건 8개와 비교 평가요인 12개를 하나의 버전으로 관리합니다.</p></div></div>
 <div class="banner"><strong>두 종류의 프로필</strong><span>참여 판단 프로필은 '어떤 기준으로 참여할지', 영향인자 프로필은 '무엇을 측정하고 점수를 어떻게 반영할지'를 정의합니다. 이번 화면은 영향인자 가중치와 확인 서류를 다룹니다.</span></div>
 <div class="profilegrid"><div class="card"><div class="panelTop"><h2>필수 참가조건 8개</h2><span class="pill">Hard Gate</span></div><div id="gateVariables" class="listGrid"></div></div>
-<div class="card"><div class="panelTop"><div><h2>평가 영향인자 12개</h2><p class="muted">높을수록 유리 · 점수 근거 부족은 미확인</p></div><span class="pill pending" id="weightTotal">합계 100%</span></div><div id="factorWeights"></div><div class="actions" style="margin-top:22px"><button class="btn primary" id="saveFactors">가중치 프로필 화면에 임시 저장</button><button class="btn" id="resetFactors">기본 가중치 복원</button></div><p class="helper">가중치 합계가 100%일 때만 저장합니다. 이 화면은 시안이며 저장값은 서버·파일에 남지 않습니다.</p></div></div>
+<div class="card"><div class="panelTop"><div><h2>평가 영향인자 12개</h2><p class="muted">높을수록 유리 · 점수 근거 부족은 미확인</p></div><span class="pill pending" id="weightTotal">합계 100%</span></div><div id="factorWeights"></div><div class="actions" style="margin-top:22px"><button class="btn primary" id="saveFactors">가중치 프로필 저장</button><button class="btn" id="resetFactors">기본 가중치 복원</button></div><p class="helper">가중치 합계가 100%일 때만 저장합니다. 이 화면은 시안이며 저장값은 서버·파일에 남지 않습니다.</p></div></div>
 </section>
 <section class="view" id="view-history">
 <div class="hgroup"><div><div class="eyebrow">DECISION HISTORY</div><h1>참여·불참 판단 이력</h1><p class="desc">공고별로 무엇 때문에 불참했는지, 어떤 기준으로 판단했는지를 조회합니다.</p></div>

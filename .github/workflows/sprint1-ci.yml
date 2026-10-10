@@ -46,7 +46,9 @@ jobs:
       - name: README synchronization gate
         run: python scripts/check_documentation_sync.py
       - name: Local app JavaScript syntax
-        run: node --check local_app/app.js
+        run: |
+          node --check local_app/app.js
+          node --check frontend/public/bid-decision-dashboard-preview.js
       - name: Static publishing preview syntax and boundaries
         run: python scripts/check_ui_preview.py
       - name: Verify standalone preview included in build
@@ -70,6 +72,11 @@ jobs:
           name: local-python-bid-agent
           path: |
             local_app/server.py
+            local_app/decision_profiles.py
+            local_app/test_decision_profiles.py
+            local_app/test_bid_decision_preview.py
+            frontend/public/bid-decision-dashboard-preview.html
+            frontend/public/bid-decision-dashboard-preview.js
             local_app/cross_review.py
             local_app/extractors.py
             local_app/index.html

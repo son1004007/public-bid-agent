@@ -24,6 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from decision_support import advise as advise_bid
+from decision_profiles import ProfileConflict, load_state as load_decision_profiles, next_state as update_decision_profiles
 from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
 
 GATES = [
@@ -309,6 +310,12 @@ class Handler(BaseHTTPRequestHandler):
    b=DOCUMENT_GUIDE.read_bytes()
    self.send_local_headers(200,"application/json; charset=utf-8",len(b))
    return self.wfile.write(b)
+  if self.path=="/api/decision-profiles":
+   with LOCK:
+    try: profile=load_decision_profiles(ROOT / "decision_profiles.json")
+    except (ValueError, json.JSONDecodeError, OSError):
+     return self.respond({"error":"저장된 프로필을 읽을 수 없습니다. 파일을 확인하세요"},503)
+   return self.respond({"profiles":profile,"csrf":TOKEN,"storage":"LOCAL_JSON"})
   if self.path=="/api/operations":
    with LOCK: profile=load_operations()
    return self.respond({"operations":profile,"sections":REFERENCE_SECTIONS})
@@ -325,6 +332,16 @@ class Handler(BaseHTTPRequestHandler):
     raise ValueError("본문 JSON 최대 4MB")
    payload=json.loads(self.rfile.read(size))
    if not isinstance(payload,dict): raise ValueError("JSON 객체만 지원")
+   if self.path=="/api/decision-profiles/save":
+    with LOCK:
+     try: existing=load_decision_profiles(ROOT / "decision_profiles.json")
+     except (ValueError, json.JSONDecodeError, OSError):
+      return self.respond({"error":"저장된 프로필이 손상되었습니다. 덮어쓰지 않았습니다"},503)
+     try: updated=update_decision_profiles(existing,payload,now())
+     except ProfileConflict as error:
+      return self.respond({"error":str(error)},409)
+     persist(updated,ROOT / "decision_profiles.json")
+     return self.respond({"ok":True,"profiles":updated,"storage":"LOCAL_JSON"})
    if self.path=="/api/operations/save":
     with LOCK:
      existing = load_operations()
