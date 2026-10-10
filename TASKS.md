@@ -252,7 +252,7 @@
 - [x] 기존 개발 브랜치·PR·CI/정적 화면·로컬 JSON·운영 원가 저장을 확인하고 신규 구현 기준점 확정
 - [x] 로컬 참여 판단 기준·12 가중치 별도 JSON 버전 저장 API와 화면 연결 코드 작성
 - [x] revision 충돌/불량 스키마/파일 손상/CSRF/기존 JSON 분리 검증용 회귀 테스트 코드 작성
-- [ ] 해당 SHA의 GitHub Actions PASS 확인 및 필요한 수정·재실행
+- [x] 구현 커밋 `10a0dfb`의 GitHub Actions push 및 PR SUCCESS. Python 60 unittest + FastAPI 11 pytest PASS, TS build/JS/UI/README gate PASS
 - [ ] 사용자가 로컬 UI에서 프로필 변경 → 새로고침 복원 → 다른 탭 409 확인
 - [ ] 별도 AGY/Gemini 및 Codex 최종 의미·보안 검수; 결과 교정 및 재검수 (완료 전 main 병합 금지)
 - [ ] 다음 수직 슬라이스: 공고별 판단 권고와 최종 Bid/No-Bid·근거·적용된 프로필 스냅샷의 서버 영구 기록

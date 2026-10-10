@@ -303,4 +303,6 @@
 - `local_app/server.py`: GET `/api/decision-profiles`, POST `/api/decision-profiles/save`(Host/Origin/CSRF, 400/409/503 구분, 원자 파일 저장).
 - `frontend/public/bid-decision-dashboard-preview.js`: 로컬앱 `/decision-preview`에서 저장/새로고침 복원, 독립 HTML 파일에서 메모리 시안 유지. 저장 충돌 시 이전 내용을 덮어쓰지 않고 재조회.
 - **범위 제한**: 공고 8개/판별/불참 이력은 계속 합성·메모리 시연, 실시간 자동수집/AI 호출 없음. 기존 회사 운영정보·공고 분석 JSON 변경 없음.
-- 최초 코드 작성 시 테스트 상태: `IMPLEMENTED_UNVERIFIED`. 이 기록은 CI 및 실행 증거 확인 전 사전 구현 상태다. 사용자 승인, 독립 AGY/Codex 코드 검수, 병합 및 공개 운영은 여전히 `NOT RUN / HOLD`.
+- **검증된 실행 증거 (2026-10-10):** 커밋 `10a0dfb`의 [push CI](https://github.com/son1004007/public-bid-agent/actions/runs/38059273249)와 [PR CI](https://github.com/son1004007/public-bid-agent/actions/runs/38059276328)는 모두 SUCCESS. 로컬 Python unittest **60 PASS**, FastAPI pytest **11 PASS**, React/Vite 빌드/Node JS 문법/퍼블리싱 정적 검사/README 동기화 **PASS**.
+- 위 결과는 GitHub Linux CI의 `VERIFIED (automated)` 범위에 한정된다. 사용자 PC의 로컬 브라우저 클릭/프로필 복원/동시 탭 E2E `NOT RUN`; AGY/Gemini 및 독립 Codex 최종 리뷰 `BLOCKED/REVIEW_DEBT`; 사용자 UX 승인 `NOT RUN`, main 병합·공개 배포 `HOLD`.
+- [프로필 API 테스트 근거](docs/reviews/DECISION_PROFILES_API_2026-10-10.md).
