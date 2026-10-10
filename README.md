@@ -179,3 +179,7 @@ Windows 실제 Chrome 헤드리스 검사에서 로컬 서버의 `Content-Securi
 ### 2026-10-10 Chrome 브라우저 퍼블리싱 확인
 
 회사 노트북 `TD-kiseok`의 Chromium 기반 Chrome headless 실렌더링에서 새 대시보드 `http://127.0.0.1:8765/decision-preview`의 **합성 공고 8행, 현황 KPI 5개, 영향인자 가중치 입력 12개**가 DOM에 생성됨을 검증. 로컬 GET HTTP 200, CSP의 같은 출처 JS 로드, Node `--check` PASS. 검증 중 inline script CSP 차단을 실제 발견하여 정적 JS 파일로 분리하고 보안 헤더는 유지. GitHub push run [38049729286](https://github.com/son1004007/public-bid-agent/actions/runs/38049729286) SUCCESS / PR run [38049733578](https://github.com/son1004007/public-bid-agent/actions/runs/38049733578) SUCCESS. **클릭 상호작용의 브라우저 자동화 E2E 및 사용자의 UI 승인 = NOT RUN**. 현재 앱은 실제 나라장터 수집·AI 판별·프로필 영구 저장을 제공하지 않는 정적 설계 시안이며 main 병합은 HOLD.
+
+### 2026-10-10 공고 전체 상세보기 퍼블리싱
+
+새 공고 중심 대시보드 `/decision-preview`의 목록에 독립된 **상세보기** 버튼을 추가하여 전체 폭의 **공고 상세 화면**으로 이동합니다. 4개 탭: **기본정보(기관/예산/마감/원문·첨부 수집 여부), 참가자격·과업(요구범위 및 Hard Gate 8종), 영향인자·사업성(12개 Factor, 가중치, 기술·이익률 및 프로필 버전), 참여 판단·불참 사유(가상 참고권고와 사람의 최종결정, 명시적 불참 입력 및 이력)**. 목록 복귀/재판단을 제공합니다. `상세보기` 자체는 자동 AI 호출·평가·상태변경을 하지 않습니다. 사용자 입력 상태는 브라우저 탭 메모리만, 새로고침 시 초기화되며 실제 나라장터 원문/첨부·프로필 영구저장·AI 판별·사내 민감정보 전송은 미구현입니다. 정적 HTML과 동명 JS를 함께 제공하며 로컬 CSP를 유지합니다.

@@ -21,6 +21,27 @@ class BidDecisionPreviewTests(unittest.TestCase):
   self.assertIn("logDecision(",content)
   self.assertIn("function weightedFit(n)",content)
   self.assertIn("담당자 최종 불참 사유",content)
+
+ def test_full_detail_navigation_and_four_tabs_without_automatic_assessment(self):
+  html=PAGE.read_text(encoding="utf-8")
+  js=SCRIPT.read_text(encoding="utf-8")
+  self.assertIn('id="view-full-detail"',html)
+  for key in ("overview","requirements","evaluation","decision"):
+   self.assertIn(f'data-detail-tab="{key}"',html)
+  self.assertIn('id="detailBack"',html)
+  self.assertIn('id="detailAssess"',html)
+  self.assertIn('id="fullDetailNoBidReason"',js)
+  self.assertIn("function openFullDetail(id,tab='overview')",js)
+  self.assertIn("function renderFullDetail()",js)
+  self.assertIn("function renderFullRequirements(n,pane)",js)
+  self.assertIn("function renderFullEvaluation(n,pane)",js)
+  self.assertIn("function renderFullDecision(n,pane)",js)
+  self.assertIn("const b=el('button','btn small','상세보기')",js)
+  self.assertIn("b.addEventListener('click',()=>openFullDetail(n.id))",js)
+  self.assertIn("function recordHumanNoBid(n,text)",js)
+  self.assertNotIn("b.addEventListener('click',()=>{selected=n.id;if(!n.rec)assess(n)",js)
+  self.assertIn("const entries=logs.filter(x=>x.id===n.id)",js)
+
  def test_not_live_collection_model_or_storage(self):
   t=PAGE.read_text(encoding="utf-8")+"\n"+SCRIPT.read_text(encoding="utf-8")
   self.assertIn("합성 공고",t)

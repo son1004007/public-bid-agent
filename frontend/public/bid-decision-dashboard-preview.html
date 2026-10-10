@@ -91,6 +91,38 @@ label{font-size:12px;color:#526780;font-weight:720}label>input,label>select{disp
 #toast{position:fixed;right:28px;bottom:24px;max-width:440px;background:#1b3656;color:white;padding:13px 18px;border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,.22);font-size:12px;z-index:20;display:none}#toast.show{display:block}
 @media(max-width:1250px){.workgrid{grid-template-columns:1fr}.detail{position:static}.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:920px){.shell{grid-template-columns:1fr}.sidebar{position:static;height:auto;padding:10px 15px;flex-direction:row;flex-wrap:wrap;gap:8px}.brand{padding:4px;margin-right:auto}.sidebar .minor,.side-bottom{display:none}.nav{display:flex;flex-wrap:wrap}.nav button{width:auto;padding:9px 12px}.topbar{padding:0 20px}.content{padding:25px 19px}.collectionGrid,.profilegrid{grid-template-columns:1fr 1fr}}
 @media(max-width:680px){.brand small{display:none}.nav{width:100%}.nav button{font-size:11px}.nav button span{display:none}.topbar{height:55px}.topright .dot{display:none}.content{padding:22px 12px}.hgroup{align-items:stretch}.hgroup .actions{width:100%}.hgroup .actions .btn{flex:1}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{padding:14px}.kpi .kvalue{font-size:24px}.collectionGrid,.profilegrid,.fieldset{grid-template-columns:1fr}.searchrow input{min-width:140px}.searchrow{width:100%}.toolbar{align-items:stretch}.historyRow{grid-template-columns:1fr;gap:9px}.weightRow{grid-template-columns:1fr 115px 45px}.detail{position:static}}
+
+/* 공고 전체 상세보기 — 기존 목록과 동일한 토큰/컬러 계열 */
+.detailHeader{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-bottom:15px}
+.detailHeader h1{font-size:27px;max-width:850px}
+.detailHero{padding:24px 27px;margin-bottom:16px}
+.detailHero .heroMeta{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0 0}
+.detailHero .heroMeta span{border:1px solid #e3e8f0;background:#f6f8fb;border-radius:5px;padding:5px 9px;color:#5e748d;font-size:11px}
+.detailTabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid #e5eaf2;padding:12px 19px 0}
+.detailTabs button{background:transparent;border:0;border-bottom:3px solid transparent;padding:10px 16px;color:#647b96;font-size:12px;font-weight:750}
+.detailTabs button.active{border-bottom-color:#2664c7;color:#2259ae}
+.detailPane{padding:22px}
+.detailColumns{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:15px}
+.detailBlock{border:1px solid #e5ebf2;background:#fff;border-radius:10px;padding:19px;min-width:0}
+.detailBlock h3{margin:0 0 12px}
+.detailLabel{font-size:10px;letter-spacing:.5px;font-weight:850;color:#6887b1;margin-bottom:9px}
+.detailGrid{display:grid;grid-template-columns:minmax(140px,1fr) minmax(180px,2fr);row-gap:13px;column-gap:10px;margin:0}
+.detailGrid dt{color:#8091a6;font-size:12px}.detailGrid dd{color:#354a62;font-size:12px;font-weight:650;margin:0;overflow-wrap:anywhere}
+.requirementRow{display:grid;grid-template-columns:minmax(170px,1fr) minmax(90px,130px) minmax(200px,1.4fr);gap:10px;align-items:center;padding:13px 6px;border-bottom:1px solid #edf1f5;font-size:12px}
+.requirementRow:last-child{border-bottom:0}.requirementRow strong{color:#314862}
+.requirementRow .evidence{color:#7c8fa5;font-size:11px}
+.requirementRow small{display:block;color:#91a1b3;margin-top:4px}
+.detailNotice{background:#fffbf4;border:1px solid #efdfbe;padding:13px 15px;border-radius:8px;color:#805f25;font-size:12px;line-height:1.7;margin-bottom:17px}
+.metricBar{height:7px;background:#e8eff7;border-radius:6px;overflow:hidden;margin-top:6px}
+.metricBar i{display:block;height:100%;background:#4b79c6}
+.variableRow{display:grid;grid-template-columns:minmax(145px,1.25fr) 65px 80px minmax(120px,.9fr);gap:10px;align-items:center;border-bottom:1px solid #ecf0f5;padding:14px 6px;font-size:12px}
+.variableRow:last-child{border-bottom:0}.variableRow strong{font-size:12px}
+.timeline{display:grid;gap:12px}.timeline article{border-left:3px solid #adc4e4;background:#f8fbff;border-radius:0 8px 8px 0;padding:14px 16px}
+.timeline p{font-size:12px;color:#58718d;line-height:1.65}
+.detailTextarea{width:100%;min-height:96px;padding:12px;border:1px solid #cad8e7;border-radius:8px;resize:vertical;font-size:13px}
+@media(max-width:850px){.detailColumns{grid-template-columns:1fr}.requirementRow{grid-template-columns:minmax(130px,1fr) 95px}.requirementRow .evidence{grid-column:1 / -1}.variableRow{grid-template-columns:1fr 55px 65px}.variableRow .evidence{grid-column:1 / -1}}
+@media(max-width:550px){.detailHeader h1{font-size:22px}.detailPane{padding:13px}.detailBlock{padding:15px}.detailGrid{grid-template-columns:1fr}.detailGrid dt{margin-bottom:-11px}.detailTabs button{padding:9px 10px;font-size:11px}}
+
 </style></head>
 <body><div class="shell">
 <aside class="sidebar"><div class="brand"><div class="mark">P</div><div>Public Bid Agent<small>BID INTELLIGENCE</small></div></div><div class="minor">WORKSPACE</div>
@@ -115,6 +147,27 @@ label{font-size:12px;color:#526780;font-weight:720}label>input,label>select{disp
 <div id="listEmpty" class="empty" hidden>조건에 맞는 공고가 없습니다. 검색어 또는 상태 필터를 바꿔주세요.</div></section>
 <aside class="card detail"><div class="sectionHead"><h2>공고별 판단 근거</h2><span class="muted">화면 시뮬레이션</span></div><div class="detailInner" id="detail"></div></aside>
 </div></section>
+
+<section class="view" id="view-full-detail">
+ <div class="detailHeader">
+  <div><div class="eyebrow">TENDER DETAIL / SYNTHETIC PREVIEW</div>
+   <h1 id="fullDetailTitle">공고 상세정보</h1>
+   <p class="desc">공고 원문·참가조건·영향인자·불참 이유를 한 화면에서 검토합니다.</p></div>
+  <div class="actions"><button class="btn" id="detailBack">← 공고 목록으로</button><button class="btn primary" id="detailAssess">이 공고 참여 판단 시연</button></div>
+ </div>
+ <div class="banner"><strong>합성 상세 화면</strong><span>표시된 사업·금액·평가점수·증빙은 가상의 시연 자료입니다. 실제 나라장터 공고 원문, 정정차수, PDF/HWP 첨부 및 AI 분석과 연결되지 않았습니다. 법적 참가자격과 실제 수주확률은 판단할 수 없습니다.</span></div>
+ <div class="card detailHero" id="fullDetailHero"></div>
+ <div class="card">
+  <div class="detailTabs" id="fullDetailTabs" role="tablist" aria-label="공고 상세 메뉴">
+   <button type="button" role="tab" data-detail-tab="overview" aria-selected="true">공고 기본정보</button>
+   <button type="button" role="tab" data-detail-tab="requirements" aria-selected="false">참가자격·과업</button>
+   <button type="button" role="tab" data-detail-tab="evaluation" aria-selected="false">영향인자·사업성</button>
+   <button type="button" role="tab" data-detail-tab="decision" aria-selected="false">참여 판단·불참 사유</button>
+  </div>
+  <section class="detailPane" id="fullDetailPane" role="tabpanel" aria-live="polite" aria-label="공고 상세 내용"></section>
+ </div>
+</section>
+
 <section class="view" id="view-collection">
 <div class="hgroup"><div><div class="eyebrow">COLLECTION SETTINGS</div><h1>정기 공고 수집</h1><p class="desc">수집 규칙과 실행 이력을 먼저 검토합니다. 자동화와 공식 API 연결은 다음 단계입니다.</p></div></div>
 <div class="banner"><strong>연동 예정</strong><span>이 화면의 실행 버튼은 가상 공고를 목록에 추가할 뿐 나라장터에 접속하지 않습니다. 주기 설정 역시 저장/예약되지 않습니다.</span></div>

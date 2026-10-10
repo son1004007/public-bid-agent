@@ -280,3 +280,9 @@
 - Windows Node JS 구문 검사 PASS, 정적 시안 Python 검사 3개 PASS, 실제 Chrome headless DOM 8개 공고행/5개 KPI/12개 가중치 컨트롤 생성 PASS, localhost /decision-preview HTTP 200, CSP 유지. GitHub push/PR CI 38049729286/38049733578 SUCCESS.
 - 전체 Windows Python 53테스트 수행 중 기존에 반복된 CSRF negative-case URLopen WinError 10053 2개가 간헐 발생. 시안 범위 별도 테스트는 PASS; 기존 Windows 로컬 HTTP test 간헐 실패 추적 지속.
 - Chrome headless에서 기본 렌더링을 확인했으나 실제 사용자 클릭 기반 브라우저 자동 E2E와 UI_APPROVED는 NOT RUN. 기존 로컬 JSON 사례는 시안 GET 동작으로 수정되지 않음. merge HOLD, 백엔드 기능은 UI 확인 후 구현.
+
+## 2026-10-10 공고 전체 상세 화면 시안
+
+- 사용자 요청: 공고 목록에서 상세보기 눌렀을 때 실제 어떤 내용이 표시되는지 구현. 별도 `view-full-detail` 화면, 4개 탭(기본/참가자격·과업/영향인자·사업성/결정·불참·이력), 원문·첨부 미수집 표시, 공고·프로필 동일 합성 상태로 목록/상세/이력 흐름 연결.
+- 상세보기 자체는 단순 렌더링이며 AI/수집/서버 저장·판단 상태변경 없음. 실제 자동수집과 모델 분석·원문 증빙·프로필 서버 저장은 여전히 미구현. 화면 시연 데이터는 브라우저 탭 메모리만.
+- 새 상세 화면의 테스트/브라우저 클릭 검증은 변경 후 확인하여 기록. main 병합 미실시, 독립 의미·보안 검수 필요.
