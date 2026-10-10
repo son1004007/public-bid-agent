@@ -73,7 +73,7 @@ def clean_registers(value):
             if not isinstance(val,str) or len(val)>maxlen:
                 raise ValueError("운영자료 입력 길이 제한을 초과했습니다")
             fields[field]=val.strip()
-        if fields["reviewed_on"] and not re.fullmatch(r"20\\d{2}-[01]\\d-[0-3]\\d",fields["reviewed_on"]):
+        if fields["reviewed_on"] and not re.fullmatch(r"20\d{2}-[01]\d-[0-3]\d",fields["reviewed_on"]):
             raise ValueError("확인일은 YYYY-MM-DD 형태로 입력하세요")
         if state=="reviewed" and (not fields["summary"] or not fields["source"] or not fields["reviewed_on"]):
             raise ValueError("검토 완료에는 요약·자료 출처·확인일이 모두 필요합니다")
