@@ -125,11 +125,11 @@ label{font-size:12px;color:#526780;font-weight:720}label>input,label>select{disp
 </section>
 <section class="view" id="view-policy">
 <div class="hgroup"><div><div class="eyebrow">DECISION POLICY PROFILE</div><h1>입찰 참여 판단 기준</h1><p class="desc">참여 추천·불참 검토·보류를 분류할 업무 기준을 프로필로 관리합니다.</p></div></div>
-<div class="banner"><strong>프로필 시안</strong><span>프로필 수정 후 '화면에 임시 저장'을 눌러야 가상 판단에 적용됩니다. 새로고침하면 초기값으로 복원됩니다. 저장된 결과는 실제 AI 판단 또는 법적 참가자격 판정이 아닙니다.</span></div>
+<div class="banner"><strong>프로필 시안</strong><span>프로필 수정 후 '화면에 임시 저장'을 눌러야 가상 판단에 적용됩니다. 새로고침하면 초기화됩니다. 저장된 결과는 실제 AI 판단 또는 법적 참가자격 판정이 아닙니다.</span></div>
 <div class="profilegrid">
 <div class="card"><div class="panelTop"><div><h2>기본 참여 판단 프로필</h2><p class="muted" id="policyVersion"></p></div><span class="pill pending">화면 임시 저장</span></div>
 <label>프로필 이름<input id="policyName" class="field" maxlength="50"></label>
-<div class="fieldset"><label>최소 기술 적합성 점수 (0~100)<input id="policyFit" class="field" type="number" min="0" max="100"></label><label>최소 예상 사업이익률 (%)<input id="policyMargin" class="field" type="number" min="-100" max="100"></label></div>
+<div class="fieldset"><label>최소 가중 종합 적합도 (0~100)<input id="policyFit" class="field" type="number" min="0" max="100"></label><label>최소 예상 사업이익률 (%)<input id="policyMargin" class="field" type="number" min="-100" max="100"></label></div>
 <div class="stacked" style="margin-top:23px">
 <label class="toggleRow"><input id="policyRequire" type="checkbox"> 필수 참가자격이 미확인인 공고는 '보류'로 분류</label>
 <label class="toggleRow"><input id="policyOperations" type="checkbox"> 운영·상주 중심 공고는 '불참 검토'로 분류</label>
@@ -214,17 +214,34 @@ function renderNotices(){renderKPIs();renderFilters();const list=notices.filter(
  tr.addEventListener('click',e=>{if(e.target.closest('button'))return;selected=n.id;renderNotices();});tr.style.cursor='pointer';container.append(tr);});
  renderDetail();
 }
-function logDecision(n,actor){logs.unshift({stamp:'2026.10.10 · 화면 시연',id:n.id,title:n.title,status:n.final||n.rec||'hold',actor:actor,reason:n.reasons.join(' / ')||'별도 사유 미입력',version:'판단 v'+policyVersion+' · 영향인자 v'+weightVersion});}
+function logDecision(n,actor){logs.unshift({stamp:'2026.10.10 · 화면 시연',id:n.id,title:n.title,status:n.final||n.rec||'hold',actor:actor,reason:n.finalReason||(n.reasons.join(' / ')||'별도 사유 미입력'),version:'판단 v'+policyVersion+' · 영향인자 v'+weightVersion});}
+function factorScore(n,key){
+ const scaled=Math.max(1,Math.min(5,Math.round(n.fit/20)));
+ if(key==='technical')return scaled;
+ if(key==='staff')return n.ops?3:scaled;
+ if(key==='experience')return n.exp?4:2;
+ if(key==='profit')return n.margin===null?null:Math.max(1,Math.min(5,Math.round((n.margin+5)/7)));
+ if(key==='bid_cost')return n.margin===null?null:n.margin>=20?4:2;
+ if(key==='risk')return n.ops?1:4;
+ if(key==='readiness')return n.hard==='unknown'?2:4;
+ return Math.max(1,Math.min(5,Math.round((scaled+3)/2)));
+}
+function weightedFit(n){
+ let total=0,count=0;
+ factors.forEach(([key])=>{const score=factorScore(n,key);if(score===null)return;total+=score*weights[key];count+=weights[key];});
+ return count?Math.round(total/count*20):null;
+}
 function assess(n){let rec='bid';let reasons=[];
+ const weighted=weightedFit(n);
  if(n.hard==='fail'){rec='no_bid';reasons.push('공고의 필수 참가자격 미충족 (가상)');}
  else if(policy.require&&n.hard==='unknown'){rec='hold';reasons.push('필수 자격 증빙 확인 전');}
  else if(policy.proof&&!n.exp){rec='hold';reasons.push('실적증빙 자료 부족');}
  else if(policy.ops&&n.ops){rec='no_bid';reasons.push('운영·상주 중심 사업 제외 기준 적용');}
- else if(n.fit<policy.minFit){rec='no_bid';reasons.push('기술 적합성 '+n.fit+'점 · 기준 '+policy.minFit+'점 미달');}
+ else if(weighted!==null&&weighted<policy.minFit){rec='no_bid';reasons.push('가중 종합 적합도 '+weighted+'점 · 기준 '+policy.minFit+'점 미달');}
  else if(n.margin===null){rec='hold';reasons.push('원가·예상 이익률 확인 필요');}
  else if(n.margin<policy.minMargin){rec='no_bid';reasons.push('예상 이익률 '+n.margin+'% · 기준 '+policy.minMargin+'% 미달');}
- else{reasons.push('현재 가상 조건에서 참여 검토 가능');reasons.push('원문 증빙·실제 회사 기준 확인 필요');}
- n.rec=rec;n.reasons=reasons;n.checked='화면 시연 · 방금';n.policyRef='참여 판단 v'+policyVersion+' · 영향인자 v'+weightVersion;n.score=n.fit;
+ else{reasons.push('현재 가상 조건과 영향인자 프로필에서 참여 검토 가능');reasons.push('원문 증빙·실제 회사 기준 확인 필요');}
+ n.rec=rec;n.reasons=reasons;n.checked='화면 시연 · 방금';n.policyRef='참여 판단 v'+policyVersion+' · 영향인자 v'+weightVersion;n.score=weighted;
  logDecision(n,'시뮬레이션 판별');}
 function renderDetail(){const n=getNotice(),panel=byId('detail');panel.replaceChildren();if(!n){panel.append(el('p','muted','목록에서 공고를 선택하세요.'));return;}
  panel.append(el('div','detailTitle',n.title));const meta=el('div','detailMeta');[n.cat==='DATA'?'데이터분석':n.cat,n.org,n.id].forEach(t=>meta.append(el('span','',t)));panel.append(meta);
@@ -232,11 +249,12 @@ function renderDetail(){const n=getNotice(),panel=byId('detail');panel.replaceCh
  const reason=el('div','callout');reason.style.marginTop='13px';reason.append(el('strong','','판단 사유 및 영향 요인'));
  if(n.reasons.length){const ul=el('ul','reasonList');n.reasons.forEach(v=>ul.append(el('li','',v)));reason.append(ul);}else reason.append(el('p','muted','아직 판단하지 않았습니다. 버튼을 누르면 가상 프로필 기준으로 근거가 표시됩니다.'));panel.append(reason);
  panel.append(el('h3','', '판단에 사용된 프로필'));const ps=el('p','muted',n.policyRef||'기본 참여 판단 v1 · 영향인자 v1 (초기 예시)');ps.style.marginBottom='13px';panel.append(ps);
- [['기술 적합성',n.fit+' / 100'],['예상 이익률',n.margin===null?'미확인':n.margin+'%'],['필수 참가조건',n.hard==='unknown'?'미확인':n.hard==='fail'?'불충족':'충족 가정'],['실적증빙',n.exp?'보유 가정':'미확인'],['운영 중심 여부',n.ops?'운영 중심':'구축·개발 중심']].forEach(v=>{const row=el('div','dl');row.style.marginBottom='8px';row.append(el('dt','',v[0]),el('dd','',v[1]));panel.append(row)});
+ [['기술 적합성',n.fit+' / 100'],['영향인자 가중 종합',weightedFit(n)+' / 100 (가상 값)'],['예상 이익률',n.margin===null?'미확인':n.margin+'%'],['필수 참가조건',n.hard==='unknown'?'미확인':n.hard==='fail'?'불충족':'충족 가정'],['실적증빙',n.exp?'보유 가정':'미확인'],['운영 중심 여부',n.ops?'운영 중심':'구축·개발 중심']].forEach(v=>{const row=el('div','dl');row.style.marginBottom='8px';row.append(el('dt','',v[0]),el('dd','',v[1]));panel.append(row)});
  const actions=el('div','actions');actions.style.marginTop='20px';
  const judge=el('button','btn primary','참여 판단 시연');judge.addEventListener('click',()=>{assess(n);renderNotices();notify('저장된 참여판단 프로필 기준으로 화면 판단을 시연했습니다. 실제 AI 호출은 없습니다.');});
- const decision=el('button','btn','담당자 최종 불참 기록');decision.addEventListener('click',()=>{if(!n.rec){notify('먼저 참여 판단을 실행하세요.');return;}n.final='no_bid';if(n.reasons.length===0)n.reasons=['화면 시연: 불참 사유 입력 필요'];logDecision(n,'담당자 불참 기록 (화면 시연)');renderNotices();notify('불참 최종결정을 화면에서만 기록했습니다. 실제 입찰 상태와 무관합니다.');});
- actions.append(judge,decision);panel.append(actions);const note=el('p','muted','불참·보류 근거와 프로필 버전은 화면 시연 기록에만 남습니다. 새로고침하면 모두 초기화됩니다.');note.style.marginTop='13px';panel.append(note);
+ const reasonInput=el('textarea');reasonInput.rows=2;reasonInput.placeholder='담당자가 확인한 최종 불참 사유를 입력하세요 (가상 예시만)';reasonInput.style.width='100%';reasonInput.style.marginTop='12px';reasonInput.setAttribute('aria-label','담당자 최종 불참 사유');reasonInput.value=n.finalReason||'';
+ const decision=el('button','btn','담당자 최종 불참 기록');decision.addEventListener('click',()=>{if(!n.rec){notify('먼저 참여 판단을 실행하세요.');return;}const reason=reasonInput.value.trim();if(!reason){notify('불참 최종결정에는 담당자 사유를 입력해야 합니다.');reasonInput.focus();return;}n.final='no_bid';n.finalReason=reason;logDecision(n,'담당자 불참 기록 (화면 시연)');renderNotices();notify('담당자 불참 사유를 화면에 임시 기록했습니다. 실제 입찰 상태와 무관합니다.');});
+ panel.append(reasonInput);actions.append(judge,decision);panel.append(actions);const note=el('p','muted','불참·보류 근거와 프로필 버전은 화면 시연 기록에만 남습니다. 새로고침하면 모두 초기화됩니다.');note.style.marginTop='13px';panel.append(note);
 }
 function renderPolicy(){byId('policyName').value=policy.name;byId('policyFit').value=policy.minFit;byId('policyMargin').value=policy.minMargin;byId('policyRequire').checked=policy.require;byId('policyOperations').checked=policy.ops;byId('policyProof').checked=policy.proof;byId('policyVersion').textContent='참여 판단 기준 v'+policyVersion+' · 가상 프로필';}
 function savePolicy(){const minFit=Number(byId('policyFit').value),minMargin=Number(byId('policyMargin').value),name=byId('policyName').value.trim();if(!name||!Number.isFinite(minFit)||minFit<0||minFit>100||!Number.isFinite(minMargin)||minMargin< -100||minMargin>100){notify('이름·기술점수(0~100)·예상 이익률(-100~100)을 확인하세요.');return;}

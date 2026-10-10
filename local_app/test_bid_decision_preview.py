@@ -18,7 +18,8 @@ class BidDecisionPreviewTests(unittest.TestCase):
   self.assertIn("참여 판단 시연",content)
   self.assertIn("불참 사유",content)
   self.assertIn("logDecision(",content)
-  self.assertIn("window.",content.replace("window.", "window.") if "window." in content else "window.")
+  self.assertIn("function weightedFit(n)",content)
+  self.assertIn("담당자 최종 불참 사유",content)
  def test_not_live_collection_model_or_storage(self):
   t=PAGE.read_text(encoding="utf-8")
   self.assertIn("합성 공고",t)
