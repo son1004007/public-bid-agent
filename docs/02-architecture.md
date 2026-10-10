@@ -197,3 +197,5 @@ Codex 1개가 선택된 경우 LangGraph는 independent_analysis에서 1회 호�
 ## 2026-10-10 운영 기준과 입찰별 원가 분리 (ADR 미승인 기능 검증)
 
 로컬 운영 기준 `operations.json` schema_version=1, revision 카운터 및 `roles[{role,cost_per_mm_krw,available_mm}]`, `overhead_pct`, `reserve_pct`를 보유. 직원 개인 급여/이름을 저장하지 않음. 공고별 `cases.json` 각 case에 `cost_plan`(역할별 투입 MM, 외주비/직접경비/제안비, VAT 제외 예정 공급가액)과 계산된 `cost_estimate`(revision, 금액, 경고) 저장. GET `/api/operations`, POST `/api/operations/save`, POST `/api/cost-plan`; 기존 localhost Host/Origin/CSRF, 잠금, 원자 저장, optimistic revision 검증 유지. 순수 함수 `operations.calculate`로 인건비/간접비/충당/이익률 결정적 계산. 기준정보 업데이트 시 기존 견적을 명시적으로 stale 표시(기존 값 변경하지 않음). `prompt_for`는 원래 입찰공고 설명/첨부 텍스트만 전달하며 운영 기준·원가계획을 자동 직렬화하지 않음. 배치계획/수금 현금흐름/실제 회계·법적 입찰 적격 추정은 이 수직 슬라이스 범위 밖.
+
+- `operations.json.registers`: 8개 자료 분류별 `status` (`not_collected`, `needs_refresh`, `reviewed`), 승인된 짧은 요약(`summary`), 문서명(`source`), 확인일(`reviewed_on`). 화면/GET 응답의 메타데이터는 `REFERENCE_SECTIONS` 단일 진실이며, 내용은 Codex/Claude 및 견적 원가에 자동 직렬화하지 않는다. 이는 단순 자료 준비도 기록이지 원장 통합/민감자료 검증이 아님.

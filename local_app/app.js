@@ -4,7 +4,7 @@
  * 보존: 입력 후 명시적 POST 시 사용자 홈 JSON 저장; 파일 원본은 업로드 후 메모리 제거.
  * 불변조건: 제안 점수를 실제 검증/수주확률로 자동 승격하지 않음.
  */
-let token="",cases=[],gates=[],factors=[],active=null,operations=null;
+let token="",cases=[],gates=[],factors=[],active=null,operations=null,operationSections=[];
 const el=id=>document.getElementById(id);
 const make=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e};
 const message=text=>el("message").textContent=text;
@@ -167,9 +167,43 @@ function addOperationRole(row={role:"",cost_per_mm_krw:0,available_mm:0}){
  const del=make("button","이 직무 삭제");del.className="btn";del.type="button";del.addEventListener("click",()=>card.remove());
  card.append(role,cost,capacity,del);el("opsRoles").append(card);
 }
+
+function renderOperatingRegisters(){
+ const container=el("opsRegisters");container.replaceChildren();
+ operationSections.forEach(([key,title,owner])=>{
+  const data=(operations?.registers||{})[key]||{};
+  const card=make("article");card.className="item";card.dataset.regKey=key;
+  card.append(make("h3",title),make("p","보유·확인 담당: "+owner));
+  const status=make("label","현황");
+  const choice=make("select");choice.dataset.regField="status";
+  [["not_collected","미수집/미확인"],["needs_refresh","갱신 필요"],["reviewed","요약·출처 확인"]].forEach(([val,label])=>{
+   const op=make("option",label);op.value=val;choice.append(op);
+  });
+  choice.value=data.status||"not_collected";status.append(choice);
+  const summary=make("label","승인된 비식별 요약 (최대 600자)");
+  const area=make("textarea");area.maxLength=600;area.dataset.regField="summary";area.rows=2;area.value=data.summary||"";summary.append(area);
+  const source=make("label","자료 출처/내부 관리 문서명 (기밀 경로·계정 제외)");
+  const src=make("input");src.maxLength=120;src.dataset.regField="source";src.value=data.source||"";source.append(src);
+  const date=make("label","최종 확인일 (YYYY-MM-DD)");
+  const dateInput=make("input");dateInput.type="date";dateInput.dataset.regField="reviewed_on";dateInput.value=data.reviewed_on||"";date.append(dateInput);
+  [area,src,dateInput].forEach(elem=>elem.addEventListener("input",()=>{if(choice.value==="reviewed")choice.value="needs_refresh";}));
+  card.append(status,summary,source,date);container.append(card);
+ });
+}
+function collectRegisters(){
+ const result={};
+ for(const card of el("opsRegisters").children){
+  const field=(key)=>card.querySelector('[data-reg-field="'+key+'"]');
+  result[card.dataset.regKey]={status:field("status").value,summary:field("summary").value,
+    source:field("source").value,reviewed_on:field("reviewed_on").value};
+ }
+ return result;
+}
+
 function renderOperations(){
  el("opsRoles").replaceChildren();
  (operations?.roles||[]).forEach(addOperationRole);
+ renderOperatingRegisters();
  el("opsOverhead").value=operations?.overhead_pct??0;
  el("opsReserve").value=operations?.reserve_pct??0;
  el("operationsMessage").textContent=operations?"운영정보 버전 "+operations.revision+" · 저장된 역할 "+operations.roles.length+"종 · 미입력 회사 기준단가를 임의 계산하지 않습니다.":"회사 운영정보를 불러오지 못했습니다.";
@@ -178,7 +212,7 @@ async function loadOperations(){
  try{
   const r=await fetch("/api/operations",{cache:"no-store"});
   if(!r.ok)throw Error("운영정보 조회 실패");
-  operations=(await r.json()).operations;
+  const payload=await r.json();operations=payload.operations;operationSections=payload.sections||[];
   renderOperations();
   if(active)renderCostPlan();
  }catch(e){el("operationsMessage").textContent="운영정보 오류: "+e.message}
@@ -198,7 +232,8 @@ function collectOperations(){
    cost_per_mm_krw:readNumber(field("cost_per_mm_krw")),
    available_mm:readNumber(field("available_mm"))};
  });
- return {roles,overhead_pct:readNumber(el("opsOverhead")),reserve_pct:readNumber(el("opsReserve"))};
+ return {roles,overhead_pct:readNumber(el("opsOverhead")),reserve_pct:readNumber(el("opsReserve")),
+  registers:collectRegisters()};
 }
 function renderCostPlan(){
  const container=el("planRows");container.replaceChildren();

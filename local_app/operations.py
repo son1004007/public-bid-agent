@@ -36,9 +36,54 @@ def _number(value, label, maximum=1000):
     return number
 
 
+# 실제 업무에는 다양한 회사 장부/시스템이 있으므로, 본 MVP는 원본 대신 승인된 요약의 갱신 상태를 보관한다.
+REFERENCE_SECTIONS = [
+ ("registrations","사업자 자격·인증","영업지원·경영지원"),
+ ("utilization","진행 프로젝트·가용인력 배치","기술팀장·PMO"),
+ ("past_performance","프로젝트 수행실적·실제 손익","사업관리·재무"),
+ ("suppliers","협력사·외주 기준단가","구매·사업관리"),
+ ("finance","매출·수금·현금흐름","재무·회계"),
+ ("pipeline","입찰 파이프라인·제안 일정","영업·사업부"),
+ ("strategy","사업 전략·차별화 방향","사업부장·경영진"),
+ ("risks","계약·품질·보안 위험 이력","PMO·보안")
+]
+
+
+def empty_registers():
+    return {key:{"status":"not_collected","summary":"","source":"","reviewed_on":""}
+            for key,_,_ in REFERENCE_SECTIONS}
+
+
+def clean_registers(value):
+    if value is None:
+        value={}
+    if not isinstance(value,dict) or set(value)-{k for k,_,_ in REFERENCE_SECTIONS}:
+        raise ValueError("운영자료 확인표의 분류가 올바르지 않습니다")
+    cleaned=empty_registers()
+    for key in cleaned:
+        item=value.get(key,{})
+        if not isinstance(item,dict):
+            raise ValueError("운영자료 요약값이 올바르지 않습니다")
+        state=item.get("status","not_collected")
+        if state not in ("not_collected","needs_refresh","reviewed"):
+            raise ValueError("운영자료 확인 상태가 잘못됐습니다")
+        fields={}
+        for field,maxlen in (("summary",600),("source",120),("reviewed_on",10)):
+            val=item.get(field,"")
+            if not isinstance(val,str) or len(val)>maxlen:
+                raise ValueError("운영자료 입력 길이 제한을 초과했습니다")
+            fields[field]=val.strip()
+        if fields["reviewed_on"] and not re.fullmatch(r"20\\d{2}-[01]\\d-[0-3]\\d",fields["reviewed_on"]):
+            raise ValueError("확인일은 YYYY-MM-DD 형태로 입력하세요")
+        if state=="reviewed" and (not fields["summary"] or not fields["source"] or not fields["reviewed_on"]):
+            raise ValueError("검토 완료에는 요약·자료 출처·확인일이 모두 필요합니다")
+        cleaned[key]={"status":state,**fields}
+    return cleaned
+
+
 def default_profile():
     return {"schema_version": 1, "revision": 0, "roles": [],
-            "overhead_pct": 0, "reserve_pct": 0, "updated_at": None}
+            "overhead_pct": 0, "reserve_pct": 0, "registers":empty_registers(), "updated_at": None}
 
 
 def clean_profile(value):
@@ -69,7 +114,8 @@ def clean_profile(value):
     overhead = _number(value.get("overhead_pct", 0), "간접비율", 100)
     reserve = _number(value.get("reserve_pct", 0), "위험충당률", 100)
     return {"schema_version": 1, "roles": cleaned,
-            "overhead_pct": float(overhead), "reserve_pct": float(reserve)}
+            "overhead_pct": float(overhead), "reserve_pct": float(reserve),
+            "registers": clean_registers(value.get("registers"))}
 
 
 def clean_plan(value, profile):

@@ -24,7 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from decision_support import advise as advise_bid
-from operations import default_profile, clean_profile, clean_plan, calculate
+from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
 
 GATES = [
  ("eligibility","입찰 등록·업종 적격성"),("licenses","면허·인증·보험·보증"),
@@ -301,7 +301,7 @@ class Handler(BaseHTTPRequestHandler):
    return self.wfile.write(b)
   if self.path=="/api/operations":
    with LOCK: profile=load_operations()
-   return self.respond({"operations":profile})
+   return self.respond({"operations":profile,"sections":REFERENCE_SECTIONS})
   if self.path=="/api/state":
    with LOCK: data=load()
    return self.respond({"csrf":TOKEN,"data":data,"gates":GATES,"factors":FACTORS})

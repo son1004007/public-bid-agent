@@ -15,7 +15,7 @@ from urllib.error import HTTPError
 
 sys.path.insert(0,str(Path(__file__).parent))
 import server
-from operations import default_profile,clean_profile,clean_plan,calculate
+from operations import default_profile,clean_profile,clean_plan,calculate,REFERENCE_SECTIONS
 
 MOCK_PROFILE={"roles":[
     {"role":"Python 백엔드","cost_per_mm_krw":8000000,"available_mm":3},
@@ -26,6 +26,17 @@ MOCK_PLAN={"entries":[{"role":"Python 백엔드","mm":2.5},{"role":"프런트엔
            "proposal_krw":2000000,"proposed_supply_price_krw":50000000}
 
 class CostUnitTests(unittest.TestCase):
+ def test_eight_business_registers_stay_unverified_until_summary_and_source(self):
+  profile=clean_profile(MOCK_PROFILE)
+  self.assertEqual(len(REFERENCE_SECTIONS),8)
+  self.assertEqual(len(profile["registers"]),8)
+  self.assertTrue(all(item["status"]=="not_collected" for item in profile["registers"].values()))
+  with self.assertRaises(ValueError):
+   clean_profile({**MOCK_PROFILE,"registers":{"finance":{"status":"reviewed","summary":"","source":"","reviewed_on":""}}})
+  known=clean_profile({**MOCK_PROFILE,"registers":{"finance":{"status":"reviewed","summary":"가상 재무 요약","source":"가상 손익분석표","reviewed_on":"2026-10-10"}}})
+  self.assertEqual(known["registers"]["finance"]["status"],"reviewed")
+  self.assertEqual(known["registers"]["pipeline"]["status"],"not_collected")
+
  def test_cost_calculation_vat_excluded_and_no_model_inference(self):
   ops=clean_profile(MOCK_PROFILE)
   plan=clean_plan(MOCK_PLAN,ops)
@@ -98,6 +109,7 @@ class CostHTTPTests(unittest.TestCase):
   with urlopen(self.base+path,timeout=4) as resp:return json.load(resp)
  def test_operations_profile_revision_and_cost_case_json_are_separate(self):
   self.assertEqual(self.get("/api/operations")["operations"]["revision"],0)
+  self.assertEqual(len(self.get("/api/operations")["sections"]),8)
   code,saved=self.post("/api/operations/save",{"expected_revision":0,"operations":MOCK_PROFILE})
   self.assertEqual(code,200)
   self.assertEqual(saved["operations"]["revision"],1)
