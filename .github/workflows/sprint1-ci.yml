@@ -83,6 +83,8 @@ jobs:
             local_app/decision_support.py
             local_app/test_decision_support.py
             local_app/test_public_tenders.py
+            local_app/operations.py
+            local_app/test_operations.py
             local_app/document_guide.json
             local_app/test_document_guide.py
             local_app/fixtures/public_tenders_2026_10_10.json

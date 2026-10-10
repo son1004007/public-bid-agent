@@ -193,3 +193,7 @@ Codex 1개가 선택된 경우 LangGraph는 independent_analysis에서 1회 호�
 ## 2026-10-10 문서 입력 가이드 계약
 
 단일 마스터 `local_app/document_guide.json`에 5개 추천 문서 묶음(외부 2종/회사 내부 3종)과 20개 변수의 `sources`, `missing_question` 정의를 관리. `GET /document-guide.json`은 정적 JSON(모델 외부 전송/DB 저장 없음)을 제공하며, `app.js`가 사용자 최초 접속 시 공고와 관계없이 매핑을 렌더링한다. 문서 가이드 조회만으로 AI 모델 요청/업로드/민감정보 저장이 발생하지 않는다. 이 JSON은 업로드 파일 유형 자동분류·증빙 법적 진위 검증을 수행하는 규칙 엔진이 아니다. 직원/고객 개인정보와 원가 원문을 회사 승인 없이 외부 AI로 전송하지 않는다.
+
+## 2026-10-10 운영 기준과 입찰별 원가 분리 (ADR 미승인 기능 검증)
+
+로컬 운영 기준 `operations.json` schema_version=1, revision 카운터 및 `roles[{role,cost_per_mm_krw,available_mm}]`, `overhead_pct`, `reserve_pct`를 보유. 직원 개인 급여/이름을 저장하지 않음. 공고별 `cases.json` 각 case에 `cost_plan`(역할별 투입 MM, 외주비/직접경비/제안비, VAT 제외 예정 공급가액)과 계산된 `cost_estimate`(revision, 금액, 경고) 저장. GET `/api/operations`, POST `/api/operations/save`, POST `/api/cost-plan`; 기존 localhost Host/Origin/CSRF, 잠금, 원자 저장, optimistic revision 검증 유지. 순수 함수 `operations.calculate`로 인건비/간접비/충당/이익률 결정적 계산. 기준정보 업데이트 시 기존 견적을 명시적으로 stale 표시(기존 값 변경하지 않음). `prompt_for`는 원래 입찰공고 설명/첨부 텍스트만 전달하며 운영 기준·원가계획을 자동 직렬화하지 않음. 배치계획/수금 현금흐름/실제 회계·법적 입찰 적격 추정은 이 수직 슬라이스 범위 밖.

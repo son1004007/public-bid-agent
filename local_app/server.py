@@ -24,6 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from decision_support import advise as advise_bid
+from operations import default_profile, clean_profile, clean_plan, calculate
 
 GATES = [
  ("eligibility","입찰 등록·업종 적격성"),("licenses","면허·인증·보험·보증"),
@@ -55,7 +56,8 @@ EXTRACTOR = Path(__file__).with_name("extractors.py")
 def now():
  return datetime.now(timezone.utc).isoformat()
 
-def persist(data):
+def persist(data, file_path=None):
+ file_path = file_path or FILE
  ROOT.mkdir(parents=True, exist_ok=True, mode=0o700)
  if os.name == "posix": ROOT.chmod(0o700)
  fd,path=tempfile.mkstemp(dir=ROOT,prefix=".pending-",suffix=".json")
@@ -65,8 +67,8 @@ def persist(data):
    json.dump(data,out,ensure_ascii=False,indent=2)
    out.flush()
    os.fsync(out.fileno())
-  os.replace(path,FILE)
-  if os.name == "posix": FILE.chmod(0o600)
+  os.replace(path,file_path)
+  if os.name == "posix": file_path.chmod(0o600)
  finally:
   if os.path.exists(path): os.unlink(path)
 
@@ -75,6 +77,26 @@ def load():
  with FILE.open(encoding="utf-8") as inp: data=json.load(inp)
  if data.get("schema_version")!=1: raise ValueError("지원하지 않는 JSON 버전")
  return data
+
+def load_operations():
+ """회사 공통 운영정보는 공고 데이터와 별도 파일로 저장한다."""
+ path = ROOT / "operations.json"
+ if not path.exists():
+  return default_profile()
+ with path.open(encoding="utf-8") as inp:
+  operations = json.load(inp)
+ if operations.get("schema_version") != 1:
+  raise ValueError("지원하지 않는 회사 운영정보 JSON 버전")
+ return operations
+
+def current_cost_estimate(case):
+ estimate = case.get("cost_estimate")
+ if not estimate:
+  return None
+ # 공통 운영정보 기준이 변경되면 기존 계산값의 갱신이 필요함을 즉시 알린다.
+ updated = dict(estimate)
+ updated["stale"] = estimate.get("operations_revision") != load_operations()["revision"]
+ return updated
 
 def create_case(title):
  return {
@@ -277,6 +299,9 @@ class Handler(BaseHTTPRequestHandler):
    b=DOCUMENT_GUIDE.read_bytes()
    self.send_local_headers(200,"application/json; charset=utf-8",len(b))
    return self.wfile.write(b)
+  if self.path=="/api/operations":
+   with LOCK: profile=load_operations()
+   return self.respond({"operations":profile})
   if self.path=="/api/state":
    with LOCK: data=load()
    return self.respond({"csrf":TOKEN,"data":data,"gates":GATES,"factors":FACTORS})
@@ -290,6 +315,16 @@ class Handler(BaseHTTPRequestHandler):
     raise ValueError("본문 JSON 최대 4MB")
    payload=json.loads(self.rfile.read(size))
    if not isinstance(payload,dict): raise ValueError("JSON 객체만 지원")
+   if self.path=="/api/operations/save":
+    with LOCK:
+     existing = load_operations()
+     if type(payload.get("expected_revision")) is not int or payload["expected_revision"] != existing["revision"]:
+      return self.respond({"error":"운영정보가 다른 창에서 변경되었습니다. 다시 불러오세요"},409)
+     profile = clean_profile(payload.get("operations"))
+     profile["revision"] = existing["revision"] + 1
+     profile["updated_at"] = now()
+     persist(profile, ROOT / "operations.json")
+     return self.respond({"ok":True,"operations":profile})
    if self.path=="/api/analyze":
     providers=payload.get("providers")
     if (not isinstance(providers,list) or not providers or len(providers)>2
@@ -332,6 +367,14 @@ class Handler(BaseHTTPRequestHandler):
      if self.path=="/api/save":
       update_case(case,payload)
       case["decision_support"]=advise_bid(case)
+     elif self.path=="/api/cost-plan":
+      profile = load_operations()
+      if type(payload.get("expected_operations_revision")) is not int or payload["expected_operations_revision"] != profile["revision"]:
+       return self.respond({"error":"운영정보가 갱신됐습니다. 가용 공수/단가를 재확인하세요"},409)
+      plan=clean_plan(payload.get("cost_plan"),profile)
+      estimate=calculate(profile,plan)
+      case["cost_plan"]=plan
+      case["cost_estimate"]={**estimate,"operations_revision":profile["revision"],"estimated_at":now()}
      elif self.path=="/api/file":
       if len(case["documents"])>=6: raise ValueError("문서는 6개까지")
       name=text_value(payload.get("name",""),120)

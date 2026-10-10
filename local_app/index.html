@@ -58,6 +58,21 @@ textarea{min-height:105px;resize:vertical}
 <div class="disclaimer"><b>로컬 저장과 AI 전송은 다릅니다.</b> 프롬프트·문서 텍스트·평가 결과는 지정한 내 PC JSON 파일에 저장합니다. AI 실행을 누르면 선택한 Codex/Claude 제공자에게 해당 자료 내용이 전송됩니다. 기밀 회사 자료는 회사의 외부 전송 허가가 있을 때만 사용하세요. 자격요건·낙찰확률을 AI가 확정하지 않습니다.</div>
 <div id="message" role="status" aria-live="polite"></div>
 <section class="card" id="intro"><h2>시작하기</h2><p>왼쪽에서 공고를 새로 만들거나 기존 공고를 선택하세요. 최초에는 아무 자료도 AI에 전송되지 않습니다.</p></section>
+
+<details class="card" id="operationsPanel">
+ <summary style="font-size:17px;font-weight:800;cursor:pointer">회사 공통 운영정보 (내 PC에만 저장)</summary>
+ <p class="muted">한 번 등록한 직무별 월 총원가·가용 공수, 공통 간접비율·위험충당률을 공고별 원가 산정에 재사용합니다. 개인별 급여·실명·고객정보는 입력하지 마세요. 실제 회사정보는 사내 승인 없이 사용하지 않습니다.</p>
+ <div class="note warning">이 운영정보는 Codex 프롬프트에 자동 포함되지 않습니다. 별도 <code>operations.json</code>에 저장되며, 컴퓨터 접근권한이 있는 사람은 읽을 수 있는 평문입니다. 회사 데이터 보관 및 외부 AI 전송은 별도의 회사 승인 사항입니다.</div>
+ <p id="operationsMessage" role="status" class="muted">운영정보를 불러오는 중입니다.</p>
+ <div id="opsRoles" class="grid" aria-label="직무별 총원가 및 가용 공수"></div>
+ <div class="actions"><button class="btn" id="opsAddRole">직무 추가</button></div>
+ <div class="grid">
+  <label>간접비율 (%)<input id="opsOverhead" type="number" min="0" max="100" step=".01" value="0"></label>
+  <label>위험충당률 (%)<input id="opsReserve" type="number" min="0" max="100" step=".01" value="0"></label>
+ </div>
+ <div class="actions"><button class="btn primary" id="opsSave">회사 공통 기준정보 저장</button></div>
+</details>
+
 <details class="card" id="documentGuide" open><summary style="font-size:16px;font-weight:800;cursor:pointer">입찰 판단에 필요한 문서 5종과 변수별 증빙 안내</summary>
 <p class="muted">나라장터·발주기관 자료 2묶음과 회사 보유 자료 3묶음입니다. 모든 문서가 하나의 파일로 존재할 필요는 없고, 자료가 부족하면 미확인으로 둡니다.</p>
 <div class="note warning"><strong>회사 내부자료 전송 주의</strong><p id="guideSafety" style="margin:5px 0 0">승인되지 않은 회사 실적·인력·원가·계약 자료는 외부 AI로 전송하지 마세요.</p></div>
@@ -72,6 +87,21 @@ textarea{min-height:105px;resize:vertical}
 <div class="grid"><label>입찰문서 추가 (Excel XLSX/XLS/XLSM · PDF/OCR · HWP/HWPX · DOCX · TXT 등)
 <input id="file" type="file" accept=".txt,.md,.csv,.json,.pdf,.docx,.xlsx,.xls,.xlsm,.hwp,.hwpx"></label><div><p class="muted">파일 바이너리는 보관하지 않고 로컬에서 추출한 텍스트만 JSON에 기록합니다. 최대 10 MiB/파일, 6개 파일, PDF 40페이지·OCR 12페이지. 한국어 Tesseract 언어팩 필요. 수식은 저장된 계산값을 사용하며 매크로는 실행하지 않습니다. OCR 및 추출 누락은 경고로 표시합니다.</p><ul id="docs" class="doc-list"></ul></div></div>
 </section>
+
+<section class="card" id="costPlanning">
+ <div class="card-head"><h2>공고별 투입·원가 계획 (로컬 계산)</h2><span class="status">AI 모델 전송 안 함</span></div>
+ <p class="muted">회사 공통 기준정보를 먼저 등록하세요. 공고마다 예상 MM(인월), 외주비·직접경비·제안준비비와 예정 공급가액(부가세 제외)을 입력하면 계산됩니다. 가용 MM은 기준정보 시점의 참고값이며 다른 입찰/진행 프로젝트 중복 배정은 자동 차감되지 않습니다.</p>
+ <div id="planRows" class="grid" aria-label="직무별 예정 투입 공수"></div>
+ <div class="grid">
+  <label>외주비 (원)<input data-plan="subcontract_krw" type="number" min="0" step="1" value="0"></label>
+  <label>기타 직접경비: 클라우드·출장·라이선스 (원)<input data-plan="direct_expenses_krw" type="number" min="0" step="1" value="0"></label>
+  <label>제안서 작성·입찰 준비비 (원)<input data-plan="proposal_krw" type="number" min="0" step="1" value="0"></label>
+  <label>예정 공급가액 VAT 제외 (원; 비우면 미산출)<input data-plan="proposed_supply_price_krw" type="number" min="0" step="1" placeholder="미정"></label>
+ </div>
+ <div class="actions"><button class="btn primary" id="saveCostPlan">공고별 예상 원가 계산·저장</button></div>
+ <div id="costResult" class="note" role="status">예상 원가가 아직 없습니다.</div>
+</section>
+
 <section class="card"><div class="card-head"><h2>1. AI가 영향인자 초안 작성</h2><span class="status">선택해서 명시적 전송</span></div>
 <div class="actions"><label><input id="codex" type="checkbox" checked style="width:auto"> Codex CLI (기본: 단독 분석 가능)</label><label><input id="claude" type="checkbox" style="width:auto"> Claude Code CLI (구독·로그인 가능한 경우에만 선택)</label></div>
 <label style="flex-direction:row;align-items:flex-start;gap:9px;margin:12px 0"><input id="consent" type="checkbox" style="width:auto;margin-top:4px"><span>선택한 AI 제공자에게 이 공고의 프롬프트와 문서 텍스트를 전송하는 데 동의합니다.</span></label>

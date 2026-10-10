@@ -4,7 +4,7 @@
  * 보존: 입력 후 명시적 POST 시 사용자 홈 JSON 저장; 파일 원본은 업로드 후 메모리 제거.
  * 불변조건: 제안 점수를 실제 검증/수주확률로 자동 승격하지 않음.
  */
-let token="",cases=[],gates=[],factors=[],active=null;
+let token="",cases=[],gates=[],factors=[],active=null,operations=null;
 const el=id=>document.getElementById(id);
 const make=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e};
 const message=text=>el("message").textContent=text;
@@ -28,6 +28,7 @@ function render(){
  el("intro").hidden=!!active;el("workspace").hidden=!active;
  if(!active)return;
  el("caseTitle").textContent=active.title;el("prompt").value=active.prompt;
+ renderCostPlan();
  const docs=el("docs");docs.replaceChildren();
  active.documents.forEach(d=>{
    const info=d.name+" · 추출 "+d.text.length+"자"+(d.method?" · "+d.method:"");
@@ -126,6 +127,7 @@ function renderDocumentGuide(data){
   card.append(make("h3",doc.order+". "+doc.name),make("p",doc.owner+" · "+(doc.classification==="public"?"공개자료":doc.classification==="public_or_restricted"?"공개 또는 제한자료":doc.classification==="company_restricted"?"회사 기밀(전송 승인 필요)":"회사 내부자료(전송 승인 필요)")));
   card.append(make("p","어디서 찾나: "+doc.examples),make("p","추출할 정보: "+doc.purpose));
   card.append(make("p","원본을 못 넣으면: "+doc.fallback));
+ if(doc.id==="business_case"&&(data.operation_sources||[]).length){card.append(make("p","회사 공통 운영자료 출처: "+data.operation_sources.map(x=>x.title+"("+x.owner+")").join(", ")));}
   const warning=make("small","주의: "+doc.caution);warning.style.color="#825519";card.append(warning);
   cards.append(card);
  });
@@ -151,6 +153,114 @@ async function loadDocumentGuide(){
   el("guideCards").replaceChildren(make("p","문서 가이드를 불러오지 못했습니다. 앱을 새로고침하거나 로컬 서버 설치를 확인하세요."));
  }
 }
+
+
+function displayMoney(value){return value===null||value===undefined?"미산출":Number(value).toLocaleString("ko-KR")+"원"}
+function addOperationRole(row={role:"",cost_per_mm_krw:0,available_mm:0}){
+ const card=make("article");card.className="item";
+ const role=make("label","직무명 (개인 실명 금지)");const roleInput=make("input");
+ roleInput.dataset.opsField="role";roleInput.maxLength=60;roleInput.value=row.role;role.append(roleInput);
+ const cost=make("label","직무별 1MM 월 총원가 (원, 회사 부담액)");const costInput=make("input");
+ costInput.type="number";costInput.min="0";costInput.step="1";costInput.dataset.opsField="cost_per_mm_krw";costInput.value=row.cost_per_mm_krw;cost.append(costInput);
+ const capacity=make("label","현재 가용 공수 (MM, 최대 2자리 소수)");const capacityInput=make("input");
+ capacityInput.type="number";capacityInput.min="0";capacityInput.step=".01";capacityInput.dataset.opsField="available_mm";capacityInput.value=row.available_mm;capacity.append(capacityInput);
+ const del=make("button","이 직무 삭제");del.className="btn";del.type="button";del.addEventListener("click",()=>card.remove());
+ card.append(role,cost,capacity,del);el("opsRoles").append(card);
+}
+function renderOperations(){
+ el("opsRoles").replaceChildren();
+ (operations?.roles||[]).forEach(addOperationRole);
+ el("opsOverhead").value=operations?.overhead_pct??0;
+ el("opsReserve").value=operations?.reserve_pct??0;
+ el("operationsMessage").textContent=operations?"운영정보 버전 "+operations.revision+" · 저장된 역할 "+operations.roles.length+"종 · 미입력 회사 기준단가를 임의 계산하지 않습니다.":"회사 운영정보를 불러오지 못했습니다.";
+}
+async function loadOperations(){
+ try{
+  const r=await fetch("/api/operations",{cache:"no-store"});
+  if(!r.ok)throw Error("운영정보 조회 실패");
+  operations=(await r.json()).operations;
+  renderOperations();
+  if(active)renderCostPlan();
+ }catch(e){el("operationsMessage").textContent="운영정보 오류: "+e.message}
+}
+function readNumber(input,optional=false){
+ const value=input.value.trim();
+ if(optional&&value==="")return null;
+ if(value==="")throw Error("숫자 입력이 비어 있습니다.");
+ const num=Number(value);
+ if(!Number.isFinite(num)||num<0)throw Error("0 이상의 숫자를 입력하세요.");
+ return num;
+}
+function collectOperations(){
+ const roles=[...el("opsRoles").children].map(card=>{
+  const field=k=>card.querySelector('[data-ops-field="'+k+'"]');
+  return {role:field("role").value.trim(),
+   cost_per_mm_krw:readNumber(field("cost_per_mm_krw")),
+   available_mm:readNumber(field("available_mm"))};
+ });
+ return {roles,overhead_pct:readNumber(el("opsOverhead")),reserve_pct:readNumber(el("opsReserve"))};
+}
+function renderCostPlan(){
+ const container=el("planRows");container.replaceChildren();
+ const plan=active?.cost_plan||{};
+ if(!operations){
+  container.append(make("p","회사 공통 운영정보 조회 후 공고별 공수를 입력할 수 있습니다."));return;
+ }
+ if(!operations.roles.length)container.append(make("p","위에서 회사 공통 기준 직무와 월 총원가를 먼저 등록하세요."));
+ const existing=Object.fromEntries((plan.entries||[]).map(e=>[e.role,e.mm]));
+ operations.roles.forEach(role=>{
+  const label=make("label",role.role+" · 기준 원가 "+displayMoney(role.cost_per_mm_krw)+" / MM · 가용 "+role.available_mm+"MM");
+  const input=make("input");input.type="number";input.min="0";input.step=".01";input.value=existing[role.role]??0;input.dataset.planRole=role.role;
+  label.append(input);container.append(label);
+ });
+ for(const key of ["subcontract_krw","direct_expenses_krw","proposal_krw","proposed_supply_price_krw"]){
+  const input=document.querySelector('[data-plan="'+key+'"]');
+  const value=plan[key];
+  input.value=value===null||value===undefined?"":String(value);
+  if(key!=="proposed_supply_price_krw"&&input.value==="")input.value="0";
+ }
+ const estimate=active.cost_estimate;
+ if(!estimate){el("costResult").textContent="예상 원가 산출 전입니다. 회사 공통 운영정보를 기준으로 계산합니다.";return;}
+ const stale=estimate.operations_revision!==operations.revision;
+ const lines=[
+  stale?"주의: 회사 운영 기준정보 버전이 변경되었습니다. 계산을 다시 저장해야 합니다.":"적용한 운영정보 버전 "+estimate.operations_revision,
+  "직접 인건비 "+displayMoney(estimate.labor_krw),
+  "외주비 "+displayMoney(estimate.subcontract_krw),
+  "기타 직접경비 "+displayMoney(estimate.direct_expenses_krw),
+  "배부 간접비 "+displayMoney(estimate.overhead_krw),
+  "위험충당액 "+displayMoney(estimate.reserve_krw),
+  "제안 준비비 "+displayMoney(estimate.proposal_krw),
+  "예상 총원가 "+displayMoney(estimate.total_cost_krw),
+  "예상 사업이익 "+displayMoney(estimate.expected_profit_krw),
+  "예상 이익률 "+(estimate.expected_margin_pct===null?"미산출":estimate.expected_margin_pct+"%"),
+  ...(estimate.warnings||[]).map(w=>"주의: "+w),
+  "이 값은 회계 확정값/낙찰확률/AI 자동판단이 아닙니다."
+ ];
+ el("costResult").textContent=lines.join("\n");
+}
+function collectCostPlan(){
+ return {entries:[...document.querySelectorAll('[data-plan-role]')].map(input=>({role:input.dataset.planRole,mm:readNumber(input)})),
+  subcontract_krw:readNumber(document.querySelector('[data-plan="subcontract_krw"]')),
+  direct_expenses_krw:readNumber(document.querySelector('[data-plan="direct_expenses_krw"]')),
+  proposal_krw:readNumber(document.querySelector('[data-plan="proposal_krw"]')),
+  proposed_supply_price_krw:readNumber(document.querySelector('[data-plan="proposed_supply_price_krw"]'),true)};
+}
+el("opsAddRole").addEventListener("click",()=>addOperationRole());
+el("opsSave").addEventListener("click",()=>act(async()=>{
+ if(!operations)throw Error("운영정보가 로드되지 않았습니다");
+ const data=await api("operations/save",{expected_revision:operations.revision,operations:collectOperations()});
+ operations=data.operations;renderOperations();
+ if(active)renderCostPlan();
+ message("회사 운영 기준을 로컬 operations.json에 저장했습니다. Codex 전송은 수행하지 않았습니다.");
+}));
+el("saveCostPlan").addEventListener("click",()=>act(async()=>{
+ if(!active||!operations)throw Error("공고와 회사 운영정보가 필요합니다");
+ const data=await api("cost-plan",{id:active.id,expected_operations_revision:operations.revision,cost_plan:collectCostPlan()});
+ active=data.case;
+ cases=cases.map(c=>c.id===active.id?active:c);
+ render();
+ message("예상 원가와 이익을 로컬 JSON에 저장했습니다. Codex 전송·입찰 제출은 수행하지 않았습니다.");
+}));
 
 function renderInputs(){
  const gg=el("gates"),ff=el("factors");gg.replaceChildren();ff.replaceChildren();
@@ -246,4 +356,5 @@ el("decide").addEventListener("click",()=>act(async()=>{
  active=v.case;render();message("사용자의 최종 결정을 로컬 JSON에 기록했습니다. 입찰 제출/계약은 하지 않았습니다.");
 }));
 loadDocumentGuide();
+loadOperations();
 refresh().catch(e=>message("초기화 오류: "+e.message));
