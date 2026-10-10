@@ -58,6 +58,13 @@ textarea{min-height:105px;resize:vertical}
 <div class="disclaimer"><b>로컬 저장과 AI 전송은 다릅니다.</b> 프롬프트·문서 텍스트·평가 결과는 지정한 내 PC JSON 파일에 저장합니다. AI 실행을 누르면 선택한 Codex/Claude 제공자에게 해당 자료 내용이 전송됩니다. 기밀 회사 자료는 회사의 외부 전송 허가가 있을 때만 사용하세요. 자격요건·낙찰확률을 AI가 확정하지 않습니다.</div>
 <div id="message" role="status" aria-live="polite"></div>
 <section class="card" id="intro"><h2>시작하기</h2><p>왼쪽에서 공고를 새로 만들거나 기존 공고를 선택하세요. 최초에는 아무 자료도 AI에 전송되지 않습니다.</p></section>
+<details class="card" id="documentGuide" open><summary style="font-size:16px;font-weight:800;cursor:pointer">입찰 판단에 필요한 문서 5종과 변수별 증빙 안내</summary>
+<p class="muted">나라장터·발주기관 자료 2묶음과 회사 보유 자료 3묶음입니다. 모든 문서가 하나의 파일로 존재할 필요는 없고, 자료가 부족하면 미확인으로 둡니다.</p>
+<div class="note warning"><strong>회사 내부자료 전송 주의</strong><p id="guideSafety" style="margin:5px 0 0">승인되지 않은 회사 실적·인력·원가·계약 자료는 외부 AI로 전송하지 마세요.</p></div>
+<div id="guideCards" class="grid" role="region" aria-label="권장 업로드 문서 유형">문서 가이드를 불러오는 중입니다.</div>
+<details style="margin-top:14px"><summary style="font-weight:750;cursor:pointer">독립변수 20개별 필요 문서와 담당자 확인 질문</summary><div id="guideVariables"></div></details>
+<p class="muted" id="guideLimits">공고당 파일은 최대 6개입니다. 문서 원문 검증과 AI 전송 동의는 별도로 진행합니다.</p>
+</details>
 <div id="workspace" hidden>
 <section class="card"><div class="card-head"><h2 id="caseTitle"></h2><span class="status">수정 데이터도 로컬 JSON 저장</span></div>
 <label>공고 설명 또는 자유 프롬프트<textarea id="prompt" maxlength="44000" placeholder="공고 내용, 당사 가용인력과 유사사업 증빙 등을 설명하세요. 기밀정보 전송에 유의하세요."></textarea></label>

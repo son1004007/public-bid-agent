@@ -1,0 +1,294 @@
+{
+  "version": 1,
+  "title": "입찰 참여판단 20개 독립변수 입력 문서 가이드",
+  "summary": "권장 입력은 외부 공고·RFP와 회사 내부 자료를 합친 5개 문서 묶음입니다. 5개 모두 필수는 아니며, 없는 증빙은 미확인으로 유지합니다.",
+  "limits": "현재 앱은 개별 파일 최대 10MiB, 공고당 최대 6개, 모델 입력 글자수 제한이 있습니다. 5개는 문서 종류이지 확정 파일 개수가 아닙니다.",
+  "safety": "회사의 명시적 승인 없이 내부 실적·인력·원가·계약·고객 데이터 원본을 Codex/Claude에 전송하지 마세요. 승인되지 않았다면 공개 공고자료와 허가된 비식별 요약·가상 예시만 분석하고 내부 조건은 사람 검증 입력칸에서 확인하세요. 원본이 아닌 텍스트도 업무상 기밀일 수 있습니다.",
+  "missing_policy": "문서에 없으면 미확인(null/unknown)으로 두고 담당자에게 확인합니다. AI 추출은 미검증 초안이며 법적 입찰자격·낙찰확률 확정이 아닙니다.",
+  "documents": [
+    {
+      "id": "notice",
+      "order": 1,
+      "name": "입찰공고문·정정공고",
+      "owner": "발주기관·나라장터",
+      "classification": "public",
+      "purpose": "참가자격, 업종코드, 기업규모 제한, 마감, 입찰방식, 공동수급·하도급, 계약예정금액",
+      "examples": "입찰공고문 PDF/HWP, 공고 메타데이터, 정정공고",
+      "fallback": "공식 공고번호·원문 URL·마감·입찰조건의 수기 요약",
+      "caution": "반드시 공고번호와 최신 차수를 대조하고, 재게시 정보 충돌 시 공식 원문을 확인합니다."
+    },
+    {
+      "id": "rfp",
+      "order": 2,
+      "name": "제안요청서(RFP)·과업지시서",
+      "owner": "발주기관·나라장터",
+      "classification": "public_or_restricted",
+      "purpose": "기술/업무 범위, 필수 실적·투입인력, 평가항목, 보안·개인정보, 수행기한·검수",
+      "examples": "RFP, 과업지시서, 제안서 작성지침, 평가표, 계약특수조건",
+      "fallback": "요구사항·평가표·필수 제출서류를 근거 조항과 함께 요약",
+      "caution": "비공개 입찰·제한 배포 문서는 외부 AI 제공자 전송 권한을 별도로 확인합니다."
+    },
+    {
+      "id": "qualification",
+      "order": 3,
+      "name": "회사 등록·자격·인증 증빙",
+      "owner": "경영지원·영업관리·입찰담당",
+      "classification": "company_sensitive",
+      "purpose": "사업자 등록 업종, 소프트웨어사업자 확인, 중소기업·직접생산·면허·인증의 유효기간",
+      "examples": "사업자등록증, 조달청 경쟁입찰참가자격 등록증, SW사업자 확인서, 기업확인서, 자격증 현황표",
+      "fallback": "증빙번호/담당자/개인식별정보를 제거하고 등록 유형·유효기간·보유 여부만 요약",
+      "caution": "사업자등록번호, 대표자 개인정보, 인증서 비밀키, 계정·비밀번호는 AI로 전송하지 않습니다."
+    },
+    {
+      "id": "capability",
+      "order": 4,
+      "name": "유사 사업 수행실적·기술·가용인력 자료",
+      "owner": "사업부·기술팀·인사·PMO",
+      "classification": "company_sensitive",
+      "purpose": "납품 실적, 기술스택/레퍼런스, 보유 인력의 실무역량, 프로젝트별 투입 가능 일정",
+      "examples": "최근 사업수행실적 증명서, 준공·납품 증빙, 회사 소개서, 기술 역량표, 인력가동률·배치계획표",
+      "fallback": "고객명/개인식별정보를 제거한 실적 유형·기간·규모, 역할별 투입 가능 인원 표",
+      "caution": "이력서 원본, 이름·연락처·급여, 고객사 계약정보를 허가 없이 업로드하지 않습니다."
+    },
+    {
+      "id": "business_case",
+      "order": 5,
+      "name": "사업별 원가·제안 준비·경쟁전략 요약",
+      "owner": "영업·사업부장·재무·입찰 PM",
+      "classification": "company_restricted",
+      "purpose": "예정원가, 인건비/외주비, 이익률, 수주 전략, 제안비용, 협력사 확보, 수행위험·수용 조건",
+      "examples": "사업수지표/견적원가표, 제안 일정·산출물 계획, 리스크 레지스터, 경쟁/차별화 분석, 협력사 검토 메모",
+      "fallback": "원가 금액 대신 승인받은 수익성 구간과 투입 가용성·입찰 의사만 비식별 요약",
+      "caution": "가장 민감한 내부 전략 자료입니다. 회사 허가 없는 외부 AI 전송 대신 로컬 수기 입력·승인된 비식별 요약을 사용합니다."
+    }
+  ],
+  "additional_source": {
+    "id": "additional_public",
+    "title": "공개 과거 낙찰·시장자료 (5개 묶음에 포함되지 않은 선택 자료)",
+    "examples": "발주기관 공개 과거 낙찰공고, 질의응답, 공개 사업자료",
+    "caution": "경쟁사 수·관계·발주기관 성향을 근거 없이 추정하지 않습니다."
+  },
+  "variables": [
+    {
+      "kind": "gate",
+      "key": "eligibility",
+      "label": "입찰 등록·업종 적격성",
+      "sources": [
+        "notice",
+        "qualification"
+      ],
+      "missing_question": "공고의 등록 업종과 기업규모 제한을 회사 등록·기업확인 증빙이 실제로 충족합니까?"
+    },
+    {
+      "kind": "gate",
+      "key": "licenses",
+      "label": "면허·인증·보험·보증",
+      "sources": [
+        "notice",
+        "rfp",
+        "qualification"
+      ],
+      "missing_question": "필수 자격·직접생산·인증/보증의 보유 여부와 유효기간을 누가 확인합니까?"
+    },
+    {
+      "kind": "gate",
+      "key": "track_record",
+      "label": "공고상 필수 실적",
+      "sources": [
+        "notice",
+        "rfp",
+        "capability"
+      ],
+      "missing_question": "인정 범위·기한·금액 등 필수 실적 기준에 맞는 실적 증빙이 있습니까?"
+    },
+    {
+      "kind": "gate",
+      "key": "resources",
+      "label": "필수 인력·재무",
+      "sources": [
+        "rfp",
+        "capability",
+        "business_case"
+      ],
+      "missing_question": "자격을 갖춘 인력을 계약기간 동안 실제 배정할 수 있고 재무요건을 충족합니까?"
+    },
+    {
+      "kind": "gate",
+      "key": "teaming",
+      "label": "공동수급·지역·하도급 제한",
+      "sources": [
+        "notice",
+        "rfp",
+        "qualification",
+        "business_case"
+      ],
+      "missing_question": "공동수급 허용·지역 제한과 협력사 계약 조건에 맞춰 참여할 수 있습니까?"
+    },
+    {
+      "kind": "gate",
+      "key": "deadline",
+      "label": "제출기한·서류",
+      "sources": [
+        "notice",
+        "rfp",
+        "business_case"
+      ],
+      "missing_question": "최신 정정공고 기준 입찰등록·협정서·제안서 마감과 준비상태를 확인했습니까?"
+    },
+    {
+      "kind": "gate",
+      "key": "security",
+      "label": "보안·데이터·수행 장소",
+      "sources": [
+        "rfp",
+        "qualification",
+        "business_case"
+      ],
+      "missing_question": "보안인증, 데이터 반출·폐쇄망, 상주/재택 제한을 수용할 수 있습니까?"
+    },
+    {
+      "kind": "gate",
+      "key": "contract",
+      "label": "계약 필수·배제 조건",
+      "sources": [
+        "notice",
+        "rfp",
+        "business_case"
+      ],
+      "missing_question": "계약기간, 지체상금, 하자·검수, 책임범위를 승인받았습니까?"
+    },
+    {
+      "kind": "factor",
+      "key": "technical",
+      "label": "기술·솔루션 적합성",
+      "sources": [
+        "rfp",
+        "capability"
+      ],
+      "missing_question": "요구 기능·기술을 보유 역량과 대조한 증빙이 있습니까?"
+    },
+    {
+      "kind": "factor",
+      "key": "staff",
+      "label": "수행 인력·일정",
+      "sources": [
+        "rfp",
+        "capability",
+        "business_case"
+      ],
+      "missing_question": "역할별 가용 인원·시작일·투입률을 최신 자료로 확인했습니까?"
+    },
+    {
+      "kind": "factor",
+      "key": "experience",
+      "label": "유사 사업 실적",
+      "sources": [
+        "rfp",
+        "capability"
+      ],
+      "missing_question": "이번 과업과 관련성이 높은 과거 납품의 범위·성과를 확인할 수 있습니까?"
+    },
+    {
+      "kind": "factor",
+      "key": "buyer",
+      "label": "고객 요구 이해",
+      "sources": [
+        "notice",
+        "rfp",
+        "additional_public"
+      ],
+      "missing_question": "발주 목적·이전 사업·공개 질의응답에서 요구 우선순위를 확인했습니까?"
+    },
+    {
+      "kind": "factor",
+      "key": "competition",
+      "label": "경쟁사·기존 수행사 대비 위치",
+      "sources": [
+        "business_case",
+        "additional_public"
+      ],
+      "missing_question": "공개 낙찰이력과 확인 가능한 시장자료에서 경쟁 구도를 파악했습니까? 자료 없으면 미확인입니다."
+    },
+    {
+      "kind": "factor",
+      "key": "differentiation",
+      "label": "차별성·가격 경쟁력",
+      "sources": [
+        "rfp",
+        "capability",
+        "business_case",
+        "additional_public"
+      ],
+      "missing_question": "사업별로 검증 가능한 차별화 기능·가격 우위를 입증할 수 있습니까?"
+    },
+    {
+      "kind": "factor",
+      "key": "profit",
+      "label": "수익성·현금흐름",
+      "sources": [
+        "notice",
+        "rfp",
+        "business_case"
+      ],
+      "missing_question": "발주 예산, 투입·외주·운영비, 지급조건을 기준으로 예상 손익을 검토했습니까?"
+    },
+    {
+      "kind": "factor",
+      "key": "bid_cost",
+      "label": "제안비용·기회비용",
+      "sources": [
+        "notice",
+        "rfp",
+        "business_case"
+      ],
+      "missing_question": "제안서 작성·증빙 준비비와 다른 프로젝트 포기비용을 계산했습니까?"
+    },
+    {
+      "kind": "factor",
+      "key": "relationship",
+      "label": "고객 이해·과거 평가",
+      "sources": [
+        "capability",
+        "business_case",
+        "additional_public"
+      ],
+      "missing_question": "검증 가능한 기존 수행 이력 또는 발주기관 공개 평가자료가 있습니까? 관계를 임의 추정하지 마세요."
+    },
+    {
+      "kind": "factor",
+      "key": "strategy",
+      "label": "전략·후속 사업 가치",
+      "sources": [
+        "rfp",
+        "business_case",
+        "additional_public"
+      ],
+      "missing_question": "수주 목적, 후속 확장 가능성과 회사의 실제 사업전략이 부합합니까?"
+    },
+    {
+      "kind": "factor",
+      "key": "readiness",
+      "label": "제안 준비도",
+      "sources": [
+        "notice",
+        "rfp",
+        "capability",
+        "business_case"
+      ],
+      "missing_question": "입찰등록·제안 책임자·예산승인·제출 서류와 일정이 준비됐습니까?"
+    },
+    {
+      "kind": "factor",
+      "key": "risk",
+      "label": "계약·수행 위험 통제",
+      "sources": [
+        "notice",
+        "rfp",
+        "qualification",
+        "capability",
+        "business_case"
+      ],
+      "missing_question": "법무·보안·인력·원가·납기 위험과 통제계획을 확인했습니까? 5점은 위험 통제가 양호한 상태입니다."
+    }
+  ]
+}

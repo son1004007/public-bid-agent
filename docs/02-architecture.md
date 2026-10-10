@@ -189,3 +189,7 @@ Codex 1개가 선택된 경우 LangGraph는 independent_analysis에서 1회 호�
 ## 2026-10-10 참여 판단 Y1 품질·검증 경계
 
 `cross_review.py`의 모델 원문 의견과 `decision_support.py`의 결정적 보수적 규칙 위험 분류를 분리합니다. `ai_reports[*]`와 `ai_draft`는 미검증 모델 추출, `decision_support`는 Hard Gate 실패/미확인/사용자 충돌 위험, `decision`은 오직 사용자만 갱신합니다. 사용자 보정(`/api/save`) 뒤에도 보수적 검증 분류가 다시 계산됩니다. 위험 분류는 법적 적격, 수주확률, 실제 계약 행위를 뜻하지 않습니다.
+
+## 2026-10-10 문서 입력 가이드 계약
+
+단일 마스터 `local_app/document_guide.json`에 5개 추천 문서 묶음(외부 2종/회사 내부 3종)과 20개 변수의 `sources`, `missing_question` 정의를 관리. `GET /document-guide.json`은 정적 JSON(모델 외부 전송/DB 저장 없음)을 제공하며, `app.js`가 사용자 최초 접속 시 공고와 관계없이 매핑을 렌더링한다. 문서 가이드 조회만으로 AI 모델 요청/업로드/민감정보 저장이 발생하지 않는다. 이 JSON은 업로드 파일 유형 자동분류·증빙 법적 진위 검증을 수행하는 규칙 엔진이 아니다. 직원/고객 개인정보와 원가 원문을 회사 승인 없이 외부 AI로 전송하지 않는다.

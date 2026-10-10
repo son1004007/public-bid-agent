@@ -80,6 +80,12 @@ jobs:
             local_app/README.md
             local_app/test_local.py
             local_app/test_cross_review.py
+            local_app/decision_support.py
+            local_app/test_decision_support.py
+            local_app/test_public_tenders.py
+            local_app/document_guide.json
+            local_app/test_document_guide.py
+            local_app/fixtures/public_tenders_2026_10_10.json
             docs/DEPENDENCIES_AND_LICENSES.md
             README.md
           if-no-files-found: error

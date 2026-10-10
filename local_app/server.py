@@ -45,6 +45,7 @@ ROOT = Path(os.environ.get("PUBLIC_BID_LOCAL_DATA", str(Path.home()/".public-bid
 FILE = ROOT/"cases.json"
 HTML = Path(__file__).with_name("index.html")
 APP_JS = Path(__file__).with_name("app.js")
+DOCUMENT_GUIDE = Path(__file__).with_name("document_guide.json")
 LOCK = threading.RLock()
 TOKEN = secrets.token_urlsafe(32)
 LIMIT = 10*1024*1024
@@ -271,6 +272,10 @@ class Handler(BaseHTTPRequestHandler):
   if self.path=="/app.js":
    b=APP_JS.read_bytes()
    self.send_local_headers(200,"text/javascript; charset=utf-8",len(b))
+   return self.wfile.write(b)
+  if self.path=="/document-guide.json":
+   b=DOCUMENT_GUIDE.read_bytes()
+   self.send_local_headers(200,"application/json; charset=utf-8",len(b))
    return self.wfile.write(b)
   if self.path=="/api/state":
    with LOCK: data=load()

@@ -114,6 +114,44 @@ function renderAiFactors(){
  group("필수 참가조건 8개",gates,"gates");
  group("비교 평가요인 12개",factors,"factors");
 }
+function renderDocumentGuide(data){
+ const cards=el("guideCards"), map=el("guideVariables");
+ cards.replaceChildren();map.replaceChildren();
+ el("guideSafety").textContent=data.safety;
+ el("guideLimits").textContent=data.limits+" "+data.missing_policy;
+ const docNames=Object.fromEntries(data.documents.map(d=>[d.id,d.order+"번 "+d.name]));
+ docNames[data.additional_source.id]=data.additional_source.title;
+ data.documents.forEach(doc=>{
+  const card=make("article");card.className="item";
+  card.append(make("h3",doc.order+". "+doc.name),make("p",doc.owner+" · "+(doc.classification==="public"?"공개자료":doc.classification==="public_or_restricted"?"공개 또는 제한자료":doc.classification==="company_restricted"?"회사 기밀(전송 승인 필요)":"회사 내부자료(전송 승인 필요)")));
+  card.append(make("p","어디서 찾나: "+doc.examples),make("p","추출할 정보: "+doc.purpose));
+  card.append(make("p","원본을 못 넣으면: "+doc.fallback));
+  const warning=make("small","주의: "+doc.caution);warning.style.color="#825519";card.append(warning);
+  cards.append(card);
+ });
+ for(const kind of ["gate","factor"]){
+  map.append(make("h3",kind==="gate"?"필수조건 8개 (충족·미충족·미확인)":"평가요인 12개 (1~5점 또는 미확인)"));
+  const group=make("div");group.className="grid";
+  data.variables.filter(v=>v.kind===kind).forEach(v=>{
+   const card=make("article");card.className="item";
+   card.append(make("strong",v.label));
+   card.append(make("p","필요 문서: "+v.sources.map(id=>docNames[id]||"기타 공개자료").join(" / ")));
+   card.append(make("p","없으면 확인할 질문: "+v.missing_question));
+   group.append(card);
+  });
+  map.append(group);
+ }
+}
+async function loadDocumentGuide(){
+ try{
+  const response=await fetch("/document-guide.json",{cache:"no-store"});
+  if(!response.ok)throw Error("HTTP "+response.status);
+  renderDocumentGuide(await response.json());
+ }catch(error){
+  el("guideCards").replaceChildren(make("p","문서 가이드를 불러오지 못했습니다. 앱을 새로고침하거나 로컬 서버 설치를 확인하세요."));
+ }
+}
+
 function renderInputs(){
  const gg=el("gates"),ff=el("factors");gg.replaceChildren();ff.replaceChildren();
  gates.forEach(([key,title])=>{
@@ -207,4 +245,5 @@ el("decide").addEventListener("click",()=>act(async()=>{
  const v=await api("decide",{id:active.id,decision:el("decision").value,reason:el("reason").value});
  active=v.case;render();message("사용자의 최종 결정을 로컬 JSON에 기록했습니다. 입찰 제출/계약은 하지 않았습니다.");
 }));
+loadDocumentGuide();
 refresh().catch(e=>message("초기화 오류: "+e.message));
