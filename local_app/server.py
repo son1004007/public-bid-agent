@@ -48,6 +48,7 @@ HTML = Path(__file__).with_name("index.html")
 APP_JS = Path(__file__).with_name("app.js")
 DOCUMENT_GUIDE = Path(__file__).with_name("document_guide.json")
 DECISION_PREVIEW = Path(__file__).resolve().parents[1] / "frontend" / "public" / "bid-decision-dashboard-preview.html"
+DECISION_PREVIEW_JS = DECISION_PREVIEW.with_suffix(".js")
 LOCK = threading.RLock()
 TOKEN = secrets.token_urlsafe(32)
 LIMIT = 10*1024*1024
@@ -299,6 +300,10 @@ class Handler(BaseHTTPRequestHandler):
   if self.path=="/decision-preview":
    b=DECISION_PREVIEW.read_bytes()
    self.send_local_headers(200,"text/html; charset=utf-8",len(b))
+   return self.wfile.write(b)
+  if self.path=="/bid-decision-dashboard-preview.js":
+   b=DECISION_PREVIEW_JS.read_bytes()
+   self.send_local_headers(200,"text/javascript; charset=utf-8",len(b))
    return self.wfile.write(b)
   if self.path=="/document-guide.json":
    b=DOCUMENT_GUIDE.read_bytes()
