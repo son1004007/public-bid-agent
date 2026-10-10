@@ -99,6 +99,24 @@ class LogicTests(unittest.TestCase):
         self.assertEqual(result["status"],"error")
         self.assertNotIn("Traceback",result["error"])
 
+
+    def test_ai_prompt_defines_positive_score_direction(self):
+        case=app.create_case("synthetic")
+        p=app.prompt_for(case)
+        self.assertIn("위험이 많고 통제되지 않으면 1점",p)
+        self.assertIn("부담이 높을수록 1점",p)
+        self.assertIn("reason에는 전체 권고 사유",p)
+
+    def test_ai_variable_read_only_preview_is_in_html_js(self):
+        html=app.HTML.read_text(encoding="utf-8")
+        js=app.APP_JS.read_text(encoding="utf-8")
+        self.assertIn('id="aiFactorsPreview"',html)
+        self.assertIn('id="aiIndependentVariables"',html)
+        self.assertIn('function renderAiFactors()',js)
+        self.assertIn('const draft=active?.ai_draft;',js)
+        self.assertIn('group("필수 참가조건 8개"',js)
+        self.assertIn('group("비교 평가요인 12개"',js)
+
     def test_file_whitelist(self):
         self.assertEqual(app.ingest("example.md", "가상 자료".encode()), "가상 자료")
         with self.assertRaises(ValueError): app.ingest("config.py", b"print('hello')")

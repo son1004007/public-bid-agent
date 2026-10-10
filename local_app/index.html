@@ -70,7 +70,9 @@ textarea{min-height:105px;resize:vertical}
 <label style="flex-direction:row;align-items:flex-start;gap:9px;margin:12px 0"><input id="consent" type="checkbox" style="width:auto;margin-top:4px"><span>선택한 AI 제공자에게 이 공고의 프롬프트와 문서 텍스트를 전송하는 데 동의합니다.</span></label>
 <div class="actions"><button id="analyze" class="btn primary">AI 영향인자 추출 실행</button><button id="adopt" class="btn">AI 초안 적용 (수정 가능)</button></div>
 <p class="muted">Codex만 로그인된 경우에도 분석할 수 있습니다. 이때 Codex 1회 분석·수기 검증·사용자 결정만 수행하고 두 AI 합의를 표시하지 않습니다. Codex는 ChatGPT 인증 CLI의 지원 모델을 별도로 지정합니다. Claude는 선택적입니다. 실행 전에 사용할 CLI를 설치하고 로그인해야 합니다. 설치되어 있지 않거나 로그인할 수 없으면 결과가 생성되지 않습니다. 두 CLI를 선택하면 독립 검토 결과를 표시하며, 두 모델이 성공하면 LangGraph가 상대 의견을 한 번씩 재검토하고 이견을 비교합니다. 이 작업은 모델당 최대 2번 요청할 수 있으며 별도 비용·사용량이 발생할 수 있습니다. 실제 사용자의 최종 결정은 변경되지 않습니다.</p>
-<div class="ai" id="opinions"></div><div class="note warning" id="decisionSupport" role="status">AI 분석 전입니다.</div><div class="note" id="crossReview" role="status">교차검토 실행 전입니다.</div>
+<div class="ai" id="opinions"></div>
+<details class="item" id="aiIndependentVariables" open><summary style="font-weight:800;cursor:pointer">AI 독립변수 20개 및 추출 근거 (읽기 전용, 미검증)</summary><p class="muted">AI 원본값을 확인하는 영역입니다. 값 변경이나 사용자 검증은 아래 별도 입력칸에서 진행합니다. 점수 5는 항상 유리한 상태이며, 위험 통제 5는 위험이 잘 통제된 상태를 의미합니다. 기존 분석의 점수 방향 오류에 주의하세요.</p><div id="aiFactorsPreview" role="region" aria-label="AI가 추출한 독립변수의 상태와 출처"></div></details>
+<div class="note warning" id="decisionSupport" role="status">AI 분석 전입니다.</div><div class="note" id="crossReview" role="status">교차검토 실행 전입니다.</div>
 </section>
 <section class="card"><div class="card-head"><h2>2. 필수 참가조건 확인</h2><span class="status">Hard Gate 8개</span></div>
 <div class="note">AI 초안은 미확인 상태이며 검증 완료가 아닙니다. 참가자격 충족은 담당자가 원문과 증빙을 확인하고 '내가 확인함'을 선택해야 합니다.</div>

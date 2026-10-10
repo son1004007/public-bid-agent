@@ -46,6 +46,7 @@ function render(){
   }else article.append(make("p",report.status+": "+(report.error||"결과 없음")));
   opinions.append(article);
  });
+ renderAiFactors();
  const adviser=active.decision_support||{};
  el("decisionSupport").replaceChildren();
  if(adviser.status){
@@ -81,6 +82,37 @@ function render(){
   +" / 미검증 Gate "+gateUnknown+"개 / 미검증 요인 "+factorUnknown+"개"
   +"\n참고 가중지표: "+(index===null?"미산출":index.toFixed(1)+"/100")
   +" (실제 수주확률 아님)\n최종 결정: "+active.decision;
+}
+function renderAiFactors(){
+ const container=el("aiFactorsPreview");container.replaceChildren();
+ const draft=active?.ai_draft;
+ if(!draft || !draft.gates || !draft.factors){
+  container.append(make("p","AI 분석 결과가 없습니다. AI 영향인자 추출을 실행하면 20개 값을 이곳에서 볼 수 있습니다."));
+  return;
+ }
+ const legend=make("p","현재 표시: AI의 제안 원본 · 원문 검증 전 · 수기 입력값과 별도 · '미확인'은 0점이 아님");
+ legend.className="muted";container.append(legend);
+ const gateStatus={pass:"충족 제안",fail:"미충족 제안",na:"해당 없음 제안",unknown:"미확인"};
+ function group(title,items,category){
+  const heading=make("h3",title);container.append(heading);
+  const list=make("div");list.className="grid";
+  items.forEach(([key,name])=>{
+   const data=(draft[category]||{})[key]||{};
+   const card=make("article");card.className="item";
+   const value=category==="gates"?(gateStatus[data.status]||"미확인"):
+       (Number.isInteger(data.score) ? String(data.score)+" / 5점" : "미확인 (점수 없음)");
+   card.append(make("strong",name+" : "+value));
+   const evidence=make("p","AI가 제시한 근거: "+(data.evidence||"근거가 없습니다."));
+   evidence.style.whiteSpace="pre-wrap";evidence.style.overflowWrap="anywhere";
+   evidence.style.margin="8px 0 0";card.append(evidence);
+   const note=make("small","출처 검증 상태: 확인 전 (AI 추출값)");
+   note.style.color="#8b5c1e";card.append(note);
+   list.append(card);
+  });
+  container.append(list);
+ }
+ group("필수 참가조건 8개",gates,"gates");
+ group("비교 평가요인 12개",factors,"factors");
 }
 function renderInputs(){
  const gg=el("gates"),ff=el("factors");gg.replaceChildren();ff.replaceChildren();
