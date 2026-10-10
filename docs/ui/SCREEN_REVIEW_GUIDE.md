@@ -158,3 +158,5 @@
 - 구분: 8건 **합성 공고**만 제공; AI 판별/정기 수집/영구 Profile/실제 입찰 제출 미구현. 페이지 내부 데이터는 저장되지 않으며 새로고침으로 초기화. UI_APPROVED 아님, 기존 로컬 업무 데이터는 손대지 않음.
 
 - 본 시안은 CSP에 맞춰 HTML과 동명 JS 2파일로 구성됩니다. 로컬 앱에서는 `/decision-preview`에서 같은 출처 JS를 불러오며 서버 보안 헤더를 완화하지 않습니다. Vite `frontend/public` 정적 제공에도 호환됩니다.
+
+- 실렌더링: `TD-kiseok`의 Chrome headless가 8개 합성 공고 DOM/5개 KPI/12개 Factor 가중치 생성 확인. 이는 click E2E나 실제 데이터 검증이 아님. 사용자가 `http://127.0.0.1:8765/decision-preview`를 원격 데스크톱으로 열고 목록 필터·두 Profile·불참이력 확인 필요.

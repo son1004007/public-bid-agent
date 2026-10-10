@@ -273,3 +273,10 @@
 - 시안 코드 자동검증 1차에서 새로고침 안내 문구와 테스트 불일치 발견. 수정하면서 12개 Factor 가중치 프로필이 화면의 재판별에 실제로 반영되도록 가상 weightedFit() 시뮬레이터를 추가하고, 불참 최종결정에 별도 담당자 사유 입력을 요구하여 기록을 분리함. 사용자 검증 전까지 MOCK_ONLY.
 
 - 독립 시안 Chrome headless DOM에서 공고 목록/프로필이 초기 렌더링되지 않는 결함 발견: 기존 로컬 서버의 CSP `script-src 'self'`가 HTML 인라인 코드를 차단. 보안 헤더를 완화하는 대신 별도 JS로 분리하고 로컬 동일출처 GET 라우트를 추가. 브라우저 실행 검증 진행 상태는 별도 기록.
+
+## 2026-10-10 공고 의사결정 UI 퍼블리싱 최종 동작 상태
+
+- 사용자 요청대로 목록 중심·정기 수집 계획·단건/일괄 판단(가상)·참여 판단 기준 Profile·8 Gate/12 Factor Profile·불참 사유 및 판단 이력 5개 영역을 정적 HTML+외부 JS로 구현.
+- Windows Node JS 구문 검사 PASS, 정적 시안 Python 검사 3개 PASS, 실제 Chrome headless DOM 8개 공고행/5개 KPI/12개 가중치 컨트롤 생성 PASS, localhost /decision-preview HTTP 200, CSP 유지. GitHub push/PR CI 38049729286/38049733578 SUCCESS.
+- 전체 Windows Python 53테스트 수행 중 기존에 반복된 CSRF negative-case URLopen WinError 10053 2개가 간헐 발생. 시안 범위 별도 테스트는 PASS; 기존 Windows 로컬 HTTP test 간헐 실패 추적 지속.
+- Chrome headless에서 기본 렌더링을 확인했으나 실제 사용자 클릭 기반 브라우저 자동 E2E와 UI_APPROVED는 NOT RUN. 기존 로컬 JSON 사례는 시안 GET 동작으로 수정되지 않음. merge HOLD, 백엔드 기능은 UI 확인 후 구현.

@@ -175,3 +175,7 @@ Windows 회사 노트북의 **가상 원가 데이터**로 회사 기준정보 �
 ### Chrome CSP 호환 퍼블리싱 시안 (2026-10-10)
 
 Windows 실제 Chrome 헤드리스 검사에서 로컬 서버의 `Content-Security-Policy: script-src 'self'`가 시안 HTML의 inline script를 차단함을 확인했습니다. 보안 정책을 완화하지 않고 브라우저 코드를 `frontend/public/bid-decision-dashboard-preview.js`로 분리했으며 로컬 서버가 동일출처 `/bid-decision-dashboard-preview.js`로 제공합니다. 정적 HTML 단독 파일만 복사하면 동작하지 않으므로 같은 디렉터리의 JS도 함께 배포해야 합니다. 실제 브라우저 DOM에 공고 행과 프로필 요소가 표시되는지 검증한 뒤 UI 시연 완료를 판단합니다.
+
+### 2026-10-10 Chrome 브라우저 퍼블리싱 확인
+
+회사 노트북 `TD-kiseok`의 Chromium 기반 Chrome headless 실렌더링에서 새 대시보드 `http://127.0.0.1:8765/decision-preview`의 **합성 공고 8행, 현황 KPI 5개, 영향인자 가중치 입력 12개**가 DOM에 생성됨을 검증. 로컬 GET HTTP 200, CSP의 같은 출처 JS 로드, Node `--check` PASS. 검증 중 inline script CSP 차단을 실제 발견하여 정적 JS 파일로 분리하고 보안 헤더는 유지. GitHub push run [38049729286](https://github.com/son1004007/public-bid-agent/actions/runs/38049729286) SUCCESS / PR run [38049733578](https://github.com/son1004007/public-bid-agent/actions/runs/38049733578) SUCCESS. **클릭 상호작용의 브라우저 자동화 E2E 및 사용자의 UI 승인 = NOT RUN**. 현재 앱은 실제 나라장터 수집·AI 판별·프로필 영구 저장을 제공하지 않는 정적 설계 시안이며 main 병합은 HOLD.
