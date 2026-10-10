@@ -36,6 +36,9 @@ class CostUnitTests(unittest.TestCase):
   known=clean_profile({**MOCK_PROFILE,"registers":{"finance":{"status":"reviewed","summary":"가상 재무 요약","source":"가상 손익분석표","reviewed_on":"2026-10-10"}}})
   self.assertEqual(known["registers"]["finance"]["status"],"reviewed")
   self.assertEqual(known["registers"]["pipeline"]["status"],"not_collected")
+  for day in ("2026-02-30","2026-13-01","not-a-date"):
+   with self.subTest(day=day),self.assertRaises(ValueError):
+    clean_profile({**MOCK_PROFILE,"registers":{"finance":{"status":"reviewed","summary":"가상","source":"가상 문서","reviewed_on":day}}})
 
  def test_cost_calculation_vat_excluded_and_no_model_inference(self):
   ops=clean_profile(MOCK_PROFILE)

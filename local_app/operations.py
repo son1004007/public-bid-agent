@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from datetime import date
 import re
 
 MAX_MONEY = 10**12
@@ -73,8 +74,11 @@ def clean_registers(value):
             if not isinstance(val,str) or len(val)>maxlen:
                 raise ValueError("운영자료 입력 길이 제한을 초과했습니다")
             fields[field]=val.strip()
-        if fields["reviewed_on"] and not re.fullmatch(r"20\d{2}-[01]\d-[0-3]\d",fields["reviewed_on"]):
-            raise ValueError("확인일은 YYYY-MM-DD 형태로 입력하세요")
+        if fields["reviewed_on"]:
+            try:
+                date.fromisoformat(fields["reviewed_on"])
+            except ValueError as exc:
+                raise ValueError("확인일은 실제 존재하는 YYYY-MM-DD 날짜로 입력하세요") from exc
         if state=="reviewed" and (not fields["summary"] or not fields["source"] or not fields["reviewed_on"]):
             raise ValueError("검토 완료에는 요약·자료 출처·확인일이 모두 필요합니다")
         cleaned[key]={"status":state,**fields}
