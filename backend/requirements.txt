@@ -1,0 +1,3 @@
+# Conservative compatible range; refresh after a verified lock/resolution.
+fastapi>=0.128,<0.144
+uvicorn>=0.48,<0.49

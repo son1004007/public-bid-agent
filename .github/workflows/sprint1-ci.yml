@@ -1,0 +1,101 @@
+name: Sprint 1 CI
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+      - name: Install Korean OCR engine (CI)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-kor tesseract-ocr-eng fonts-dejavu-core
+      - name: Install local document readers
+        run: python -m pip install -r local_app/test-requirements.txt
+      - name: Test standalone local JSON server
+        run: python -m unittest discover -s local_app -p 'test_*.py' -v
+      - name: Run backend tests
+        env:
+          PYTHONPATH: backend
+        run: python -m pytest backend/tests -q
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+      - name: Typecheck and build
+        working-directory: frontend
+        run: npm run build
+      - name: README synchronization gate
+        run: python scripts/check_documentation_sync.py
+      - name: Local app JavaScript syntax
+        run: |
+          node --check local_app/app.js
+          node --check frontend/public/bid-decision-dashboard-preview.js
+      - name: Static publishing preview syntax and boundaries
+        run: python scripts/check_ui_preview.py
+      - name: Verify standalone preview included in build
+        run: test -f frontend/dist/ui-review.html && test -f frontend/dist/bid-detail-review.html && test -f frontend/dist/bid-management-preview.html && test -f frontend/dist/ai-account-preview.html
+      - name: Package offline UI preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: bid-management-ui-preview
+          path: |
+            frontend/dist/ui-review.html
+            frontend/dist/bid-detail-review.html
+            frontend/dist/bid-management-preview.html
+            frontend/dist/ai-account-preview.html
+          if-no-files-found: error
+          retention-days: 14
+
+
+      - name: Package local Python runnable source
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-python-bid-agent
+          path: |
+            local_app/server.py
+            local_app/decision_profiles.py
+            local_app/test_decision_profiles.py
+            local_app/test_bid_decision_preview.py
+            frontend/public/bid-decision-dashboard-preview.html
+            frontend/public/bid-decision-dashboard-preview.js
+            local_app/cross_review.py
+            local_app/extractors.py
+            local_app/index.html
+            local_app/app.js
+            local_app/requirements.txt
+            local_app/test-requirements.txt
+            local_app/test_extractors.py
+            local_app/README.md
+            local_app/test_local.py
+            local_app/test_cross_review.py
+            local_app/decision_support.py
+            local_app/test_decision_support.py
+            local_app/test_public_tenders.py
+            local_app/operations.py
+            local_app/test_operations.py
+            local_app/document_guide.json
+            local_app/test_document_guide.py
+            local_app/fixtures/public_tenders_2026_10_10.json
+            docs/DEPENDENCIES_AND_LICENSES.md
+            README.md
+          if-no-files-found: error
+          retention-days: 14

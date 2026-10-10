@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Public Bid Agent | 로컬 AI 분석</title>
+<style>
+:root{font:14px/1.6 system-ui,-apple-system,"Malgun Gothic",sans-serif;background:#f4f7fc;color:#1b2e4b}*{box-sizing:border-box}
+body{margin:0}button,input,textarea,select{font:inherit}button{cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #83adf7;outline-offset:2px}
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+.sidebar{background:#132d51;color:white;padding:24px 16px}
+.brand{font-size:17px;font-weight:850;margin-bottom:8px}.subtitle{color:#a9bedc;font-size:12px;line-height:1.85}
+.sidebar button{background:transparent;color:#bed5f5;text-align:left;border:0;border-radius:8px;display:block;width:100%;padding:10px}
+.sidebar button.active{background:#295189;color:white}.sidebar strong{display:block;margin-top:22px;font-size:12px;color:#a7bbd5}
+main{min-width:0;padding:32px;max-width:1400px;width:100%;margin:0 auto}
+h1{font-size:28px;line-height:1.3;margin:4px 0 8px}h2{font-size:18px;margin:0}h3{font-size:15px;margin:8px 0}
+.eyebrow{font-weight:900;font-size:11px;color:#2c67c0;letter-spacing:1px}
+.sub{color:#72839c;font-size:12px;margin:5px 0 21px}
+.disclaimer{background:#fff4df;border:1px solid #efdbb9;color:#805c20;padding:14px;border-radius:9px;font-size:12px;line-height:1.85;margin:20px 0}
+.card{background:#fff;border:1px solid #e0e8f4;border-radius:11px;padding:22px;margin:16px 0}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+button.btn{padding:9px 14px;border-radius:8px;border:1px solid #b9cce9;background:#fff;color:#245894;font-weight:800;font-size:12px}
+button.primary{background:#2467c8;color:#fff;border-color:#2467c8}
+button.btn:disabled{opacity:.48;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#465f80;font-weight:750}
+input,select,textarea{width:100%;border:1px solid #cdd9e8;border-radius:8px;background:white;padding:9px 11px;color:#1e3556}
+textarea{min-height:105px;resize:vertical}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.item{border:1px solid #e0e7f1;border-radius:8px;padding:13px;background:#fbfcff}
+.item h3{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.item small{font-weight:400;color:#8496aa;font-size:10px}
+.item-grid{display:grid;grid-template-columns:180px 1fr 90px;gap:9px;align-items:end}
+.item-grid input[type=checkbox]{width:auto;vertical-align:middle}
+.item-grid .verify{display:flex;flex-direction:row;align-items:center;justify-content:center;padding-bottom:10px;font-size:11px}
+.ai{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ai article{padding:13px;background:#f3f7ff;border-radius:9px;border:1px solid #dbe6f6;min-width:0}
+.ai p{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.note{background:#eef6ff;color:#335c91;border-left:3px solid #4488dc;padding:12px;margin:12px 0;border-radius:7px;font-size:12px}
+.warning{background:#fff6e4;border-left:3px solid #dca34a;color:#7c5c20}
+.muted{color:#8294ad;font-size:12px}
+#message{white-space:pre-wrap}
+#message:not(:empty){background:#eaf4ff;color:#27547f;border-radius:8px;padding:12px;margin-bottom:15px}
+#review{font-size:12px;white-space:pre-wrap;line-height:1.9}
+.doc-list{padding-left:17px;font-size:12px}
+#cases button{white-space:normal;overflow-wrap:anywhere}
+.status{display:inline-block;background:#e4efff;color:#255ca4;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:800}
+@media(max-width:1050px){.layout{grid-template-columns:1fr}.sidebar{padding:15px}.sidebar .case-list{display:flex;overflow-x:auto;gap:6px}.sidebar button{width:auto;flex:0 0 190px}main{padding:22px}}
+@media(max-width:700px){main{padding:15px}.grid,.ai,.item-grid{grid-template-columns:1fr}.card{padding:14px}.item-grid .verify{justify-content:flex-start}.sidebar button{flex-basis:145px}}
+</style>
+</head><body><div class="layout">
+<aside class="sidebar"><div class="brand">Public Bid Agent</div>
+<div class="subtitle">LOCAL FIRST / 개인 컴퓨터에서 실행<br>파일 저장: 내 PC의 JSON<br>AI 분석 시 선택한 제공자에만 외부 전송</div>
+<strong>공고 관리</strong><div class="actions"><button class="btn" id="newCase">+ 검토 공고 만들기</button></div>
+<div class="case-list" id="cases"></div>
+</aside>
+<main><div class="eyebrow">LOCAL AI-ASSISTED BID DECISION</div><h1>공고 AI 분석 및 영향인자 검토</h1>
+<p class="sub">프롬프트·문서 업로드 → AI 초안 → 사용자 수정·검증 → 참여/보류/미참여 결정</p>
+<div class="disclaimer"><b>로컬 저장과 AI 전송은 다릅니다.</b> 프롬프트·문서 텍스트·평가 결과는 지정한 내 PC JSON 파일에 저장합니다. AI 실행을 누르면 선택한 Codex/Claude 제공자에게 해당 자료 내용이 전송됩니다. 기밀 회사 자료는 회사의 외부 전송 허가가 있을 때만 사용하세요. 자격요건·낙찰확률을 AI가 확정하지 않습니다.</div>
+<div id="message" role="status" aria-live="polite"></div>
+<section class="card" id="intro"><h2>시작하기</h2><p>왼쪽에서 공고를 새로 만들거나 기존 공고를 선택하세요. 최초에는 아무 자료도 AI에 전송되지 않습니다.</p></section>
+
+<details class="card" id="operationsPanel">
+ <summary style="font-size:17px;font-weight:800;cursor:pointer">회사 공통 운영정보 (내 PC에만 저장)</summary>
+ <p class="muted">한 번 등록한 직무별 월 총원가·가용 공수, 공통 간접비율·위험충당률을 공고별 원가 산정에 재사용합니다. 개인별 급여·실명·고객정보는 입력하지 마세요. 실제 회사정보는 사내 승인 없이 사용하지 않습니다.</p>
+ <div class="note warning">이 운영정보는 Codex 프롬프트에 자동 포함되지 않습니다. 별도 <code>operations.json</code>에 저장되며, 컴퓨터 접근권한이 있는 사람은 읽을 수 있는 평문입니다. 회사 데이터 보관 및 외부 AI 전송은 별도의 회사 승인 사항입니다.</div>
+ <p id="operationsMessage" role="status" class="muted">운영정보를 불러오는 중입니다.</p>
+ <div id="opsRoles" class="grid" aria-label="직무별 총원가 및 가용 공수"></div>
+ <div class="actions"><button class="btn" id="opsAddRole">직무 추가</button></div>
+ <div class="grid">
+  <label>간접비율 (%)<input id="opsOverhead" type="number" min="0" max="100" step=".01" value="0"></label>
+  <label>위험충당률 (%)<input id="opsReserve" type="number" min="0" max="100" step=".01" value="0"></label>
+ </div>
+ <details style="margin-top:16px"><summary style="font-weight:700;cursor:pointer">기타 회사 운영자료 8종 (상태·담당 부서·확인 근거)</summary>
+ <p class="muted">원본 인사·재무 자료를 올리지 말고, 승인된 최소 요약만 입력하세요. 저장한 요약은 예상원가 계산 및 Codex 분석에 자동 반영되지 않습니다.</p>
+ <div id="opsRegisters" class="grid" aria-label="운영자료 종류별 수집 상태 및 확인일"></div></details>
+ <div class="actions"><button class="btn primary" id="opsSave">회사 공통 기준정보 저장</button></div>
+</details>
+
+<details class="card" id="documentGuide" open><summary style="font-size:16px;font-weight:800;cursor:pointer">입찰 판단에 필요한 문서 5종과 변수별 증빙 안내</summary>
+<p class="muted">나라장터·발주기관 자료 2묶음과 회사 보유 자료 3묶음입니다. 모든 문서가 하나의 파일로 존재할 필요는 없고, 자료가 부족하면 미확인으로 둡니다.</p>
+<div class="note warning"><strong>회사 내부자료 전송 주의</strong><p id="guideSafety" style="margin:5px 0 0">승인되지 않은 회사 실적·인력·원가·계약 자료는 외부 AI로 전송하지 마세요.</p></div>
+<div id="guideCards" class="grid" role="region" aria-label="권장 업로드 문서 유형">문서 가이드를 불러오는 중입니다.</div>
+<details style="margin-top:14px"><summary style="font-weight:750;cursor:pointer">독립변수 20개별 필요 문서와 담당자 확인 질문</summary><div id="guideVariables"></div></details>
+<p class="muted" id="guideLimits">공고당 파일은 최대 6개입니다. 문서 원문 검증과 AI 전송 동의는 별도로 진행합니다.</p>
+</details>
+<section class="card" style="border:2px solid #b4cdf0;background:#f7fbff"><h2>새 공고 중심 대시보드 화면 검증</h2><p class="sub" style="margin:8px 0 12px">공고 수집 → 참여 판단 버튼 → 참여 판단 프로필 및 영향인자 프로필 → 불참 사유 이력을 확인하는 새 화면입니다. 실제 수집/AI/프로필 영구 저장 전의 퍼블리싱 시안입니다.</p><a class="btn primary" style="display:inline-block;text-decoration:none" href="/decision-preview" target="_blank" rel="noopener">새 입찰 의사결정 화면 열기 →</a></section>
+<div id="workspace" hidden>
+<section class="card"><div class="card-head"><h2 id="caseTitle"></h2><span class="status">수정 데이터도 로컬 JSON 저장</span></div>
+<label>공고 설명 또는 자유 프롬프트<textarea id="prompt" maxlength="44000" placeholder="공고 내용, 당사 가용인력과 유사사업 증빙 등을 설명하세요. 기밀정보 전송에 유의하세요."></textarea></label>
+<div class="actions"><button class="btn" id="savePrompt">설명 로컬 저장</button></div>
+<div class="grid"><label>입찰문서 추가 (Excel XLSX/XLS/XLSM · PDF/OCR · HWP/HWPX · DOCX · TXT 등)
+<input id="file" type="file" accept=".txt,.md,.csv,.json,.pdf,.docx,.xlsx,.xls,.xlsm,.hwp,.hwpx"></label><div><p class="muted">파일 바이너리는 보관하지 않고 로컬에서 추출한 텍스트만 JSON에 기록합니다. 최대 10 MiB/파일, 6개 파일, PDF 40페이지·OCR 12페이지. 한국어 Tesseract 언어팩 필요. 수식은 저장된 계산값을 사용하며 매크로는 실행하지 않습니다. OCR 및 추출 누락은 경고로 표시합니다.</p><ul id="docs" class="doc-list"></ul></div></div>
+</section>
+
+<section class="card" id="costPlanning">
+ <div class="card-head"><h2>공고별 투입·원가 계획 (로컬 계산)</h2><span class="status">AI 모델 전송 안 함</span></div>
+ <p class="muted">회사 공통 기준정보를 먼저 등록하세요. 공고마다 예상 MM(인월), 외주비·직접경비·제안준비비와 예정 공급가액(부가세 제외)을 입력하면 계산됩니다. 가용 MM은 기준정보 시점의 참고값이며 다른 입찰/진행 프로젝트 중복 배정은 자동 차감되지 않습니다.</p>
+ <div id="planRows" class="grid" aria-label="직무별 예정 투입 공수"></div>
+ <div class="grid">
+  <label>외주비 (원)<input data-plan="subcontract_krw" type="number" min="0" step="1" value="0"></label>
+  <label>기타 직접경비: 클라우드·출장·라이선스 (원)<input data-plan="direct_expenses_krw" type="number" min="0" step="1" value="0"></label>
+  <label>제안서 작성·입찰 준비비 (원)<input data-plan="proposal_krw" type="number" min="0" step="1" value="0"></label>
+  <label>예정 공급가액 VAT 제외 (원; 비우면 미산출)<input data-plan="proposed_supply_price_krw" type="number" min="0" step="1" placeholder="미정"></label>
+ </div>
+ <div class="actions"><button class="btn primary" id="saveCostPlan">공고별 예상 원가 계산·저장</button></div>
+ <div id="costResult" class="note" role="status">예상 원가가 아직 없습니다.</div>
+</section>
+
+<section class="card"><div class="card-head"><h2>1. AI가 영향인자 초안 작성</h2><span class="status">선택해서 명시적 전송</span></div>
+<div class="actions"><label><input id="codex" type="checkbox" checked style="width:auto"> Codex CLI (기본: 단독 분석 가능)</label><label><input id="claude" type="checkbox" style="width:auto"> Claude Code CLI (구독·로그인 가능한 경우에만 선택)</label></div>
+<label style="flex-direction:row;align-items:flex-start;gap:9px;margin:12px 0"><input id="consent" type="checkbox" style="width:auto;margin-top:4px"><span>선택한 AI 제공자에게 이 공고의 프롬프트와 문서 텍스트를 전송하는 데 동의합니다.</span></label>
+<div class="actions"><button id="analyze" class="btn primary">AI 영향인자 추출 실행</button><button id="adopt" class="btn">AI 초안 적용 (수정 가능)</button></div>
+<p class="muted">Codex만 로그인된 경우에도 분석할 수 있습니다. 이때 Codex 1회 분석·수기 검증·사용자 결정만 수행하고 두 AI 합의를 표시하지 않습니다. Codex는 ChatGPT 인증 CLI의 지원 모델을 별도로 지정합니다. Claude는 선택적입니다. 실행 전에 사용할 CLI를 설치하고 로그인해야 합니다. 설치되어 있지 않거나 로그인할 수 없으면 결과가 생성되지 않습니다. 두 CLI를 선택하면 독립 검토 결과를 표시하며, 두 모델이 성공하면 LangGraph가 상대 의견을 한 번씩 재검토하고 이견을 비교합니다. 이 작업은 모델당 최대 2번 요청할 수 있으며 별도 비용·사용량이 발생할 수 있습니다. 실제 사용자의 최종 결정은 변경되지 않습니다.</p>
+<div class="ai" id="opinions"></div>
+<details class="item" id="aiIndependentVariables" open><summary style="font-weight:800;cursor:pointer">AI 독립변수 20개 및 추출 근거 (읽기 전용, 미검증)</summary><p class="muted">AI 원본값을 확인하는 영역입니다. 값 변경이나 사용자 검증은 아래 별도 입력칸에서 진행합니다. 점수 5는 항상 유리한 상태이며, 위험 통제 5는 위험이 잘 통제된 상태를 의미합니다. 기존 분석의 점수 방향 오류에 주의하세요.</p><div id="aiFactorsPreview" role="region" aria-label="AI가 추출한 독립변수의 상태와 출처"></div></details>
+<div class="note warning" id="decisionSupport" role="status">AI 분석 전입니다.</div><div class="note" id="crossReview" role="status">교차검토 실행 전입니다.</div>
+</section>
+<section class="card"><div class="card-head"><h2>2. 필수 참가조건 확인</h2><span class="status">Hard Gate 8개</span></div>
+<div class="note">AI 초안은 미확인 상태이며 검증 완료가 아닙니다. 참가자격 충족은 담당자가 원문과 증빙을 확인하고 '내가 확인함'을 선택해야 합니다.</div>
+<div id="gates" class="grid"></div></section>
+<section class="card"><div class="card-head"><h2>3. 전략·경쟁력 영향인자</h2><span class="status">12개 · 가중치 100 (예시)</span></div>
+<div class="note">점수는 1~5, 미확인은 비어있음. 근거가 없으면 검증할 수 없습니다. 예시 가중지표는 실제 수주 확률이 아닙니다.</div>
+<div id="factors" class="grid"></div></section>
+<section class="card"><div class="card-head"><h2>4. 사람의 최종 결정</h2><button class="btn primary" id="saveFactors">수정·검증값 로컬 저장</button></div>
+<div id="review" class="note"></div>
+<div class="grid">
+<label>최종 선택<select id="decision"><option value="undecided">아직 결정 안 함</option><option value="bid">참여</option><option value="hold">보류</option><option value="no_bid">미참여</option></select></label>
+<label>최종 결정 사유<input id="reason" maxlength="1000" placeholder="결정자가 판단한 이유"></label></div>
+<div class="actions"><button class="btn primary" id="decide">최종 선택 로컬 기록</button></div>
+<p class="muted">AI 권고와 사용자의 결정은 별개입니다. AI 분석은 계약 체결, 입찰서 제출, 실제 낙찰 결과 갱신을 수행하지 않습니다.</p>
+</section></div>
+</main></div>
+<script src="/app.js" defer></script>
+</body></html>

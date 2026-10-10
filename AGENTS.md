@@ -21,7 +21,7 @@
 - 저장소: `public-bid-agent`
 - 서비스명: Public Bid Agent
 - 목적: 공개 AI/SW 입찰공고를 검색하고 참가조건과 기술 적합성을 원문 근거로 분석하는 웹서비스
-- 상태: 애자일 반복 개발로 전환 / Sprint 1 구현 준비 (아직 코드·테스트·배포 없음)
+- 상태: 애자일 UI 퍼블리싱 우선 설계 검증 단계 / React+FastAPI 초기 코드 보존, 백엔드 추가 구현은 사용자 화면 검증 뒤 / 독립 최종 검수 및 공개 배포 미완료
 
 ## 2. 필수 문서 확인 순서
 
@@ -37,7 +37,8 @@
 10. `docs/04-operation-and-deployment.md`
 11. `docs/05-coding-standards.md`
 12. `docs/06-source-layout.md`
-13. 작업 관련 공통 표준과 ADR, 실제 코드, 테스트, 최신 GitHub 증거
+13. [UI 퍼블리싱 설계 검증 가이드](docs/ui/SCREEN_REVIEW_GUIDE.md), [현재 구현 지속 지시서](docs/implementation/CONTINUE_IMPLEMENTATION_PROMPT_2026-10-09.md), [Sprint 1 실행안내](docs/implementation/SPRINT1_RUNBOOK.md)
+14. 작업 관련 공통 표준과 ADR, 실제 코드, 테스트, 최신 GitHub 증거
 
 ## 3. 증거와 작업 순서
 
@@ -53,6 +54,38 @@
 **이 프로젝트는 워터폴식 일괄 설계 승인 방식이 아니라 애자일 반복 개발을 기본으로 합니다.** 기존 ADR은 설계 기준선과 위험 목록이며, 모든 미래 기능의 사전 구현 승인 조건이 아닙니다. 비공개 로컬 실행과 검증용 fixture 개발은 즉시 진행할 수 있고, 실제 외부 연동·인증·AI 호출·개인정보 처리·공개 서비스 활성화는 해당 기능의 안전 게이트를 충족한 뒤 진행합니다.
 
 개발 중 작은 수정마다 독립 검수를 다시 받지 않습니다. 다만 중요한 설계는 공통 정책에 따른 사전 독립 검토, 의미 있는 논리적 변경 단위는 완료 판정 전 독립 최종 검수를 수행합니다. 개인 프로젝트의 AGY/Gemini 검수 의무와 불가 시 검수 부채 처리 등은 `personal-engineering-handbook/REVIEW_POLICY.md`를 따릅니다. 독립 검수가 없으면 구현 진행과 완료·출시 판정을 구분합니다.
+
+## 3.1 사용자 최신 지시: 퍼블리싱 우선
+
+- **설계 → 실행 가능한 UI 퍼블리싱 → 사용자가 화면 검증 → 필요한 화면/요구/API 계약 수정 → 백엔드 세부 구현** 순서를 적용한다.
+- 기존 FastAPI 합성 fixture 코드는 폐기하지 않지만, 새로운 서버 기능·실제 나라장터 API·인증·AI 연동은 사용자의 초기 화면 검토가 가능해질 때까지 후순위로 둔다.
+- 화면은 서버 없이 실행 가능한 `frontend/public/ui-review.html`로 시연한다. 합성 자료를 실제 공고/자격 확정/실제 AI로 오인하게 만들지 않는다.
+- 화면 시안 검수와 코드 독립 검수는 다른 절차다. 사용자가 UI 승인을 하기 전에는 `UI_APPROVED`라고 표시하지 않으며, 미검수 코드를 `REVIEWED`/릴리스로 표시하지 않는다.
+- 동일 패턴은 공통 handbook의 UI 퍼블리싱 우선 기준 제안([독립 검수 대기 PR](https://github.com/son1004007/personal-engineering-handbook/pull/1))에 별도로 기록했다. 타 저장소 전체에 아직 승인된 의무로 강제하지 않는다.
+
+## 3.2 사용자 추가 요구: 자신의 Codex 계정 선택
+
+- 입찰관리 사용자마다 **본인의 ChatGPT/Codex 계정을 선택·추가·전환**하는 UI를 제공한다. 사용자의 프로젝트 로그인과 OpenAI 계정 연결/AI 요금제 사용 동의는 별도 권한 경계다.
+- 현재 공개 웹서비스에서 실제 제3자 구독 사용이 허용된 상태가 아니므로 `frontend/public/ai-account-preview.html`은 합성 프로필·브라우저 메모리 시안만 제공한다. 실제 연결·결제·토큰 획득·LLM 요청을 구현했다고 주장하지 않는다.
+- 공식 `Sign in with ChatGPT` 오픈소스 로컬 앱 인증 흐름과 공개 원격 호스팅 앱의 승인 경계를 [공식 조사](docs/research/2026-10-09-chatgpt-account-integration.md)에 기록한다.
+- 실제 사용 시 사용자별 계정 식별·워크스페이스·OAuth 클라이언트 등록·토큰을 다른 사용자의 데이터와 혼용하지 않으며, 본인 권한 취소/사용량 한도를 검증한다.
+
+## 3.3 로컬 우선 AI 자동 영향인자 추출 (2026-10-09 지시)
+
+- 사용자/업로드 RFP·회사 역량 설명을 AI가 분석하여 영향인자의 **초안**을 채우고 수동 입력은 사용자 오류 수정/증빙 확인에 사용한다.
+- 로컬 `local_app/server.py` 기준으로 Python 설치 후 개인 PC에서 실행, `127.0.0.1`만 바인딩한다. 앱 데이터는 사용자 로컬 JSON 외 외부 DB/서버로 저장하지 않는다.
+- 외부 Codex/Claude CLI 호출은 **분석할 문서와 해당 공급자 전송에 대한 명시적 승인 후에만** 실행한다. 로컬 저장과 외부 모델 전송을 동의/화면에서 분리한다.
+- AI 공급자 인증 자격은 사용자의 로컬 CLI가 소유하며 앱은 자격증명을 수집하지 않는다. 일반 기업 정보·제안서의 외부 전송은 사내 정책/승인 우선.
+- AI 출력은 검증 전 주장. 필수 입찰조건의 충족/미충족, 점수 및 추천은 출처·근거 확인 없이는 확정 불가. 사람의 최종 Bid/No-Bid 기록과 실제 수주 결과는 별도.
+- 실질적으로 민감한 문서 파서, 토큰, 외부 AI 전송, 실제 서비스 공개에는 격리/독립 최종 검수·조건 검증 필요. 개발 중 CLI의 자체 캐시·외부 제공자 로그 정책도 별개다.
+
+## 3.4 최신 구현 지시: 프로필 로컬 백엔드 수직 연결 (2026-10-10)
+
+- 사용자가 상세 퍼블리싱 상태를 확인하고 백엔드 구현 진행을 명시적으로 요청했다. 기존 3.1의 UI 승인 대기 제한은 **로컬 합성 시연용 프로필 JSON 구현에는 더 이상 선행조건이 아니다**.
+- `frontend/public/bid-decision-dashboard-preview.html`의 참여 판단 기준과 12개 가중치만 로컬 `decision_profiles.json`에 분리 저장한다. 기존 `cases.json`과 `operations.json`을 이동·삭제·자동 수정하지 않는다.
+- 저장은 서버의 Host/Origin/CSRF, 스키마 검증, 원자 파일 쓰기, revision 충돌 보호 아래 실시하며 두 프로필의 이전 값과 버전을 유지한다.
+- 현재 공식 공고 자동수집·결정 이력 영구 저장·실제 AI 추론·사용자별 로그인·대외 배포는 이 변경에 포함되지 않는다.
+- 사용자 UX 승인 및 별도 독립 최종 검수 없이 `UI_APPROVED`/`REVIEWED`/`RELEASED`로 표시하거나 PR을 병합하지 않는다.
 
 ## 4. 구현 및 보안 규칙
 
@@ -118,3 +151,19 @@ TypeScript/TSX 예시:
 ## 7. Git 및 완료 기준
 
 커밋 접두어는 `docs:`, `feat:`, `fix:`, `test:`, `refactor:`, `chore:`를 사용합니다. `PLANNED` / `IN_PROGRESS` / `IMPLEMENTED_UNVERIFIED` / `VERIFIED` / `REVIEWED` / `RELEASED`를 구별합니다. 작업 도중 공개 소스코드를 GitHub에 기록할 수 있지만 이것이 운영 배포 승인이나 기능 완료를 의미하지는 않습니다. 주요 위험과 미완료 검수는 `TASKS.md`에 남깁니다. 사용자 합의 없는 일괄 설계 재검수 루프는 구현을 차단하지 않으며, 실제 테스트·필수 독립 검수 없이 `REVIEWED`나 `RELEASED`로 표시하지 않습니다.
+
+## 2026-10-09 파일 형식 구현 기준
+
+- 사용자 요구에 따라 로컬 문서 추출은 Excel(XLS/XLSX/XLSM), PDF+한국어 OCR, HWP/HWPX, DOCX, TXT 등 지원을 목표로 함.
+- 파일 변환/파싱은 `local_app/extractors.py`의 별도 Python subprocess에서 수행. 크기/압축 폭탄/페이지 수/시간·메모리 제한, 업로드 JSON 원본 미보관, 추출 메타데이터·오류/잘림 표시.
+- HWP 계열은 Apache-2.0 `python-hwpx` 또는 HWPX OWPML XML 파서 기준. AGPL3 `pyhwp`는 공개 저장소의 기본 의존성으로 추가하지 않음.
+- 이미지 스캔 PDF는 사용자 PC에 Tesseract와 `kor` 언어팩이 있을 때 로컬 OCR만 수행. AI 공급자로의 자료 전송은 별도 사용자 동의 뒤 실행.
+- AI가 OCR 문자를 완전/정확하다고 가정하지 않으며 입찰자격/마감/평가점수는 최종 원문 대조 필요.
+
+## 최신 필수 규칙: README 동기화 및 승인된 개발 버전 (2026-10-09)
+
+- Python 기준 실행/CI 환경은 **CPython 3.12.x**이며 `.python-version` 및 README 설치 문서에 일치시킨다. 새 버전 공식/CI 검증 후에만 지원 범위를 바꾼다.
+- **코드/패키지/UI/API 계약 수정 커밋마다 루트 `README.md`와 `local_app/README.md`를 같은 커밋에서 동기화한다.** `scripts/check_documentation_sync.py`가 GitHub CI에서 검증한다. 문서의 실제 정확성은 별도 코드 검토 대상으로 둔다.
+- 구조/의존성 변경 시 `docs/02-architecture.md`, `docs/DEPENDENCIES_AND_LICENSES.md`, `CURRENT_STATE.md`, `TASKS.md`의 해당 부분도 갱신한다.
+- 로컬 LangGraph: 독립 모델 2개 -> 상대 의견 검토 각 1회 -> 이견 비교; 사용자 최종 결정은 변경하지 않는다. 외부 모델 전송에 매번 명시적 동의가 필요하다.
+- 모델별 CLI 인증, 외부 계약, OCR/문서 악성 입력, 하위 의존성/바이너리 재배포 고지는 코드 라이선스 호환성과 별도 검증한다.
