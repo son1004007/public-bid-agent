@@ -255,3 +255,11 @@
 
 - 운영자료 날짜 검증 정규식의 잘못된 이스케이프를 로컬 실패 테스트로 발견·수정. 이어진 코드 한 줄짜리 fix 커밋이 루트/로컬 README 동시 변경 의무를 지키지 않아 push CI의 README gate 실패 확인(동일 SHA PR CI는 SUCCESS).
 - 이 의미 있는 날짜 보정/추가 테스트 변경에서 두 README를 함께 갱신해 push CI 재검증. 과거 workflow failure 기록은 삭제/숨기지 않음.
+
+## 2026-10-10 운영정보 원가/8종 운영자료 실제 검증 결과
+
+- `ops-cost-synthetic-e2e` 합성 데이터에서 기준정보 revision 0→1→2, 인건비 27,000,000원, 예상 총원가 37,805,000원, 이익 12,195,000원(24.4%), 원가 재산정 구버전 상태 및 CSRF 필수 보호 검증. 인가되지 않은 실제 회사/고객 데이터 입력 없음.
+- 추가 8종 자료 메타데이터(재무 reviewed, 파이프라인 needs_refresh, 나머지 미확인 6개) 로컬 저장 성공. 초기 사용자용 운영정보는 여전히 비어 있음.
+- Windows 50개 unittest PASS, JS syntax PASS, GitHub push CI 38040046052 및 PR CI 38040049212 SUCCESS. CSRF 경계 테스트 1회 WinError 10053 간헐 실패 기록, targeted/full 재실행 PASS (관찰 필요).
+- 실제 사용자 로컬 앱 8765 재시작, 기존 4개 합성 공고·최종결정 보존, UI HTML·JS·8종 운영자료 제공 200·loopback 확인. 브라우저 실제 인터랙션/레이아웃 검수는 NOT RUN.
+- 상세 [운영정보 E2E 보고서](docs/reviews/OPERATIONS_COST_E2E_2026-10-10.md). AGY/독립 Codex 의미 검수 미완료로 Draft PR #1 및 main merge HOLD.
