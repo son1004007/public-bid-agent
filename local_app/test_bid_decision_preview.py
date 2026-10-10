@@ -30,7 +30,7 @@ class BidDecisionPreviewTests(unittest.TestCase):
    self.assertIn(f'data-detail-tab="{key}"',html)
   self.assertIn('id="detailBack"',html)
   self.assertIn('id="detailAssess"',html)
-  self.assertIn('id="fullDetailNoBidReason"',js)
+  self.assertIn("note.id='fullDetailNoBidReason'",js)
   self.assertIn("function openFullDetail(id,tab='overview')",js)
   self.assertIn("function renderFullDetail()",js)
   self.assertIn("function renderFullRequirements(n,pane)",js)
