@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Public Bid Agent - 공고 수집, 참여 판별 기준 및 영향인자 프로필, 불참 사유 퍼블리싱 시안">
+<title>Public Bid Agent | 공고 수집 및 참여판단 화면 시안</title>
+<style>
+/* 설계 계약: 서버/로그인/AI/수집 호출 없는 독립 화면. 모든 데이터는 합성·메모리 임시 저장이며, 사람 결정과 AI 권고를 분리한다. */
+:root{font:14px/1.55 system-ui,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#23354d;background:#f4f6fa;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}a{color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #9dc7fb;outline-offset:2px}
+.shell{display:grid;grid-template-columns:242px minmax(0,1fr);min-height:100vh}
+.sidebar{background:#14263d;color:#c8d5e4;padding:30px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:12px;padding:0 12px 34px;font-weight:800;font-size:17px;color:#fff}
+.mark{display:grid;place-items:center;min-width:38px;height:38px;background:#4e89ff;border-radius:11px;color:#fff;font-size:21px;font-weight:900}
+.brand small{display:block;font-size:10px;color:#87a4c3;font-weight:650;letter-spacing:1.2px}
+.sidebar .minor{padding:6px 13px;margin:13px 0 6px;text-transform:uppercase;letter-spacing:1.3px;font-size:10px;font-weight:900;color:#8299b4}
+.nav{display:grid;gap:3px}.nav button{width:100%;background:transparent;border:0;color:#becddd;border-radius:9px;text-align:left;padding:12px 13px;font-weight:640}
+.nav button:hover,.nav button.active{color:#fff;background:#28425f}.nav button.active{box-shadow:inset 3px 0 0 #71b4ff}
+.nav button span{margin-right:10px;color:#91add0}
+.side-bottom{margin-top:auto;padding:16px 11px 2px;color:#96a9c3;font-size:11px;line-height:1.8}
+.side-bottom b{color:#e1ecfb}.side-bottom a{color:#bcd7fc;text-decoration:none}
+.main{min-width:0}.topbar{height:66px;background:#fff;border-bottom:1px solid #e4e9ef;display:flex;justify-content:space-between;align-items:center;padding:0 36px;gap:20px}
+.breadcrumb{color:#788ba2;font-size:12px}.breadcrumb strong{color:#2e445f}
+.topright{display:flex;align-items:center;gap:16px;font-size:12px;color:#677f98}
+.dot{display:inline-block;width:7px;height:7px;border-radius:100%;background:#b2becd;margin-right:5px}
+.stage{display:inline-block;border:1px solid #d3deeb;background:#f3f7fb;padding:6px 11px;border-radius:20px;color:#55708e;font-weight:700}
+.content{max-width:1580px;margin:0 auto;padding:34px 37px 80px}
+.eyebrow{font-size:11px;letter-spacing:1.5px;color:#4a79c2;font-weight:850}
+.hgroup{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:22px;flex-wrap:wrap}
+h1{font-size:clamp(24px,2.4vw,31px);margin:5px 0 5px;letter-spacing:-.7px;color:#1a304a}
+h2{font-size:17px;margin:0;letter-spacing:-.25px}h3{font-size:15px;margin:0 0 9px}p{margin:5px 0 0}
+.muted{color:#8190a3;font-size:12px}.desc{color:#6c7e94;font-size:13px}
+.btn{border:1px solid #d2dce8;border-radius:8px;background:#fff;color:#325474;font-weight:760;padding:10px 15px;font-size:12px;white-space:nowrap}
+.btn:hover{background:#f2f6fc}.btn.primary{background:#2263cf;border-color:#2263cf;color:#fff}.btn.primary:hover{background:#174ca5}
+.btn.dark{background:#15375b;color:#fff;border-color:#15375b}.btn.ghost{background:transparent;border:0}.btn.small{padding:7px 10px;font-size:11px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.banner{display:flex;gap:10px;align-items:flex-start;background:#eaf2fe;border:1px solid #d5e3f9;color:#45688e;padding:13px 17px;border-radius:10px;margin:18px 0 22px;line-height:1.65;font-size:12px}
+.banner strong{color:#25539a}.card{background:#fff;border:1px solid #e3e8ef;border-radius:12px;box-shadow:0 3px 14px rgba(22,42,65,.025)}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:19px}
+.kpi{padding:18px 19px}.kpi .klabel{font-size:12px;color:#8191a7}.kpi .kvalue{display:block;font-size:28px;font-weight:850;letter-spacing:-1.5px;margin-top:7px;color:#1f3655}.kpi .ksub{font-size:11px;color:#94a1b1;margin-top:3px}.kpi.highlight{background:#173b69}.kpi.highlight .klabel,.kpi.highlight .ksub{color:#c7d8ed}.kpi.highlight .kvalue{color:white}
+.toolbar{padding:17px 20px;border-bottom:1px solid #eef1f5;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.toolbar .filters{display:flex;flex-wrap:wrap;gap:6px}
+.filter{background:#fff;border:1px solid #e2e7ef;border-radius:6px;color:#6d7e96;font-size:12px;padding:7px 12px}
+.filter.active{background:#eaf2ff;color:#2460bd;border-color:#bcd2f2;font-weight:800}
+.searchrow{display:flex;gap:8px;flex-wrap:wrap}
+.field{border:1px solid #d8e0e9;border-radius:7px;background:#fff;padding:9px 12px;color:#33465f;min-height:39px}
+.searchrow input{min-width:220px}
+.workgrid{display:grid;grid-template-columns:minmax(0,1fr) 345px;gap:16px;align-items:start}
+.workgrid .card{min-width:0;overflow:hidden}
+.sectionHead{display:flex;align-items:center;justify-content:space-between;padding:18px 21px;border-bottom:1px solid #eef1f5;gap:8px}
+.sectionHead p{font-size:11px;color:#95a5b8}
+.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;text-align:left}th{background:#fbfcfe;font-size:11px;font-weight:760;color:#8090a6;padding:12px 14px;border-bottom:1px solid #edf0f4;white-space:nowrap}td{padding:16px 14px;border-bottom:1px solid #eef1f5;font-size:12px;vertical-align:middle}tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#f9fbff}tbody tr.selected{background:#f2f7ff}
+.p-title{font-weight:760;color:#253b59;font-size:13px;line-height:1.5;max-width:340px}
+.idline{font-size:10px;color:#96a6ba;margin-top:5px}.subline{color:#788ba0;margin-top:6px;font-size:11px}
+.pill{display:inline-block;border-radius:5px;background:#f1f4f7;border:1px solid #e6eaf0;color:#6c7b8d;font-size:11px;font-weight:750;padding:4px 8px;white-space:nowrap}
+.pill.bid{background:#e8f5ef;border-color:#cde9da;color:#287755}.pill.no_bid{background:#fceceb;border-color:#f5d6d3;color:#a54d46}.pill.hold{background:#fff4e4;border-color:#f3dfbf;color:#94651b}.pill.pending{background:#eaf2ff;border-color:#d6e6fa;color:#4d77aa}
+.score{font-weight:850;color:#324e71}
+.detail{position:sticky;top:83px;overflow:hidden}.detailInner{padding:21px}
+.detailTitle{font-size:17px;font-weight:820;line-height:1.52;color:#273c56;margin-bottom:10px}
+.detailMeta{display:flex;flex-wrap:wrap;gap:7px;font-size:11px;color:#7388a1;margin-bottom:17px}
+.detailMeta span{background:#f5f7fa;border-radius:5px;padding:4px 7px}
+.hr{border:0;border-top:1px solid #e7ecf3;margin:18px 0}
+.dl{display:grid;grid-template-columns:90px 1fr;gap:7px;font-size:12px}.dl dt{color:#8797ab}.dl dd{margin:0;color:#344b67;font-weight:650}
+.callout{padding:12px 13px;border-radius:8px;background:#f6f8fc;border:1px solid #e6eaf0;color:#53677f;font-size:12px;line-height:1.7}
+.callout strong{display:block;color:#253d5a;margin-bottom:5px}
+.reasonList{margin:10px 0 0;padding-left:17px;font-size:12px;color:#5a6e86;line-height:1.8}
+.progress{height:6px;border-radius:3px;overflow:hidden;background:#e8edf4}.progress i{display:block;height:100%;background:#5684c9}
+.panel{padding:25px;margin-bottom:18px}
+.panelTop{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+.profilegrid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px}.profilegrid .card{padding:22px}
+.fieldset{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:19px}
+label{font-size:12px;color:#526780;font-weight:720}label>input,label>select{display:block;width:100%;margin-top:8px}
+.helper{font-size:11px;color:#8b9baf;font-weight:450;margin-top:6px}
+.stacked{display:grid;gap:14px}.toggleRow{display:flex;gap:12px;align-items:flex-start;font-size:12px;color:#536a84}
+.toggleRow input{margin-top:2px}.miniHead{font-size:11px;color:#4772aa;font-weight:800;letter-spacing:.5px;margin-top:9px}
+.weightRow{display:grid;grid-template-columns:minmax(110px,1fr) 140px 70px;gap:12px;align-items:center;padding:11px 6px;border-bottom:1px solid #eef1f5}
+.weightRow:last-child{border-bottom:0}
+.weightRow strong{font-size:12px;color:#41556e}.weightRow small{font-size:10px;color:#94a2b5}
+.weightRow input[type=range]{width:100%;accent-color:#2969c7}
+.weightRow output{font-size:13px;color:#204f9a;font-weight:800;text-align:right}
+.profileInfo{font-size:12px;color:#56708d;line-height:1.75;padding:14px;background:#f8fbff;border:1px solid #e2eaf5;border-radius:9px}
+.listGrid{display:grid;gap:12px}
+.historyRow{display:grid;grid-template-columns:135px minmax(0,1fr) 130px;gap:20px;align-items:center;padding:17px 20px;border-bottom:1px solid #eef1f6}
+.historyRow:last-child{border:0}.historyRow h3{font-size:13px;margin:4px 0}.historyRow p{font-size:12px;color:#6e8198}
+.collectionGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:20px}
+.collectionGrid .card{padding:20px}
+.empty{padding:48px;text-align:center;color:#879bb4;font-size:13px}
+.footer{margin-top:26px;color:#9aa8ba;text-align:center;font-size:11px}
+.view{display:none}.view.active{display:block}
+#toast{position:fixed;right:28px;bottom:24px;max-width:440px;background:#1b3656;color:white;padding:13px 18px;border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,.22);font-size:12px;z-index:20;display:none}#toast.show{display:block}
+@media(max-width:1250px){.workgrid{grid-template-columns:1fr}.detail{position:static}.kpis{grid-template-columns:repeat(3,1fr)}}@media(max-width:920px){.shell{grid-template-columns:1fr}.sidebar{position:static;height:auto;padding:10px 15px;flex-direction:row;flex-wrap:wrap;gap:8px}.brand{padding:4px;margin-right:auto}.sidebar .minor,.side-bottom{display:none}.nav{display:flex;flex-wrap:wrap}.nav button{width:auto;padding:9px 12px}.topbar{padding:0 20px}.content{padding:25px 19px}.collectionGrid,.profilegrid{grid-template-columns:1fr 1fr}}
+@media(max-width:680px){.brand small{display:none}.nav{width:100%}.nav button{font-size:11px}.nav button span{display:none}.topbar{height:55px}.topright .dot{display:none}.content{padding:22px 12px}.hgroup{align-items:stretch}.hgroup .actions{width:100%}.hgroup .actions .btn{flex:1}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{padding:14px}.kpi .kvalue{font-size:24px}.collectionGrid,.profilegrid,.fieldset{grid-template-columns:1fr}.searchrow input{min-width:140px}.searchrow{width:100%}.toolbar{align-items:stretch}.historyRow{grid-template-columns:1fr;gap:9px}.weightRow{grid-template-columns:1fr 115px 45px}.detail{position:static}}
+</style></head>
+<body><div class="shell">
+<aside class="sidebar"><div class="brand"><div class="mark">P</div><div>Public Bid Agent<small>BID INTELLIGENCE</small></div></div><div class="minor">WORKSPACE</div>
+<nav class="nav" aria-label="시안 화면 이동">
+<button data-view="notices" class="active"><span>▦</span> 공고 목록</button>
+<button data-view="collection"><span>↻</span> 수집 관리</button>
+<button data-view="policy"><span>☷</span> 참여 판단 프로필</button>
+<button data-view="variables"><span>◇</span> 영향인자 프로필</button>
+<button data-view="history"><span>▤</span> 참여·불참 이력</button>
+</nav><div class="side-bottom"><b>UI DESIGN PREVIEW</b><br>서버·계정·AI 연결 없음<br>수집/판단/프로필 저장은 이 화면에서만 시뮬레이션합니다.<br><a href="/">&larr; 기존 로컬 AI 분석 앱</a></div></aside>
+<div class="main"><header class="topbar"><div class="breadcrumb">입찰 관리 / <strong id="breadcrumb">공고 목록</strong></div><div class="topright"><span><i class="dot"></i>실제 수집 미연동</span><span class="stage">시연용 합성 데이터</span></div></header>
+<div class="content">
+<section class="view active" id="view-notices">
+<div class="hgroup"><div><div class="eyebrow">BID OPPORTUNITY DASHBOARD</div><h1>AI·데이터 사업 공고</h1><p class="desc">수집한 사업을 한 곳에서 확인하고, 저장한 기준 프로필로 참여 여부를 검토합니다.</p></div>
+<div class="actions"><button class="btn" id="jump-collection">수집 설정</button><button class="btn primary" id="assess-all">판단 대기 공고 일괄 판별 시연</button></div></div>
+<div class="banner"><strong>화면 설계 검증</strong><span>현재 공고 8건은 전부 가상의 예시입니다. 정기 수집·Codex 분석·프로필 영구 저장·나라장터 제출은 연결되지 않았습니다. 버튼은 화면 동작만 시뮬레이션하며 실제 입찰 결정을 하지 않습니다.</span></div>
+<div class="kpis" id="kpis"></div>
+<div class="workgrid">
+<section class="card"><div class="sectionHead"><div><h2>수집 공고 목록</h2><p>공고별 판단 상태와 불참 사유까지 확인</p></div><div class="actions"><span class="muted" id="result-count"></span><button class="btn small" id="demo-collect">가상 수집 시연</button></div></div>
+<div class="toolbar"><div class="filters" id="statusFilters"></div><div class="searchrow"><input id="search" class="field" placeholder="사업명, 발주기관 검색" aria-label="공고 검색"><select id="sector" class="field" aria-label="분야"><option value="">전체 분야</option><option value="AI">AI</option><option value="DATA">데이터분석</option><option value="SW">SW</option></select></div></div>
+<div class="tablewrap"><table aria-label="합성 입찰공고 목록"><thead><tr><th>공고명 / 발주기관</th><th>분야</th><th>예산</th><th>마감</th><th>AI 참고 판단</th><th>검토</th></tr></thead><tbody id="noticeRows"></tbody></table></div>
+<div id="listEmpty" class="empty" hidden>조건에 맞는 공고가 없습니다. 검색어 또는 상태 필터를 바꿔주세요.</div></section>
+<aside class="card detail"><div class="sectionHead"><h2>공고별 판단 근거</h2><span class="muted">화면 시뮬레이션</span></div><div class="detailInner" id="detail"></div></aside>
+</div></section>
+<section class="view" id="view-collection">
+<div class="hgroup"><div><div class="eyebrow">COLLECTION SETTINGS</div><h1>정기 공고 수집</h1><p class="desc">수집 규칙과 실행 이력을 먼저 검토합니다. 자동화와 공식 API 연결은 다음 단계입니다.</p></div></div>
+<div class="banner"><strong>연동 예정</strong><span>이 화면의 실행 버튼은 가상 공고를 목록에 추가할 뿐 나라장터에 접속하지 않습니다. 주기 설정 역시 저장/예약되지 않습니다.</span></div>
+<div class="collectionGrid"><div class="card"><div class="miniHead">수집 대상</div><h2>나라장터 공고</h2><p class="desc">AI 서비스 · 데이터 분석 · 소프트웨어 용역</p></div><div class="card"><div class="miniHead">수집 주기 (설계값)</div><h2>평일 오전 09:00</h2><p class="desc">최초 수집 및 정정공고 확인, 중복 방지</p></div><div class="card"><div class="miniHead">마지막 수집 (예시)</div><h2>2026.10.10 08:50</h2><p class="desc">8건 (합성) · 실제 작업 기록 아님</p></div></div>
+<div class="card panel"><div class="panelTop"><h2>수집 범위와 기준</h2><button class="btn primary" id="collect-action">가상 공고 1건 수집 시연</button></div>
+<div class="fieldset"><label>수집 채널<input class="field" value="나라장터 공식 공고 API (연동 예정)" disabled></label><label>주기<input class="field" value="평일 09:00 (예약 미구현)" disabled></label><label>대상 분야<input class="field" value="AI, 데이터분석, SW 서비스" disabled></label><label>갱신 전략<input class="field" value="공고번호+차수 중복 방지 / 정정 추적" disabled></label></div>
+<p class="helper" style="margin-top:17px">자동 수집 여부, 마지막 성공 시간, 실패·재시도 이력, 정정공고 변경내역은 실제 백엔드 구현 이후 연결할 예정입니다.</p></div>
+</section>
+<section class="view" id="view-policy">
+<div class="hgroup"><div><div class="eyebrow">DECISION POLICY PROFILE</div><h1>입찰 참여 판단 기준</h1><p class="desc">참여 추천·불참 검토·보류를 분류할 업무 기준을 프로필로 관리합니다.</p></div></div>
+<div class="banner"><strong>프로필 시안</strong><span>프로필 수정 후 '화면에 임시 저장'을 눌러야 가상 판단에 적용됩니다. 새로고침하면 초기값으로 복원됩니다. 저장된 결과는 실제 AI 판단 또는 법적 참가자격 판정이 아닙니다.</span></div>
+<div class="profilegrid">
+<div class="card"><div class="panelTop"><div><h2>기본 참여 판단 프로필</h2><p class="muted" id="policyVersion"></p></div><span class="pill pending">화면 임시 저장</span></div>
+<label>프로필 이름<input id="policyName" class="field" maxlength="50"></label>
+<div class="fieldset"><label>최소 기술 적합성 점수 (0~100)<input id="policyFit" class="field" type="number" min="0" max="100"></label><label>최소 예상 사업이익률 (%)<input id="policyMargin" class="field" type="number" min="-100" max="100"></label></div>
+<div class="stacked" style="margin-top:23px">
+<label class="toggleRow"><input id="policyRequire" type="checkbox"> 필수 참가자격이 미확인인 공고는 '보류'로 분류</label>
+<label class="toggleRow"><input id="policyOperations" type="checkbox"> 운영·상주 중심 공고는 '불참 검토'로 분류</label>
+<label class="toggleRow"><input id="policyProof" type="checkbox"> 필수 수행실적 불충족 시 '불참 검토'로 분류</label>
+</div><div class="actions" style="margin-top:25px"><button class="btn primary" id="savePolicy">프로필 화면에 임시 저장</button><button class="btn" id="resetPolicy">기본값 복원</button></div></div>
+<div class="card"><h2>판단 우선순위</h2><p class="desc" style="margin:13px 0">이 프로필로 공고당 버튼을 누르면 아래 순서로 **참고 판단**을 계산합니다.</p><div class="stacked">
+<div class="callout"><strong>01. 필수조건 확인</strong>법적 등록·면허·실적 등의 명백한 불일치는 '불참 검토', 증빙 미확인은 '보류'로 구분합니다.</div>
+<div class="callout"><strong>02. 기술·인력·사업성</strong>기술 적합성, 내부 투입 여력, 원가 기반 수익성을 비교합니다.</div>
+<div class="callout"><strong>03. 담당자 최종 결정</strong>AI/규칙의 참고 권고와 실제 참여/불참 결정은 별도입니다. 불참을 선택하면 사유와 사용한 프로필 버전을 남깁니다.</div>
+</div><div class="profileInfo" style="margin-top:22px"><strong>프로필 변경에 따른 재판단</strong><br>기존 공고의 판단 결과는 자동으로 덮어쓰지 않습니다. 새 프로필로 공고의 '참여 판단 시연'을 다시 누를 때 버전과 사유가 갱신됩니다.</div></div></div>
+</section>
+<section class="view" id="view-variables">
+<div class="hgroup"><div><div class="eyebrow">INDEPENDENT VARIABLES PROFILE</div><h1>참여 영향인자 프로필</h1><p class="desc">필수 참가조건 8개와 비교 평가요인 12개를 하나의 버전으로 관리합니다.</p></div></div>
+<div class="banner"><strong>두 종류의 프로필</strong><span>참여 판단 프로필은 '어떤 기준으로 참여할지', 영향인자 프로필은 '무엇을 측정하고 점수를 어떻게 반영할지'를 정의합니다. 이번 화면은 영향인자 가중치와 확인 서류를 다룹니다.</span></div>
+<div class="profilegrid"><div class="card"><div class="panelTop"><h2>필수 참가조건 8개</h2><span class="pill">Hard Gate</span></div><div id="gateVariables" class="listGrid"></div></div>
+<div class="card"><div class="panelTop"><div><h2>평가 영향인자 12개</h2><p class="muted">높을수록 유리 · 점수 근거 부족은 미확인</p></div><span class="pill pending" id="weightTotal">합계 100%</span></div><div id="factorWeights"></div><div class="actions" style="margin-top:22px"><button class="btn primary" id="saveFactors">가중치 프로필 화면에 임시 저장</button><button class="btn" id="resetFactors">기본 가중치 복원</button></div><p class="helper">가중치 합계가 100%일 때만 저장합니다. 이 화면은 시안이며 저장값은 서버·파일에 남지 않습니다.</p></div></div>
+</section>
+<section class="view" id="view-history">
+<div class="hgroup"><div><div class="eyebrow">DECISION HISTORY</div><h1>참여·불참 판단 이력</h1><p class="desc">공고별로 무엇 때문에 불참했는지, 어떤 기준으로 판단했는지를 조회합니다.</p></div>
+<button class="btn" id="goto-notices">공고 목록으로</button></div>
+<div class="banner"><strong>합성 이력</strong><span>이력은 예시 데이터와 이번 브라우저에서 버튼으로 추가한 기록입니다. 실제 수집·입찰 제출·낙찰 상태와 무관하며 새로고침 시 원복됩니다.</span></div>
+<div class="card"><div class="sectionHead"><h2>검토 기록</h2><div class="actions"><select id="historyFilter" class="field"><option value="">전체</option><option value="no_bid">불참</option><option value="hold">보류</option><option value="bid">참여 검토</option></select></div></div><div id="historyRows"></div></div></section>
+<div class="footer">PUBLIC BID AGENT · PUBLISHING PREVIEW ONLY · SYNTHETIC NOTICES · NO LIVE API · NO MODEL · NO PERSISTENCE</div>
+</div></div></div><div id="toast" role="status" aria-live="polite"></div>
+<script>
+/**
+ * 시안 파일 설계 계약
+ * 목적: 수집 현황/참여 판단 프로필/영향인자 프로필/판단 이력을 조작 가능한 정적 UI로 시연.
+ * 입력: 합성 공고, 화면의 사용자 클릭과 프로필 편집.
+ * 출력: 화면 메모리상의 참고판단·결정 기록. 네트워크 호출/저장 없음.
+ * 경계: 회사·공고 실제정보가 아니며 법적 입찰자격·수주가능성 확정 불가.
+ * 불변: AI 권고와 사람 최종결정 분리, 불참 이유/사용한 두 프로필 버전 별도 보존.
+ */
+const byId=id=>document.getElementById(id);
+const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
+const fmt=n=>Number(n).toLocaleString('ko-KR');
+const seed=[
+{id:'DEMO-AI-001',title:'[합성] 공공기관 생성형 AI 업무지원 플랫폼',org:'가상 디지털진흥원',cat:'AI',budget:'3.2억',end:'10.28',fit:91,margin:24,hard:'pass',ops:false,exp:true,score:88,rec:'bid',final:null,reasons:['기술요건 부합','투입인력 및 원가 검토 예시'],checked:'10.10 09:20'},
+{id:'DEMO-DA-002',title:'[합성] 데이터 수집·품질분석 체계 고도화',org:'가상 정보산업진흥원',cat:'DATA',budget:'1.8억',end:'10.30',fit:76,margin:17,hard:'unknown',ops:false,exp:true,score:76,rec:'hold',final:null,reasons:['공고상 필수 실적 증빙 미확인'],checked:'10.10 09:20'},
+{id:'DEMO-AI-003',title:'[합성] 의료 AI 영상 판독 모델 개발',org:'가상 보건센터',cat:'AI',budget:'4.5억',end:'11.04',fit:31,margin:12,hard:'pass',ops:false,exp:true,score:41,rec:'no_bid',final:'no_bid',reasons:['기술 적합성 기준 미달','의료영상 모델 개발 역량 부족'],checked:'10.10 09:20'},
+{id:'DEMO-DA-004',title:'[합성] 통계 데이터 분석서비스 구축',org:'가상 통계연구원',cat:'DATA',budget:'2.1억',end:'11.11',fit:84,margin:22,hard:'pass',ops:false,exp:true,score:82,rec:null,final:null,reasons:[],checked:'수집만 완료'},
+{id:'DEMO-AI-005',title:'[합성] AI 상담서비스 24시간 운영 사업',org:'가상 고객서비스공단',cat:'AI',budget:'1.5억',end:'10.26',fit:69,margin:17,hard:'pass',ops:true,exp:true,score:63,rec:'no_bid',final:'no_bid',reasons:['24시간 운영 중심 사업','운영 부담 수용 기준 초과'],checked:'10.10 09:22'},
+{id:'DEMO-DA-006',title:'[합성] 대용량 분석 데이터 통합 플랫폼',org:'가상 데이터원',cat:'DATA',budget:'8.0억',end:'11.02',fit:74,margin:null,hard:'unknown',ops:false,exp:false,score:67,rec:'hold',final:null,reasons:['제안요청서 검토 필요','사업 예상원가 미확인'],checked:'10.10 09:25'},
+{id:'DEMO-SW-007',title:'[합성] 업무 데이터 API 및 대시보드',org:'가상 행정정보센터',cat:'SW',budget:'1.2억',end:'11.14',fit:89,margin:25,hard:'pass',ops:false,exp:true,score:89,rec:null,final:null,reasons:[],checked:'수집만 완료'},
+{id:'DEMO-DA-008',title:'[합성] 공공 빅데이터 시각화 용역',org:'가상 지역혁신원',cat:'DATA',budget:'9,500만',end:'11.21',fit:79,margin:19,hard:'pass',ops:false,exp:false,score:72,rec:null,final:null,reasons:[],checked:'수집만 완료'}];
+let notices=seed.map(x=>({...x,reasons:[...x.reasons]})),selected='DEMO-AI-001',filter='all',query='',sector='',page='notices',toasts=0,policyVersion=1,weightVersion=1;
+const policyDefault={name:'AI·데이터 사업 기본 참여 기준',minFit:65,minMargin:15,require:true,ops:true,proof:true};
+let policy={...policyDefault};
+const gates=[
+['eligibility','업종·기업규모 자격','공고문 / 나라장터 등록증'],
+['licenses','면허·인증','공고문 / 증빙 유효기간'],
+['track_record','필수 수행실적','제안요청서 / 실적증명'],
+['resources','인력·재무 여건','사업관리 / 가용인력'],
+['teaming','공동수급·지역 제한','정정공고 / 계약방식'],
+['deadline','접수 기한·제출서류','공고 / 체크리스트'],
+['security','보안·데이터 제약','제안요청서 / 수행환경'],
+['contract','계약 배제 요건','특수조건 / 법무 검토']];
+const factors=[
+['technical','기술·솔루션 적합성',15],['staff','수행 인력·일정',10],['experience','유사 사업 실적',10],
+['buyer','고객 요구 이해',10],['competition','경쟁사 대비 위치',10],['differentiation','차별성·가격 경쟁력',10],
+['profit','사업 수익성·현금흐름',10],['bid_cost','제안비용·기회비용',5],
+['relationship','고객 이해·과거 평가',5],['strategy','사업 전략 적합성',5],
+['readiness','제안 준비도',5],['risk','계약·수행 위험 통제',5]];
+let weights=Object.fromEntries(factors.map(v=>[v[0],v[2]]));
+let logs=[
+{stamp:'2026.10.10 09:20',id:'DEMO-AI-003',title:'[합성] 의료 AI 영상 판독 모델 개발',status:'no_bid',actor:'담당자 최종결정 (가상)',reason:'기술 적합성 기준 미달 / 의료영상 모델 개발 역량 부족',version:'판단 v1 · 영향인자 v1'},
+{stamp:'2026.10.10 09:22',id:'DEMO-AI-005',title:'[합성] AI 상담서비스 24시간 운영 사업',status:'no_bid',actor:'담당자 최종결정 (가상)',reason:'24시간 운영 중심 사업 / 운영 부담 수용 기준 초과',version:'판단 v1 · 영향인자 v1'}
+];
+const names={bid:'참여 검토',no_bid:'불참 검토',hold:'확인 보류',pending:'판단 대기'};
+let toastTimer;
+function notify(s){const t=byId('toast');t.textContent=s;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),4500);}
+function badge(key){return el('span','pill '+(key||'pending'),names[key]||names.pending);}
+function getNotice(){return notices.find(n=>n.id===selected);}
+function show(view){page=view;document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+view));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));const titles={notices:'공고 목록',collection:'수집 관리',policy:'참여 판단 프로필',variables:'영향인자 프로필',history:'참여·불참 이력'};byId('breadcrumb').textContent=titles[view];if(view==='history')renderHistory();}
+function summary(){const out={total:notices.length,pending:0,bid:0,hold:0,no_bid:0};notices.forEach(n=>{out[n.rec||'pending']++});return out;}
+function renderKPIs(){const totals=summary();const defs=[['수집한 공고',totals.total,'합성 공고 목록','highlight'],['판단 대기',totals.pending,'평가 실행 전',''],['참여 검토',totals.bid,'최종 참여 결정 아님',''],['확인 보류',totals.hold,'근거·자료 확인 필요',''],['불참 검토',totals.no_bid,'사유 확인 가능','']];byId('kpis').replaceChildren();defs.forEach(a=>{const c=el('article','card kpi '+a[3]);c.append(el('div','klabel',a[0]),el('strong','kvalue',a[1]+'건'),el('div','ksub',a[2]));byId('kpis').append(c);});}
+function renderFilters(){const entries=[['all','전체'],['pending','판단 대기'],['bid','참여 검토'],['hold','확인 보류'],['no_bid','불참 검토']];const container=byId('statusFilters');container.replaceChildren();entries.forEach(([key,label])=>{const b=el('button','filter'+(filter===key?' active':''),label);b.type='button';b.addEventListener('click',()=>{filter=key;renderNotices();});container.append(b);});}
+function renderNotices(){renderKPIs();renderFilters();const list=notices.filter(n=>(filter==='all'||(n.rec||'pending')===filter)&&(!sector||n.cat===sector)&&(!query||[n.title,n.org,n.id].join(' ').toLocaleLowerCase().includes(query.toLocaleLowerCase())));byId('result-count').textContent=list.length+' / '+notices.length+'건';
+ const container=byId('noticeRows');container.replaceChildren();byId('listEmpty').hidden=list.length!==0;
+ list.forEach(n=>{const tr=el('tr',n.id===selected?'selected':'');const t=el('td');t.append(el('div','p-title',n.title),el('div','idline',n.org+' · '+n.id));if(n.rec==='no_bid')t.append(el('div','subline','불참 사유: '+n.reasons[0]));tr.append(t);tr.append(el('td','',n.cat==='DATA'?'데이터':n.cat),el('td','',n.budget),el('td','',n.end));
+ const cell=el('td');cell.append(badge(n.rec||'pending'));tr.append(cell);const act=el('td');const b=el('button','btn small',n.rec?'근거 보기':'참여 판단');b.type='button';b.addEventListener('click',()=>{selected=n.id;if(!n.rec)assess(n);renderNotices();});act.append(b);tr.append(act);
+ tr.addEventListener('click',e=>{if(e.target.closest('button'))return;selected=n.id;renderNotices();});tr.style.cursor='pointer';container.append(tr);});
+ renderDetail();
+}
+function logDecision(n,actor){logs.unshift({stamp:'2026.10.10 · 화면 시연',id:n.id,title:n.title,status:n.final||n.rec||'hold',actor:actor,reason:n.reasons.join(' / ')||'별도 사유 미입력',version:'판단 v'+policyVersion+' · 영향인자 v'+weightVersion});}
+function assess(n){let rec='bid';let reasons=[];
+ if(n.hard==='fail'){rec='no_bid';reasons.push('공고의 필수 참가자격 미충족 (가상)');}
+ else if(policy.require&&n.hard==='unknown'){rec='hold';reasons.push('필수 자격 증빙 확인 전');}
+ else if(policy.proof&&!n.exp){rec='hold';reasons.push('실적증빙 자료 부족');}
+ else if(policy.ops&&n.ops){rec='no_bid';reasons.push('운영·상주 중심 사업 제외 기준 적용');}
+ else if(n.fit<policy.minFit){rec='no_bid';reasons.push('기술 적합성 '+n.fit+'점 · 기준 '+policy.minFit+'점 미달');}
+ else if(n.margin===null){rec='hold';reasons.push('원가·예상 이익률 확인 필요');}
+ else if(n.margin<policy.minMargin){rec='no_bid';reasons.push('예상 이익률 '+n.margin+'% · 기준 '+policy.minMargin+'% 미달');}
+ else{reasons.push('현재 가상 조건에서 참여 검토 가능');reasons.push('원문 증빙·실제 회사 기준 확인 필요');}
+ n.rec=rec;n.reasons=reasons;n.checked='화면 시연 · 방금';n.policyRef='참여 판단 v'+policyVersion+' · 영향인자 v'+weightVersion;n.score=n.fit;
+ logDecision(n,'시뮬레이션 판별');}
+function renderDetail(){const n=getNotice(),panel=byId('detail');panel.replaceChildren();if(!n){panel.append(el('p','muted','목록에서 공고를 선택하세요.'));return;}
+ panel.append(el('div','detailTitle',n.title));const meta=el('div','detailMeta');[n.cat==='DATA'?'데이터분석':n.cat,n.org,n.id].forEach(t=>meta.append(el('span','',t)));panel.append(meta);
+ const dl=el('dl','dl');[['사업 예산',n.budget],['접수 마감 (가상)',n.end],['판별 이력',n.checked],['담당자 최종결정',n.final==='no_bid'?'불참 (가상)':n.final==='bid'?'참여 (가상)':'미결정']].forEach(a=>{dl.append(el('dt','',a[0]),el('dd','',a[1]))});panel.append(dl,el('hr','hr'),el('h3','','참여 판단 결과'));panel.append(badge(n.rec||'pending'));
+ const reason=el('div','callout');reason.style.marginTop='13px';reason.append(el('strong','','판단 사유 및 영향 요인'));
+ if(n.reasons.length){const ul=el('ul','reasonList');n.reasons.forEach(v=>ul.append(el('li','',v)));reason.append(ul);}else reason.append(el('p','muted','아직 판단하지 않았습니다. 버튼을 누르면 가상 프로필 기준으로 근거가 표시됩니다.'));panel.append(reason);
+ panel.append(el('h3','', '판단에 사용된 프로필'));const ps=el('p','muted',n.policyRef||'기본 참여 판단 v1 · 영향인자 v1 (초기 예시)');ps.style.marginBottom='13px';panel.append(ps);
+ [['기술 적합성',n.fit+' / 100'],['예상 이익률',n.margin===null?'미확인':n.margin+'%'],['필수 참가조건',n.hard==='unknown'?'미확인':n.hard==='fail'?'불충족':'충족 가정'],['실적증빙',n.exp?'보유 가정':'미확인'],['운영 중심 여부',n.ops?'운영 중심':'구축·개발 중심']].forEach(v=>{const row=el('div','dl');row.style.marginBottom='8px';row.append(el('dt','',v[0]),el('dd','',v[1]));panel.append(row)});
+ const actions=el('div','actions');actions.style.marginTop='20px';
+ const judge=el('button','btn primary','참여 판단 시연');judge.addEventListener('click',()=>{assess(n);renderNotices();notify('저장된 참여판단 프로필 기준으로 화면 판단을 시연했습니다. 실제 AI 호출은 없습니다.');});
+ const decision=el('button','btn','담당자 최종 불참 기록');decision.addEventListener('click',()=>{if(!n.rec){notify('먼저 참여 판단을 실행하세요.');return;}n.final='no_bid';if(n.reasons.length===0)n.reasons=['화면 시연: 불참 사유 입력 필요'];logDecision(n,'담당자 불참 기록 (화면 시연)');renderNotices();notify('불참 최종결정을 화면에서만 기록했습니다. 실제 입찰 상태와 무관합니다.');});
+ actions.append(judge,decision);panel.append(actions);const note=el('p','muted','불참·보류 근거와 프로필 버전은 화면 시연 기록에만 남습니다. 새로고침하면 모두 초기화됩니다.');note.style.marginTop='13px';panel.append(note);
+}
+function renderPolicy(){byId('policyName').value=policy.name;byId('policyFit').value=policy.minFit;byId('policyMargin').value=policy.minMargin;byId('policyRequire').checked=policy.require;byId('policyOperations').checked=policy.ops;byId('policyProof').checked=policy.proof;byId('policyVersion').textContent='참여 판단 기준 v'+policyVersion+' · 가상 프로필';}
+function savePolicy(){const minFit=Number(byId('policyFit').value),minMargin=Number(byId('policyMargin').value),name=byId('policyName').value.trim();if(!name||!Number.isFinite(minFit)||minFit<0||minFit>100||!Number.isFinite(minMargin)||minMargin< -100||minMargin>100){notify('이름·기술점수(0~100)·예상 이익률(-100~100)을 확인하세요.');return;}
+ policy={name,minFit,minMargin,require:byId('policyRequire').checked,ops:byId('policyOperations').checked,proof:byId('policyProof').checked};policyVersion++;renderPolicy();notify('참여 판단 기준 v'+policyVersion+'을 이 화면에 임시 저장했습니다. 과거 판단은 그대로 유지됩니다.');}
+function renderVariables(){byId('gateVariables').replaceChildren();gates.forEach((g,i)=>{const c=el('div','callout');c.append(el('strong','',(i+1)+'. '+g[1]),el('p','muted','필요 근거: '+g[2]));byId('gateVariables').append(c);});const list=byId('factorWeights');list.replaceChildren();factors.forEach((f,i)=>{const row=el('div','weightRow');row.append(el('strong','',(i+1)+'. '+f[1]));const inp=el('input');inp.type='range';inp.min='0';inp.max='25';inp.step='1';inp.value=weights[f[0]];inp.dataset.weight=f[0];inp.setAttribute('aria-label',f[1]+' 가중치');const out=el('output','',inp.value+'%');inp.addEventListener('input',()=>{out.textContent=inp.value+'%';calcWeightTotal();});row.append(inp,out);list.append(row);});calcWeightTotal();}
+function calcWeightTotal(){let total=0;document.querySelectorAll('[data-weight]').forEach(n=>{total+=Number(n.value)});byId('weightTotal').textContent='합계 '+total+'%';byId('saveFactors').disabled=total!==100;byId('weightTotal').className='pill '+(total===100?'bid':'no_bid');}
+function renderHistory(){const selectedFilter=byId('historyFilter').value;const rows=byId('historyRows');rows.replaceChildren();const visible=logs.filter(x=>!selectedFilter||x.status===selectedFilter);if(!visible.length){rows.append(el('div','empty','이 상태의 판단 이력이 없습니다.'));return;}visible.forEach(v=>{const row=el('article','historyRow');row.append(el('div','muted',v.stamp));const main=el('div');main.append(el('h3','',v.title),el('p','',v.actor+' · '+v.reason),el('p','muted',v.version));row.append(main);const status=el('div');status.append(badge(v.status));const detailButton=el('button','btn small','공고 근거 보기');detailButton.style.display='block';detailButton.style.marginTop='8px';detailButton.addEventListener('click',()=>{selected=v.id;filter='all';query='';sector='';byId('search').value='';byId('sector').value='';show('notices');renderNotices()});status.append(detailButton);row.append(status);rows.append(row);});}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{show(b.dataset.view);if(b.dataset.view==='variables')renderVariables();if(b.dataset.view==='policy')renderPolicy();}));
+byId('jump-collection').addEventListener('click',()=>show('collection'));byId('goto-notices').addEventListener('click',()=>show('notices'));
+byId('search').addEventListener('input',e=>{query=e.target.value.trim();renderNotices();});byId('sector').addEventListener('change',e=>{sector=e.target.value;renderNotices();});
+byId('historyFilter').addEventListener('change',renderHistory);
+byId('assess-all').addEventListener('click',()=>{let count=0;notices.forEach(n=>{if(!n.rec){assess(n);count++}});renderNotices();notify(count+'개 합성 공고의 판별을 시연했습니다. 실제 Codex 호출 및 입찰 결정은 없습니다.');});
+function simulateCollect(){if(notices.some(n=>n.id==='DEMO-NEW-009')){notify('이미 가상 공고를 1건 추가했습니다. 새로고침 시 초기화됩니다.');return;}notices.unshift({id:'DEMO-NEW-009',title:'[합성] 지자체 AI 데이터 검색·분석 플랫폼',org:'가상 스마트행정센터',cat:'DATA',budget:'2.7억',end:'11.19',fit:87,margin:22,hard:'unknown',ops:false,exp:true,score:79,rec:null,final:null,reasons:[],checked:'화면 수집 시연 · 방금'});selected='DEMO-NEW-009';show('notices');renderNotices();notify('가상 공고 1건을 화면 목록에 추가했습니다. 실제 수집은 수행하지 않았습니다.');}
+byId('demo-collect').addEventListener('click',simulateCollect);byId('collect-action').addEventListener('click',simulateCollect);
+byId('savePolicy').addEventListener('click',savePolicy);byId('resetPolicy').addEventListener('click',()=>{policy={...policyDefault};policyVersion++;renderPolicy();notify('참여 판단 프로필을 이 화면에서 기본값으로 복원했습니다.');});
+byId('saveFactors').addEventListener('click',()=>{const next={};document.querySelectorAll('[data-weight]').forEach(x=>next[x.dataset.weight]=Number(x.value));if(Object.values(next).reduce((a,b)=>a+b,0)!==100){notify('평가요인 가중치 합계가 100%여야 합니다.');return;}weights=next;weightVersion++;notify('영향인자 프로필 v'+weightVersion+'을 화면에 임시 저장했습니다. 실제 AI 호출/결과 변경은 없습니다.');});
+byId('resetFactors').addEventListener('click',()=>{weights=Object.fromEntries(factors.map(v=>[v[0],v[2]]));weightVersion++;renderVariables();notify('기본 가중치 프로필로 복원했습니다.');});
+renderNotices();renderPolicy();renderVariables();
+</script></body></html>

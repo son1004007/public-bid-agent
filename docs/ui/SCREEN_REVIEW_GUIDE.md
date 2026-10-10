@@ -150,3 +150,9 @@
 - GitHub PR CI 성공: https://github.com/son1004007/public-bid-agent/actions/runs/37921419837.
 - CI 아티팩트 `bid-management-ui-preview`(ID 11611952655)에 `bid-management-preview.html` 포함. Chromium Playwright 18개 사용자 동선/유효성 검사 성공; 모바일 390px 가로넘침 없음.
 - 업무 실무 기준(필수조건 정의, 가중치, 비용, 검토자 역할)은 아직 사용자가 직접 승인하지 않았다.
+
+## 2026-10-10 UI 재설계: 공고/참여판단/두 프로필/불참 사유
+
+- 새 우선 검수 화면: `frontend/public/bid-decision-dashboard-preview.html`, 로컬 앱 `/decision-preview`.
+- 테스트할 사용자 경로: ① 합성 공고 목록에서 검색·분야·상태 필터 ② 판단 대기 공고에서 '참여 판단' 클릭 ③ 참여 판단 프로필 최소 기술 적합도·이익률·운영/법적 제한 수정 후 '임시 저장' ④ 영향인자 프로필 8 Gate/12 Factors 가중치 합계 100% 저장 검증 ⑤ 불참 검토 항목 선택해 이유·프로필 버전 ⑥ 참여·불참 이력 목록 조회 ⑦ 수집 관리의 평일 09시 계획과 가상 수집 버튼 흐름 ⑧ 모바일 반응형.
+- 구분: 8건 **합성 공고**만 제공; AI 판별/정기 수집/영구 Profile/실제 입찰 제출 미구현. 페이지 내부 데이터는 저장되지 않으며 새로고침으로 초기화. UI_APPROVED 아님, 기존 로컬 업무 데이터는 손대지 않음.

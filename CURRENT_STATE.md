@@ -263,3 +263,9 @@
 - Windows 50개 unittest PASS, JS syntax PASS, GitHub push CI 38040046052 및 PR CI 38040049212 SUCCESS. CSRF 경계 테스트 1회 WinError 10053 간헐 실패 기록, targeted/full 재실행 PASS (관찰 필요).
 - 실제 사용자 로컬 앱 8765 재시작, 기존 4개 합성 공고·최종결정 보존, UI HTML·JS·8종 운영자료 제공 200·loopback 확인. 브라우저 실제 인터랙션/레이아웃 검수는 NOT RUN.
 - 상세 [운영정보 E2E 보고서](docs/reviews/OPERATIONS_COST_E2E_2026-10-10.md). AGY/독립 Codex 의미 검수 미완료로 Draft PR #1 및 main merge HOLD.
+
+## 2026-10-10 새 화면 요구 반영: 공고 목록 중심 UX
+
+- 사용자 요구: AI·데이터분석 공고를 정기 수집 → 목록에 표시 → 사용자가 버튼으로 참여여부 판별 → 판단기준과 8+12 영향인자를 별도 버전형 프로필로 저장 → 불참 항목의 이유/근거·사용 프로필·판단 이력 확인.
+- 퍼블리싱 단계 구현: `frontend/public/bid-decision-dashboard-preview.html` (HTML/CSS/JS 정적, 백엔드 의존 없음), 기존 로컬앱 `/decision-preview` 경로와 첫 화면 안내 링크. 리스트·단건/일괄 판단·가상 수집·두 프로필 편집 및 가중치 검증·이력 필터·불참 근거 상세·반응형. 모든 데이터 합성/메모리 임시이며 수집·판별·영구저장·AI 연동은 실제 구현하지 않음.
+- 사용자에게 먼저 화면 확인 요청. UI_APPROVED 아님. 실제 나라장터 수집 스케줄러, 실제 프로필 DB/JSON 모델, 검증 가능한 법적 Gate, 실제 입찰 참여 최종결정 이력은 차기 스프린트로 보류.
