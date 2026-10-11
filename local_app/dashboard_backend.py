@@ -266,8 +266,8 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
                                 if (field not in original or original[field] in (None, "", [])) and value:
                                     original[field] = copy.deepcopy(value)
                         elif len(merged) < 40:
-                            if url:
-                                by_url[url] = len(merged)
+                            # 인덱스는 이미 저장된 기존 근거만 가리킨다.
+                            # 같은 URL의 신규 별첨도 각각 독립된 근거로 보존한다.
                             merged.append(copy.deepcopy(fresh))
                     incoming_value = merged
                 if old.get(key) != incoming_value:
@@ -276,7 +276,14 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
             # 기수집 원문과 담당자 판단을 보존한 상태에서 새 메타데이터로 분류를 다시 계산한다.
             apply_department_filter(old)
         else:
-            existing[item["id"]] = copy.deepcopy(item)
+            new_item = copy.deepcopy(item)
+            # 신규 공고에도 동일한 첨부 상한을 적용한다. 새 근거끼리
+            # URL이 같다는 이유만으로 개별 항목을 합쳐 없애지 않는다.
+            if isinstance(new_item.get("attachments"), list):
+                new_item["attachments"] = [
+                    f for f in new_item["attachments"] if isinstance(f, dict)
+                ][:40]
+            existing[item["id"]] = new_item
             changed += 1
     if len(existing) > 10000:
         raise ValueError("저장 가능한 공고 수 초과")

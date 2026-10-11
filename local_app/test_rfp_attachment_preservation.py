@@ -55,6 +55,28 @@ class AttachmentPreservationTests(unittest.TestCase):
         self.assertEqual(result["history"],snapshot["history"])
         self.assertEqual(old,snapshot)
 
+    def test_new_notice_limits_attachment_count_to_forty(self):
+        fresh=normalize(BASE)
+        fresh["attachments"]=[{"url":URL+str(i)+".pdf","name":str(i)}
+                              for i in range(41)]
+        saved=update_collection(blank(),[fresh],41,"SYNTHETIC")["notices"][0]
+        self.assertEqual(len(saved["attachments"]),40)
+        self.assertEqual(saved["attachments"][0]["name"],"0")
+        self.assertEqual(saved["attachments"][-1]["name"],"39")
+
+    def test_incoming_duplicate_url_preserves_distinct_new_evidence(self):
+        old=self._state()
+        old["notices"][0]["attachments"]=[]
+        incoming=normalize(BASE)
+        incoming["attachments"]=[
+            {"url":URL+"same.pdf","name":"제안요청서",
+             "source":"공식 상세","identity":"rfp-sha"},
+            {"url":URL+"same.pdf","name":"별첨 요구사항",
+             "source":"공식 상세","identity":"annex-sha"}]
+        saved=update_collection(old,[incoming],2,"SYNTHETIC")["notices"][0]["attachments"]
+        self.assertEqual(len(saved),2)
+        self.assertEqual({x["identity"] for x in saved},{"rfp-sha","annex-sha"})
+
     def test_same_url_keeps_original_rfp_metadata_and_fills_missing_fields(self):
         old=self._state()
         preserved={"url":URL+"same.pdf","name":"상세 RFP.pdf",
