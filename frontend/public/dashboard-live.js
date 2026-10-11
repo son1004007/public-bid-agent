@@ -30,6 +30,22 @@
     byId('storageMode').textContent = '나라장터 공식 API에서 수집한 데이터만 표시합니다. 자격·기술·원가·AI 적합도는 미검증 상태이며 담당자 결정은 별도 저장합니다.';
     document.querySelector('.stage').textContent = '공식 공고 목록';
     document.querySelector('.topright span').textContent = 'PC 로컬 저장';
+    const detailBanner = document.querySelector('#view-full-detail .banner');
+    detailBanner.querySelector('strong').textContent = '공식 목록 조회';
+    detailBanner.querySelector('span').textContent = '수집된 공식 목록 메타데이터만 표시합니다. 원문/RFP, 법적 참가자격과 AI 분석 결과는 미확인입니다.';
+    const collectionBanner = document.querySelector('#view-collection .banner');
+    collectionBanner.querySelector('strong').textContent = '공식 API 수동 수집';
+    collectionBanner.querySelector('span').textContent = 'API 인증키를 설정한 뒤 수집 버튼을 누르면 최근 용역 공고를 요청합니다. 정기 예약은 구현되지 않았습니다.';
+    const cards = document.querySelectorAll('#view-collection .collectionGrid .card');
+    cards[1].querySelector('h2').textContent = '수동 수집 (예약 없음)';
+    cards[1].querySelector('p').textContent = '자동 수집 스케줄러는 아직 구현되지 않았습니다.';
+    cards[2].querySelector('h2').textContent = state.collection.last_success || '실제 수집 기록 없음';
+    cards[2].querySelector('p').textContent = state.collection.last_count === null ? '아직 조회 성공 기록 없음'
+      : '검색 조건 해당 ' + state.collection.last_count + '건';
+    const config = document.querySelectorAll('#view-collection .fieldset input');
+    config[0].value = '조달청 나라장터 용역 공고 API';
+    config[1].value = '수동 실행 · 정기 예약 미구현';
+    document.querySelector('.footer').textContent = 'PUBLIC BID AGENT · LOCAL ONLY · OFFICIAL LIST METADATA · UNVERIFIED ELIGIBILITY · NO AUTOMATED BID SUBMISSION';
     byId('collectionStatus').textContent = '수집 상태: ' + state.collection.status
       + ' / 마지막 성공: ' + (state.collection.last_success || '없음')
       + ' / 해당 공고: ' + (state.collection.last_count ?? '미확인') + '건';

@@ -211,3 +211,5 @@ Windows 실제 Chrome 헤드리스 검사에서 로컬 서버의 `Content-Securi
 - 기본 수집 인증키는 **저장소에 없고 실제 개인 키 요청 검증은 별도**입니다. 공식 API의 실제 응답 스키마·정정/취소·첨부는 아직 실키 성공 샘플 및 독립 최종 검수 전입니다. 대외 공개·실입찰 법적 판정에 사용하면 안 됩니다.
 - 저장: `~/.public-bid-agent-local/dashboard.json` (기본) 혹은 런처의 `PUBLIC_BID_LOCAL_DATA` 하위 별도 로컬 JSON. 기존 `cases.json`/`operations.json`은 수정하지 않습니다.
 - 자세한 계약·제약: [대시보드 수집·상태 설명](docs/research/2026-10-11-dashboard-backend.md).
+
+수집 대시보드 실행 모드에서는 상세·수집상태·화면 하단도 실제 API 상태를 기준으로 변경되어, 합성 시안 안내를 실수로 실제 공고에 적용하지 않습니다. 현재 실키 호출 검증 및 운영은 미완료입니다.
