@@ -491,7 +491,7 @@
     try{
       const response=await fetch('/api/workforce?detail=1',
         {cache:'no-store',headers:{'X-Local-CSRF':csrf}});
-      if(!response.ok)throw Error('로컬 인력 파일 조회 실패');
+      if(!response.ok)throw Error('로컬 인력 상세 조회 미허용. 개인별 보기는 로컬 관리자 모드가 필요합니다.');
       const data=(await response.json()).workforce;
       workforceRows.replaceChildren();
       workforceRates.replaceChildren();

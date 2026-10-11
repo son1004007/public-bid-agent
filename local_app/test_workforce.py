@@ -151,6 +151,7 @@ class WorkforceHTTPTests(unittest.TestCase):
         except HTTPError as error:
             self.assertEqual(error.code,503)
 
+    @patch.object(server,"WORKFORCE_DETAILS_ENABLED",True)
     def test_detail_requires_local_csrf_and_can_return_synthetic_staff(self):
         path=self.root/"workforce.json"
         path.write_text(json.dumps(sample()),encoding="utf-8")
@@ -162,6 +163,15 @@ class WorkforceHTTPTests(unittest.TestCase):
         with urlopen(req,timeout=5) as response:
             view=json.load(response)["workforce"]
         self.assertEqual(len(view["staff"]),3)
+
+    def test_detail_disabled_by_default(self):
+        self.assertFalse(server.WORKFORCE_DETAILS_ENABLED)
+        self.root.joinpath("workforce.json").write_text(json.dumps(sample()), encoding="utf-8")
+        req=Request(self.base+"/api/workforce?detail=1",
+                    headers={"X-Local-CSRF":server.TOKEN})
+        with self.assertRaises(HTTPError) as error:
+            urlopen(req,timeout=5)
+        self.assertEqual(error.exception.code,403)
 
     def test_host_header_rejected(self):
         request=Request(self.base+"/api/workforce",headers={"Host":"attacker.invalid"})

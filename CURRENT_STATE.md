@@ -422,3 +422,5 @@
 - 실제 소속 및 개인 명단은 비공개 로컬 workforce.json과 operations.json에만 존재, 공개 repo에는 코드·범용 분류·합성 테스트만 위치. 원본 dashboard/cases 체크섬 보존.
 - Windows Python unittest 115 PASS, JS 구문 PASS, 실제 로컬 읽기 전용 HTTP smoke PASS(격리 포트). 후속 CI/최종 독립 리뷰 상태는 별도 확인 필요.
 - 기존 8765 실행 인스턴스 재시작/적용은 하지 않았으며, 재시작·인력 입력 승인 및 기존 RFP 크로스프로세스 원자성 문제와 사용자 UI 검수 전에 Draft/main 병합 금지.
+
+- 3차 독립 코드 검토 후 로컬 공통 운영정보의 새 직무 MM=0 오류를 미정(null)으로 수정하고, 개인별 인력 상세 조회는 기본 비활성+명시적 단일 사용자 개발 모드에서만 허용. 마지막 Windows unittest 116 PASS, JavaScript 구문 PASS, 실제 로컬 사용자 데이터 smoke 및 dashboard/cases 체크섬 보존 확인. Draft/main HOLD 유지.

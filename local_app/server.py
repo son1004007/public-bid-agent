@@ -71,6 +71,8 @@ DECISION_PREVIEW_JS = DECISION_PREVIEW.with_suffix(".js")
 DASHBOARD_LIVE_JS = DECISION_PREVIEW.with_name("dashboard-live.js")
 LOCK = threading.RLock()
 TOKEN = secrets.token_urlsafe(32)
+# CSRF 토큰은 인증 수단이 아니다. 개인별 인력 상세는 로컬 관리자 opt-in 실행에서만 허용.
+WORKFORCE_DETAILS_ENABLED = os.environ.get("PUBLIC_BID_WORKFORCE_DETAILS", "") == "1"
 LIMIT = 10*1024*1024
 MAX_POST = 15*1024*1024
 EXTRACTOR = Path(__file__).with_name("extractors.py")
@@ -376,7 +378,7 @@ class Handler(BaseHTTPRequestHandler):
   if self.path in ("/api/workforce", "/api/workforce?detail=1"):
    # 기본 응답은 인원 집계 전용. 개인별 코드/기술은 명시적 로컬 CSRF 토큰 요청 때만 제공.
    details = self.path.endswith("?detail=1")
-   if details and self.headers.get("X-Local-CSRF") != TOKEN:
+   if details and (not WORKFORCE_DETAILS_ENABLED or self.headers.get("X-Local-CSRF") != TOKEN):
     return self.respond({"error":"로컬 상세 조회 권한 없음"},403)
    try:
     with LOCK: data=load_workforce(ROOT / "workforce.json")

@@ -156,7 +156,7 @@ async function loadDocumentGuide(){
 
 
 function displayMoney(value){return value===null||value===undefined?"미산출":Number(value).toLocaleString("ko-KR")+"원"}
-function addOperationRole(row={role:"",cost_per_mm_krw:0,available_mm:0}){
+function addOperationRole(row={role:"",cost_per_mm_krw:0,available_mm:null}){
  const card=make("article");card.className="item";
  const role=make("label","직무명 (개인 실명 금지)");const roleInput=make("input");
  roleInput.dataset.opsField="role";roleInput.maxLength=60;roleInput.value=row.role;role.append(roleInput);
