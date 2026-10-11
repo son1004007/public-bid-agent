@@ -48,6 +48,7 @@
     document.querySelector('.footer').textContent = 'PUBLIC BID AGENT · LOCAL ONLY · OFFICIAL LIST METADATA · UNVERIFIED ELIGIBILITY · NO AUTOMATED BID SUBMISSION';
     byId('collectionStatus').textContent = '수집 상태: ' + state.collection.status
       + ' / 마지막 성공: ' + (state.collection.last_success || '없음')
+      + ' / 최근 조회 범위: ' + (state.collection.lookback_days || '미확인') + '일'
       + ' / 해당 공고: ' + (state.collection.last_count ?? '미확인') + '건';
     renderNotices();
     if (page === 'full-detail') renderFullDetail();
@@ -150,7 +151,7 @@
     const button = byId('collect-action');
     button.disabled = true;
     try {
-      await write('/api/dashboard/collect', {});
+      await write('/api/dashboard/collect', {days: Number(byId('lookbackDays').value)});
       notify('나라장터 API 조회 결과를 갱신했습니다. 원문 및 실제 참가자격은 별도로 확인해야 합니다.');
     } catch (e) {
       try { await reload(); } catch (_) {}

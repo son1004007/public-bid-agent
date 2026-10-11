@@ -174,6 +174,34 @@ class DashboardHTTPTests(unittest.TestCase):
         self.assertEqual((self.root / "cases.json").read_bytes(), self.original)
         self.assertFalse((self.root / "operations.json").exists())
 
+    def test_seven_day_collection_deduplicates_across_days(self):
+        with patch.dict(os.environ, {db.KEY_ENV: "SYNTHETIC-KEY-FOR-TEST-123456"}):
+            with patch.object(server, "fetch_official_notices", return_value=([db.normalize(RAW)], 1)) as fetcher:
+                code, response = self.post("/api/dashboard/collect", {"days": 7})
+        self.assertEqual(code, 200)
+        self.assertEqual(fetcher.call_count, 7)
+        self.assertEqual(response["dashboard"]["collection"]["lookback_days"], 7)
+        self.assertEqual(response["dashboard"]["collection"]["last_scanned"], 7)
+        self.assertEqual(response["dashboard"]["collection"]["last_count"], 1)
+        self.assertEqual(len(response["dashboard"]["notices"]), 1)
+        self.assertEqual((self.root / "cases.json").read_bytes(), self.original)
+        for invalid in (0, 2, 30, True, "7"):
+            self.assertEqual(self.post("/api/dashboard/collect", {"days": invalid})[0], 400)
+
+    def test_seven_day_partial_failure_preserves_previous_records(self):
+        prior = db.update_collection(db.blank(), [db.normalize(RAW)], 1, "initial")
+        server.persist(prior, self.root / "dashboard.json")
+        with patch.dict(os.environ, {db.KEY_ENV: "SYNTHETIC-KEY-FOR-TEST-123456"}):
+            with patch.object(server, "fetch_official_notices",
+                    side_effect=[([db.normalize(RAW)], 1), db.ProviderError("simulated provider failure")]):
+                code, _ = self.post("/api/dashboard/collect", {"days": 7})
+        self.assertEqual(code, 503)
+        _, loaded = self.get()
+        self.assertEqual(loaded["dashboard"]["collection"]["status"], "ERROR")
+        self.assertEqual(loaded["dashboard"]["notices"], prior["notices"])
+        self.assertEqual(loaded["dashboard"]["history"], prior["history"])
+        self.assertEqual((self.root / "cases.json").read_bytes(), self.original)
+
     def test_csrf_and_failed_provider_keep_previous(self):
         self.assertEqual(self.post("/api/dashboard/collect", {}, headers=False)[0], 403)
         server.persist(db.update_collection(db.blank(), [db.normalize(RAW)], 1, "initial"),

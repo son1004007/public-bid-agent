@@ -195,6 +195,9 @@ label{font-size:12px;color:#526780;font-weight:720}label>input,label>select{disp
 </section>
 <div class="collectionGrid"><div class="card"><div class="miniHead">수집 대상</div><h2>나라장터 공고</h2><p class="desc">AI 서비스 · 데이터 분석 · 소프트웨어 용역</p></div><div class="card"><div class="miniHead">수집 주기 (설계값)</div><h2>평일 오전 09:00</h2><p class="desc">최초 수집 및 정정공고 확인, 중복 방지</p></div><div class="card"><div class="miniHead">마지막 수집 (예시)</div><h2>2026.10.10 08:50</h2><p class="desc">8건 (합성) · 실제 작업 기록 아님</p></div></div>
 <div class="card panel"><div class="panelTop"><h2>수집 범위와 기준</h2><button class="btn primary" id="collect-action">가상 공고 1건 수집 시연</button></div>
+<div class="fieldset"><label>조회 기간
+<select class="field" id="lookbackDays" aria-label="나라장터 공고 조회 기간"><option value="1">최근 24시간</option><option value="7" selected>최근 7일 (평일 포함)</option></select>
+</label></div>
 <div class="fieldset"><label>수집 채널<input class="field" value="나라장터 공식 공고 API (연동 예정)" disabled></label><label>주기<input class="field" value="평일 09:00 (예약 미구현)" disabled></label><label>대상 분야<input class="field" value="AI, 데이터분석, SW 서비스" disabled></label><label>갱신 전략<input class="field" value="공고번호+차수 중복 방지 / 정정 추적" disabled></label></div>
 <p class="helper" style="margin-top:17px">자동 수집 여부, 마지막 성공 시간, 실패·재시도 이력, 정정공고 변경내역은 실제 백엔드 구현 이후 연결할 예정입니다.</p></div>
 </section>

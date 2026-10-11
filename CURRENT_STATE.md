@@ -356,3 +356,11 @@
 - 구현 CI Push [38113357140](https://github.com/son1004007/public-bid-agent/actions/runs/38113357140) 및 PR [38113360004](https://github.com/son1004007/public-bid-agent/actions/runs/38113360004) **SUCCESS**.
 - 사용자가 키 발급을 완료했다고 보고함. 다음은 실제 키를 자신의 로컬 수집 관리 화면에 붙여넣고 **별도의 API 연결 확인** 실행. 키는 공유하지 않는다.
 - [웹 인증키 검증 보고서](docs/reviews/PROCUREMENT_KEY_WEB_E2E_2026-10-11.md). 독립 최종 보안 검수/사용자 UX 승인 전 Draft PR/main merge HOLD.
+
+## 2026-10-11 실 API 수집 및 최근 7일 조회 보완
+
+- TD-kiseok Windows DPAPI에 실제 사용자가 등록한 키 존재 확인(값 출력 없음). `POST /api/procurement-key/verify` 실제 API 응답 `ok=true`, `verified=true` 확인.
+- 기존 24시간 실 API 수집은 `status=SUCCESS`, 원본 1건·제목필터 해당 0건·저장 0건. 이는 정상적인 주말 조회이며, 실 관심공고 수집 실패라는 의미는 아님.
+- 실제 API 과거 일자 별도 진단: 2026-10-08 KST 원본 700건/관심 제목 90건, 10-09 KST 원본 10건/관심 제목 2건. 개발 시안이 아닌 실제 조달청 API 반환 공고 기준이며, 참가자격/적합도는 검증 전.
+- 데이터가 0건인 주말에도 유효한 목업/실데이터 UI 검증을 위해 `POST /api/dashboard/collect`에 1일/7일 옵션, UI 조회 기간 선택을 추가. 7일 수집은 모든 일자를 조회할 때만 성공으로 기록하며 공고 중복 제거 및 이전 의사결정 보존.
+- 이 변경의 Windows/Chrome 재테스트 및 실제 7일 저장 검증은 커밋 이후 별도 증거를 기록. 독립 보안 검수·UX 최종 승인 전 Draft/main HOLD.

@@ -19,7 +19,7 @@ import tempfile
 import threading
 import uuid
 import webbrowser
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -27,7 +27,7 @@ from decision_support import advise as advise_bid
 from decision_profiles import ProfileConflict, load_state as load_decision_profiles, next_state as update_decision_profiles
 from dashboard_backend import (
     ProviderError, DashboardConflict, read as read_dashboard, collect as fetch_official_notices,
-    update_collection, failed_collection, record_action, key_available, verify_key,
+    update_collection, failed_collection, record_action, key_available, verify_key, KST,
 )
 from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
 from procurement_credentials import (
@@ -395,6 +395,9 @@ class Handler(BaseHTTPRequestHandler):
      return self.respond({"error":"조달청 공식 API 인증 확인에 실패했습니다. 활용신청·승인·이용한도를 확인하세요"},502)
     return self.respond({"ok":True,"verified":True,"message":"공식 API 응답 코드 00 확인. 공고 내용 전체 수집과는 별도입니다"})
    if self.path=="/api/dashboard/collect":
+    days=payload.get("days",1)
+    if type(days) is not int or days not in (1,7):
+     raise ValueError("공고 조회 기간은 1일 또는 7일만 지정할 수 있습니다")
     try:
      key=procurement_key()
     except (CredentialError,ValueError):
@@ -403,7 +406,19 @@ class Handler(BaseHTTPRequestHandler):
      return self.respond({"error":"공공데이터포털 인증키를 수집 관리 화면에서 등록하세요"},424)
     # 외부 통신 중 LOCK을 보유하지 않는다. 결과 저장 시 최신 파일을 다시 읽는다.
     try:
-     incoming, scanned=fetch_official_notices(key)
+     if days==1:
+      incoming,scanned=fetch_official_notices(key)
+     else:
+      incoming_by_id={}
+      scanned=0
+      end_at=datetime.now(KST)
+      # 과거→현재 순서로 취합해 최신 차수의 메타데이터를 우선한다.
+      # 어느 일자의 API라도 오류/페이지 누락이면 기존 공고를 덮어쓰지 않는다.
+      for lag in range(days-1,-1,-1):
+       partial,count=fetch_official_notices(key,clock=end_at-timedelta(days=lag))
+       scanned+=count
+       for notice in partial:incoming_by_id[notice["id"]]=notice
+      incoming=list(incoming_by_id.values())
     except ProviderError:
      with LOCK:
       try:
@@ -417,6 +432,7 @@ class Handler(BaseHTTPRequestHandler):
      except (ValueError,json.JSONDecodeError,OSError):
       return self.respond({"error":"저장된 공고 파일 오류; 덮어쓰지 않았습니다"},503)
      updated=update_collection(state,incoming,scanned,now())
+     updated["collection"]["lookback_days"]=days
      persist(updated,ROOT / "dashboard.json")
      return self.respond({"ok":True,"dashboard":updated,"storage":"LOCAL_JSON"})
    if self.path=="/api/dashboard/action":
