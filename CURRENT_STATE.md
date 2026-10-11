@@ -390,3 +390,12 @@
 - 새로운 procurement_related.py 가 공식 입찰공고정보서비스 면허제한/참가가능지역/e발주 첨부 목록 오퍼레이션을 고정 HTTPS로 조회한다.
 - local_app/server.py POST /api/dashboard/related 를 UI 상세 탭 버튼에 연결한다. 선택 공고번호+차수만 추가 조회하고, 기존 사용자 판단/문서/공고 목록은 보존한다.
 - 실제 회사의 등록/면허/실적/수주 참여자격은 미확인 상태를 유지한다. 실 서비스 API E2E 및 독립 보안 리뷰 전까지 검증 완료로 표기하지 않는다.
+
+## 2026-10-11 전체 용역·RFP·면허/지역 상세 구현 검증
+
+- 사용자 제목 필터 누락 문제 개선 완료: 공식 API 최근 7일 원본 2,225행 → 공고번호+차수 2,223건 전수 저장. 구 275건/사용자 사례 5건 및 최종 판단 이력 0건 보존.
+- 공식 공공조달분류·정보화사업/제안첨부/본문/마감/취소/등록마감 분리, 부서 관심 분야 AI/SW/DATA/SECURITY 로컬 프로필. 범용 개발·구축 오탐 수정 후 전체 2,223건 로컬 재분류: CANDIDATE 143, REVIEW 2080. 화면 기본 현재 후보 125, 필터 변경하면 전체 2,223건 확인.
+- 실제 NMS 소프트웨어 개발 PDF RFP 6,284자 안전 추출, 본문 근거로 AI/SW/DATA 분류. 5건 일괄 시험 중 4건 성공/1건 실패를 확인하고, 이후 자동 5건을 부서 CANDIDATE 우선으로 제한. 현재 총 추출 성공 문서 5개, 나머지 미확인.
+- `/api/dashboard/related`: 공식 면허/참가지역/e발주 첨부 3 오퍼레이션. 실제 NMS 공고 상세 API 성공, 면허/지역 목록 0건, 첨부 2건 보존, 회사 법적 참가자격 UNVERIFIED 유지.
+- Windows unittest **93 PASS**, JS 검사 PASS, GitHub Push [38117518610](https://github.com/son1004007/public-bid-agent/actions/runs/38117518610)/PR [38117521593](https://github.com/son1004007/public-bid-agent/actions/runs/38117521593) 모두 **SUCCESS**. 실제 Chrome 2,223행 전체 필터/125 기본 후보/공식 RFP/면허·지역 상세 UI **7 PASS**.
+- [상세 검증 보고서](docs/reviews/G2B_ALL_TENDER_CATEGORY_RFP_2026-10-11.md). 독립 코드/보안 검수 및 사용자 UI 최종 승인 전 Draft/main merge HOLD.
