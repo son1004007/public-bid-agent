@@ -28,7 +28,7 @@ from decision_support import advise as advise_bid
 from decision_profiles import ProfileConflict, load_state as load_decision_profiles, next_state as update_decision_profiles
 from dashboard_backend import (
     ProviderError, DashboardConflict, read as read_dashboard, collect as fetch_official_notices,
-    update_collection, failed_collection, record_action, key_available, verify_key, KST,
+    update_collection, merge_attachments, failed_collection, record_action, key_available, verify_key, KST,
 )
 from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
 from workforce import load as load_workforce, summary as summarize_workforce
@@ -541,16 +541,14 @@ class Handler(BaseHTTPRequestHandler):
      if target is None:return self.respond({"error":"조회 중 공고 삭제됨"},409)
      target["license_restrictions"]=related["licenses"]
      target["region_restrictions"]=related["regions"]
-     existing_attachments=target.get("attachments",[])
-     all_urls={a.get("url") for a in existing_attachments if isinstance(a,dict)}
-     for attachment in related["attachments"]:
-      if attachment["url"] not in all_urls:
-       existing_attachments.append(attachment)
-       all_urls.add(attachment["url"])
-     target["attachments"]=existing_attachments[:40]
+     try:
+      target["attachments"]=merge_attachments(target.get("attachments",[]),
+                                                related["attachments"])
+     except ValueError:
+      return self.respond({"error":"공식 상세 첨부 보존 상한에 도달했습니다. 기존 공고 원본은 유지됩니다"},503)
      target["related_status"]="FETCHED"
      target["requirements_status"]="API_METADATA_ONLY"
-     if target.get("document_status")=="NOT_AVAILABLE" and existing_attachments:
+     if target.get("document_status")=="NOT_AVAILABLE" and target["attachments"]:
       target["document_status"]="PENDING"
      reclassify_notice(target)
      state["revision"]+=1

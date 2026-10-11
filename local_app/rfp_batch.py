@@ -13,7 +13,7 @@ import json
 import threading
 from datetime import datetime, timezone
 from pathlib import PurePath
-from dashboard_backend import read as read_dashboard, ProviderError
+from dashboard_backend import read as read_dashboard, merge_attachments, MAX_STORED_ATTACHMENTS, ProviderError
 from json_transaction import transaction as dashboard_transaction
 from department_profile import load as load_department_profile
 from procurement_documents import SUPPORTED, DocumentFetchError, fetch_attachment, official_url
@@ -38,7 +38,7 @@ def document_signature(notice):
 
 def ranked(notice):
     ranked_files, seen = [], set()
-    for f in notice.get("attachments", [])[:40]:
+    for f in notice.get("attachments", [])[:MAX_STORED_ATTACHMENTS]:
         if not isinstance(f, dict):
             continue
         name, url = f.get("name", ""), f.get("url")
@@ -291,12 +291,13 @@ class Manager:
                             outcome="FAILED"
                         else:
                             extras=result.pop("related_attachments",[])
-                            known={f.get("url") for f in current.get("attachments",[]) if isinstance(f,dict)}
-                            for f in extras:
-                                if f.get("url") not in known:
-                                    current.setdefault("attachments",[]).append(f)
-                                    known.add(f.get("url"))
-                            if (current.get("rfp_text") and
+                            try:
+                                combined_attachments=merge_attachments(
+                                    current.get("attachments",[]),extras)
+                            except ValueError:
+                                # 기존 공식 첨부를 버리기보다 해당 건을 수동 재검토로 남긴다.
+                                result=None
+                            if (result is not None and current.get("rfp_text") and
                                 current["rfp_text"]!=result.get("rfp_text")):
                                 history=current.setdefault("document_prior_versions",[])
                                 if len(history)>=10:
@@ -308,6 +309,26 @@ class Manager:
                                         "status":current.get("document_status"),
                                         "evidence":copy.deepcopy(current.get("document_evidence",[]))})
                             if result is not None:
+                                # 새 상위 RFP가 나와도 이전 문서 증거를 버리지 않는다.
+                                evidence=copy.deepcopy(result.get("document_evidence",[]))
+                                identity_set={entry.get("identity") for entry in evidence
+                                              if isinstance(entry,dict) and entry.get("identity")}
+                                for previous in current.get("document_evidence",[]):
+                                    if not isinstance(previous,dict):
+                                        continue
+                                    ident_prev=previous.get("identity")
+                                    if ident_prev and ident_prev in identity_set:
+                                        continue
+                                    if not ident_prev and previous in evidence:
+                                        continue
+                                    evidence.append(copy.deepcopy(previous))
+                                    if ident_prev: identity_set.add(ident_prev)
+                                if len(evidence)>40:
+                                    result=None  # 기록된 근거를 자르지 않고 이 공고 재처리를 보류.
+                                else:
+                                    result["document_evidence"]=evidence
+                            if result is not None:
+                                current["attachments"]=combined_attachments
                                 current.update(result)
                                 reclassify(current)
                                 board["revision"]+=1

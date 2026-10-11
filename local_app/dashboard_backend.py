@@ -6,7 +6,8 @@
 신뢰 경계: 외부 필드와 사용자 입력 모두 비신뢰. 고정 HTTPS 호스트/경로, 시간·크기·페이지 제한.
 상태/부작용: dashboard.json만 원자 갱신. cases.json/operations.json/AI·인증정보 무변경.
 실패: 인증/통신/응답 오류는 실패; 저장된 공고를 0건 또는 취소로 오인하지 않음.
-불변: 공식 자격/실적/수익/AI 판단을 추측하지 않음. 사람이 내린 결정과 추천 분리.
+불변: 공식 자격/실적/수익/AI 판단을 추측하지 않음.
+첨부 병합: 기존 RFP 증거와 서로 다른 공식 별첨 레코드를 우선 보존하고 공고당 40개 상한 적용. 사람이 내린 결정과 추천 분리.
 관련 자료: docs/research/2026-10-11-dashboard-backend.md, 테스트 test_dashboard_backend.py.
 """
 import copy
@@ -225,6 +226,46 @@ def collect(key: str, clock=None, transport=None) -> tuple[list[dict], int]:
     return list(all_notices.values()), scanned
 
 
+MAX_STORED_ATTACHMENTS = 120
+
+
+def merge_attachments(saved: list, fresh: list) -> list:
+    """기존 증거 우선 첨부 병합. 상한 도달 시 예외로 전체 쓰기를 중단한다."""
+    if not isinstance(saved,list) or not isinstance(fresh,list):
+        raise ValueError("첨부 목록 계약 오류")
+    if len(saved)>MAX_STORED_ATTACHMENTS:
+        raise ValueError("기존 첨부 목록 상한 초과. 자동 덮어쓰기 중단")
+    merged=copy.deepcopy(saved)
+    for item in fresh:
+        if not isinstance(item,dict):
+            continue
+        url=item.get("url")
+        identity=item.get("identity")
+        same_url=[entry for entry in merged
+                  if isinstance(entry,dict) and entry.get("url")==url] if url else []
+        if identity:
+            # identity가 존재하는 근거는 다른 identity/미확인 근거에 합치지 않는다.
+            original=next((entry for entry in same_url
+                           if entry.get("identity")==identity),None)
+        else:
+            # 출처/이름이 다른 동일 URL 근거도 별도 기록으로 남긴다.
+            original=next((entry for entry in same_url
+                if not entry.get("identity")
+                and all(not (entry.get(field) and item.get(field)
+                             and entry[field]!=item[field])
+                        for field in ("name","source"))),None)
+        if original is not None:
+            for field,value in item.items():
+                if (field not in original or original[field] in (None,"",[])) and value:
+                    original[field]=copy.deepcopy(value)
+            continue
+        if len(merged)>=MAX_STORED_ATTACHMENTS:
+            raise ValueError("공식 첨부 120개 초과. 원본 보존 후 수동 검토 필요")
+        # URL이 같아도 별도 원문 식별자가 있으면 독립 근거로 저장한다.
+        merged.append(copy.deepcopy(item))
+    return merged
+
+
 def update_collection(state: dict, notices: list, scanned: int, timestamp: str) -> dict:
     if not isinstance(notices, list) or not isinstance(scanned, int) or scanned < 0:
         raise ValueError("수집 결과 계약 오류")
@@ -242,34 +283,10 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
                         "requirements_status", "attachments"):
                 incoming_value = item[key]
                 if key == "attachments":
-                    # 기존 RFP/상세 API 근거를 먼저 보존. 40개를 초과해도 기존
-                    # 근거가 뒤로 밀려 삭제되거나 동일 URL의 출처가 지워지면 안 된다.
-                    merged, by_url = [], {}
-                    for saved in old.get("attachments", []):
-                        if not isinstance(saved, dict):
-                            continue
-                        url = saved.get("url")
-                        if len(merged) >= 40:
-                            break
-                        # 같은 URL이어도 이전에 별도 기록한 첨부 증거는 삭제하지 않는다.
-                        if url:
-                            by_url.setdefault(url, len(merged))
-                        merged.append(copy.deepcopy(saved))
-                    for fresh in incoming_value:
-                        if not isinstance(fresh, dict):
-                            continue
-                        url = fresh.get("url")
-                        if url and url in by_url:
-                            # 새 공고의 비어 있지 않은 필드는 기존에 없을 때만 보충한다.
-                            original = merged[by_url[url]]
-                            for field, value in fresh.items():
-                                if (field not in original or original[field] in (None, "", [])) and value:
-                                    original[field] = copy.deepcopy(value)
-                        elif len(merged) < 40:
-                            # 인덱스는 이미 저장된 기존 근거만 가리킨다.
-                            # 같은 URL의 신규 별첨도 각각 독립된 근거로 보존한다.
-                            merged.append(copy.deepcopy(fresh))
-                    incoming_value = merged
+                    incoming_value = merge_attachments(old.get("attachments", []),incoming_value)
+                if key != "attachments" and incoming_value in (None, "") and old.get(key) not in (None, ""):
+                    # API 부분 응답의 공백은 기존 공식 메타데이터 삭제 신호가 아니다.
+                    continue
                 if old.get(key) != incoming_value:
                     old[key] = incoming_value
                     changed += 1
@@ -277,12 +294,8 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
             apply_department_filter(old)
         else:
             new_item = copy.deepcopy(item)
-            # 신규 공고에도 동일한 첨부 상한을 적용한다. 새 근거끼리
-            # URL이 같다는 이유만으로 개별 항목을 합쳐 없애지 않는다.
-            if isinstance(new_item.get("attachments"), list):
-                new_item["attachments"] = [
-                    f for f in new_item["attachments"] if isinstance(f, dict)
-                ][:40]
+            # 신규 공고도 같은 상한/증거 보존 정책. 초과 시 잘라 저장하지 않는다.
+            new_item["attachments"] = merge_attachments([],new_item.get("attachments", []))
             existing[item["id"]] = new_item
             changed += 1
     if len(existing) > 10000:

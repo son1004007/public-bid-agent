@@ -62,3 +62,26 @@
 - 안전한 저장과 별개인 장기 JSON 백업/복원 세대 관리·갑작스러운 전원 장애 내구성은 미구현/후속 작업이다. 잠금 규칙을 따르지 않는 구버전 서버 동시 실행은 금지하고, 운영 적용 전 프로세스 재시작 및 백업 정책 확인이 필요하다.
 
 - 저장된 기존 첨부는 URL이 같아도 서로 다른 문서·정정·근거 식별자가 있을 수 있으므로 두 레코드를 모두 유지한다. 신규 첨부에 한해 동일 URL 기존 첫 항목의 누락 필드를 보충한다. 합성 test_two_existing_evidence_records_sharing_url_remain_distinct PASS.
+
+## 2026-10-12 첨부 병합 추가 재검수 반례 2건
+
+- Codex 읽기 전용 검수 입력 SHA-256: a648df5f76b5cb1aeb9ef059fa00b3ec31fe1591d2069ee9b95fe3cc9173f4f9. 로컬 비공개 원문: user-json/rfp_attachment_review_final2_20261012.json.
+- 신규 공고에서 첨부 41건이 그대로 저장되는 경우 수정: 새 공고 저장 경로에 동일한 40건 상한 적용.
+- 기존 첨부가 없는 공고에서 신규 동일 URL/서로 다른 identity의 두 항목이 합쳐지는 경우 수정: 신규 항목끼리는 URL로 병합하지 않고 독립 기록 보존.
+- test_new_notice_limits_attachment_count_to_forty, test_incoming_duplicate_url_preserves_distinct_new_evidence 합성 회귀 PASS. 최종 재검수 및 전체 테스트 별도 확인.
+
+### 독립 검수에서 추가 발견된 3개 병합 경계 (2026-10-12)
+
+- 독립 Codex 입력 SHA256: c6642ae16e7861512d4b80c9cb8ab9a29e01b5fc6bef51820c03a24f7e5df01f, 원문은 PC 비공개 user-json/rfp_attachment_review_final4_20261012.json.
+- 불완전한 공고 메타데이터(None/빈 문자열)로 기존 유효 값을 덮는 유실 가능성: 값 존재 검증 후 기존 값 보존하도록 수정.
+- 동일 URL의 출처/파일명이 다른 증거가 강제로 병합되는 문제: identity 및 이름/출처 동치 확인 후 누락 필드만 채우고, 다른 근거는 별도 항목 보존.
+- 기존 복수 근거 중 첫 URL 인덱스만 사용하여 두 번째 identity와 같은 신규 첨부를 중복 추가하던 문제: 동일 URL 후보 전체에서 identity를 찾아 병합.
+- 합성 회귀 test_rfp_attachment_preservation.py에 부분 수집 메타데이터 불변, 서로 다른 출처, 중복 identity 재수집 테스트가 포함됨. 현재 자동 적격 판단 및 8765 서버 적용은 제외.
+
+### 2026-10-12 최종 첨부/evidence 보존 보완
+
+- 첨부 저장 상한은 120개로 상향하였다. 기존 공식 상세 첨부 40개와 추가 RFP 1개가 총 41개로 저장되고 재수집 후에도 유지된다. 121번째 신규 독립 첨부는 저장 실패로 처리해 기존 첨부를 자르지 않는다.
+- 동일 URL의 독립된 `identity=A/B` 근거는 둘 다 유지한다. 같은 URL에서 B를 새로 수집한 경우 B에만 누락된 정보를 보충하며 A를 변경하지 않는다.
+- RFP 배치 재추출로 상위 2개 파일이 달라져도 이전 `document_evidence`의 독립 문서 식별자를 보존한다. 합성 원문이 같은 경우도 포함한다.
+- 독립 Codex 최종 수정 재검수: 위 3가지 **PASS**, 심각한 신규 회귀 미발견. 입력 SHA-256 `328a2d103cc60a04bbd228bf11419bd69a1865cab6f7c50267dd838dd1dbadcc`; 출력 원문은 개인 PC `user-json/rfp_evidence_review_retest.json`에 비공개 보관.
+- 최종 Windows 합성 Python 전체 **177 PASS**, JavaScript 문법/Git diff 검사 PASS, 실제 2,223건 `dashboard.json` 원본 SHA 보존 PASS. 8765 원본 서버 변경 없음. 본 변경의 범위는 협조 프로세스/로컬 파일 시스템이며 정전 내구성·임의 잠금파일 교체·대량 실 RFP 추출은 별도 검증이다.

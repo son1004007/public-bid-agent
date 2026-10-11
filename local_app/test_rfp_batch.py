@@ -196,6 +196,69 @@ class RfpBatchTests(unittest.TestCase):
             restarted.worker.join(6)
             self.assertEqual(restarted.status()["statistics"]["done"],1)
 
+    def test_worker_persists_forty_first_attachments_plus_new_rfp(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            n=notice("1")
+            n["attachments"]=[
+                {"name":"공고문 "+str(i)+".pdf","url":ROOT_URL+str(i),"source":"공고 목록"}
+                for i in range(40)]
+            persist({"schema_version":1,"revision":0,"notices":[n],
+                     "history":[{"decision":"no_bid"}],
+                     "collection":{"status":"SUCCESS"}},root/"dashboard.json")
+            persist({"schema_version":1,"revision":0,"categories":["SW"],
+                     "include_review":False},root/"department_profile.json")
+            fresh={"name":"제안요청서.pdf","url":ROOT_URL+"newrfp","source":"공식 상세"}
+            manager=Manager(root,threading.RLock(),persist,
+                lambda name,raw:{"text":"합성 RFP 발췌","warnings":[]},
+                related=lambda *_:{"attachments":[fresh]},
+                key_getter=lambda:"SYNTHETIC_KEY_NOT_STORED",
+                fetcher=lambda url:b"PUBLIC_SYNTHETIC_PDF",delay=0)
+            manager.start(1)
+            manager.worker.join(timeout=7)
+            self.assertFalse(manager.worker.is_alive())
+            saved=json.loads((root/"dashboard.json").read_text(encoding="utf-8"))
+            item=saved["notices"][0]
+            self.assertEqual(item["document_status"],"EXTRACTED")
+            self.assertEqual(len(item["attachments"]),41)
+            self.assertIn(fresh,item["attachments"])
+            self.assertEqual(item["document_evidence"][0]["name"],"제안요청서.pdf")
+            self.assertEqual(saved["history"],[{"decision":"no_bid"}])
+
+    def test_reprocessing_same_text_keeps_prior_document_evidence(self):
+        import hashlib
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            n=notice("1")
+            n["document_status"]="FAILED"
+            n["rfp_text"]="동일한\n\n동일한"
+            n["attachments"]=[
+                {"name":"공고문1.pdf","url":ROOT_URL+"old1","source":"공고"},
+                {"name":"공고문2.pdf","url":ROOT_URL+"old2","source":"공고"},
+                {"name":"제안요청서.pdf","url":ROOT_URL+"new1","source":"상세"},
+                {"name":"과업지시서.pdf","url":ROOT_URL+"new2","source":"상세"}]
+            n["document_evidence"]=[
+                {"identity":"synthetic-old-evidence-A","name":"공고문1.pdf",
+                 "status":"EXTRACTED","excerpt":"동일한"},
+                {"identity":"synthetic-old-evidence-B","name":"공고문2.pdf",
+                 "status":"EXTRACTED","excerpt":"동일한"}]
+            persist({"schema_version":1,"revision":0,"notices":[n],"history":[],
+                     "collection":{"status":"SUCCESS"}},root/"dashboard.json")
+            persist({"schema_version":1,"revision":0,"categories":["SW"],
+                     "include_review":False},root/"department_profile.json")
+            m=Manager(root,threading.RLock(),persist,
+                lambda *_:{"text":"동일한","warnings":[]},
+                fetcher=lambda _:b"SYNTHETIC",delay=0)
+            m.start(1)
+            m.worker.join(timeout=8)
+            self.assertFalse(m.worker.is_alive())
+            saved=json.loads((root/"dashboard.json").read_text(encoding="utf-8"))["notices"][0]
+            ids={entry["identity"] for entry in saved["document_evidence"]}
+            self.assertIn("synthetic-old-evidence-A",ids)
+            self.assertIn("synthetic-old-evidence-B",ids)
+            self.assertEqual(saved["document_status"],"EXTRACTED")
+            self.assertEqual(saved["rfp_text"],"동일한\n\n동일한")
+
     def test_corrupt_state_fail_closed(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td)
