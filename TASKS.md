@@ -257,3 +257,13 @@
 - [ ] 별도 AGY/Gemini 및 Codex 최종 의미·보안 검수; 결과 교정 및 재검수 (완료 전 main 병합 금지)
 - [ ] 다음 수직 슬라이스: 공고별 판단 권고와 최종 Bid/No-Bid·근거·적용된 프로필 스냅샷의 서버 영구 기록
 - [ ] 공식 나라장터 API 표본 확인 및 자동 수집은 법적/스키마/중복/정정/시각 확인 후 별도 진행
+
+## 2026-10-11 로컬 실행 후 검증
+
+- [x] 기존 Windows PC 개발 저장소 Git clean 확인 후 최신 Draft PR 브랜치로 Fast-forward
+- [x] Windows Python unittest 60 PASS
+- [x] 임시 분리 합성 데이터·Chrome 프로필로 저장·새로고침·가중치·409 충돌 브라우저 E2E 6항목 PASS
+- [x] 기존 로컬 앱 재시작 후 4개 HTTP 응답 PASS, `cases.json` 해시 동일 및 기존 공고 5건 보존
+- [x] 임시 포트 8766/Chrome 프로필·임시 스크립트 정리
+- [ ] 사용자 UX 최종 승인 및 독립 AGY/Gemini/Codex 최종 의미·보안 검수 (Draft/merge HOLD)
+- [ ] 다음 백엔드 수직 슬라이스: 공고별 AI 권고와 담당자 최종 의사결정/불참 사유 및 적용 프로필 버전 이력을 서버 JSON에 연결 (합성 로컬 한정)

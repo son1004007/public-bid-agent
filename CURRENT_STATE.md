@@ -306,3 +306,13 @@
 - **검증된 실행 증거 (2026-10-10):** 커밋 `10a0dfb`의 [push CI](https://github.com/son1004007/public-bid-agent/actions/runs/38059273249)와 [PR CI](https://github.com/son1004007/public-bid-agent/actions/runs/38059276328)는 모두 SUCCESS. 로컬 Python unittest **60 PASS**, FastAPI pytest **11 PASS**, React/Vite 빌드/Node JS 문법/퍼블리싱 정적 검사/README 동기화 **PASS**.
 - 위 결과는 GitHub Linux CI의 `VERIFIED (automated)` 범위에 한정된다. 사용자 PC의 로컬 브라우저 클릭/프로필 복원/동시 탭 E2E `NOT RUN`; AGY/Gemini 및 독립 Codex 최종 리뷰 `BLOCKED/REVIEW_DEBT`; 사용자 UX 승인 `NOT RUN`, main 병합·공개 배포 `HOLD`.
 - [프로필 API 테스트 근거](docs/reviews/DECISION_PROFILES_API_2026-10-10.md).
+
+## 2026-10-11 Windows 실행 및 Chrome E2E
+
+- `TD-kiseok`에서 `feat/sprint1-search-demo`를 `bb06ff1`까지 Fast-forward, 작업 트리 clean 상태 확인.
+- Windows CPython 3.12 로컬 unittest **60 PASS**.
+- 기존 사용자 데이터를 변경하지 않는 임시 `127.0.0.1:8766` 환경에서 Chrome 실제 DOM·클릭 기반 프로필 저장/새로고침/가중치 변경/409 충돌 **6항목 PASS**.
+- 기존 `127.0.0.1:8765` 개발 앱을 동일 저장 경로로 재시작. GET `/`, `/decision-preview`, `/bid-decision-dashboard-preview.js`, `/api/decision-profiles` 모두 HTTP 200.
+- 기존 실제 사용자 `cases.json`의 SHA-256 재시작 전후 동일, 기존 공고 5건 유지. 테스트용 임시 Chrome·서버·데이터/스크립트 정리.
+- 이 결과는 **Windows 합성 브라우저 E2E 및 기존 데이터 비파괴 재시작의 VERIFIED** 근거다. 새 사용자 프로필 실사용 데이터 저장·사용자 UX 승인·독립 AGY/Gemini/Codex 리뷰는 아직 미완료. Draft PR 및 main merge HOLD 유지.
+- 상세: [Windows E2E 보고서](docs/reviews/DECISION_PROFILES_WINDOWS_E2E_2026-10-11.md).
