@@ -39,6 +39,22 @@ class AttachmentPreservationTests(unittest.TestCase):
         self.assertEqual(merged["history"],snapshot["history"])
         self.assertEqual(old,snapshot)
 
+    def test_two_existing_evidence_records_sharing_url_remain_distinct(self):
+        old=self._state()
+        first={"url":URL+"same.pdf","name":"제안요청서","source":"공식 상세",
+               "identity":"sha-rfp"}
+        second={"url":URL+"same.pdf","name":"별첨 요구사항","source":"공식 상세",
+                "identity":"sha-annex"}
+        old["notices"][0]["attachments"]=[first,second]
+        fresh=normalize(BASE)
+        fresh["attachments"]=[]
+        snapshot=copy.deepcopy(old)
+        result=update_collection(old,[fresh],1,"SYNTHETIC")
+        saved=result["notices"][0]["attachments"]
+        self.assertEqual(saved,[first,second])
+        self.assertEqual(result["history"],snapshot["history"])
+        self.assertEqual(old,snapshot)
+
     def test_same_url_keeps_original_rfp_metadata_and_fills_missing_fields(self):
         old=self._state()
         preserved={"url":URL+"same.pdf","name":"상세 RFP.pdf",

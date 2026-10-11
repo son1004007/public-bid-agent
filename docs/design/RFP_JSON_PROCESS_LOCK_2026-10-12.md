@@ -48,3 +48,5 @@
 - 동일 URL이면 기존 파일명·출처·식별자·추가 메타데이터를 유지하고, 기존에 없거나 비어 있는 필드만 최신 공식 목록에서 보충한다.
 - 40건 제한으로 신규 첨부 일부를 저장하지 못할 수 있으며, 전체 RFP 수집 완전성은 사람 검증 대상이다.
 - 합성 테스트 test_rfp_attachment_preservation.py: 신규 40개에 의한 기존 RFP 누락 방지, 동일 URL 메타데이터·기존 결정/원본 불변 PASS.
+
+- 저장된 기존 첨부는 URL이 같아도 서로 다른 문서·정정·근거 식별자가 있을 수 있으므로 두 레코드를 모두 유지한다. 신규 첨부에 한해 동일 URL 기존 첫 항목의 누락 필드를 보충한다. 합성 test_two_existing_evidence_records_sharing_url_remain_distinct PASS.

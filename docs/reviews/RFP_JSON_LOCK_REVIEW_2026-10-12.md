@@ -60,3 +60,5 @@
 - 나머지 지적인 “FAILED와 PENDING이 섞여 있으면 정상 PENDING까지 일체 자동 재개 금지”는 기존 명시적 계약과 다른 제안이므로 **REJECTED AS SCOPE MISINTERPRETATION**으로 판정. 기존 `docs/design/RFP_RESUMABLE_BATCH_2026-10-11.md`와 `test_rfp_batch.py::test_resume_failure_retry_and_decisions_preserved`가 명시하는 동작은 실패 `FAILED`만 `retry_failed=True` 필요, 미처리 `PENDING`은 사용자가 다음 `start`를 요청하면 계속 처리한다는 것이다.
 - 반례를 추가 테스트 `test_rfp_race_safety.py::test_pending_items_resume_without_retrying_failed_items`로 검증: 첫 건 FAILED + 다음 PENDING에서 사용자가 정상 start를 다시 누르면 PENDING 한 건만 처리하고, FAILED는 재시도하지 않으며 전체 status는 PAUSED를 유지한다.
 - 안전한 저장과 별개인 장기 JSON 백업/복원 세대 관리·갑작스러운 전원 장애 내구성은 미구현/후속 작업이다. 잠금 규칙을 따르지 않는 구버전 서버 동시 실행은 금지하고, 운영 적용 전 프로세스 재시작 및 백업 정책 확인이 필요하다.
+
+- 저장된 기존 첨부는 URL이 같아도 서로 다른 문서·정정·근거 식별자가 있을 수 있으므로 두 레코드를 모두 유지한다. 신규 첨부에 한해 동일 URL 기존 첫 항목의 누락 필드를 보충한다. 합성 test_two_existing_evidence_records_sharing_url_remain_distinct PASS.
