@@ -388,11 +388,12 @@
               el('span','muted','내부 동명 등급 인원: '+
                 (item.nominal_internal_grade_count===null?'프로필 미등록':item.nominal_internal_grade_count+'명')+
                 ' (법정 등급·기술·투입 가능 여부 미확인)'),
-              el('span','muted','공식 문서: '+item.source_document+
-                ' / 기록된 문서 SHA-256(결속 미검증): '+(item.source_sha256||'구형 추출, 원본 해시 미확인')+
+              el('span','muted','저장된 문서 발췌: '+item.source_document+
+                ' / 발췌 '+item.excerpt_line+'행 / 원본 페이지·표 위치 미확인'+
+                ' / 기록된 문서 SHA-256(결속 미검증): '+(item.source_sha256||'저장된 해시 미기록 또는 형식 오류')+
                 ' / 발췌 SHA-256: '+item.excerpt_sha256+
                 ' / 출처 상태: '+item.source_status),
-              el('span','evidence','원문 발췌: '+item.source_excerpt));
+              el('span','evidence','개인정보를 제외한 탐지 표현: '+item.source_excerpt));
             staffRows.append(row);
           });
         }catch(error){staffInfo.textContent='인력요건 조회 실패: '+error.message;}

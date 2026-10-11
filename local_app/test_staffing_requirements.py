@@ -115,6 +115,41 @@ class StaffingExtractionTest(unittest.TestCase):
         ordinary=assess(sample_notice("필수 인력\n개발자 고급 2명"))
         self.assertEqual(ordinary["requirements"][0]["count_kind"],"STATED")
 
+    def test_minimum_and_postpositional_at_least_counts(self):
+        for text in ("개발자 고급 최소 2명",
+                     "개발자 고급 2명 이상을 투입",
+                     "개발자 고급 2명 이상으로 구성",
+                     "개발자 고급 2명 이상의 인력"):
+            with self.subTest(text=text):
+                report=assess(sample_notice("필수 인력\n"+text))
+                self.assertEqual(report["requirement_count"],1)
+                self.assertEqual(report["requirements"][0]["headcount"],2)
+                self.assertEqual(report["requirements"][0]["count_kind"],"AT_LEAST")
+
+    def test_inline_exception_negates_only_explicitly_referenced_staff(self):
+        report=assess(sample_notice(
+            "필수 인력: 개발자 고급 2명(단, 해당 인력은 요구하지 않음)"))
+        self.assertEqual(report["requirement_count"],0)
+        positive=assess(sample_notice(
+            "필수 인력\n개발자 고급 2명 (별도 자격증 필요 없음)"))
+        self.assertEqual(positive["requirement_count"],1)
+
+    def test_truncated_last_line_not_treated_as_complete_requirement(self):
+        prefix="필수 인력\n"+"X"*(6000-len("필수 인력\n")-len("\n개발자 고급 2명"))+"\n"
+        full=prefix+"개발자 고급 2명 요구하지 않음"
+        n=sample_notice(full)
+        n["document_evidence"][0]["excerpt"]=full[:6000]
+        n["document_evidence"][0]["chars"]=len(full)
+        report=assess(n)
+        self.assertTrue(report["any_text_truncated"])
+        self.assertEqual(report["requirement_count"],0)
+
+    def test_postposition_negation_and_explicit_no_staff_heading(self):
+        for text in ("필수 인력\n개발자 고급 2명 이상으로 필요 없음",
+                     "필수 인력 없음(필요 시 개발자 고급 2명 배치)"):
+            with self.subTest(text=text):
+                self.assertEqual(assess(sample_notice(text))["requirement_count"],0)
+
     def test_broad_staffing_headings_are_not_mandatory(self):
         for heading in ("수행 인력","참여 인력","인력 구성","사업 수행 조직"):
             with self.subTest(heading=heading):
@@ -126,13 +161,13 @@ class StaffingExtractionTest(unittest.TestCase):
         n["document_evidence"]=[
             {"status":"FAILED","name":"bad.pdf","sha256":None},
             {"status":"EXTRACTED","name":"wrong-hash.pdf","sha256":"wrong",
-             "excerpt":"필수 인력\n개발자 고급 4명"},
+             "excerpt":""},
             {"status":"EXTRACTED","name":"valid.pdf","sha256":"b"*64,
              "excerpt":"필수 인력\n개발자 고급 3명"}]
         r=assess(n)
         self.assertEqual(r["document_count"],1)
         self.assertEqual(r["requirements"][0]["headcount"],3)
-        self.assertEqual(r["requirements"][0]["source_document"],"valid.pdf")
+        self.assertEqual(r["requirements"][0]["source_document"],"저장 문서 #3")
         self.assertEqual(r["skipped_document_count"],2)
         self.assertEqual(r["skipped_nonextracted_or_invalid_count"],2)
 
@@ -147,6 +182,107 @@ class StaffingExtractionTest(unittest.TestCase):
             n["document_evidence"]=invalid
             with self.subTest(invalid=invalid),self.assertRaises(ValueError):
                 assess(n)
+
+    def test_negative_required_staff_context_does_not_activate(self):
+        for text in ("필수 투입인력은 별도 요구하지 않음\n개발자 고급 2명",
+                     "필수 인력은 제안사가 자율 구성\n개발자 고급 2명",
+                     "필수 인력은 제안사가 자율 구성(별도 자격증 필요 없음)\n개발자 고급 2명",
+                     "필수 인력\n없음\n개발자 고급 2명",
+                     "필수 인력은 개발자 고급 2명 요구하지 않음",
+                     "필수 인력은 개발자 고급 2명을 요구하지 않음",
+                     "필수 인력은 개발자 고급 2명 별도로 필요 없음",
+                     "필수 인력은 개발자 고급 2명 이상 요구하지 않음",
+                     "필수 인력은 개발자 고급 2명 이상은 요구하지 않음",
+                     "필수 인력: 개발자 고급 2명은 필요하지 않음",
+                     "필수 인력: 개발자 고급 2명은 요구되지 않음",
+                     "필수 인력: 개발자 고급 2명은 필요치 않음",
+                     "필수 인력은 별도 요구하지 않음, 개발자 고급 2명"):
+            with self.subTest(text=text):
+                self.assertEqual(assess(sample_notice(text))["requirement_count"],0)
+
+    def test_negated_second_role_does_not_hide_first_required_role(self):
+        report=assess(sample_notice("필수 인력: 개발자 고급 2명, PM 1명 요구하지 않음"))
+        self.assertEqual(report["requirement_count"],1)
+        item=report["requirements"][0]
+        self.assertEqual(item["role"],"developer")
+        self.assertEqual(item["headcount"],2)
+
+    def test_unrelated_certificate_exemption_keeps_required_staff(self):
+        for line in (
+            "개발자 고급 2명 (별도 자격증 필요 없음)",
+            "필수 인력: 개발자 고급 2명 (자격증 필요 없음)",
+            "개발자 고급 2명 (별도 면허 없음)",
+        ):
+            with self.subTest(line=line):
+                report=assess(sample_notice("필수 인력\n"+line))
+                self.assertEqual(report["requirement_count"],1)
+                self.assertEqual(report["requirements"][0]["headcount"],2)
+
+    def test_header_exemption_of_certification_keeps_staffing(self):
+        report=assess(sample_notice(
+            "필수 인력 자격요건: 별도 자격증 필요 없음\n개발자 고급 2명"))
+        self.assertEqual(report["requirement_count"],1)
+        self.assertEqual(report["requirements"][0]["headcount"],2)
+
+    def test_upper_bound_is_not_misreported_as_required_exact_count(self):
+        for line in ("개발자 고급 최대 2명", "개발자 고급 2명 이내",
+                     "개발자 고급 2명 내외", "개발자 고급 2명 이하"):
+            with self.subTest(line=line):
+                report=assess(sample_notice("필수 인력\n"+line))
+                self.assertEqual(report["requirement_count"],0)
+
+    def test_shared_count_with_two_roles_is_not_assigned_to_one(self):
+        report=assess(sample_notice("필수 인력\n개발자·분석가 고급 2명"))
+        self.assertEqual(report["requirement_count"],0)
+        report2=assess(sample_notice("필수 인력\n개발자 고급 2명, 분석가 중급 1명"))
+        self.assertEqual(report2["requirement_count"],2)
+
+    def test_certificate_holder_exemption_preserves_staffing(self):
+        report=assess(sample_notice(
+            "필수 인력은 자격증 소지자를 요구하지 않음\n개발자 고급 2명"))
+        self.assertEqual(report["requirement_count"],1)
+        self.assertEqual(report["requirements"][0]["headcount"],2)
+
+    def test_api_candidate_excerpt_does_not_echo_pii(self):
+        report=assess(sample_notice(
+            "필수 인력\n홍길동 010-1234-5678 개발자 고급 2명 hello@example.com"))
+        self.assertEqual(report["requirement_count"],1)
+        body=json.dumps(report,ensure_ascii=False)
+        for term in ("홍길동","010-1234-5678","hello@example.com","합성_제안요청서.pdf"):
+            self.assertNotIn(term,body)
+        self.assertEqual(report["requirements"][0]["source_excerpt"],"개발자 고급 2명")
+        self.assertEqual(report["requirements"][0]["source_document"],"저장 문서 #1")
+
+    def test_three_and_four_digit_staff_counts_are_visible(self):
+        for count in (100,120,1000):
+            text="필수 인력\n개발자 고급 "+str(count)+"명 이상"
+            report=assess(sample_notice(text))
+            self.assertEqual(report["requirement_count"],1)
+            item=report["requirements"][0]
+            self.assertEqual(item["headcount"],count)
+            self.assertEqual(item["count_kind"],"AT_LEAST")
+            self.assertEqual(item["headcount_check"],"OUT_OF_RANGE_FOR_REVIEW" if count>500 else "STANDARD_CANDIDATE")
+
+    def test_missing_or_bad_hash_still_extracts_with_lower_provenance(self):
+        for sha, expected in ((None,"HASH_MISSING_UNVERIFIED"),
+                              ("not-a-sha","HASH_INVALID_UNVERIFIED")):
+            n=sample_notice("필수 인력\n개발자 고급 2명")
+            n["document_evidence"][0]["sha256"]=sha
+            report=assess(n)
+            self.assertEqual(report["requirement_count"],1)
+            self.assertEqual(report["requirements"][0]["source_status"],expected)
+            self.assertIsNone(report["requirements"][0]["source_sha256"])
+            self.assertEqual(report["document_state"],"EXTRACTED_REQUIREMENTS_FOR_REVIEW")
+            self.assertEqual(report["skipped_nonextracted_or_invalid_count"],0)
+
+    def test_excerpt_line_and_identity_do_not_claim_pdf_page(self):
+        n=sample_notice("설명\n필수 인력\n개발자 고급 2명")
+        n["document_evidence"][0]["identity"]="c"*64
+        result=assess(n)
+        item=result["requirements"][0]
+        self.assertEqual(item["excerpt_line"],3)
+        self.assertEqual(item["source_identity"],"c"*64)
+        self.assertEqual(item["original_page"],"UNKNOWN")
 
     def test_legacy_text_is_marked_low_provenance(self):
         n=sample_notice("필수 투입인력\n고급 개발자 2명")
@@ -180,6 +316,8 @@ class StaffingHTTPTest(unittest.TestCase):
         state["notices"]=[notice]
         server.persist(state,self.root/"dashboard.json")
         self.before=(self.root/"dashboard.json").read_bytes()
+        server.persist({"schema_version":1,"cases":[{"id":"synthetic-old","title":"preserve"}]},self.root/"cases.json")
+        self.cases_before=(self.root/"cases.json").read_bytes()
         self.http=ThreadingHTTPServer(("127.0.0.1",0),server.Handler)
         self.thread=threading.Thread(target=self.http.serve_forever,daemon=True)
         self.thread.start()
@@ -197,6 +335,7 @@ class StaffingHTTPTest(unittest.TestCase):
         self.assertEqual(data["staffing"]["requirement_count"],1)
         self.assertEqual(data["staffing"]["workforce_state"],"NOT_CONFIGURED")
         self.assertEqual(self.before,(self.root/"dashboard.json").read_bytes())
+        self.assertEqual(self.cases_before,(self.root/"cases.json").read_bytes())
         self.assertFalse((self.root/"workforce.json").exists())
 
     def test_private_staffing_api_exposes_only_aggregate_count(self):
@@ -211,6 +350,24 @@ class StaffingHTTPTest(unittest.TestCase):
         for prohibited in ("T1","T2","nominal_capacity_mm","available_mm",
                            "annual_assumed_salary", "cost_per_mm_krw"):
             self.assertNotIn(prohibited,serialized)
+
+    def test_http_extracted_candidate_does_not_return_source_pii(self):
+        path=self.root/"dashboard.json"
+        dashboard=json.loads(self.before)
+        notice=dashboard["notices"][0]
+        notice["document_evidence"][0]["name"]="홍길동-개인정보-문서.pdf"
+        notice["document_evidence"][0]["excerpt"]=(
+            "필수 인력\\n홍길동 010-1234-5678 개발자 고급 2명 hello@example.com")
+        notice["rfp_text"]=notice["document_evidence"][0]["excerpt"]
+        path.write_text(json.dumps(dashboard,ensure_ascii=False),encoding="utf-8")
+        original=path.read_bytes()
+        with urlopen(self.url+"/api/dashboard/staffing?id=G2B-SYNTHETIC-00",timeout=4) as response:
+            text=response.read().decode("utf-8")
+        for secret in ("홍길동","010-1234-5678","hello@example.com","개인정보-문서.pdf"):
+            self.assertNotIn(secret,text)
+        self.assertIn("개발자 고급 2명",text)
+        self.assertEqual(path.read_bytes(),original)
+        self.assertEqual((self.root/"cases.json").read_bytes(),self.cases_before)
 
     def test_unknown_and_injection_fail_and_preserve_data(self):
         for query,expected in (("id=G2B-MISSING-00",404),
