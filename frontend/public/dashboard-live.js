@@ -470,6 +470,53 @@
   const discoveryRefresh=btn('검토 우선순위 갱신',()=>void refreshDiscovery());
   discoveryPanel.append(discoveryHeading,discoveryInfo,discoveryRefresh,discoveryRows);
   byId('view-collection').append(discoveryPanel);
+
+  // 로컬 workforce.json만 조회한다. 공개 저장소에는 인원 코드와 등급을 넣지 않는다.
+  const workforcePanel=el('div','card panel');
+  workforcePanel.id='workforcePanel';
+  workforcePanel.hidden=true;
+  const workforceHeading=el('h2','','부서 인력·가정 원가 (PC 비공개)');
+  const workforceInfo=el('p','helper','로컬 인력 파일 조회 중');
+  workforceInfo.setAttribute('role','status');
+  const workforceRates=el('div','helper');
+  const workforceRows=el('div','');
+  const workforceRefresh=btn('인력 정보 새로고침',()=>void refreshWorkforce());
+  workforcePanel.append(workforceHeading,workforceInfo,workforceRates,workforceRefresh,workforceRows);
+  byId('view-collection').append(workforcePanel);
+  const roleLabels={analyst:'분석가',developer:'개발자',executive:'임원',accounting:'경리'};
+  const gradeLabels={junior:'초급',intermediate:'중급',senior:'고급'};
+  const money=value=>Number(value).toLocaleString('ko-KR')+'원';
+  async function refreshWorkforce(){
+    workforcePanel.hidden=false;
+    try{
+      const response=await fetch('/api/workforce',{cache:'no-store'});
+      if(!response.ok)throw Error('로컬 인력 파일 조회 실패');
+      const data=(await response.json()).workforce;
+      workforceRows.replaceChildren();
+      workforceRates.replaceChildren();
+      if(!data){
+        workforceInfo.textContent='로컬 workforce.json 미등록. 공개 저장소에는 실제 인력 자료를 보관하지 않습니다.';
+        return;
+      }
+      workforceInfo.textContent='총 '+data.headcount_total+'명 / 분석·개발 '+data.delivery_headcount+
+        '명 / 가정 연봉 합계 '+money(data.annual_assumed_salary_total_krw)+
+        ' (급여 가정만 포함, 실제 회사 총원가·가용 공수 미확인)';
+      workforceRates.textContent=data.roles.map(r=>r.role+' '+r.headcount+
+        '명 · '+money(r.cost_per_mm_krw)+'/MM · 가용 MM 미정').join(' / ');
+      data.staff.forEach(person=>{
+        const box=el('div','requirementRow');
+        const heading=person.id+' · '+(roleLabels[person.role]||'미확인')+
+          (person.grade?' '+gradeLabels[person.grade]:'')+(person.lead?' (팀장)':'');
+        box.append(el('strong','',heading),
+          el('span','muted','담당분야: '+person.responsibility+' (임시 배정)'),
+          el('span','muted','기술: '+(person.skills.join(', ')||'미등록')+
+            ' / 근거: '+(person.skills_evidence==='VERIFIED'?'확인':'추정 또는 미확인')+
+            ' / 가용 공수: '+(person.available_mm===null?'미정':person.available_mm+'MM')));
+        workforceRows.append(box);
+      });
+    }catch(error){workforceInfo.textContent='인력 자료 조회 실패: '+error.message;}
+  }
+
   async function refreshDiscovery(){
     try{
       const r=await fetch('/api/dashboard/discovery',{cache:'no-store'});
@@ -510,6 +557,7 @@
   reload().then(() => {
     void refreshBatch().catch(()=>{});
     void refreshDiscovery();
+    void refreshWorkforce();
     byId('procurementKeySave').addEventListener('click', () => void credentialAction('save'));
     byId('procurementKeyVerify').addEventListener('click', () => void credentialAction('verify'));
     byId('procurementKeyDelete').addEventListener('click', () => void credentialAction('delete'));

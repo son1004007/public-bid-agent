@@ -113,7 +113,7 @@ def clean_profile(value):
         cleaned.append({
             "role": name,
             "cost_per_mm_krw": _money(item.get("cost_per_mm_krw"), "직무별 월 총원가"),
-            "available_mm": float(_number(item.get("available_mm", 0), "가용 공수")),
+            "available_mm": (None if item.get("available_mm") is None else float(_number(item["available_mm"], "가용 공수"))),
         })
     overhead = _number(value.get("overhead_pct", 0), "간접비율", 100)
     reserve = _number(value.get("reserve_pct", 0), "위험충당률", 100)
@@ -167,7 +167,9 @@ def calculate(profile, plan):
         warnings.append("투입 공수가 0입니다. 사업원가를 확정할 수 없습니다")
     for entry in plan["entries"]:
         role = catalog[entry["role"]]
-        if entry["mm"] > role["available_mm"]:
+        if role["available_mm"] is None:
+            warnings.append(entry["role"] + " 가용 공수가 미정입니다. 투입 가능 여부를 확인하세요")
+        elif entry["mm"] > role["available_mm"]:
             warnings.append(entry["role"] + " 투입 공수가 현재 가용 공수를 초과합니다")
         if entry["mm"] > 0 and role["cost_per_mm_krw"] == 0:
             warnings.append(entry["role"] + " 월 원가 단가가 0원입니다. 회사 기준단가를 확인하세요")

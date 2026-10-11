@@ -11,5 +11,9 @@ __pycache__/
 node_modules/
 frontend/dist/
 coverage/
+# 로컬 비공개 운영/인력 프로필의 실수 커밋 방지
+**/workforce.json
+**/operations.json
+**/user-json/
 *.tsbuildinfo
 .DS_Store

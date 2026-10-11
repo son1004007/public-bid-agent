@@ -57,6 +57,16 @@ class CostUnitTests(unittest.TestCase):
   out=calculate(p,clean_plan(data,p))
   self.assertIsNone(out["expected_profit_krw"])
   self.assertIsNone(out["expected_margin_pct"])
+ def test_unknown_capacity_is_not_zero_and_requires_review(self):
+  data={**MOCK_PROFILE,"roles":[{**MOCK_PROFILE["roles"][0],"available_mm":None}]}
+  ops=clean_profile(data)
+  self.assertIsNone(ops["roles"][0]["available_mm"])
+  plan=clean_plan({**MOCK_PLAN,"entries":[{"role":"Python 백엔드","mm":1}]},ops)
+  out=calculate(ops,plan)
+  self.assertEqual(out["status"],"NEEDS_REVIEW")
+  self.assertTrue(any("미정" in w for w in out["warnings"]))
+  self.assertFalse(any("초과" in w for w in out["warnings"]))
+
  def test_excess_capacity_warns_and_does_not_silently_adjust(self):
   p=clean_profile(MOCK_PROFILE)
   plan=clean_plan({**MOCK_PLAN,"entries":[{"role":"Python 백엔드","mm":4}]},p)

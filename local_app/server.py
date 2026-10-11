@@ -30,6 +30,7 @@ from dashboard_backend import (
     update_collection, failed_collection, record_action, key_available, verify_key, KST,
 )
 from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
+from workforce import load as load_workforce, summary as summarize_workforce
 from department_profile import (
     DepartmentProfileConflict, load as load_department_profile,
     modify as modify_department_profile,
@@ -372,6 +373,14 @@ class Handler(BaseHTTPRequestHandler):
   if self.path=="/api/operations":
    with LOCK: profile=load_operations()
    return self.respond({"operations":profile,"sections":REFERENCE_SECTIONS})
+  if self.path=="/api/workforce":
+   try:
+    with LOCK: data=load_workforce(ROOT / "workforce.json")
+    return self.respond({"status":"LOCAL_ONLY" if data is not None else "NOT_CONFIGURED",
+                         "workforce":summarize_workforce(data) if data is not None else None,
+                         "storage":"LOCAL_JSON"})
+   except (ValueError, json.JSONDecodeError, OSError):
+    return self.respond({"error":"인력 설정 파일이 손상됐습니다. 로컬 원본을 확인하세요"},503)
   if self.path=="/api/state":
    with LOCK: data=load()
    return self.respond({"csrf":TOKEN,"data":data,"gates":GATES,"factors":FACTORS})

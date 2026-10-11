@@ -160,10 +160,10 @@ function addOperationRole(row={role:"",cost_per_mm_krw:0,available_mm:0}){
  const card=make("article");card.className="item";
  const role=make("label","직무명 (개인 실명 금지)");const roleInput=make("input");
  roleInput.dataset.opsField="role";roleInput.maxLength=60;roleInput.value=row.role;role.append(roleInput);
- const cost=make("label","직무별 1MM 월 총원가 (원, 회사 부담액)");const costInput=make("input");
+ const cost=make("label","직무별 1MM 월 원가 (원, 연봉 가정이면 급여만 반영)");const costInput=make("input");
  costInput.type="number";costInput.min="0";costInput.step="1";costInput.dataset.opsField="cost_per_mm_krw";costInput.value=row.cost_per_mm_krw;cost.append(costInput);
  const capacity=make("label","현재 가용 공수 (MM, 최대 2자리 소수)");const capacityInput=make("input");
- capacityInput.type="number";capacityInput.min="0";capacityInput.step=".01";capacityInput.dataset.opsField="available_mm";capacityInput.value=row.available_mm;capacity.append(capacityInput);
+ capacityInput.type="number";capacityInput.min="0";capacityInput.step=".01";capacityInput.dataset.opsField="available_mm";capacityInput.value=row.available_mm??"";capacityInput.placeholder="미정";capacity.append(capacityInput);
  const del=make("button","이 직무 삭제");del.className="btn";del.type="button";del.addEventListener("click",()=>card.remove());
  card.append(role,cost,capacity,del);el("opsRoles").append(card);
 }
@@ -230,7 +230,7 @@ function collectOperations(){
   const field=k=>card.querySelector('[data-ops-field="'+k+'"]');
   return {role:field("role").value.trim(),
    cost_per_mm_krw:readNumber(field("cost_per_mm_krw")),
-   available_mm:readNumber(field("available_mm"))};
+   available_mm:readNumber(field("available_mm"),true)};
  });
  return {roles,overhead_pct:readNumber(el("opsOverhead")),reserve_pct:readNumber(el("opsReserve")),
   registers:collectRegisters()};
@@ -244,7 +244,7 @@ function renderCostPlan(){
  if(!operations.roles.length)container.append(make("p","위에서 회사 공통 기준 직무와 월 총원가를 먼저 등록하세요."));
  const existing=Object.fromEntries((plan.entries||[]).map(e=>[e.role,e.mm]));
  operations.roles.forEach(role=>{
-  const label=make("label",role.role+" · 기준 원가 "+displayMoney(role.cost_per_mm_krw)+" / MM · 가용 "+role.available_mm+"MM");
+  const label=make("label",role.role+" · 기준 원가 "+displayMoney(role.cost_per_mm_krw)+" / MM · 가용 "+(role.available_mm===null?"미정":role.available_mm+"MM"));
   const input=make("input");input.type="number";input.min="0";input.step=".01";input.value=existing[role.role]??0;input.dataset.planRole=role.role;
   label.append(input);container.append(label);
  });
