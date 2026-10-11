@@ -114,6 +114,14 @@ class DashboardHTTPTests(unittest.TestCase):
         self.file_patch = patch.object(server, "FILE", root / "cases.json")
         self.root_patch.start()
         self.file_patch.start()
+        # 사용자 Windows DPAPI에 실키가 등록돼 있어도 unittest는 그 키를 읽지 않는다.
+        # 이 서버 테스트는 명시된 합성 환경변수만 사용해 완전 격리한다.
+        self.key_patch = patch.object(server, "procurement_key",
+                                      side_effect=lambda: os.environ.get(db.KEY_ENV) or None)
+        self.available_patch = patch.object(server, "key_available",
+                                            side_effect=lambda: bool(os.environ.get(db.KEY_ENV)))
+        self.key_patch.start()
+        self.available_patch.start()
         server.persist({"schema_version": 1, "cases": [{"id": "old-case", "title": "preserve"}]})
         self.original = (root / "cases.json").read_bytes()
         self.root = root
@@ -126,6 +134,8 @@ class DashboardHTTPTests(unittest.TestCase):
         self.http.shutdown()
         self.http.server_close()
         self.thread.join(timeout=4)
+        self.available_patch.stop()
+        self.key_patch.stop()
         self.root_patch.stop()
         self.file_patch.stop()
         self.temp.cleanup()
