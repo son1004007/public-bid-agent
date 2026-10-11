@@ -6,6 +6,7 @@
 부작용: 사용자 데이터 디렉터리에 고정 .dashboard-rfp.lock 파일 생성(삭제하지 않음).
 실패: 최대 10초 대기 후 TimeoutError; 원본 JSON 미변경.
 불변조건: 모든 dashboard.json/rfp_batch.json read-modify-write는 같은 잠금을 사용.
+잠금 수명: 예외 또는 작업자 종료 시 파일·스레드 잠금을 해제하고, 다음 요청이 다시 획득한다.
 검증: test_json_transaction.py, test_rfp_batch.py, docs/design/RFP_RESUMABLE_BATCH_2026-10-11.md.
 """
 import os

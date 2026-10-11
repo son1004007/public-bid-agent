@@ -346,3 +346,7 @@ Windows에서 인증·CSRF 거절 POST의 요청 본문이 남아 연결이 강�
 - 합성 테스트 test_rfp_attachment_preservation.py: 신규 40개에 의한 기존 RFP 누락 방지, 동일 URL 메타데이터·기존 결정/원본 불변 PASS.
 
 - 저장된 기존 첨부는 URL이 같아도 서로 다른 문서·정정·근거 식별자가 있을 수 있으므로 두 레코드를 모두 유지한다. 신규 첨부에 한해 동일 URL 기존 첫 항목의 누락 필드를 보충한다. 합성 test_two_existing_evidence_records_sharing_url_remain_distinct PASS.
+
+- 새로 수집한 공고도 첨부 40개 상한을 적용한다. 신규 목록에서 URL이 같아도 이름·근거 식별자가 다른 두 별첨은 서로 병합하지 않고 별도로 보존한다. 합성 회귀 테스트 2건 PASS.
+
+- 2026-10-12 CI 문서 동기화: `dashboard_backend.py` 첨부 병합의 기존 근거 우선·동일 URL 별첨별 독립 증거·최대 40개 제한을 코드와 테스트의 불변조건으로 유지합니다.
