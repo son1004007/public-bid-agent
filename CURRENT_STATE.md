@@ -364,3 +364,15 @@
 - 실제 API 과거 일자 별도 진단: 2026-10-08 KST 원본 700건/관심 제목 90건, 10-09 KST 원본 10건/관심 제목 2건. 개발 시안이 아닌 실제 조달청 API 반환 공고 기준이며, 참가자격/적합도는 검증 전.
 - 데이터가 0건인 주말에도 유효한 목업/실데이터 UI 검증을 위해 `POST /api/dashboard/collect`에 1일/7일 옵션, UI 조회 기간 선택을 추가. 7일 수집은 모든 일자를 조회할 때만 성공으로 기록하며 공고 중복 제거 및 이전 의사결정 보존.
 - 이 변경의 Windows/Chrome 재테스트 및 실제 7일 저장 검증은 커밋 이후 별도 증거를 기록. 독립 보안 검수·UX 최종 승인 전 Draft/main HOLD.
+
+## 2026-10-11 실제 나라장터 공고 수집 및 Chrome 목업 테스트 결과
+
+- 사용자 등록 Windows DPAPI 키 구성 확인, 실제 `/api/procurement-key/verify` 응답 **SUCCESS**.
+- 실제 `/api/dashboard/collect`: 24시간 원본 1/관심 0, 범위 보완 후 **최근 7일 원본 2,227/제목 필터 275건**, 로컬 dashboard.json 공고 275건 저장. API 수집 SUCCESS, revision 2.
+- 공개 공고 링크 275건, 제목 기반 AI 104/SW 97/DATA 74. 마감 미래 209, 마감 미확인 37. 제목 필터는 입찰 가능/실제 자격/AI 적합성 평가가 아님.
+- Windows unittest 76 PASS, 실제 공고 Chrome 목록·상세·8개 미확인 필수조건/12개 미확인 영향인자·수집 상태·새로고침 PASS.
+- 실제 공고를 **별도 임시 서버/JSON 사본에 복제**해 담당자 보류/사유/프로필 이력 저장 및 새로고침 검증. 실제 dashboard.json/cases.json E2E 전후 바이트 동일.
+- KPI '합성 공고 목록' 안내를 실데이터에서 공식 API 출처 표시로 변경. 수정 후 Chrome 7개 시나리오 모두 PASS.
+- GitHub Actions 최신 Push [38114456978](https://github.com/son1004007/public-bid-agent/actions/runs/38114456978) / PR [38114459846](https://github.com/son1004007/public-bid-agent/actions/runs/38114459846) SUCCESS.
+- [실 API/Chrome 검증 상세보고](docs/reviews/G2B_LIVE_COLLECTION_UI_E2E_2026-10-11.md).
+- 공개배포·main 병합 HOLD: 독립 AGY/Gemini/Codex 최종 보안/의미 검수 및 사용자 최종 UI 승인 미완료.
