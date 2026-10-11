@@ -174,3 +174,5 @@ GET `/api/procurement-key`, POST `/api/procurement-key/save`, POST `/api/procure
 로컬 API: GET /api/department-profile, POST /api/department-profile/save (버전 충돌 검사); POST /api/dashboard/enrich (공고 ID 하나), POST /api/dashboard/enrich-batch (현재 후보 최대 5개). API는 기존 loopback/Origin/CSRF 검사를 따르고 입력 URL 대신 서버에 이미 저장한 공식 첨부 URL만 사용합니다. 허용 형식 PDF/HWP/HWPX/DOCX/TXT, 8MiB, 리다이렉트 불허, 별도 추출 프로세스, 최대 12,000자 저장. 오류는 재검토 상태로 보존합니다.
 
 검토대기 포함 기본 설정은 false입니다. 조달 분류/RFP 확인 전 generic '개발·구축'은 SW 자동 후보로 확정하지 않고 REVIEW로 유지합니다.
+
+규칙 기반 복합 키워드(예: AI 데이터 분석 플랫폼)는 AI/DATA 복수 카테고리 근거로 분류합니다. 담당자 최종 Bid/No-Bid 이력은 재분류 시에도 유지합니다.
