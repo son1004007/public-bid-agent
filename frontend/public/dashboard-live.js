@@ -354,6 +354,53 @@
        ['법적 참가가능 여부','회사별 나라장터 등록·면허·실적 확인 전'],
        ['면허·지역 상세 API','조회: '+(n.related_status||'아직 미조회')]]));
       section.append(btn('공식 면허·지역·e발주 첨부 추가조회',()=>void fetchOfficialConstraints(n.id)));
+
+      // 사용자 요청 시에만 기존 RFP 본문에서 명시적 인력 요건 후보를 추출한다.
+      const staffPanel=detailBlock('RFP 인력요건·부서 역량 예비 검토');
+      const staffInfo=el('p','muted','검토 버튼을 누르면 공식 첨부 발췌에서 역할·등급·인원 후보를 찾습니다. 실제 참가자격·기술자 등급·가용 공수는 미확인입니다.');
+      staffInfo.setAttribute('role','status');
+      const staffRows=el('div','');
+      const staffButton=btn('인력 요건 후보 확인',async()=>{
+        staffButton.disabled=true;
+        staffInfo.textContent='공식 RFP 발췌와 비공개 직무 집계를 읽고 있습니다.';
+        staffRows.replaceChildren();
+        try{
+          const resp=await fetch('/api/dashboard/staffing?id='+encodeURIComponent(n.id),{cache:'no-store'});
+          const payload=await resp.json();
+          if(!resp.ok || !payload.staffing)throw Error(payload.error||'인력요건 조회 실패');
+          const report=payload.staffing;
+          staffInfo.textContent='발췌 분석 '+report.processed_document_count+'개 / 기록된 문서 증거 '+report.total_document_evidence_count+
+            '개 / 생략 '+report.skipped_document_count+'개 (미추출·형식 '+report.skipped_nonextracted_or_invalid_count+
+            '개, 처리 상한 '+report.skipped_due_to_limit_count+'개) / 각 발췌 최대 '+report.excerpt_char_limit+
+            '자'+(report.any_text_truncated?' (본문 절단 있음)':' (본문 완전성 미확인)')+
+            ' / 명시적 인력요건 후보 '+report.requirement_count+'건 / 인력 적격성 미확인. '+report.warning;
+          if(!report.requirement_count){
+            staffRows.append(el('p','muted',report.document_state==='NO_RFP_EXTRACTED'
+              ?'추출된 공식 RFP 본문이 없습니다. 먼저 문서 본문을 추출해야 합니다.'
+              :'현재 발췌 범위에 명시적으로 식별된 인력 요건이 없습니다. RFP 전체 표·각주를 확인하세요.'));
+          }
+          report.requirements.forEach(item=>{
+            const row=el('div','requirementRow');
+            const role=item.role==='analyst'?'분석가':'개발자';
+            const grade={junior:'초급',intermediate:'중급',senior:'고급'}[item.grade]||'등급 불명';
+            row.append(el('strong','',role+' / '+grade+' / '+item.headcount+(item.count_kind==='AT_LEAST'?'명 이상 (최소 인원)':'명 (원문 표기 인원)')),
+              el('span','muted','기술 키워드: '+(item.skills.join(', ')||'추출 안 됨')),
+              el('span','muted','내부 동명 등급 인원: '+
+                (item.nominal_internal_grade_count===null?'프로필 미등록':item.nominal_internal_grade_count+'명')+
+                ' (법정 등급·기술·투입 가능 여부 미확인)'),
+              el('span','muted','공식 문서: '+item.source_document+
+                ' / 기록된 문서 SHA-256(결속 미검증): '+(item.source_sha256||'구형 추출, 원본 해시 미확인')+
+                ' / 발췌 SHA-256: '+item.excerpt_sha256+
+                ' / 출처 상태: '+item.source_status),
+              el('span','evidence','원문 발췌: '+item.source_excerpt));
+            staffRows.append(row);
+          });
+        }catch(error){staffInfo.textContent='인력요건 조회 실패: '+error.message;}
+        finally{staffButton.disabled=false;}
+      });
+      staffPanel.append(staffInfo,staffButton,staffRows);
+      section.append(staffPanel);
+
       if(n.related_status==='FETCHED'){
         const licenses=detailBlock('조달청 면허·업종 제한 (공식 목록)');
         if(!(n.license_restrictions||[]).length)licenses.append(el('p','muted','조회된 면허 제한 목록 없음 (업체 참가자격 확인과 별도)'));

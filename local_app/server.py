@@ -22,6 +22,7 @@ import webbrowser
 from datetime import datetime, timezone, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlsplit, parse_qs
 
 from decision_support import advise as advise_bid
 from decision_profiles import ProfileConflict, load_state as load_decision_profiles, next_state as update_decision_profiles
@@ -31,6 +32,7 @@ from dashboard_backend import (
 )
 from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
 from workforce import load as load_workforce, summary as summarize_workforce
+from staffing_requirements import assess as assess_staffing
 from department_profile import (
     DepartmentProfileConflict, load as load_department_profile,
     modify as modify_department_profile,
@@ -348,6 +350,26 @@ class Handler(BaseHTTPRequestHandler):
    return self.respond({"profile":profile,"csrf":TOKEN,"categories":{
     "AI":"AI 서비스·LLM","SW":"SW·업무시스템 개발",
     "DATA":"데이터 수집·분석·플랫폼","SECURITY":"보안·인증·감사 지원 SW"}})
+  if self.path.startswith("/api/dashboard/staffing?"):
+   # 조회 전용 RFP 인력요건 예비검토. 공고와 사용자 JSON에 변화 없음.
+   query=urlsplit(self.path)
+   params=parse_qs(query.query,keep_blank_values=True)
+   if query.path!="/api/dashboard/staffing" or set(params)!={"id"} or len(params["id"])!=1:
+    return self.respond({"error":"공고 식별자 형식 오류"},400)
+   ident=params["id"][0]
+   if len(ident)>120 or not re.fullmatch(r"G2B-[A-Za-z0-9-]+",ident):
+    return self.respond({"error":"공고 식별자 형식 오류"},400)
+   try:
+    with LOCK:
+     state=read_dashboard(ROOT / "dashboard.json")
+     notice=next((n for n in state["notices"] if n["id"]==ident),None)
+     if notice is None:return self.respond({"error":"공고를 찾을 수 없습니다"},404)
+     private=load_workforce(ROOT / "workforce.json")
+     aggregate=summarize_workforce(private) if private is not None else None
+     report=assess_staffing(notice,aggregate)
+    return self.respond({"staffing":report,"storage":"LOCAL_JSON"})
+   except (ValueError,UnicodeError,json.JSONDecodeError,OSError):
+    return self.respond({"error":"공고·인력 로컬 파일 조회 오류. 원본 보존"},503)
   if self.path=="/api/dashboard/discovery":
    try:
     with LOCK: state=read_dashboard(ROOT / "dashboard.json")
