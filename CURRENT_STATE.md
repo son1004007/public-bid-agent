@@ -347,3 +347,12 @@
 - 기존 로컬 앱 `/api/procurement-key` GET (상태만), `/save`·`/verify`·`/delete` POST, 브라우저 `수집 관리` 패널 연동. 공식 사이트 링크는 신청 페이지에 이동하되 로그인/신청 대행 안 함.
 - 첨부한 조달청 API v1.2 참조 문서에서 용역 검색 오퍼레이션 `getBidPblancListInfoServcPPSSrch`와 요청키 명 `ServiceKey` 확인해 어댑터 수정.
 - 현재 단계: 로컬 합성/격리 검증, 사용자 발급 키 **실제 입력·연결 확인 아직 수행 전**. Windows 브라우저 및 GitHub CI/최종 보안 검수 결과 별도 추적. Draft PR 및 main HOLD.
+
+## 2026-10-11 인증키 웹 등록 실행 검증
+
+- GitHub 개발 브랜치 `acd8653`: Windows 전체 unittest **74 PASS**, 실 Windows CryptProtectData/UnprotectData 사용자 범위 왕복 PASS.
+- Chrome Headless 실제 UI 클릭 5항목(미등록 상태/가상 키 암호화 저장/연결 확인 mock/공고 수집 mock/삭제) **PASS**. 가상 키는 별도 임시 폴더/임시 서버에서만 사용.
+- 기존 PC 로컬 앱 8765 최신 코드 재시작, 메인/대시보드/JS/API 6경로 HTTP 200, 사용자 `cases.json` 해시 동일/기존 공고 5건 유지, 실제 키 아직 미입력/미등록.
+- 구현 CI Push [38113357140](https://github.com/son1004007/public-bid-agent/actions/runs/38113357140) 및 PR [38113360004](https://github.com/son1004007/public-bid-agent/actions/runs/38113360004) **SUCCESS**.
+- 사용자가 키 발급을 완료했다고 보고함. 다음은 실제 키를 자신의 로컬 수집 관리 화면에 붙여넣고 **별도의 API 연결 확인** 실행. 키는 공유하지 않는다.
+- [웹 인증키 검증 보고서](docs/reviews/PROCUREMENT_KEY_WEB_E2E_2026-10-11.md). 독립 최종 보안 검수/사용자 UX 승인 전 Draft PR/main merge HOLD.
