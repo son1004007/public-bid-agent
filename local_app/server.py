@@ -341,6 +341,20 @@ class Handler(BaseHTTPRequestHandler):
   return self.respond({"error":"없는 경로"},404)
  def do_POST(self):
   if not self.host_ok() or self.headers.get("Origin")!=f"http://127.0.0.1:{self.server.server_port}" or self.headers.get("X-Local-CSRF")!=TOKEN:
+   # Windows에서는 요청 body가 남은 채 응답 연결을 닫으면 TCP reset이 발생할 수 있다.
+   # Content-Length가 한도 이내인 경우만 짧은 제한시간으로 읽고 403을 반환한다.
+   try:
+    denied_size=int(self.headers.get("Content-Length","0"))
+    if 0 < denied_size <= MAX_POST:
+     self.connection.settimeout(2)
+     remaining=denied_size
+     while remaining:
+      part=self.rfile.read(min(remaining,65536))
+      if not part: break
+      remaining-=len(part)
+   except (ValueError, OSError):
+    pass
+   self.close_connection=True
    return self.respond({"error":"출처/CSRF 검증 실패"},403)
   try:
    size=int(self.headers.get("Content-Length","0"))
