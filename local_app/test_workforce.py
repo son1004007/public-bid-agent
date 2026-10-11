@@ -30,9 +30,9 @@ def sample():
             "annual_grade_rates_krw": {"junior": 24000000,
                                        "intermediate": 36000000,
                                        "senior": 60000000},
-            "staff": [person("TEST1", "analyst", "junior", ["DB"]),
-                      person("TEST2", "developer", "senior", ["JAVA", "DB"]),
-                      person("TEST3", "accounting")]}
+            "staff": [person("T1", "analyst", "junior", ["DB"]),
+                      person("T2", "developer", "senior", ["JAVA", "DB"]),
+                      person("T3", "accounting")]}
 
 
 class WorkforceContractTests(unittest.TestCase):
@@ -49,7 +49,30 @@ class WorkforceContractTests(unittest.TestCase):
         self.assertEqual(result["staff"][2]["annual_assumed_salary_krw"], None)
         self.assertEqual(result["eligibility_status"], "NOT_ASSESSED")
 
+    def test_known_capacity_zero_and_positive_are_aggregated(self):
+        data = sample()
+        data["staff"].append(person("T4", "analyst", "junior", ["DB"], mm=2))
+        data["staff"][0]["available_mm"] = 0
+        result = summary(data)
+        self.assertEqual(result["roles"][0]["available_mm"], 2)
+        self.assertEqual(result["roles"][0]["capacity_status"], "KNOWN")
+        data["staff"][0]["available_mm"] = None
+        self.assertEqual(summary(data)["roles"][0]["capacity_status"], "UNKNOWN")
+
+    def test_individual_monthly_rounding_is_consistent_with_role_rates(self):
+        data = sample()
+        data["annual_grade_rates_krw"]["junior"] = 24000001
+        data["annual_grade_rates_krw"]["senior"] = 60000002
+        view = summary(data)
+        total = sum(x["cost_per_mm_krw"] * x["headcount"] for x in view["roles"])
+        self.assertEqual(view["monthly_assumed_salary_total_krw"], total)
+
     def test_person_name_and_extra_fields_are_rejected(self):
+        for invalid_id in ("KIM-MINSU", "PARK", "KIM3", "LEE_JH"):
+            data = sample()
+            data["staff"][0]["id"] = invalid_id
+            with self.subTest(id=invalid_id), self.assertRaises(ValueError):
+                validate(data)
         for field in ("name", "email", "actual_salary"):
             data = sample()
             data["staff"][0][field] = "not-allowed"
@@ -58,7 +81,7 @@ class WorkforceContractTests(unittest.TestCase):
 
     def test_duplicate_bad_grade_bad_skills_and_invalid_capacity_are_rejected(self):
         cases = []
-        data = sample();data["staff"][1]["id"]="TEST1";cases.append(data)
+        data = sample();data["staff"][1]["id"]="T1";cases.append(data)
         data = sample();data["staff"][0]["grade"]="senior_typo";cases.append(data)
         data = sample();data["staff"][1]["skills"]=["JAVA","JAVA"];cases.append(data)
         data = sample();data["staff"][0]["role"]=["analyst"];cases.append(data)
@@ -117,6 +140,15 @@ class WorkforceHTTPTests(unittest.TestCase):
         except HTTPError as error:
             self.assertEqual(error.code,503)
             self.assertNotIn("SECRET-DO-NOT-LEAK",error.read().decode("utf-8"))
+
+    def test_invalid_unicode_returns_503(self):
+        path=self.root/"workforce.json"
+        path.write_bytes(bytes([0xff, 0xfe]))
+        try:
+            urlopen(self.base+"/api/workforce",timeout=5)
+            self.fail("503 expected")
+        except HTTPError as error:
+            self.assertEqual(error.code,503)
 
     def test_host_header_rejected(self):
         request=Request(self.base+"/api/workforce",headers={"Host":"attacker.invalid"})

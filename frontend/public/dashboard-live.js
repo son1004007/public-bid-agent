@@ -474,13 +474,13 @@
   // 로컬 workforce.json만 조회한다. 공개 저장소에는 인원 코드와 등급을 넣지 않는다.
   const workforcePanel=el('div','card panel');
   workforcePanel.id='workforcePanel';
-  workforcePanel.hidden=true;
+  workforcePanel.hidden=false;
   const workforceHeading=el('h2','','부서 인력·가정 원가 (PC 비공개)');
-  const workforceInfo=el('p','helper','로컬 인력 파일 조회 중');
+  const workforceInfo=el('p','helper','비공개 인력 정보는 조회 버튼을 누르면 이 PC에서만 읽습니다.');
   workforceInfo.setAttribute('role','status');
   const workforceRates=el('div','helper');
   const workforceRows=el('div','');
-  const workforceRefresh=btn('인력 정보 새로고침',()=>void refreshWorkforce());
+  const workforceRefresh=btn('인력 정보 조회',()=>void refreshWorkforce());
   workforcePanel.append(workforceHeading,workforceInfo,workforceRates,workforceRefresh,workforceRows);
   byId('view-collection').append(workforcePanel);
   const roleLabels={analyst:'분석가',developer:'개발자',executive:'임원',accounting:'경리'};
@@ -502,7 +502,7 @@
         '명 / 가정 연봉 합계 '+money(data.annual_assumed_salary_total_krw)+
         ' (급여 가정만 포함, 실제 회사 총원가·가용 공수 미확인)';
       workforceRates.textContent=data.roles.map(r=>r.role+' '+r.headcount+
-        '명 · '+money(r.cost_per_mm_krw)+'/MM · 가용 MM 미정').join(' / ');
+        '명 · '+money(r.cost_per_mm_krw)+'/MM · '+(r.available_mm===null?'가용 MM 미정':'가용 '+r.available_mm+'MM')).join(' / ');
       data.staff.forEach(person=>{
         const box=el('div','requirementRow');
         const heading=person.id+' · '+(roleLabels[person.role]||'미확인')+
@@ -557,7 +557,7 @@
   reload().then(() => {
     void refreshBatch().catch(()=>{});
     void refreshDiscovery();
-    void refreshWorkforce();
+    // 비공개 인력 조회는 사용자 버튼 클릭 시에만 실행한다.
     byId('procurementKeySave').addEventListener('click', () => void credentialAction('save'));
     byId('procurementKeyVerify').addEventListener('click', () => void credentialAction('verify'));
     byId('procurementKeyDelete').addEventListener('click', () => void credentialAction('delete'));

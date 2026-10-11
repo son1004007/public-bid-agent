@@ -379,7 +379,7 @@ class Handler(BaseHTTPRequestHandler):
     return self.respond({"status":"LOCAL_ONLY" if data is not None else "NOT_CONFIGURED",
                          "workforce":summarize_workforce(data) if data is not None else None,
                          "storage":"LOCAL_JSON"})
-   except (ValueError, json.JSONDecodeError, OSError):
+   except (ValueError, UnicodeError, json.JSONDecodeError, OSError):
     return self.respond({"error":"인력 설정 파일이 손상됐습니다. 로컬 원본을 확인하세요"},503)
   if self.path=="/api/state":
    with LOCK: data=load()

@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
+from pathlib import Path
 from decimal import Decimal, ROUND_HALF_UP
 
 ROLES = {"analyst": "분석가", "developer": "개발자",
@@ -57,7 +58,7 @@ def validate(data):
         if not isinstance(person, dict) or set(person) != STAFF_FIELDS:
             raise ValueError("개인정보 또는 알 수 없는 인력 필드가 있습니다")
         ident = person["id"]
-        if not isinstance(ident, str) or not re.fullmatch(r"[A-Z][A-Z0-9_-]{0,11}", ident) or ident in ids:
+        if not isinstance(ident, str) or not re.fullmatch(r"(?:[A-Z]{1,2}[1-9][0-9]{0,2}|[A-Z])", ident) or ident in ids:
             raise ValueError("비식별 코드가 잘못됐거나 중복됐습니다")
         ids.add(ident)
         role, grade = person["role"], person["grade"]
@@ -90,6 +91,9 @@ def validate(data):
 
 
 def load(path):
+    repo_root = Path(__file__).resolve().parents[1]
+    if path.resolve() == repo_root or repo_root in path.resolve().parents:
+        raise ValueError("인력 프로필은 소스 저장소 밖의 로컬 디렉터리에만 보관해야 합니다")
     if not path.is_file():
         return None
     with path.open(encoding="utf-8") as handle:
@@ -111,11 +115,15 @@ def summary(data):
         for grade in ("junior", "intermediate", "senior"):
             count = grouped[(role, grade)]
             if count:
+                members = [p for p in delivery if p["role"] == role and p["grade"] == grade]
+                known_capacity = all(p["available_mm"] is not None for p in members)
+                available = (float(sum(Decimal(str(p["available_mm"])) for p in members))
+                             if known_capacity else None)
                 roles.append({"role": ROLES[role] + " " + GRADES[grade],
                               "role_code": role, "grade": grade, "headcount": count,
                               "cost_per_mm_krw": _monthly(rates[grade]),
-                              "available_mm": None,
-                              "capacity_status": "UNKNOWN"})
+                              "available_mm": available,
+                              "capacity_status": "KNOWN" if known_capacity else "UNKNOWN"})
     return {
         "schema_version": 1,
         "headcount_total": len(staff),
@@ -123,10 +131,10 @@ def summary(data):
         "excluded_from_cost_headcount": len(staff) - len(delivery),
         "grade_counts": {g: sum(p["grade"] == g for p in delivery) for g in GRADES},
         "annual_assumed_salary_total_krw": sum(rates[p["grade"]] for p in delivery),
-        "monthly_assumed_salary_total_krw": _monthly(sum(rates[p["grade"]] for p in delivery)),
+        "monthly_assumed_salary_total_krw": sum(_monthly(rates[p["grade"]]) for p in delivery),
         "pricing_basis": "ANNUAL_SALARY_ASSUMPTION_DIVIDED_BY_12",
         "pricing_excludes": ["임원·경리 원가", "법정부담금", "퇴직급여", "간접비", "위험충당금"],
-        "capacity_status": "UNKNOWN" if any(p["available_mm"] is None for p in delivery) else "PARTIAL_OR_KNOWN",
+        "capacity_status": "UNKNOWN" if any(p["available_mm"] is None for p in delivery) else "KNOWN",
         "roles": roles,
         "staff": [{**p, "annual_assumed_salary_krw": (
             rates[p["grade"]] if p["role"] in TECH_ROLES else None
