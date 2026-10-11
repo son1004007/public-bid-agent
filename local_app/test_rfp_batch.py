@@ -132,6 +132,70 @@ class RfpBatchTests(unittest.TestCase):
             self.assertEqual(result["rfp_text"],"새로운 성공 내용")
             self.assertEqual(result["document_prior_versions"][0]["text"],"기존 사용자 검토 원문")
 
+    def test_two_managers_cannot_start_the_same_active_batch(self):
+        # 서로 다른 서버 인스턴스가 동일 사용자 디렉터리의 배치를 공유할 때
+        # 진행 중인 외부 작업을 중복 실행하거나 상태를 덮어쓰지 않아야 한다.
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            persist({"schema_version":1,"revision":0,"notices":[notice("1")],
+                "history":[{"id":"1","status":"user_confirmed"}],
+                "collection":{"status":"SUCCESS"}},root/"dashboard.json")
+            persist({"schema_version":1,"revision":0,"categories":["SW"],
+                "include_review":False},root/"department_profile.json")
+            entered,release=threading.Event(),threading.Event()
+            fetches=[]
+            def slow_fetch(url):
+                fetches.append(url)
+                entered.set()
+                if not release.wait(8): raise TimeoutError("synthetic fetch timed out")
+                return b"FAKE_RFP"
+            first=Manager(root,threading.RLock(),persist,
+                lambda *_:{"text":"기존 RFP"},fetcher=slow_fetch,delay=0)
+            second=Manager(root,threading.RLock(),persist,
+                lambda *_:{"text":"중복 배치"},fetcher=slow_fetch,delay=0)
+            try:
+                first.start(1)
+                self.assertTrue(entered.wait(4))
+                before=json.loads((root/"rfp_batch.json").read_text(encoding="utf-8"))
+                with self.assertRaisesRegex(ValueError,"실행|진행|배치"):
+                    second.start(1)
+                after=json.loads((root/"rfp_batch.json").read_text(encoding="utf-8"))
+                self.assertEqual(before,after)
+            finally:
+                release.set()
+                for m in (first,second):
+                    if m.worker:m.worker.join(9)
+            self.assertEqual(len(fetches),1)
+            board=json.loads((root/"dashboard.json").read_text(encoding="utf-8"))
+            self.assertEqual(board["history"],[{"id":"1","status":"user_confirmed"}])
+            self.assertEqual(first.status()["statistics"]["done"],1)
+
+    def test_thread_start_failure_releases_worker_lease_and_recovers_paused_state(self):
+        from unittest.mock import patch
+        from json_transaction import transaction
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            persist({"schema_version":1,"revision":0,"notices":[notice("1")],
+                "history":[],"collection":{"status":"SUCCESS"}},root/"dashboard.json")
+            persist({"schema_version":1,"revision":0,"categories":["SW"],
+                "include_review":False},root/"department_profile.json")
+            manager=Manager(root,threading.RLock(),persist,
+                lambda *_:{"text":"합성 본문"},fetcher=lambda _:b"PDF",delay=0)
+            with patch.object(threading.Thread,"start",side_effect=RuntimeError("synthetic thread start failure")):
+                with self.assertRaisesRegex(RuntimeError,"synthetic thread start failure"):
+                    manager.start(1)
+            ledger=json.loads((root/"rfp_batch.json").read_text(encoding="utf-8"))
+            self.assertEqual(ledger["status"],"PAUSED")
+            self.assertEqual(ledger["items"]["1"]["status"],"PENDING")
+            self.assertFalse(manager.worker and manager.worker.is_alive())
+            with transaction(root,timeout=0,name=".rfp-batch-worker.lock"):
+                self.assertTrue((root/"rfp_batch.json").exists())
+            restarted=Manager(root,threading.RLock(),persist,
+                lambda *_:{"text":"재개 후 합성 문서"},fetcher=lambda _:b"PDF",delay=0)
+            restarted.start(1)
+            restarted.worker.join(6)
+            self.assertEqual(restarted.status()["statistics"]["done"],1)
+
     def test_corrupt_state_fail_closed(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td)

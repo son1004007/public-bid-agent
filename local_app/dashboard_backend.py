@@ -240,8 +240,38 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
                         "procurement_classification", "procurement_code", "information_business",
                         "industry_restriction", "participation_restriction", "contract_method",
                         "requirements_status", "attachments"):
-                if old.get(key) != item[key]:
-                    old[key] = item[key]
+                incoming_value = item[key]
+                if key == "attachments":
+                    # 기존 RFP/상세 API 근거를 먼저 보존. 40개를 초과해도 기존
+                    # 근거가 뒤로 밀려 삭제되거나 동일 URL의 출처가 지워지면 안 된다.
+                    merged, by_url = [], {}
+                    for saved in old.get("attachments", []):
+                        if not isinstance(saved, dict):
+                            continue
+                        url = saved.get("url")
+                        if len(merged) >= 40:
+                            break
+                        # 같은 URL이어도 이전에 별도 기록한 첨부 증거는 삭제하지 않는다.
+                        if url:
+                            by_url.setdefault(url, len(merged))
+                        merged.append(copy.deepcopy(saved))
+                    for fresh in incoming_value:
+                        if not isinstance(fresh, dict):
+                            continue
+                        url = fresh.get("url")
+                        if url and url in by_url:
+                            # 새 공고의 비어 있지 않은 필드는 기존에 없을 때만 보충한다.
+                            original = merged[by_url[url]]
+                            for field, value in fresh.items():
+                                if (field not in original or original[field] in (None, "", [])) and value:
+                                    original[field] = copy.deepcopy(value)
+                        elif len(merged) < 40:
+                            if url:
+                                by_url[url] = len(merged)
+                            merged.append(copy.deepcopy(fresh))
+                    incoming_value = merged
+                if old.get(key) != incoming_value:
+                    old[key] = incoming_value
                     changed += 1
             # 기수집 원문과 담당자 판단을 보존한 상태에서 새 메타데이터로 분류를 다시 계산한다.
             apply_department_filter(old)

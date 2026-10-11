@@ -14,6 +14,7 @@ import threading
 from datetime import datetime, timezone
 from pathlib import PurePath
 from dashboard_backend import read as read_dashboard, ProviderError
+from json_transaction import transaction as dashboard_transaction
 from department_profile import load as load_department_profile
 from procurement_documents import SUPPORTED, DocumentFetchError, fetch_attachment, official_url
 from procurement_filter import apply as reclassify
@@ -116,6 +117,7 @@ class Manager:
         self.fetcher,self.delay=fetcher,delay
         self.stop_event=threading.Event()
         self.worker=None
+        self._worker_lease=None
 
     def _load(self):
         path=self.root/"rfp_batch.json"
@@ -140,8 +142,18 @@ class Manager:
             v=state["items"].get(ident,{}).get("status","PENDING")
             stats[{"DONE":"done","FAILED":"failed"}.get(v,"pending")]+=1
         live=bool(self.worker and self.worker.is_alive())
-        status="RUNNING" if live and not self.stop_event.is_set() else (
-            "PAUSED" if state["status"]=="RUNNING" else state["status"])
+        if live and not self.stop_event.is_set():
+            status="RUNNING"
+        elif state["status"]=="RUNNING":
+            # 프로세스가 다르면 self.worker가 없으므로 수명 잠금으로 상태 확인.
+            try:
+                with dashboard_transaction(self.root,timeout=0,
+                                           name=".rfp-batch-worker.lock"):
+                    status="PAUSED"
+            except TimeoutError:
+                status="RUNNING"
+        else:
+            status=state["status"]
         return {"status":status,"statistics":stats,"revision":state["revision"],
                 "updated_at":state["updated_at"],"rate_limit_seconds":self.delay}
 
@@ -151,10 +163,20 @@ class Manager:
     def start(self,limit=3,retry_failed=False):
         if type(limit) is not int or limit not in (1,3,10,25):
             raise ValueError("한 회차는 1, 3, 10 또는 25건만 가능합니다")
-        with self.lock:
+        with self.lock, dashboard_transaction(self.root):
             if self.worker and self.worker.is_alive():
                 raise ValueError("RFP 배치가 이미 실행 중입니다")
             state=self._load()
+            # 상태가 PAUSED여도 다운로드 중인 다른 프로세스의 worker가 살아 있다.
+            # 장부 상태와 관계없이 수명 잠금을 확인한 뒤 중단 작업을 복구한다.
+            active_probe=dashboard_transaction(
+                self.root,timeout=0,name=".rfp-batch-worker.lock")
+            try:
+                active_probe.__enter__()
+            except TimeoutError as error:
+                raise ValueError("다른 프로세스에서 RFP 배치가 실행 중입니다") from error
+            else:
+                active_probe.__exit__(None,None,None)
             board=read_dashboard(self.root/"dashboard.json")
             profile=load_department_profile(self.root/"department_profile.json")
             if not state["target_ids"]:
@@ -165,7 +187,12 @@ class Manager:
                 state["target_ids"]=[n["id"] for n in candidates]
                 state["items"]={n["id"]:{"status":"DONE" if n.get("document_status")=="EXTRACTED"
                     else "PENDING","attempts":0} for n in candidates}
-            # 파일 쓰기 직후 비정상 종료되어 ledger만 PENDING인 경우 재다운로드하지 않는다.
+            # 프로세스가 도중 종료된 작업은 실패로 격리하고 명시적인 retry만 허용한다.
+            # 다운로드 직전 IN_PROGRESS를 먼저 저장해 실패 ledger 저장 전 종료도 식별.
+            for ident,item in state["items"].items():
+                if item.get("status")=="IN_PROGRESS":
+                    item["status"]="FAILED"
+                    item["recovery_note"]="중단된 RFP 작업: 수동 재시도 필요"
             for n in board["notices"]:
                 if (n["id"] in state["items"] and n.get("document_status")=="EXTRACTED"):
                     state["items"][n["id"]]["status"]="DONE"
@@ -175,17 +202,42 @@ class Manager:
             pending=[i for i in state["target_ids"] if state["items"].get(i,{}).get("status")=="PENDING"
                      and (not retry_failed or i in failed_ids)]
             remaining=any(state["items"].get(i,{}).get("status")=="PENDING" for i in state["target_ids"])
-            state["status"]="RUNNING" if pending else ("PAUSED" if remaining else "COMPLETE")
-            self._save(state)
+            failed_waiting=any(state["items"].get(i,{}).get("status") in ("FAILED","IN_PROGRESS") for i in state["target_ids"])
+            state["status"]="RUNNING" if pending else ("PAUSED" if remaining or failed_waiting else "COMPLETE")
+            lease=None
             if pending:
-                self.stop_event.clear()
-                self.worker=threading.Thread(target=self._run,args=(pending[:limit],),
-                    daemon=True,name="rfp-sequential-batch")
-                self.worker.start()
+                # 장시간 문서 다운로드는 파일 트랜잭션 잠금 밖에서 실행한다.
+                # 별도 수명 잠금으로 타 프로세스의 중복 배치를 차단한다.
+                lease=dashboard_transaction(self.root,timeout=0,
+                                            name=".rfp-batch-worker.lock")
+                try:
+                    lease.__enter__()
+                except TimeoutError as error:
+                    raise ValueError("다른 프로세스에서 RFP 배치가 실행 중입니다") from error
+            try:
+                self._save(state)
+                if pending:
+                    self._worker_lease=lease
+                    self.stop_event.clear()
+                    self.worker=threading.Thread(target=self._run,args=(pending[:limit],),
+                        daemon=True,name="rfp-sequential-batch")
+                    self.worker.start()
+            except BaseException:
+                # 스레드 시작 실패 시 RUNNING ledger를 남기지 않고 재개 가능 상태로 복구.
+                try:
+                    if lease is not None:
+                        state["status"]="PAUSED"
+                        self._save(state)
+                    self.worker=None
+                finally:
+                    if lease is not None:
+                        self._worker_lease=None
+                        lease.__exit__(None,None,None)
+                raise
             return self._summary(state)
 
     def pause(self):
-        with self.lock:
+        with self.lock, dashboard_transaction(self.root):
             self.stop_event.set()
             state=self._load()
             if state["status"]=="RUNNING":
@@ -197,7 +249,17 @@ class Manager:
         try:
             for index,ident in enumerate(targets):
                 if self.stop_event.is_set(): break
-                with self.lock:
+                with self.lock, dashboard_transaction(self.root):
+                    state=self._load()
+                    if state["status"]=="PAUSED":
+                        break
+                    item=state["items"].get(ident)
+                    if not item or item.get("status")!="PENDING":
+                        continue
+                    item["status"]="IN_PROGRESS"
+                    item["attempts"]=item.get("attempts",0)+1
+                    item["updated_at"]=stamp()
+                    self._save(state)
                     board=read_dashboard(self.root/"dashboard.json")
                     notice=next((n for n in board["notices"] if n["id"]==ident),None)
                     source_signature=document_signature(notice)
@@ -213,7 +275,7 @@ class Manager:
                         # 한 공고의 비신뢰 문서/스키마 오류가 나머지 대기열을 중단시키지 않는다.
                         result={"document_status":"FAILED","document_error":"처리 오류",
                                 "document_evidence":[],"related_attachments":[]}
-                with self.lock:
+                with self.lock, dashboard_transaction(self.root):
                     state=self._load()
                     board=read_dashboard(self.root/"dashboard.json")
                     current=next((n for n in board["notices"] if n["id"]==ident),None)
@@ -252,12 +314,19 @@ class Manager:
                                 self.persist(board,self.root/"dashboard.json")
                                 outcome="DONE" if result["document_status"]=="EXTRACTED" else "FAILED"
                     item=state["items"].setdefault(ident,{"status":"PENDING","attempts":0})
-                    item.update({"status":outcome,"attempts":item.get("attempts",0)+1,"updated_at":stamp()})
+                    item.update({"status":outcome,"updated_at":stamp()})
                     self._save(state)
                 if index<len(targets)-1 and self.stop_event.wait(self.delay): break
         finally:
-            with self.lock:
-                state=self._load()
-                pending=any(state["items"].get(i,{}).get("status")=="PENDING" for i in state["target_ids"])
-                state["status"]="PAUSED" if pending else "COMPLETE"
-                self._save(state)
+            try:
+                with self.lock, dashboard_transaction(self.root):
+                    state=self._load()
+                    pending=any(state["items"].get(i,{}).get("status")=="PENDING" for i in state["target_ids"])
+                    failed_waiting=any(state["items"].get(i,{}).get("status") in ("FAILED","IN_PROGRESS") for i in state["target_ids"])
+                    state["status"]="PAUSED" if pending or failed_waiting else "COMPLETE"
+                    self._save(state)
+            finally:
+                lease=self._worker_lease
+                self._worker_lease=None
+                if lease is not None:
+                    lease.__exit__(None,None,None)

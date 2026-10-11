@@ -471,3 +471,29 @@
 - 최신 로컬 수정분의 GitHub 푸시, 운영 포트 8765 적용, main 병합 **미수행**. Draft PR #1 개발 브랜치에서 다음 단계 진행.
 
 - **인력요건 기능 최신 로컬본 독립 검수 최종 결론:** API/UI/비공개 집계 경계 PASS, 파서 수정 10유형 독립 Codex PASS (입력 SHA-256 `87ff93415c4e3bb5b67367c72f5c09229e2234efdce83d17719009334ff433ed`). Python 전체 150 PASS, 합성 Chrome 버튼 흐름 및 데이터 불변 PASS(재실행), 개인 PC 실제 공고 2,223건 원본 체크섬 불변. 이 기능만 `REVIEWED`; 사용자의 실제 인력 법적 자격, 전체 RFP 정확도, 전체 앱 운영 검증은 아직 `UNVERIFIED`. GitHub 최신 푸시/운영 8765 변경/main 병합 미수행.
+
+## 2026-10-12 RFP JSON 다중 프로세스 경합 수정
+
+- 진단: 기존 `server.py`의 `LOCK`은 프로세스 내부만 보호해 2개 독립 Python 프로세스의 `dashboard.json` read-modify-write 경합에서 늦게 저장한 프로세스가 다른 변경을 덮어쓸 수 있었다. `persist()`의 `os.replace`는 파일 손상 방지이지 유실 갱신 보호가 아니었다.
+- 수정: `json_transaction.py`에서 OS 파일 잠금을 도입하여 server/dashboard API와 RFP Manager가 공통 JSON 트랜잭션을 수행한다. 별도 RFP worker lease는 다중 프로세스 중복 배치를 차단하고 다른 인스턴스의 pause를 확인한다. 공식 재수집 시 상세 RFP 첨부 보존도 추가.
+- 증거: Windows 합성 별도 프로세스 동시 업데이트, lock timeout·프로세스 강제 종료, 중복 worker·pause, URL 합치기 테스트 PASS. 전체 Python/Node/독립 검수/CI는 각 최신 결과 확인 후 기록하며, 실제 공고 원본 및 인력자료 변경 금지.
+- 개발 브랜치 Draft PR 유지, main 병합 및 기존 사용자 포트 8765 서버 적용 금지. 파일 잠금은 동일 로컬 파일시스템의 협력 프로세스에 한정. 불변조건 검증 후 본문 확보 작업 확대.
+
+### 2026-10-12 RFP 배치 JSON 다중 프로세스 충돌 수정
+
+- `json_transaction.py`: Windows `msvcrt` / POSIX `flock` 파일 잠금과 동일 프로세스의 `threading.Lock`을 중첩해 `dashboard.json` read-modify-write 충돌 차단. OS가 종료된 배치의 수명 잠금은 자동 해제되며 잠금 표식 파일은 보존한다.
+- `rfp_batch.py`: 배치 중복 시작 방지 `.rfp-batch-worker.lock`, Thread.start 실패 시 PAUSED 복구, 다른 관리자 일시중지 반영(현재 처리 1건 완료 후 중단), 최신 문서 서명 비교 후 저장.
+- `server.py`: 대시보드 변경 POST 경로에서 동일 트랜잭션을 사용하고 잠금 시간 초과를 로컬 HTTP 503으로 안전 처리.
+- `dashboard_backend.py`: 새 공고 재수집이 과거 공식 상세 첨부/RFP/의사결정 이력을 덮어쓰지 않도록 기존 첨부 병합.
+- 대상 검증: 임시 합성 JSON에서 Windows의 두 실제 Python 프로세스 동시 저장, 같은 프로세스의 서로 다른 Manager 중복 시작, 배치 수명 잠금, 비정상 종료·일시중지·재개, 파일 보존. 실제 2,223건 운영 대시보드 직접 쓰기 미수행.
+- 독립 AGY print 120초 제한으로 출력 미확인(검수 부채), Codex 독립 검수 지적 중 실제 Thread.start 결함 수정, 일시중지 1건 완료는 설계 계약에 부합. 새 최종 검수와 CI 결과는 별도 확인 필요. Draft PR 유지, main 병합·운영 적용 금지.
+
+- **RFP 배치 JSON 충돌 수정 로컬 검증 결과:** Windows Python 전체 161 PASS, 실제 두 Python 프로세스·배치 작업자 수명 잠금·중복 Manager·스레드 실패·일시중지·기존 결정/첨부 보존 합성 검증. JS/Git diff 체크 PASS. 사용자 공고 원본 2,223건 SHA 체크 보존.
+- Codex 독립 재검수는 협조 프로세스 조건에서 핵심 lost-update/worker-singleton 통과로 보되, 악성 잠금파일 교체·정전 내구성은 범위 밖/미보장. AGY 최종 출력은 timeout으로 미확보. `REVIEWED`/main 병합/운영 8765 적용 금지. 근거 `docs/reviews/RFP_JSON_LOCK_REVIEW_2026-10-12.md`.
+
+### 2026-10-12 RFP JSON 동시성 수정 최신 검증 확정
+
+- **실제 Windows Python 전체 회귀 166 PASS**, JS 문법 및 Git diff 검사 PASS. 이는 합성 데이터와 임시 로컬 HTTP 테스트의 결과이며 실제 사용자 원본 JSON의 쓰기 테스트가 아니다.
+- RFP batch/legacy enrich의 동일 JSON 충돌을 공통 프로세스 파일 잠금과 최신 근거 서명 비교로 보호하고, 다른 서버 작업자 수명 잠금·부모 프로세스 종료 후 IN_PROGRESS 복구·실패만 명시적 재시도·기존 PENDING의 정상 재개·최신 인력/원문/판단 보존을 테스트했다.
+- 독립 Codex 첫/후속 검수 중 근거가 있는 stale enrich·FAILED ledger·완료 상태·일시중지 worker 경합 지적을 수정했다. 최종 지적 중 FAILED 혼재 시 미처리 PENDING까지 전면 재개 금지는 기존 명세와 충돌하여 명시적 재개 테스트로 기각했다. AGY/Gemini 결과는 미확보이므로 전체 독립 최종 승인 완료로 과장하지 않는다.
+- 향후 실제 운영 적용 전에는 현행 8765 로컬 서버를 안전하게 재시작하여 모든 writer가 공통 파일 잠금을 사용하는지 확인하고, 복구용 버전 백업·강제 종료/전원 장애 검증을 별도 수행해야 한다.

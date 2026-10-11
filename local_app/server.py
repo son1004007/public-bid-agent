@@ -40,7 +40,8 @@ from department_profile import (
 from procurement_filter import apply as reclassify_notice
 from procurement_related import fetch as fetch_related_constraints
 from procurement_documents import extract as extract_official_document, DocumentFetchError
-from rfp_batch import Manager as RfpBatchManager
+from rfp_batch import Manager as RfpBatchManager, document_signature
+from json_transaction import transaction as dashboard_transaction
 from procurement_discovery import shortlist as shortlist_unreviewed
 from procurement_credentials import (
     CredentialError, active_key as procurement_key, status as procurement_key_status,
@@ -489,14 +490,14 @@ class Handler(BaseHTTPRequestHandler):
        for notice in partial:incoming_by_id[notice["id"]]=notice
       incoming=list(incoming_by_id.values())
     except ProviderError:
-     with LOCK:
+     with LOCK, dashboard_transaction(ROOT):
       try:
        old=read_dashboard(ROOT / "dashboard.json")
        persist(failed_collection(old,now()),ROOT / "dashboard.json")
       except (ValueError,json.JSONDecodeError,OSError):
        return self.respond({"error":"대시보드 저장파일 손상; 기존 파일을 덮어쓰지 않았습니다"},503)
      return self.respond({"error":"공식 공고 조회에 실패했습니다. 기존 수집 데이터는 유지됩니다"},503)
-    with LOCK:
+    with LOCK, dashboard_transaction(ROOT):
      try: state=read_dashboard(ROOT / "dashboard.json")
      except (ValueError,json.JSONDecodeError,OSError):
       return self.respond({"error":"저장된 공고 파일 오류; 덮어쓰지 않았습니다"},503)
@@ -532,7 +533,7 @@ class Handler(BaseHTTPRequestHandler):
     try: related=fetch_related_constraints(key,number,order)
     except ProviderError:
      return self.respond({"error":"조달청 면허·지역·첨부 상세 API 조회 실패; 기존 내용 유지"},503)
-    with LOCK:
+    with LOCK, dashboard_transaction(ROOT):
      try: state=read_dashboard(ROOT / "dashboard.json")
      except (ValueError,json.JSONDecodeError,OSError):
       return self.respond({"error":"현재 공고 저장 오류"},503)
@@ -556,7 +557,7 @@ class Handler(BaseHTTPRequestHandler):
      persist(state,ROOT / "dashboard.json")
      return self.respond({"ok":True,"dashboard":state,"related":True,"storage":"LOCAL_JSON"})
    if self.path=="/api/dashboard/reclassify":
-    with LOCK:
+    with LOCK, dashboard_transaction(ROOT):
      try: state=read_dashboard(ROOT / "dashboard.json")
      except (ValueError,json.JSONDecodeError,OSError):
       return self.respond({"error":"대시보드 데이터 손상; 재분류 중단"},503)
@@ -605,21 +606,35 @@ class Handler(BaseHTTPRequestHandler):
                        "document_source_name":detail["source_name"],"document_error":""}
      except (DocumentFetchError,ValueError,OSError):
       results[ident]={"document_status":"FAILED","document_error":"첨부 다운로드 또는 추출을 완료하지 못했습니다"}
-    with LOCK:
+    with LOCK, dashboard_transaction(ROOT):
      try: current=read_dashboard(ROOT / "dashboard.json")
      except (ValueError,json.JSONDecodeError,OSError):
       return self.respond({"error":"수집 중 공고 데이터 손상"},503)
+     applied=0
+     conflicts=0
+     extracted=0
      for n in current["notices"]:
-      if n["id"] in results:
-       n.update(results[n["id"]])
-       reclassify_notice(n)
-     current["revision"]+=1
-     persist(current,ROOT / "dashboard.json")
+      if n["id"] not in results:
+       continue
+      original=todo[n["id"]]
+      if (document_signature(n)!=document_signature(original)
+          or (n.get("document_status")=="EXTRACTED"
+              and results[n["id"]]["document_status"]!="EXTRACTED")):
+       # 배치 또는 다른 요청이 더 최신 문서를 기록한 경우 완전히 보존한다.
+       conflicts+=1
+       continue
+      n.update(results[n["id"]])
+      reclassify_notice(n)
+      applied+=1
+      extracted+=int(results[n["id"]]["document_status"]=="EXTRACTED")
+     if applied:
+      current["revision"]+=1
+      persist(current,ROOT / "dashboard.json")
      return self.respond({"ok":True,"dashboard":current,"attempted":len(ids),
-                          "extracted":sum(1 for x in results.values() if x["document_status"]=="EXTRACTED"),
-                          "storage":"LOCAL_JSON"})
+                          "applied":applied,"skipped_conflicts":conflicts,
+                          "extracted":extracted,"storage":"LOCAL_JSON"})
    if self.path=="/api/dashboard/action":
-    with LOCK:
+    with LOCK, dashboard_transaction(ROOT):
      try:
       state=read_dashboard(ROOT / "dashboard.json")
       profile=load_decision_profiles(ROOT / "decision_profiles.json")
@@ -719,6 +734,8 @@ class Handler(BaseHTTPRequestHandler):
      else: return self.respond({"error":"없는 경로"},404)
     persist(data)
     return self.respond({"ok":True,"case":case,"summary":summary(case)})
+  except TimeoutError:
+   return self.respond({"error":"대시보드·RFP 동시 저장 중입니다. 원본은 보존되었으니 다시 시도하세요"},503)
   except (ValueError,UnicodeError,json.JSONDecodeError) as e:
    return self.respond({"error":str(e)[:250]},400)
   except Exception:

@@ -199,3 +199,12 @@ Codex 1개가 선택된 경우 LangGraph는 independent_analysis에서 1회 호�
 로컬 운영 기준 `operations.json` schema_version=1, revision 카운터 및 `roles[{role,cost_per_mm_krw,available_mm}]`, `overhead_pct`, `reserve_pct`를 보유. 직원 개인 급여/이름을 저장하지 않음. 공고별 `cases.json` 각 case에 `cost_plan`(역할별 투입 MM, 외주비/직접경비/제안비, VAT 제외 예정 공급가액)과 계산된 `cost_estimate`(revision, 금액, 경고) 저장. GET `/api/operations`, POST `/api/operations/save`, POST `/api/cost-plan`; 기존 localhost Host/Origin/CSRF, 잠금, 원자 저장, optimistic revision 검증 유지. 순수 함수 `operations.calculate`로 인건비/간접비/충당/이익률 결정적 계산. 기준정보 업데이트 시 기존 견적을 명시적으로 stale 표시(기존 값 변경하지 않음). `prompt_for`는 원래 입찰공고 설명/첨부 텍스트만 전달하며 운영 기준·원가계획을 자동 직렬화하지 않음. 배치계획/수금 현금흐름/실제 회계·법적 입찰 적격 추정은 이 수직 슬라이스 범위 밖.
 
 - `operations.json.registers`: 8개 자료 분류별 `status` (`not_collected`, `needs_refresh`, `reviewed`), 승인된 짧은 요약(`summary`), 문서명(`source`), 확인일(`reviewed_on`). 화면/GET 응답의 메타데이터는 `REFERENCE_SECTIONS` 단일 진실이며, 내용은 Codex/Claude 및 견적 원가에 자동 직렬화하지 않는다. 이는 단순 자료 준비도 기록이지 원장 통합/민감자료 검증이 아님.
+
+## 2026-10-12 RFP 배치와 대시보드의 JSON 프로세스 간 경합 보호
+
+- 기존 `os.replace` 원자 쓰기를 유지하고, 서로 다른 로컬 Python 프로세스의 **최신 JSON 읽기 → 검증/병합 → revision 증가 → 저장** 전체를 동일 `.dashboard-rfp.lock` 파일에 대한 운영체제 잠금으로 직렬화한다. Windows는 `msvcrt.locking`, Linux는 `fcntl.flock`을 사용하며 추가 외부 패키지는 없다. 서버 내부 `threading.RLock`은 그대로 유지한다.
+- 대상 경로: 공식 공고 수집 성공/실패, 상세 면허·첨부, 재분류, RFP enrichment, 담당자 최종 판단, RFP 배치 결과 및 `rfp_batch.json` 진행 원장. 외부 공공 API/첨부 다운로드 및 OCR 중에는 JSON 트랜잭션 잠금을 보유하지 않는다.
+- `.rfp-batch-worker.lock`의 수명 잠금으로 다른 프로세스의 같은 배치 중복 실행을 차단하고, 별도 프로세스에서 실행한 pause의 원장 상태를 다음 문서 처리 전에 확인한다. 비정상 프로세스 종료 시 운영체제가 잠금을 해제한다.
+- 공고 재수집은 이미 확보한 공식 상세 RFP 첨부 링크를 덮어쓰지 않고 URL 기준 중복 제거해 유지한다. 이전 RFP 증거·사람 결정·판단 이력은 읽기-병합 경로에서 보존한다.
+- 잠금 획득 제한시간 10초 초과 시 저장 전 실패 처리(HTTP 503). 잠금 파일에는 비밀·공고·인력 데이터가 없으며 활성/비활성 잠금 파일을 임의 삭제하지 않는다. **프로그램 이외의 직접 파일 수정, 여러 컴퓨터 간 네트워크 공유 파일 시스템의 잠금 보장, 두 JSON 파일을 통째로 하나의 DB 트랜잭션처럼 커밋하는 기능은 이 변경의 범위 밖**이다.
+- 검증: `local_app/test_json_transaction.py`에서 별도 Python 프로세스 2개 실제 동시 갱신의 revision/이력/원문 보존, 제한시간, 강제 종료 후 잠금 회수, 배치 중복 실행 차단·원격 pause, 재수집 후 RFP 첨부 보존을 합성 임시 디렉터리로 테스트한다. 실제 사용자 `dashboard.json`/`cases.json`/`workforce.json`은 수정하지 않는다.
