@@ -15,7 +15,7 @@
 ## 데이터·상태/오류 계약
 
 - `GET /api/dashboard`: dashboard.json의 공고 목록/판단이력/수집상태, 저장 revision, CSRF, 키 설정 여부만 전달한다. 키 값 자체 미노출.
-- `POST /api/dashboard/collect`: 키 확인·고정 HTTPS 도메인·timeout 12초·응답 최대 1MB·최대 3페이지/100행, 24시간 윈도우. 페이지 누락/응답 포맷 오류는 실패, 기존 공고 유지.
+- `POST /api/dashboard/collect`: 키 확인·고정 HTTPS 도메인·timeout 12초·응답 최대 1MB·최대 20페이지/100행, 24시간 윈도우. 페이지 누락/응답 포맷 오류는 실패, 기존 공고 유지.
 - `POST /api/dashboard/action`: `expected_revision` 필요, ID 존재 검증, recommendation/human_bid/human_no_bid/human_hold enum, 사람 결정 사유 필수. 409 동시 변경·400 잘못된 입력·503 손상파일. 저장 시 프로필 버전 및 별도 스냅샷 기록.
 - 수집 메타의 `last_scanned`은 API에서 읽은 행 수, `last_count`는 제목 기반 관심공고 수이며 전체 유효 공고 수/수주 대상이 아니다.
 - 식별자 `G2B-{bidNtceNo}-{bidNtceOrd}`: 원문 차수별 보존. 동차수 메타 수정은 목록 항목 갱신, 사용자 결정/이력 유지. 취소는 **취소로 자동 전환하지 않는다**.

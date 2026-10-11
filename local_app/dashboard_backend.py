@@ -25,8 +25,8 @@ KEY_ENV = "DATA_GO_KR_SERVICE_KEY"
 KEYWORDS = ("인공지능", "AI", "LLM", "생성형", "소프트웨어", "SW", "데이터", "플랫폼", "정보시스템",
             "시스템 구축", "빅데이터", "머신러닝", "클라우드", "API", "분석", "RAG")
 MAX_ROWS = 100
-MAX_PAGES = 3
-MAX_RESPONSE = 1024 * 1024
+MAX_PAGES = 20
+MAX_RESPONSE = 4 * 1024 * 1024
 KST = timezone(timedelta(hours=9))
 
 
