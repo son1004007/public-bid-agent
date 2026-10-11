@@ -19,6 +19,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from decision_profiles import clean_policy, clean_weights
+from procurement_filter import apply as apply_department_filter
 
 API_URL = "https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch"
 KEY_ENV = "DATA_GO_KR_SERVICE_KEY"
@@ -105,23 +106,45 @@ def normalize(item: dict) -> dict | None:
         raise ProviderError("필수 공고번호·차수 누락")
     if not title:
         raise ProviderError("입찰공고 제목 누락")
-    if not any(word.casefold() in title.casefold() for word in KEYWORDS):
-        return None
+    # 제목 키워드로 공고를 탈락시키지 않는다. 공공조달분류/원문 증빙은 이후 단계에서 분류.
     closing = _str(item.get("bidClseDt"), 40)
     org = _str(item.get("ntceInsttNm") or item.get("dminsttNm"), 120) or "기관 미확인"
     budget = _str(item.get("asignBdgtAmt"), 40)
     raw_url = item.get("bidNtceDtlUrl") or item.get("bidNtceUrl")
-    return {
+    attachments = []
+    for n in range(1, 11):
+        name = _str(item.get(f"ntceSpecFileNm{n}"), 200)
+        url = _official_url(item.get(f"ntceSpecDocUrl{n}"))
+        if name or url:
+            attachments.append({"name": name or "첨부파일 " + str(n), "url": url, "source": "공고규격서"})
+    # 공공데이터포털에 표시되는 것은 첨부 '링크'이며 문서 본문 자체가 아님.
+    normalized = {
         "id": "G2B-" + no + "-" + order,
         "bid_no": no, "bid_order": order, "title": title, "org": org,
         "cat": _category(title), "budget": budget or "미확인",
         "end": closing or "미확인", "source": "G2B_OFFICIAL_API",
         "source_url": _official_url(raw_url),
         "observed_at": datetime.now(KST).isoformat(),
+        "notice_kind": _str(item.get("ntceKindNm"), 60),
+        "notice_published_at": _str(item.get("bidNtceDt"), 40),
+        "qualification_deadline": _str(item.get("bidQlfctRgstDt"), 40),
+        "procurement_classification": _str(item.get("pubPrcrmntClsfcNm"), 220),
+        "procurement_code": _str(item.get("pubPrcrmntClsfcNo"), 40),
+        "information_business": _str(item.get("infoBizYn"), 3),
+        "industry_restriction": _str(item.get("indstrytyLmtYn"), 3),
+        "participation_restriction": _str(item.get("bidPrtcptLmtYn"), 3),
+        "contract_method": _str(item.get("cntrctCnclsMthdNm"), 110),
+        "requirements_status": "UNKNOWN",
+        "attachments": attachments,
+        "rfp_text": "",
+        "document_status": "PENDING" if attachments else "NOT_AVAILABLE",
+        "document_source_name": "",
+        "document_error": "",
         "rec": None, "final": None, "reasons": [],
         "finalReason": "", "policyRef": None, "checked": "원문/참가자격 미검증",
         "fit": None, "margin": None, "hard": "unknown", "ops": None, "exp": None, "score": None,
     }
+    return apply_department_filter(normalized)
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -209,10 +232,16 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
         if item["id"] in existing:
             old = existing[item["id"]]
             # 변경된 공식 메타데이터만 덮어쓰며 사람 결정 및 판단 이력은 보존한다.
-            for key in ("title", "org", "cat", "budget", "end", "source_url", "observed_at"):
+            for key in ("title", "org", "cat", "budget", "end", "source_url", "observed_at",
+                        "notice_kind", "notice_published_at", "qualification_deadline",
+                        "procurement_classification", "procurement_code", "information_business",
+                        "industry_restriction", "participation_restriction", "contract_method",
+                        "requirements_status", "attachments"):
                 if old.get(key) != item[key]:
                     old[key] = item[key]
                     changed += 1
+            # 기수집 원문과 담당자 판단을 보존한 상태에서 새 메타데이터로 분류를 다시 계산한다.
+            apply_department_filter(old)
         else:
             existing[item["id"]] = copy.deepcopy(item)
             changed += 1

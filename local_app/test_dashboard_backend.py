@@ -60,7 +60,10 @@ class ProcurementUnitTests(unittest.TestCase):
         self.assertIsNone(n["fit"])
         self.assertIsNone(n["margin"])
         self.assertEqual(n["hard"], "unknown")
-        self.assertIsNone(db.normalize({**RAW, "bidNtceNm": "사무실 책상 구매"}))
+        retained = db.normalize({**RAW, "bidNtceNm": "사무실 책상 구매"})
+        self.assertIsNotNone(retained)
+        self.assertEqual(retained["department_status"], "REVIEW")
+        self.assertEqual(retained["legal_eligibility"], "UNVERIFIED")
         with self.assertRaises(db.ProviderError):
             db.normalize({"bidNtceNm": "AI 용역"})
 

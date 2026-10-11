@@ -166,3 +166,9 @@ GET `/api/procurement-key`, POST `/api/procurement-key/save`, POST `/api/procure
 로컬 `test_dashboard_backend.py`는 키 공급자를 모킹해 사용자 DPAPI 키와 실제 공공 API 호출을 회귀 테스트에서 배제합니다. 실 API 호출은 별도 명시적 검증 시에만 진행합니다.
 
 실제 API 모드에서는 합성 시안의 KPI/수집 관리 제목이 공식 API·수동 수집 상태로 교체됩니다. 실제 공고 목록의 키워드 해당 건수를 확정 적격 공고로 오해하지 않도록 안내합니다.
+
+### 전체 용역 수집 및 공식 상세 첨부 분류
+
+조달청 용역 1일/7일 조회는 제목과 무관하게 전체 공고를 JSON에 보존합니다. 필터는 독립된 category metadata, deadline/window, document status를 사용합니다. 회사 업종/면허/나라장터 등록을 검증하지 않은 입찰 참가자격은 미확인입니다.
+
+로컬 API: GET /api/department-profile, POST /api/department-profile/save (버전 충돌 검사); POST /api/dashboard/enrich (공고 ID 하나), POST /api/dashboard/enrich-batch (현재 후보 최대 5개). API는 기존 loopback/Origin/CSRF 검사를 따르고 입력 URL 대신 서버에 이미 저장한 공식 첨부 URL만 사용합니다. 허용 형식 PDF/HWP/HWPX/DOCX/TXT, 8MiB, 리다이렉트 불허, 별도 추출 프로세스, 최대 12,000자 저장. 오류는 재검토 상태로 보존합니다.

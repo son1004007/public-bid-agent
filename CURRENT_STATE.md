@@ -376,3 +376,11 @@
 - GitHub Actions 최신 Push [38114456978](https://github.com/son1004007/public-bid-agent/actions/runs/38114456978) / PR [38114459846](https://github.com/son1004007/public-bid-agent/actions/runs/38114459846) SUCCESS.
 - [실 API/Chrome 검증 상세보고](docs/reviews/G2B_LIVE_COLLECTION_UI_E2E_2026-10-11.md).
 - 공개배포·main 병합 HOLD: 독립 AGY/Gemini/Codex 최종 보안/의미 검수 및 사용자 최종 UI 승인 미완료.
+
+## 2026-10-11 전체 용역·과업 원문 기반 관심 분야 분류 구현
+
+사용자 요청: 제목 필터 누락 방지, 조달청 전체 용역 원본 저장 후 공고 상세·과업내용·기한·부서 카테고리 필터 적용.
+
+구현: procurement_filter.py 로 AI/SW/DATA/SECURITY 분류와 REVIEW/OUT_OF_SCOPE 및 취소/마감/등록기한 분리. department_profile.json 버전 저장. 공공조달 분류/정보화사업/업종 제한/규격서1~10 URL/파일명/입찰공고 상태 보존. procurement_documents.py 공식 g2b HTTPS 첨부 안전 다운로드+로컬 subprocess 텍스트 추출/재분류, 최대 5건 요청 배치. 전체 원본 DB에서 삭제하지 않음.
+
+참가자격 실제 충족, RFP 파서가 처리하지 못하는 파일, 별도 면허·지역 상세 API, AI 모델 근거 분석과 독립 최종 검수는 미완료. 실제 Windows/CI/브라우저 검증 전까지 구현 결과를 VERIFED로 간주하지 않음. Draft/main merge HOLD.

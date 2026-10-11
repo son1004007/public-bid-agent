@@ -30,6 +30,12 @@ from dashboard_backend import (
     update_collection, failed_collection, record_action, key_available, verify_key, KST,
 )
 from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
+from department_profile import (
+    DepartmentProfileConflict, load as load_department_profile,
+    modify as modify_department_profile,
+)
+from procurement_filter import apply as reclassify_notice
+from procurement_documents import extract as extract_official_document, DocumentFetchError
 from procurement_credentials import (
     CredentialError, active_key as procurement_key, status as procurement_key_status,
     save_key as save_procurement_key, delete_key as delete_procurement_key,
@@ -325,6 +331,14 @@ class Handler(BaseHTTPRequestHandler):
    return self.wfile.write(b)
   if self.path=="/api/procurement-key":
    return self.respond({"credential":procurement_key_status(),"csrf":TOKEN})
+  if self.path=="/api/department-profile":
+   with LOCK:
+    try: profile=load_department_profile(ROOT / "department_profile.json")
+    except (ValueError,json.JSONDecodeError,OSError):
+     return self.respond({"error":"부서 관심분야 설정이 손상되었습니다"},503)
+   return self.respond({"profile":profile,"csrf":TOKEN,"categories":{
+    "AI":"AI 서비스·LLM","SW":"SW·업무시스템 개발",
+    "DATA":"데이터 수집·분석·플랫폼","SECURITY":"보안·인증·감사 지원 SW"}})
   if self.path=="/api/dashboard":
    with LOCK:
     try: state=read_dashboard(ROOT / "dashboard.json")
@@ -435,6 +449,54 @@ class Handler(BaseHTTPRequestHandler):
      updated["collection"]["lookback_days"]=days
      persist(updated,ROOT / "dashboard.json")
      return self.respond({"ok":True,"dashboard":updated,"storage":"LOCAL_JSON"})
+   if self.path=="/api/department-profile/save":
+    with LOCK:
+     try: current=load_department_profile(ROOT / "department_profile.json")
+     except (ValueError,json.JSONDecodeError,OSError):
+      return self.respond({"error":"설정 파일 손상으로 덮어쓰기를 중단했습니다"},503)
+     try: updated=modify_department_profile(current,payload)
+     except DepartmentProfileConflict as e:
+      return self.respond({"error":str(e)},409)
+     persist(updated,ROOT / "department_profile.json")
+     return self.respond({"ok":True,"profile":updated})
+   if self.path in ("/api/dashboard/enrich","/api/dashboard/enrich-batch"):
+    with LOCK:
+     try: snapshot=read_dashboard(ROOT / "dashboard.json")
+     except (ValueError,json.JSONDecodeError,OSError):
+      return self.respond({"error":"공고 저장 파일 손상"},503)
+     if self.path=="/api/dashboard/enrich":
+      if not isinstance(payload.get("id"),str) or not any(n["id"]==payload["id"] for n in snapshot["notices"]):
+       raise ValueError("공고 식별자 오류")
+      ids=[payload["id"]]
+     else:
+      ids=[n["id"] for n in snapshot["notices"] if n.get("document_status") in ("PENDING","FAILED")
+       and n.get("window_status") in ("OPEN","REGISTRATION_REVIEW","UNKNOWN")
+       and n.get("department_status") in ("CANDIDATE","REVIEW")
+       and n.get("attachments")][:5]
+     todo={n["id"]:copy.deepcopy(n) for n in snapshot["notices"] if n["id"] in ids}
+    if not ids:
+     return self.respond({"ok":True,"dashboard":snapshot,"attempted":0,"storage":"LOCAL_JSON"})
+    results={}
+    for ident in ids:
+     try:
+      detail=extract_official_document(todo[ident],extract_in_subprocess)
+      results[ident]={"document_status":"EXTRACTED","rfp_text":detail["text"],
+                       "document_source_name":detail["source_name"],"document_error":""}
+     except (DocumentFetchError,ValueError,OSError):
+      results[ident]={"document_status":"FAILED","document_error":"첨부 다운로드 또는 추출을 완료하지 못했습니다"}
+    with LOCK:
+     try: current=read_dashboard(ROOT / "dashboard.json")
+     except (ValueError,json.JSONDecodeError,OSError):
+      return self.respond({"error":"수집 중 공고 데이터 손상"},503)
+     for n in current["notices"]:
+      if n["id"] in results:
+       n.update(results[n["id"]])
+       reclassify_notice(n)
+     current["revision"]+=1
+     persist(current,ROOT / "dashboard.json")
+     return self.respond({"ok":True,"dashboard":current,"attempted":len(ids),
+                          "extracted":sum(1 for x in results.values() if x["document_status"]=="EXTRACTED"),
+                          "storage":"LOCAL_JSON"})
    if self.path=="/api/dashboard/action":
     with LOCK:
      try:

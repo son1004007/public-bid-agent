@@ -75,6 +75,10 @@ jobs:
             local_app/server.py
             local_app/decision_profiles.py
             local_app/dashboard_backend.py
+            local_app/procurement_filter.py
+            local_app/procurement_documents.py
+            local_app/department_profile.py
+            local_app/test_procurement_filter.py
             local_app/procurement_credentials.py
             local_app/test_procurement_credentials.py
             local_app/test_dashboard_backend.py
