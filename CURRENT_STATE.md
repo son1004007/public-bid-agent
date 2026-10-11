@@ -316,3 +316,14 @@
 - 기존 실제 사용자 `cases.json`의 SHA-256 재시작 전후 동일, 기존 공고 5건 유지. 테스트용 임시 Chrome·서버·데이터/스크립트 정리.
 - 이 결과는 **Windows 합성 브라우저 E2E 및 기존 데이터 비파괴 재시작의 VERIFIED** 근거다. 새 사용자 프로필 실사용 데이터 저장·사용자 UX 승인·독립 AGY/Gemini/Codex 리뷰는 아직 미완료. Draft PR 및 main merge HOLD 유지.
 - 상세: [Windows E2E 보고서](docs/reviews/DECISION_PROFILES_WINDOWS_E2E_2026-10-11.md).
+
+
+## 2026-10-11 공고 중심 백엔드 수직 슬라이스 진행
+
+- 최신 사용자 지시: 새 퍼블리싱 대시보드를 **구현의 기준 UI**로 삼고, 공고·상세·수집상태·판단 이력 API를 연결한다.
+- 로컬 `local_app/dashboard_backend.py`: 조달청 공식 용역 입찰공고 조회 HTTPS 읽기 전용 어댑터, 최근 1일·최대 3페이지·키워드 임시 필터, 독립 dashboard.json, 수집 오류/0건 분리, 공고번호·차수 기준 upsert, 사람의 결정/이력 불변.
+- `local_app/server.py`: `/api/dashboard` GET과 `/api/dashboard/collect`, `/api/dashboard/action` POST; 로컬 Host/Origin/CSRF, 409 충돌, 인증키 미설정 424, 외부 조회 실패 503. 기존 cases/operations 프로세스는 보존.
+- `frontend/public/dashboard-live.js`: 로컬 /decision-preview에만 서버 응답으로 기존 8개 합성 자료를 교체하고, 공식 메타데이터/미확인 자격/사람 결정·이력을 별도로 렌더링. 독립 파일 시안은 시연 상태 유지.
+- 정기 스케줄러, 전체 공고 커버리지, 공식 정정/취소, 실제 문서·RFP/모델 분석 및 점수, 실제 사용자별 로그인/공개 배포는 미구현.
+- 인증키는 별도 환경변수 `DATA_GO_KR_SERVICE_KEY`로만 처리. 실키 기반 실제 API HTTP 성공과 사용자 데이터 운영은 별도 검증 전.
+- 검증 상태: **구현 중 / 최신 커밋 CI·PC 실행 결과 확인 전**. 독립 최종 검수·사용자 UX 승인·main 병합은 계속 HOLD.

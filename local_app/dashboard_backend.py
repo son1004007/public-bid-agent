@@ -1,0 +1,295 @@
+"""입찰 대시보드 로컬 데이터/공식 API 읽기 전용 수집 계약.
+
+목적/책임: 공식 나라장터 용역 입찰공고를 검증해 로컬 별도 JSON에 저장하고,
+             서버가 판정한 미확인 상태/담당자 의사결정/프로필 버전 이력을 보존한다.
+입력/출력: 공개 공식 목록(JSON) -> 보수적 공고 모델; 사용자 결정 -> 변경 이벤트.
+신뢰 경계: 외부 필드와 사용자 입력 모두 비신뢰. 고정 HTTPS 호스트/경로, 시간·크기·페이지 제한.
+상태/부작용: dashboard.json만 원자 갱신. cases.json/operations.json/AI·인증정보 무변경.
+실패: 인증/통신/응답 오류는 실패; 저장된 공고를 0건 또는 취소로 오인하지 않음.
+불변: 공식 자격/실적/수익/AI 판단을 추측하지 않음. 사람이 내린 결정과 추천 분리.
+관련 자료: docs/research/2026-10-11-dashboard-backend.md, 테스트 test_dashboard_backend.py.
+"""
+import copy
+import json
+import os
+import re
+import urllib.parse
+import urllib.request
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+from decision_profiles import clean_policy, clean_weights
+
+API_URL = "https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch"
+KEY_ENV = "DATA_GO_KR_SERVICE_KEY"
+KEYWORDS = ("인공지능", "AI", "LLM", "생성형", "소프트웨어", "SW", "데이터", "플랫폼", "정보시스템",
+            "시스템 구축", "빅데이터", "머신러닝", "클라우드", "API", "분석", "RAG")
+MAX_ROWS = 100
+MAX_PAGES = 3
+MAX_RESPONSE = 1024 * 1024
+KST = timezone(timedelta(hours=9))
+
+
+class ProviderError(Exception):
+    """공식 데이터 미확인: 기존 결과를 보존해야 하는 조회 실패."""
+
+
+class DashboardConflict(Exception):
+    """서버 수정 버전 불일치."""
+
+
+def blank() -> dict:
+    return {"schema_version": 1, "revision": 0, "notices": [], "history": [],
+            "collection": {"status": "NEVER", "last_attempt": None, "last_success": None,
+                           "last_error": None, "last_count": None, "last_scanned": None}}
+
+
+def read(path: Path) -> dict:
+    if not path.exists():
+        return blank()
+    with path.open(encoding="utf-8") as inp:
+        obj = json.load(inp)
+    if not isinstance(obj, dict) or obj.get("schema_version") != 1:
+        raise ValueError("지원되지 않는 dashboard.json")
+    if type(obj.get("revision")) is not int or obj["revision"] < 0:
+        raise ValueError("대시보드 버전 오류")
+    if not isinstance(obj.get("notices"), list) or not isinstance(obj.get("history"), list):
+        raise ValueError("대시보드 항목 형식 오류")
+    if not isinstance(obj.get("collection"), dict):
+        raise ValueError("수집 상태 형식 오류")
+    if len(obj["notices"]) > 10000 or len(obj["history"]) > 20000:
+        raise ValueError("대시보드 보존 상한 초과")
+    ids = []
+    for item in obj["notices"]:
+        if not isinstance(item, dict) or not isinstance(item.get("id"), str):
+            raise ValueError("공고 데이터 형식 오류")
+        ids.append(item["id"])
+    if len(set(ids)) != len(ids):
+        raise ValueError("중복 공고 ID")
+    return obj
+
+
+def _str(v, limit=200) -> str:
+    return v.strip()[:limit] if isinstance(v, str) else ""
+
+
+def _category(title: str) -> str:
+    s = title.upper()
+    if any(x in s for x in ("AI", "인공지능", "LLM", "생성형", "RAG", "머신러닝")):
+        return "AI"
+    if any(x in s for x in ("데이터", "빅데이터", "분석", "통계")):
+        return "DATA"
+    return "SW"
+
+
+def _official_url(candidate) -> str | None:
+    if not isinstance(candidate, str):
+        return None
+    try:
+        value = urllib.parse.urlsplit(candidate.strip())
+        if (value.scheme == "https" and value.hostname in ("www.g2b.go.kr", "g2b.go.kr")
+                and not value.username and not value.password and not value.fragment):
+            return candidate.strip()[:1000]
+    except ValueError:
+        pass
+    return None
+
+
+def normalize(item: dict) -> dict | None:
+    if not isinstance(item, dict):
+        raise ProviderError("공식 목록 항목 형식 오류")
+    no = _str(item.get("bidNtceNo"), 32)
+    order = _str(item.get("bidNtceOrd"), 5)
+    title = _str(item.get("bidNtceNm"), 250)
+    if not no or not re.fullmatch(r"[0-9A-Za-z-]{4,32}", no) or not re.fullmatch(r"[0-9]{1,5}", order):
+        raise ProviderError("필수 공고번호·차수 누락")
+    if not title:
+        raise ProviderError("입찰공고 제목 누락")
+    if not any(word.casefold() in title.casefold() for word in KEYWORDS):
+        return None
+    closing = _str(item.get("bidClseDt"), 40)
+    org = _str(item.get("ntceInsttNm") or item.get("dminsttNm"), 120) or "기관 미확인"
+    budget = _str(item.get("asignBdgtAmt"), 40)
+    raw_url = item.get("bidNtceDtlUrl") or item.get("bidNtceUrl")
+    return {
+        "id": "G2B-" + no + "-" + order,
+        "bid_no": no, "bid_order": order, "title": title, "org": org,
+        "cat": _category(title), "budget": budget or "미확인",
+        "end": closing or "미확인", "source": "G2B_OFFICIAL_API",
+        "source_url": _official_url(raw_url),
+        "observed_at": datetime.now(KST).isoformat(),
+        "rec": None, "final": None, "reasons": [],
+        "finalReason": "", "policyRef": None, "checked": "원문/참가자격 미검증",
+        "fit": None, "margin": None, "hard": "unknown", "ops": None, "exp": None, "score": None,
+    }
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        raise ProviderError("공식 API에서 예상하지 못한 리다이렉트 발생")
+
+
+def _fetch_json(query: dict, transport=None) -> dict:
+    url = API_URL + "?" + urllib.parse.urlencode(query, safe="")
+    request = urllib.request.Request(url, headers={"Accept": "application/json"})
+    opener = transport or urllib.request.build_opener(_NoRedirect())
+    try:
+        with opener.open(request, timeout=12) as response:
+            final_url = urllib.parse.urlsplit(response.geturl())
+            if final_url.hostname != "apis.data.go.kr" or final_url.scheme != "https":
+                raise ProviderError("공식 API 응답 주소가 다릅니다")
+            raw = response.read(MAX_RESPONSE + 1)
+            if len(raw) > MAX_RESPONSE:
+                raise ProviderError("공식 API 응답 크기 초과")
+    except (OSError, TimeoutError, ValueError) as error:
+        raise ProviderError("공식 API 연결 실패 또는 인증 오류") from error
+    try:
+        parsed = json.loads(raw)
+    except (ValueError, UnicodeError) as error:
+        raise ProviderError("공식 API가 JSON 응답을 제공하지 않았습니다") from error
+    if not isinstance(parsed, dict):
+        raise ProviderError("공식 API 구조 오류")
+    return parsed
+
+
+def collect(key: str, clock=None, transport=None) -> tuple[list[dict], int]:
+    if not key or len(key) > 512:
+        raise ProviderError("공공데이터포털 API 활용신청 및 인증키 설정이 필요합니다")
+    end = clock or datetime.now(KST)
+    start = end - timedelta(days=1)
+    base = {"serviceKey": key, "type": "json", "inqryDiv": "1",
+            "inqryBgnDt": start.strftime("%Y%m%d%H%M"), "inqryEndDt": end.strftime("%Y%m%d%H%M"),
+            "numOfRows": str(MAX_ROWS)}
+    all_notices = {}
+    scanned = 0
+    for page in range(1, MAX_PAGES + 1):
+        document = _fetch_json({**base, "pageNo": str(page)}, transport=transport)
+        header = document.get("response", {}).get("header", {})
+        code = _str(header.get("resultCode"))
+        if code != "00":
+            raise ProviderError("공식 API 결과 오류: " + (code or "미확인"))
+        body = document.get("response", {}).get("body")
+        if not isinstance(body, dict):
+            raise ProviderError("공식 API body 구조 오류")
+        items = body.get("items")
+        if isinstance(items, dict):
+            items = items.get("item")
+        if items is None:
+            items = []
+        if isinstance(items, dict):
+            items = [items]
+        if not isinstance(items, list):
+            raise ProviderError("공식 API 공고목록 형식 오류")
+        for raw in items:
+            normalized = normalize(raw)
+            scanned += 1
+            if normalized:
+                all_notices[normalized["id"]] = normalized
+        count = body.get("totalCount")
+        if type(count) is int:
+            total = count
+        elif isinstance(count, str) and count.isdigit():
+            total = int(count)
+        else:
+            raise ProviderError("공식 API 총건수 불명확")
+        if page * MAX_ROWS >= total:
+            break
+    else:
+        if scanned < total:
+            raise ProviderError("공고가 페이지 상한을 초과했습니다. 일부 조회를 전체 수집으로 저장하지 않습니다")
+    return list(all_notices.values()), scanned
+
+
+def update_collection(state: dict, notices: list, scanned: int, timestamp: str) -> dict:
+    if not isinstance(notices, list) or not isinstance(scanned, int) or scanned < 0:
+        raise ValueError("수집 결과 계약 오류")
+    out = copy.deepcopy(state)
+    existing = {n["id"]: n for n in out["notices"]}
+    changed = 0
+    for item in notices:
+        if item["id"] in existing:
+            old = existing[item["id"]]
+            # 변경된 공식 메타데이터만 덮어쓰며 사람 결정 및 판단 이력은 보존한다.
+            for key in ("title", "org", "cat", "budget", "end", "source_url", "observed_at"):
+                if old.get(key) != item[key]:
+                    old[key] = item[key]
+                    changed += 1
+        else:
+            existing[item["id"]] = copy.deepcopy(item)
+            changed += 1
+    if len(existing) > 10000:
+        raise ValueError("저장 가능한 공고 수 초과")
+    out["notices"] = list(existing.values())
+    out["revision"] += 1
+    out["collection"] = {
+        "status": "SUCCESS", "last_attempt": timestamp, "last_success": timestamp,
+        "last_error": None, "last_count": len(notices), "last_scanned": scanned,
+        "changed": changed,
+    }
+    return out
+
+
+def failed_collection(state: dict, timestamp: str) -> dict:
+    out = copy.deepcopy(state)
+    out["revision"] += 1
+    previous = out["collection"]
+    out["collection"] = {
+        "status": "ERROR", "last_attempt": timestamp,
+        "last_success": previous.get("last_success"),
+        "last_error": "공식 API 조회 실패. 이전 데이터가 유지됩니다.",
+        "last_count": previous.get("last_count"),
+        "last_scanned": previous.get("last_scanned"),
+    }
+    return out
+
+
+def record_action(state: dict, request: dict, profiles: dict, timestamp: str) -> dict:
+    expected = request.get("expected_revision")
+    if type(expected) is not int or expected != state["revision"]:
+        raise DashboardConflict("목록 또는 이력이 다른 창에서 변경되었습니다. 새로고침 후 재시도하세요")
+    ident = request.get("id")
+    target = next((n for n in state["notices"] if n["id"] == ident), None)
+    if target is None:
+        raise ValueError("알 수 없는 공고 ID")
+    kind = request.get("kind")
+    if kind not in ("recommendation", "human_no_bid", "human_bid", "human_hold"):
+        raise ValueError("판단 유형 오류")
+    reason = request.get("reason", "")
+    if not isinstance(reason, str) or len(reason.strip()) > 500 or any(ord(c) < 32 and c not in "\t\n" for c in reason):
+        raise ValueError("사유는 500자 이하로 입력하세요")
+    reason = reason.strip()
+    if kind.startswith("human_") and not reason:
+        raise ValueError("담당자 결정 사유가 필요합니다")
+    if len(state["history"]) >= 20000:
+        raise ValueError("판단 이력 보존 한도에 도달했습니다")
+    clean_policy(profiles["policy"])
+    clean_weights(profiles["weights"])
+    out = copy.deepcopy(state)
+    entry = next(n for n in out["notices"] if n["id"] == ident)
+    if kind == "recommendation":
+        # 정식 분석·공고 원문·증빙이 없으므로 모든 공식 공고는 보류한다.
+        status = "hold"
+        reason = "공식 공고의 참가자격·원문·기업 역량/원가 확인 전 (자동 적합 판정 안 함)"
+        entry["rec"] = status
+        entry["reasons"] = [reason]
+        actor = "규칙 기반 확인 보류"
+    else:
+        status = {"human_no_bid": "no_bid", "human_bid": "bid", "human_hold": "hold"}[kind]
+        entry["final"] = status
+        entry["finalReason"] = reason
+        actor = "담당자 최종 선택 (로컬 기록)"
+    entry["policyRef"] = f"판단 v{profiles['policy_version']} · 영향인자 v{profiles['factor_version']}"
+    event = {
+        "stamp": timestamp, "id": entry["id"], "title": entry["title"], "status": status,
+        "actor": actor, "reason": reason, "version": entry["policyRef"],
+        "policy_snapshot": copy.deepcopy(profiles["policy"]),
+        "weights_snapshot": copy.deepcopy(profiles["weights"]),
+        "source": entry["source"],
+    }
+    out["history"].insert(0, event)
+    out["revision"] += 1
+    return out
+
+
+def key_available() -> bool:
+    return bool(os.environ.get(KEY_ENV))

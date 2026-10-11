@@ -25,6 +25,10 @@ from pathlib import Path
 
 from decision_support import advise as advise_bid
 from decision_profiles import ProfileConflict, load_state as load_decision_profiles, next_state as update_decision_profiles
+from dashboard_backend import (
+    ProviderError, DashboardConflict, read as read_dashboard, collect as fetch_official_notices,
+    update_collection, failed_collection, record_action, key_available, KEY_ENV,
+)
 from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
 
 GATES = [
@@ -50,6 +54,7 @@ APP_JS = Path(__file__).with_name("app.js")
 DOCUMENT_GUIDE = Path(__file__).with_name("document_guide.json")
 DECISION_PREVIEW = Path(__file__).resolve().parents[1] / "frontend" / "public" / "bid-decision-dashboard-preview.html"
 DECISION_PREVIEW_JS = DECISION_PREVIEW.with_suffix(".js")
+DASHBOARD_LIVE_JS = DECISION_PREVIEW.with_name("dashboard-live.js")
 LOCK = threading.RLock()
 TOKEN = secrets.token_urlsafe(32)
 LIMIT = 10*1024*1024
@@ -306,10 +311,21 @@ class Handler(BaseHTTPRequestHandler):
    b=DECISION_PREVIEW_JS.read_bytes()
    self.send_local_headers(200,"text/javascript; charset=utf-8",len(b))
    return self.wfile.write(b)
+  if self.path=="/dashboard-live.js":
+   b=DASHBOARD_LIVE_JS.read_bytes()
+   self.send_local_headers(200,"text/javascript; charset=utf-8",len(b))
+   return self.wfile.write(b)
   if self.path=="/document-guide.json":
    b=DOCUMENT_GUIDE.read_bytes()
    self.send_local_headers(200,"application/json; charset=utf-8",len(b))
    return self.wfile.write(b)
+  if self.path=="/api/dashboard":
+   with LOCK:
+    try: state=read_dashboard(ROOT / "dashboard.json")
+    except (ValueError, json.JSONDecodeError, OSError):
+     return self.respond({"error":"대시보드 데이터가 손상되었습니다. 변경 전 파일을 확인하세요"},503)
+   return self.respond({"dashboard":state,"csrf":TOKEN,"collection_available":key_available(),
+                        "storage":"LOCAL_JSON"})
   if self.path=="/api/decision-profiles":
    with LOCK:
     try: profile=load_decision_profiles(ROOT / "decision_profiles.json")
@@ -332,6 +348,39 @@ class Handler(BaseHTTPRequestHandler):
     raise ValueError("본문 JSON 최대 4MB")
    payload=json.loads(self.rfile.read(size))
    if not isinstance(payload,dict): raise ValueError("JSON 객체만 지원")
+   if self.path=="/api/dashboard/collect":
+    if not key_available():
+     return self.respond({"error":"공공데이터포털 API 활용신청과 DATA_GO_KR_SERVICE_KEY 환경변수 설정이 필요합니다"},424)
+    # 외부 통신 중 LOCK을 보유하지 않는다. 결과 저장 시 최신 파일을 다시 읽는다.
+    try:
+     incoming, scanned=fetch_official_notices(os.environ[KEY_ENV])
+    except ProviderError:
+     with LOCK:
+      try:
+       old=read_dashboard(ROOT / "dashboard.json")
+       persist(failed_collection(old,now()),ROOT / "dashboard.json")
+      except (ValueError,json.JSONDecodeError,OSError):
+       return self.respond({"error":"대시보드 저장파일 손상; 기존 파일을 덮어쓰지 않았습니다"},503)
+     return self.respond({"error":"공식 공고 조회에 실패했습니다. 기존 수집 데이터는 유지됩니다"},503)
+    with LOCK:
+     try: state=read_dashboard(ROOT / "dashboard.json")
+     except (ValueError,json.JSONDecodeError,OSError):
+      return self.respond({"error":"저장된 공고 파일 오류; 덮어쓰지 않았습니다"},503)
+     updated=update_collection(state,incoming,scanned,now())
+     persist(updated,ROOT / "dashboard.json")
+     return self.respond({"ok":True,"dashboard":updated,"storage":"LOCAL_JSON"})
+   if self.path=="/api/dashboard/action":
+    with LOCK:
+     try:
+      state=read_dashboard(ROOT / "dashboard.json")
+      profile=load_decision_profiles(ROOT / "decision_profiles.json")
+     except (ValueError,json.JSONDecodeError,OSError):
+      return self.respond({"error":"대시보드 또는 기준 프로필 파일 오류"},503)
+     try: updated=record_action(state,payload,profile,now())
+     except DashboardConflict as error:
+      return self.respond({"error":str(error)},409)
+     persist(updated,ROOT / "dashboard.json")
+     return self.respond({"ok":True,"dashboard":updated,"storage":"LOCAL_JSON"})
    if self.path=="/api/decision-profiles/save":
     with LOCK:
      try: existing=load_decision_profiles(ROOT / "decision_profiles.json")

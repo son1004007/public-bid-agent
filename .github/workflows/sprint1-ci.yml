@@ -49,6 +49,7 @@ jobs:
         run: |
           node --check local_app/app.js
           node --check frontend/public/bid-decision-dashboard-preview.js
+          node --check frontend/public/dashboard-live.js
       - name: Static publishing preview syntax and boundaries
         run: python scripts/check_ui_preview.py
       - name: Verify standalone preview included in build
@@ -73,10 +74,13 @@ jobs:
           path: |
             local_app/server.py
             local_app/decision_profiles.py
+            local_app/dashboard_backend.py
+            local_app/test_dashboard_backend.py
             local_app/test_decision_profiles.py
             local_app/test_bid_decision_preview.py
             frontend/public/bid-decision-dashboard-preview.html
             frontend/public/bid-decision-dashboard-preview.js
+            frontend/public/dashboard-live.js
             local_app/cross_review.py
             local_app/extractors.py
             local_app/index.html
