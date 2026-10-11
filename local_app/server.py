@@ -479,10 +479,17 @@ class Handler(BaseHTTPRequestHandler):
        raise ValueError("공고 식별자 오류")
       ids=[payload["id"]]
      else:
-      ids=[n["id"] for n in snapshot["notices"] if n.get("document_status") in ("PENDING","FAILED")
+      # 사용자 선택 분야의 명시적인 후보만 추출. 검토대기/행사/연구 등 일반용역은 건별 수동 확인.
+      user_profile=load_department_profile(ROOT / "department_profile.json")
+      candidates=[n for n in snapshot["notices"] if
+       n.get("document_status") in ("PENDING","FAILED")
        and n.get("window_status") in ("OPEN","REGISTRATION_REVIEW","UNKNOWN")
-       and n.get("department_status") in ("CANDIDATE","REVIEW")
-       and n.get("attachments")][:5]
+       and n.get("department_status")=="CANDIDATE"
+       and any(cat in user_profile["categories"] for cat in n.get("department_categories",[]))
+       and n.get("attachments")]
+      candidates.sort(key=lambda n:(not any("공공조달분류" in x.get("sources",[]) for x in n.get("category_evidence",[])),
+         not any("제안요청" in str(x.get("name","")) or "과업지시" in str(x.get("name","")) for x in n.get("attachments",[]))))
+      ids=[n["id"] for n in candidates[:5]]
      todo={n["id"]:copy.deepcopy(n) for n in snapshot["notices"] if n["id"] in ids}
     if not ids:
      return self.respond({"ok":True,"dashboard":snapshot,"attempted":0,"storage":"LOCAL_JSON"})
