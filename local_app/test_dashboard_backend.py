@@ -156,7 +156,7 @@ class DashboardHTTPTests(unittest.TestCase):
             self.assertEqual(self.post("/api/dashboard/action", {"expected_revision": 0, "id": "DEMO-AI-001", "kind": "recommendation"})[0], 400)
 
     def test_collection_and_human_decisions_persist_separately(self):
-        with patch.dict(os.environ, {db.KEY_ENV: "synthetic-key"}):
+        with patch.dict(os.environ, {db.KEY_ENV: "SYNTHETIC-KEY-FOR-TEST-123456"}):
             with patch.object(server, "fetch_official_notices", return_value=([db.normalize(RAW)], 1)):
                 status, payload = self.post("/api/dashboard/collect", {})
         self.assertEqual(status, 200)
@@ -178,7 +178,7 @@ class DashboardHTTPTests(unittest.TestCase):
         self.assertEqual(self.post("/api/dashboard/collect", {}, headers=False)[0], 403)
         server.persist(db.update_collection(db.blank(), [db.normalize(RAW)], 1, "initial"),
                        self.root / "dashboard.json")
-        with patch.dict(os.environ, {db.KEY_ENV: "synthetic-key"}):
+        with patch.dict(os.environ, {db.KEY_ENV: "SYNTHETIC-KEY-FOR-TEST-123456"}):
             with patch.object(server, "fetch_official_notices", side_effect=db.ProviderError("upstream failed")):
                 status, _ = self.post("/api/dashboard/collect", {})
         self.assertEqual(status, 503)
