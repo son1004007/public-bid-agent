@@ -329,3 +329,12 @@
 - 검증 상태: **구현 중 / 최신 커밋 CI·PC 실행 결과 확인 전**. 독립 최종 검수·사용자 UX 승인·main 병합은 계속 HOLD.
 
 - Windows 전체 unittest 66개 실행에서 기존에 보고된 WinError 10053이 신규 CSRF 거절 테스트 1건에서 재발. 인증 거절 전 남은 요청 본문 처리 개선 코드를 추가했으며 최신 런타임/CI 재검증 전까지 해결 완료로 간주하지 않는다.
+
+
+## 2026-10-11 새 공고 대시보드 Windows 실행 검증
+
+- 개발 브랜치 `514183b` 기준 Windows unittest **66 PASS**, Node JavaScript 검사 PASS, Chrome fake-provider UI E2E 5항목 PASS.
+- 기존 로컬 앱 8765를 최신 소스로 재시작. 메인/대시보드/JS/API 5개 HTTP 200, 기존 공고 5건과 cases.json SHA-256 유지, 공식 공고 대시보드 초기 0건.
+- 공식 공공데이터포털 API 키 미설정 → 수집 POST는 HTTP 424, dashboard.json 자동 생성 없음. 실제 공식 공고 HTTP 수집은 **BLOCKED**. 중앙 [USER ACTION #20](https://github.com/son1004007/ai-agent-workflow-playbook/issues/20).
+- 최종 코드/보안 독립 검수 및 UX 사용자 승인은 미완료. Draft PR/main merge HOLD.
+- [Windows 브라우저·HTTP 검증 보고서](docs/reviews/DASHBOARD_BACKEND_WINDOWS_E2E_2026-10-11.md).

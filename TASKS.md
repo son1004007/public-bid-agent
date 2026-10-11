@@ -283,3 +283,14 @@
 - [ ] AGY/Gemini 및 Codex 독립 최종 리뷰와 지적사항 재검증, UI 사용자 최종 승인 후 main 병합
 
 - [ ] WinError 10053: CSRF 거절 POST에서 본문 처리 보완 후 Windows 전체/반복 경계 테스트와 CI 결과 확인, 원인이 남으면 조사 계속
+
+
+## 2026-10-11 대시보드 구현 검증 완료·잔여
+
+- [x] 공식 API 수집/실패/수기 결정 서버 API, 별도 dashboard.json 구현 및 브라우저 연결
+- [x] Windows 전체 unittest 66 PASS, 실제 Chrome fake-provider E2E 5항목 PASS, JS syntax PASS
+- [x] GitHub Push/PR CI 성공, 실사용 서버 무손상 재시작 및 기존 공고 5건 해시 검증
+- [ ] 실제 공식 나라장터 인증키 활용신청 및 PC 설정: [중앙 USER ACTION #20](https://github.com/son1004007/ai-agent-workflow-playbook/issues/20) (실 API 검증만 BLOCKED)
+- [ ] 공식 API 실제 응답/정정차수/마감/첨부 계약 및 호출한도 확인
+- [ ] 정기 자동 수집/원문·RFP 파싱/Codex 판단 기능 후속 수직 슬라이스
+- [ ] 독립 AGY/Gemini/Codex 최종 코드·보안 검수 및 사용자 UX 승인 전 main 병합 금지
