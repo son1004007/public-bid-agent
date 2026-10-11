@@ -152,8 +152,11 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
         raise ProviderError("공식 API에서 예상하지 못한 리다이렉트 발생")
 
 
-def _fetch_json(query: dict, transport=None) -> dict:
-    url = API_URL + "?" + urllib.parse.urlencode(query, safe="")
+def _fetch_json(query: dict, transport=None, endpoint=API_URL) -> dict:
+    # endpoint는 개발 코드에 하드코딩된 공식 오퍼레이션으로만 전달한다.
+    if not isinstance(endpoint,str) or not endpoint.startswith("https://apis.data.go.kr/1230000/ad/BidPublicInfoService/"):
+        raise ProviderError("공식 API 외 오퍼레이션 접근 거부")
+    url = endpoint + "?" + urllib.parse.urlencode(query, safe="")
     request = urllib.request.Request(url, headers={"Accept": "application/json"})
     opener = transport or urllib.request.build_opener(_NoRedirect())
     try:

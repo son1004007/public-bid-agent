@@ -35,6 +35,7 @@ from department_profile import (
     modify as modify_department_profile,
 )
 from procurement_filter import apply as reclassify_notice
+from procurement_related import fetch as fetch_related_constraints
 from procurement_documents import extract as extract_official_document, DocumentFetchError
 from procurement_credentials import (
     CredentialError, active_key as procurement_key, status as procurement_key_status,
@@ -459,6 +460,47 @@ class Handler(BaseHTTPRequestHandler):
       return self.respond({"error":str(e)},409)
      persist(updated,ROOT / "department_profile.json")
      return self.respond({"ok":True,"profile":updated})
+   if self.path=="/api/dashboard/related":
+    ident=payload.get("id")
+    if not isinstance(ident,str):
+     raise ValueError("공고 ID 오류")
+    with LOCK:
+     try: current=read_dashboard(ROOT / "dashboard.json")
+     except (ValueError,json.JSONDecodeError,OSError):
+      return self.respond({"error":"공고 파일 손상"},503)
+     target=next((n for n in current["notices"] if n["id"]==ident),None)
+     if target is None:raise ValueError("알 수 없는 공고")
+     number,order=target.get("bid_no"),target.get("bid_order")
+    try:key=procurement_key()
+    except (CredentialError,ValueError):
+     return self.respond({"error":"공공데이터 인증키를 읽을 수 없습니다"},503)
+    if not key:return self.respond({"error":"공공데이터 인증키 미등록"},424)
+    try: related=fetch_related_constraints(key,number,order)
+    except ProviderError:
+     return self.respond({"error":"조달청 면허·지역·첨부 상세 API 조회 실패; 기존 내용 유지"},503)
+    with LOCK:
+     try: state=read_dashboard(ROOT / "dashboard.json")
+     except (ValueError,json.JSONDecodeError,OSError):
+      return self.respond({"error":"현재 공고 저장 오류"},503)
+     target=next((n for n in state["notices"] if n["id"]==ident),None)
+     if target is None:return self.respond({"error":"조회 중 공고 삭제됨"},409)
+     target["license_restrictions"]=related["licenses"]
+     target["region_restrictions"]=related["regions"]
+     existing_attachments=target.get("attachments",[])
+     all_urls={a.get("url") for a in existing_attachments if isinstance(a,dict)}
+     for attachment in related["attachments"]:
+      if attachment["url"] not in all_urls:
+       existing_attachments.append(attachment)
+       all_urls.add(attachment["url"])
+     target["attachments"]=existing_attachments[:40]
+     target["related_status"]="FETCHED"
+     target["requirements_status"]="API_METADATA_ONLY"
+     if target.get("document_status")=="NOT_AVAILABLE" and existing_attachments:
+      target["document_status"]="PENDING"
+     reclassify_notice(target)
+     state["revision"]+=1
+     persist(state,ROOT / "dashboard.json")
+     return self.respond({"ok":True,"dashboard":state,"related":True,"storage":"LOCAL_JSON"})
    if self.path=="/api/dashboard/reclassify":
     with LOCK:
      try: state=read_dashboard(ROOT / "dashboard.json")

@@ -180,3 +180,7 @@ GET `/api/procurement-key`, POST `/api/procurement-key/save`, POST `/api/procure
 로컬 신규 화면에서 부서 프로필 비동기 로드 전 일시적인 검토대기 과다 표시를 막기 위해 JS 기본 include_review를 false로 통일합니다. 검토대기는 별도 화면 필터에서 계속 접근할 수 있습니다.
 
 상세 문서 일괄 확인은 현재 사용자가 선택한 부서 분야의 CANDIDATE만 최대 5건씩 처리하고 공공조달 분류·제안요청서/과업지시서 링크가 있는 공고를 우선합니다. 분류 불명(REVIEW)은 단건 개별 추출로 확인할 수 있습니다.
+
+### 공식 추가 상세 API
+
+POST /api/dashboard/related 는 저장된 공고 ID 하나에 대해 고정 나라장터 API의 면허 제한/지역 제한/e발주 첨부 3회 읽기 요청을 실행합니다. 응답을 검증해 license_restrictions/region_restrictions/attachments/related_status 필드에 저장하며, 법적 자격은 계속 UNVERIFIED입니다. 한 오퍼레이션이라도 오류나 페이지 누락이면 이전 내용을 보존합니다.

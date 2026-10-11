@@ -158,6 +158,29 @@ class DashboardHTTPTests(unittest.TestCase):
         except HTTPError as response:
             return response.code, json.load(response)
 
+    def test_related_official_restrictions_do_not_claim_eligibility(self):
+        initial=db.update_collection(db.blank(),[db.normalize(RAW)],1,"initial")
+        initial["notices"][0]["final"]="hold"
+        server.persist(initial,self.root/"dashboard.json")
+        fake={"licenses":[{"name":"소프트웨어사업자/1468","allowed":"SW사업자"}],
+              "regions":[{"name":"전국"}],
+              "attachments":[{"name":"제안요청서.hwpx",
+                              "url":"https://www.g2b.go.kr/files/test.hwpx",
+                              "source":"e발주"}]}
+        with patch.object(server,"procurement_key",return_value="TEST-VALID-STRING-1234567890"):
+            with patch.object(server,"fetch_related_constraints",return_value=fake) as request:
+                status,result=self.post("/api/dashboard/related",{"id":initial["notices"][0]["id"]})
+        self.assertEqual(status,200)
+        request.assert_called_once()
+        notice=result["dashboard"]["notices"][0]
+        self.assertEqual(notice["related_status"],"FETCHED")
+        self.assertEqual(notice["legal_eligibility"],"UNVERIFIED")
+        self.assertEqual(notice["final"],"hold")
+        self.assertEqual(notice["license_restrictions"][0]["name"],"소프트웨어사업자/1468")
+        self.assertEqual(notice["region_restrictions"][0]["name"],"전국")
+        self.assertEqual(len(notice["attachments"]),1)
+        self.assertEqual((self.root/"cases.json").read_bytes(),self.original)
+
     def test_reclassify_existing_record_preserves_human_history(self):
         state = db.update_collection(db.blank(),[db.normalize(RAW)],1,"initial")
         state["notices"][0]["department_categories"] = []

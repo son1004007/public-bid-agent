@@ -70,6 +70,13 @@
     }
   }
 
+  async function fetchOfficialConstraints(id) {
+    try {
+      await write('/api/dashboard/related',{id});
+      notify('공식 면허제한·참가가능지역·e발주 첨부 목록을 확인했습니다. 업체 자격은 별도 검토가 필요합니다.');
+    } catch(error) {notify('공식 상세 API 조회 실패: '+error.message);}
+  }
+
   async function enrichOne(id) {
     try {
       await write('/api/dashboard/enrich',{id});
@@ -323,6 +330,7 @@
         link.href=file.url;link.target='_blank';link.rel='noopener noreferrer';
         const row=el('p','');row.append(link);section.append(row);
       });
+      section.append(btn('공식 면허·지역·e발주 첨부 추가조회',()=>void fetchOfficialConstraints(n.id)));
       section.append(btn('공식 문서 본문 추출 후 다시 분류',()=>void enrichOne(n.id)));
       if(n.document_status==='FAILED')section.append(el('p','muted',n.document_error||'문서 추출 실패'));
       if(n.rfp_text){
@@ -338,7 +346,19 @@
        ['입찰 마감',n.end],['참가자격 등록 마감',n.qualification_deadline||'미확인'],
        ['업종·면허 제한',n.industry_restriction||'미확인'],
        ['입찰 참가 제한',n.participation_restriction||'미확인'],
-       ['법적 참가가능 여부','회사별 나라장터 등록·면허·실적 확인 전']]));
+       ['법적 참가가능 여부','회사별 나라장터 등록·면허·실적 확인 전'],
+       ['면허·지역 상세 API','조회: '+(n.related_status||'아직 미조회')]]));
+      section.append(btn('공식 면허·지역·e발주 첨부 추가조회',()=>void fetchOfficialConstraints(n.id)));
+      if(n.related_status==='FETCHED'){
+        const licenses=detailBlock('조달청 면허·업종 제한 (공식 목록)');
+        if(!(n.license_restrictions||[]).length)licenses.append(el('p','muted','조회된 면허 제한 목록 없음 (업체 참가자격 확인과 별도)'));
+        (n.license_restrictions||[]).forEach(x=>licenses.append(el('p','',x.name+' / '+x.allowed)));
+        section.append(licenses);
+        const regions=detailBlock('조달청 참가가능 지역');
+        if(!(n.region_restrictions||[]).length)regions.append(el('p','muted','조회된 지역 제한 목록 없음 (다른 제한은 공고 원문 확인)'));
+        (n.region_restrictions||[]).forEach(x=>regions.append(el('p','',x.name)));
+        section.append(regions);
+      }
       gates.forEach(([, label, evidence]) => {
         const row = el('div', 'requirementRow');
         row.append(el('strong', '', label), el('span', 'pill pending', '미확인'),
