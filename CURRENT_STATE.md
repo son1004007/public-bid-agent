@@ -399,3 +399,12 @@
 - `/api/dashboard/related`: 공식 면허/참가지역/e발주 첨부 3 오퍼레이션. 실제 NMS 공고 상세 API 성공, 면허/지역 목록 0건, 첨부 2건 보존, 회사 법적 참가자격 UNVERIFIED 유지.
 - Windows unittest **93 PASS**, JS 검사 PASS, GitHub Push [38117518610](https://github.com/son1004007/public-bid-agent/actions/runs/38117518610)/PR [38117521593](https://github.com/son1004007/public-bid-agent/actions/runs/38117521593) 모두 **SUCCESS**. 실제 Chrome 2,223행 전체 필터/125 기본 후보/공식 RFP/면허·지역 상세 UI **7 PASS**.
 - [상세 검증 보고서](docs/reviews/G2B_ALL_TENDER_CATEGORY_RFP_2026-10-11.md). 독립 코드/보안 검수 및 사용자 UI 최종 승인 전 Draft/main merge HOLD.
+
+## 2026-10-11 재개형 RFP 배치·REVIEW 2차 메타 우선순위 (개발 진행)
+
+- 사용자 최신 지시에 따라 기존 별도 퍼블리싱 화면을 만들지 않고 `/decision-preview` 수집 관리 화면을 확장. 직렬 RFP 처리/중단·재개·실패 재시도, 작업 상태 별도 `rfp_batch.json`, 문서 2개까지 출처·SHA256·본문 발췌 기록.
+- 재시작 후 처리 상태 복원, 기존 공고 성공/담당자 참여 결정/원본 2,223건 보존. RFP 다운로드는 원래 승인된 공식 HTTPS 도메인, 8MiB, 90초 추출 subprocess/파일 제한에 의존.
+- 공고 전체 REVIEW 2,080건을 공식 정보화사업·조달분류·과업첨부/제목 재검토: 상세 문서 우선 확인 신호 227건. 규칙 순위이지 수행 가능/법적 적격 판정 아님. `G2B-R26BK01763641-000` 학습경험플랫폼(LXP) 구축 용역이 기존 REVIEW에서 발견됨.
+- Windows 전용 venv Python unittest **102 PASS**, Node JS syntax **PASS**. 실제 2,223개 공고의 **별도 JSON 사본**과 포트 8766으로 배치 1+3건, Chrome UI로 1건 추가 E2E: 총 batch 성공 7/실패 0/대기 136 (기존 후보 성공 1건 포함). 사본 이력 건수/공고 건수 보존.
+- 본문/키/회사 운영자료 외부 전송 없음. 기존 8765 사용 데이터는 배치 처리하지 않았으며, 실제 전체 추출 완료를 주장하지 않는다. 독립 최종 검수·사용자 UI 승인·main 병합은 여전히 게이트.
+- 구현 설계: `docs/design/RFP_RESUMABLE_BATCH_2026-10-11.md`; 테스트: `local_app/test_rfp_batch.py`, `test_procurement_discovery.py`.

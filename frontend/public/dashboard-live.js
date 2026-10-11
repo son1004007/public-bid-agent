@@ -333,6 +333,11 @@
       section.append(btn('공식 면허·지역·e발주 첨부 추가조회',()=>void fetchOfficialConstraints(n.id)));
       section.append(btn('공식 문서 본문 추출 후 다시 분류',()=>void enrichOne(n.id)));
       if(n.document_status==='FAILED')section.append(el('p','muted',n.document_error||'문서 추출 실패'));
+      (n.document_evidence||[]).forEach(d => {
+        section.append(el('p','muted','공식 문서: '+d.name+' / '+d.source+' / '+d.status+
+          ' / 본문 '+(d.chars ?? '미추출')+'자 / SHA-256 '+(d.sha256||'미확인')));
+        if(d.excerpt)section.append(el('p','muted','근거 발췌: '+d.excerpt.slice(0,360)));
+      });
       if(n.rfp_text){
         const excerpt=el('pre','',n.rfp_text);
         excerpt.style.whiteSpace='pre-wrap';excerpt.style.overflowWrap='anywhere';
@@ -414,6 +419,83 @@
     fresh.addEventListener('click', action);
   }
 
+  // 동일한 수집 관리 화면에 순차 RFP 분석 상태/작업 제어를 추가한다.
+  const batchPanel=el('section','card');
+  const batchTitle=el('h2','','공식 RFP 순차 분석 (서버 재시작 후 재개 가능)');
+  const batchInfo=el('p','muted','작업을 시작하면 관심분야 후보를 대상으로 1건씩 추출합니다.');
+  const batchSelect=el('select','');
+  [1,3,10,25].forEach(v=>{
+    const option=el('option','',v+'건 처리');
+    option.value=String(v);option.selected=v===3;batchSelect.append(option);
+  });
+  const batchStart=btn('시작 / 재개',()=>void batchAction('start'));
+  const batchPause=btn('현재 건 완료 후 중단',()=>void batchAction('pause'));
+  const batchRetry=btn('실패 건만 선택 개수 재시도',()=>void batchAction('retry'));
+  batchPanel.append(batchTitle,batchInfo,batchSelect,batchStart,batchPause,batchRetry);
+  byId('view-collection').append(batchPanel);
+  let previousBatch='';
+  async function refreshBatch(){
+    const response=await fetch('/api/rfp-batch',{cache:'no-store'});
+    if(!response.ok)throw Error('RFP 배치 상태 조회 실패');
+    const data=await response.json(),b=data.batch,s=b.statistics;
+    batchInfo.textContent='상태 '+b.status+' / 대상 '+s.total+'건 / 성공 '+s.done+
+      '건 / 실패 '+s.failed+'건 / 대기 '+s.pending+
+      '건 / 순차 처리 간격 '+b.rate_limit_seconds+'초. 추출 성공은 법적 자격 확인이 아닙니다.';
+    batchStart.disabled=b.status==='RUNNING';
+    batchRetry.disabled=b.status==='RUNNING'||s.failed===0;
+    batchPause.disabled=b.status!=='RUNNING';
+    const signature=s.done+':'+s.failed;
+    if(previousBatch && signature!==previousBatch)await reload();
+    previousBatch=signature;
+  }
+  async function batchAction(action){
+    [batchStart,batchPause,batchRetry].forEach(b=>b.disabled=true);
+    try{
+      const response=await fetch('/api/rfp-batch/'+action,{
+        method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-Local-CSRF':csrf},
+        body:JSON.stringify({limit:Number(batchSelect.value)})
+      });
+      const result=await response.json();
+      if(!response.ok)throw Error(result.error||'HTTP '+response.status);
+      await refreshBatch();
+    }catch(e){notify('RFP 분석 '+action+' 실패: '+e.message);}
+    finally{await refreshBatch().catch(()=>{});}
+  }
+  // REVIEW 전수 수집 없이 공식 메타데이터 근거로 상세검토 순서만 제안.
+  const discoveryPanel=el('section','card');
+  const discoveryHeading=el('h2','','검토대기 공고 중 추가 발굴 (RFP 미확인)');
+  const discoveryInfo=el('p','muted','전체 REVIEW 공고의 공식 조달분류/정보화사업/첨부 신호만 확인합니다.');
+  const discoveryRows=el('div','');
+  const discoveryRefresh=btn('검토 우선순위 갱신',()=>void refreshDiscovery());
+  discoveryPanel.append(discoveryHeading,discoveryInfo,discoveryRefresh,discoveryRows);
+  byId('view-collection').append(discoveryPanel);
+  async function refreshDiscovery(){
+    try{
+      const r=await fetch('/api/dashboard/discovery',{cache:'no-store'});
+      if(!r.ok)throw Error('검토대기 우선순위 조회 실패');
+      const data=(await r.json()).discovery;
+      discoveryInfo.textContent='전체 검토대기 '+data.total_review+'건 중 메타데이터 재검토 '+
+        data.priority_count+'건. 표시 상위 '+data.results.length+
+        '건. 과업·개발비중·참가자격은 RFP 확인 전까지 미확인입니다.';
+      discoveryRows.replaceChildren();
+      data.results.forEach(item=>{
+        const row=el('div','requirementRow');
+        row.append(el('strong','',item.title),
+          el('span','muted','우선순위 '+item.score+' / '+item.window_status+
+            ' / 참가자격 '+item.eligibility));
+        row.append(el('span','muted','근거: '+item.evidence.map(e=>e.source+
+          ' ('+e.weight+')').join(' · ')));
+        row.append(btn('기존 상세에서 확인',()=>{
+          selected=item.id; openFullDetail(item.id);
+        }));
+        discoveryRows.append(row);
+      });
+    }catch(error){discoveryInfo.textContent='검토대기 재분류 조회 오류: '+error.message;}
+  }
+
+  setInterval(()=>{if(connected)void refreshBatch().catch(()=>{});},4000);
+
   byId('departmentView').addEventListener('change',()=>renderNotices());
   byId('deadlineView').addEventListener('change',()=>renderNotices());
   byId('departmentSave').addEventListener('click',()=>void saveDepartment());
@@ -426,6 +508,8 @@
     finally{b.disabled=false;}
   });
   reload().then(() => {
+    void refreshBatch().catch(()=>{});
+    void refreshDiscovery();
     byId('procurementKeySave').addEventListener('click', () => void credentialAction('save'));
     byId('procurementKeyVerify').addEventListener('click', () => void credentialAction('verify'));
     byId('procurementKeyDelete').addEventListener('click', () => void credentialAction('delete'));

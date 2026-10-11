@@ -37,6 +37,8 @@ from department_profile import (
 from procurement_filter import apply as reclassify_notice
 from procurement_related import fetch as fetch_related_constraints
 from procurement_documents import extract as extract_official_document, DocumentFetchError
+from rfp_batch import Manager as RfpBatchManager
+from procurement_discovery import shortlist as shortlist_unreviewed
 from procurement_credentials import (
     CredentialError, active_key as procurement_key, status as procurement_key_status,
     save_key as save_procurement_key, delete_key as delete_procurement_key,
@@ -287,6 +289,9 @@ def update_case(case,data):
   case["factors"][k]={"score":score,"evidence":ev,
                      "verified":o.get("verified") is True and bool(ev)}
 
+RFP_BATCH = RfpBatchManager(ROOT, LOCK, persist, extract_in_subprocess,
+                             related=fetch_related_constraints, key_getter=procurement_key)
+
 class Handler(BaseHTTPRequestHandler):
  server_version="LocalBidAgent/0.1"
  def send_local_headers(self,code,typ,size):
@@ -340,6 +345,17 @@ class Handler(BaseHTTPRequestHandler):
    return self.respond({"profile":profile,"csrf":TOKEN,"categories":{
     "AI":"AI 서비스·LLM","SW":"SW·업무시스템 개발",
     "DATA":"데이터 수집·분석·플랫폼","SECURITY":"보안·인증·감사 지원 SW"}})
+  if self.path=="/api/dashboard/discovery":
+   try:
+    with LOCK: state=read_dashboard(ROOT / "dashboard.json")
+    return self.respond({"discovery":shortlist_unreviewed(state["notices"]),
+                         "storage":"LOCAL_JSON"})
+   except (ValueError,json.JSONDecodeError,OSError):
+    return self.respond({"error":"공고 데이터 읽기 실패; 기존 자료 보존"},503)
+  if self.path=="/api/rfp-batch":
+   try:return self.respond({"batch":RFP_BATCH.status(),"csrf":TOKEN,"storage":"LOCAL_JSON"})
+   except (ValueError,json.JSONDecodeError,OSError):
+    return self.respond({"error":"배치 상태 파일 손상; 기존 자료 보존"},503)
   if self.path=="/api/dashboard":
    with LOCK:
     try: state=read_dashboard(ROOT / "dashboard.json")
@@ -511,6 +527,14 @@ class Handler(BaseHTTPRequestHandler):
      persist(state,ROOT / "dashboard.json")
      return self.respond({"ok":True,"dashboard":state,"updated":len(state["notices"]),
                           "storage":"LOCAL_JSON"})
+   if self.path in ("/api/rfp-batch/start","/api/rfp-batch/pause","/api/rfp-batch/retry"):
+    try:
+     if self.path=="/api/rfp-batch/pause": batch=RFP_BATCH.pause()
+     else: batch=RFP_BATCH.start(payload.get("limit",3),
+                         retry_failed=self.path=="/api/rfp-batch/retry")
+    except (ValueError,json.JSONDecodeError,OSError) as error:
+     return self.respond({"error":str(error)},409)
+    return self.respond({"ok":True,"batch":batch,"storage":"LOCAL_JSON"})
    if self.path in ("/api/dashboard/enrich","/api/dashboard/enrich-batch"):
     with LOCK:
      try: snapshot=read_dashboard(ROOT / "dashboard.json")
