@@ -113,11 +113,11 @@
       status.textContent = result;
       notify(result);
     } catch (error) {
+      await refreshCredential().catch(() => {});
       status.textContent = '인증키 작업 실패: ' + error.message;
       notify('인증키 작업 실패: ' + error.message);
     } finally {
       input.value = '';
-      await refreshCredential().catch(() => {});
     }
   }
 
