@@ -13,7 +13,7 @@ class DepartmentProfileConflict(Exception):
 
 def default():
     return {"schema_version": 1, "revision": 0, "categories": list(CATEGORIES),
-            "include_review": True}
+            "include_review": False}
 
 
 def load(path):

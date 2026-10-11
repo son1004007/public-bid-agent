@@ -398,6 +398,13 @@
   byId('deadlineView').addEventListener('change',()=>renderNotices());
   byId('departmentSave').addEventListener('click',()=>void saveDepartment());
   byId('enrichBatch').addEventListener('click',()=>void enrichBatch());
+  byId('departmentReclassify').addEventListener('click',async()=>{
+    const b=byId('departmentReclassify');b.disabled=true;
+    try{const result=await write('/api/dashboard/reclassify',{});
+      notify('수집 공고 '+result.updated+'건을 부서 기준으로 다시 분류했습니다.');}
+    catch(error){notify('전체 재분류 실패: '+error.message);}
+    finally{b.disabled=false;}
+  });
   reload().then(() => {
     byId('procurementKeySave').addEventListener('click', () => void credentialAction('save'));
     byId('procurementKeyVerify').addEventListener('click', () => void credentialAction('verify'));

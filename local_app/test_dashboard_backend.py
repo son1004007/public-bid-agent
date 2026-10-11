@@ -158,6 +158,53 @@ class DashboardHTTPTests(unittest.TestCase):
         except HTTPError as response:
             return response.code, json.load(response)
 
+    def test_reclassify_existing_record_preserves_human_history(self):
+        state = db.update_collection(db.blank(),[db.normalize(RAW)],1,"initial")
+        state["notices"][0]["department_categories"] = []
+        state["notices"][0]["department_status"] = "REVIEW"
+        state["notices"][0]["final"] = "hold"
+        state["history"] = [{"id":state["notices"][0]["id"],"reason":"사전 검토 메모"}]
+        server.persist(state,self.root/"dashboard.json")
+        status,payload=self.post("/api/dashboard/reclassify",{})
+        self.assertEqual(status,200)
+        self.assertEqual(payload["updated"],1)
+        self.assertIn("AI",payload["dashboard"]["notices"][0]["department_categories"])
+        self.assertEqual(payload["dashboard"]["notices"][0]["final"],"hold")
+        self.assertEqual(payload["dashboard"]["history"],state["history"])
+        self.assertEqual((self.root/"cases.json").read_bytes(),self.original)
+
+    def test_enrich_official_document_mock_keeps_separate_human_decision(self):
+        state=db.update_collection(db.blank(),[db.normalize(RAW)],1,"initial")
+        state["notices"][0]["final"]="no_bid"
+        server.persist(state,self.root/"dashboard.json")
+        with patch.object(server,"extract_official_document",return_value={
+                "text":"주요 과업: LLM 서비스 구현과 데이터 파이프라인 구축",
+                "source_name":"제안요청서.hwpx",
+                "warnings":[]}) as mock:
+            status,result=self.post("/api/dashboard/enrich",{"id":state["notices"][0]["id"]})
+        self.assertEqual(status,200)
+        mock.assert_called_once()
+        new=result["dashboard"]["notices"][0]
+        self.assertEqual(new["document_status"],"EXTRACTED")
+        self.assertIn("데이터 파이프라인",new["rfp_text"])
+        self.assertIn("DATA",new["department_categories"])
+        self.assertEqual(new["final"],"no_bid")
+        self.assertEqual((self.root/"cases.json").read_bytes(),self.original)
+
+    def test_department_categories_save_and_conflict(self):
+        with urlopen(self.base+"/api/department-profile",timeout=5) as response:
+            self.assertEqual(response.status,200)
+            self.assertEqual(json.load(response)["profile"]["revision"],0)
+        status,body=self.post("/api/department-profile/save",{
+            "expected_revision":0,"profile":{"categories":["DATA","SECURITY"],"include_review":False}
+        })
+        self.assertEqual(status,200)
+        self.assertEqual(body["profile"]["categories"],["DATA","SECURITY"])
+        self.assertEqual(self.post("/api/department-profile/save",{
+            "expected_revision":0,"profile":{"categories":["AI"],"include_review":True}
+        })[0],409)
+        self.assertEqual((self.root/"cases.json").read_bytes(),self.original)
+
     def test_no_key_is_explicit_not_demo(self):
         with patch.dict(os.environ, {db.KEY_ENV: ""}):
             status, initial = self.get()

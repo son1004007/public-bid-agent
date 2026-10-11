@@ -172,3 +172,5 @@ GET `/api/procurement-key`, POST `/api/procurement-key/save`, POST `/api/procure
 조달청 용역 1일/7일 조회는 제목과 무관하게 전체 공고를 JSON에 보존합니다. 필터는 독립된 category metadata, deadline/window, document status를 사용합니다. 회사 업종/면허/나라장터 등록을 검증하지 않은 입찰 참가자격은 미확인입니다.
 
 로컬 API: GET /api/department-profile, POST /api/department-profile/save (버전 충돌 검사); POST /api/dashboard/enrich (공고 ID 하나), POST /api/dashboard/enrich-batch (현재 후보 최대 5개). API는 기존 loopback/Origin/CSRF 검사를 따르고 입력 URL 대신 서버에 이미 저장한 공식 첨부 URL만 사용합니다. 허용 형식 PDF/HWP/HWPX/DOCX/TXT, 8MiB, 리다이렉트 불허, 별도 추출 프로세스, 최대 12,000자 저장. 오류는 재검토 상태로 보존합니다.
+
+검토대기 포함 기본 설정은 false입니다. 조달 분류/RFP 확인 전 generic '개발·구축'은 SW 자동 후보로 확정하지 않고 REVIEW로 유지합니다.

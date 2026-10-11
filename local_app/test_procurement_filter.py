@@ -37,6 +37,12 @@ class DepartmentClassificationTests(unittest.TestCase):
         self.assertEqual(n["document_status"],"PENDING")
         self.assertEqual(n["rfp_text"],"")
 
+    def test_generic_construction_word_does_not_make_software_candidate(self):
+        r=flt.classify("부동산제도 간 상호작용을 고려한 이론모형 구축",
+                       "기타연구조사서비스")
+        self.assertNotIn("SW",r["department_categories"])
+        self.assertEqual(r["department_status"],"REVIEW")
+
     def test_no_title_gate_retains_unmatched_rows(self):
         n = db.normalize({"bidNtceNo":"R26BK12345678","bidNtceOrd":"000",
                           "bidNtceNm":"통합업무지원","ntceKindNm":"등록공고",

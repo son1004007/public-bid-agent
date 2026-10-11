@@ -459,6 +459,16 @@ class Handler(BaseHTTPRequestHandler):
       return self.respond({"error":str(e)},409)
      persist(updated,ROOT / "department_profile.json")
      return self.respond({"ok":True,"profile":updated})
+   if self.path=="/api/dashboard/reclassify":
+    with LOCK:
+     try: state=read_dashboard(ROOT / "dashboard.json")
+     except (ValueError,json.JSONDecodeError,OSError):
+      return self.respond({"error":"대시보드 데이터 손상; 재분류 중단"},503)
+     for notice in state["notices"]:reclassify_notice(notice)
+     state["revision"]+=1
+     persist(state,ROOT / "dashboard.json")
+     return self.respond({"ok":True,"dashboard":state,"updated":len(state["notices"]),
+                          "storage":"LOCAL_JSON"})
    if self.path in ("/api/dashboard/enrich","/api/dashboard/enrich-batch"):
     with LOCK:
      try: snapshot=read_dashboard(ROOT / "dashboard.json")
