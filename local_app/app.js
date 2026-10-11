@@ -206,7 +206,9 @@ function renderOperations(){
  renderOperatingRegisters();
  el("opsOverhead").value=operations?.overhead_pct??0;
  el("opsReserve").value=operations?.reserve_pct??0;
- el("operationsMessage").textContent=operations?"운영정보 버전 "+operations.revision+" · 저장된 역할 "+operations.roles.length+"종 · 미입력 회사 기준단가를 임의 계산하지 않습니다.":"회사 운영정보를 불러오지 못했습니다.";
+ el("operationsMessage").textContent=operations?"원가 기준 "+
+  (operations.cost_basis==="SALARY_ONLY"?"연봉 가정 급여만":"기존 월 총원가 계약")+
+  " · 운영정보 버전 "+operations.revision+" · 저장된 역할 "+operations.roles.length+"종 · 미입력 회사 기준단가를 임의 계산하지 않습니다.":"회사 운영정보를 불러오지 못했습니다.";
 }
 async function loadOperations(){
  try{
@@ -233,7 +235,7 @@ function collectOperations(){
    available_mm:readNumber(field("available_mm"),true)};
  });
  return {roles,overhead_pct:readNumber(el("opsOverhead")),reserve_pct:readNumber(el("opsReserve")),
-  registers:collectRegisters()};
+  cost_basis:operations?.cost_basis||"FULLY_LOADED",registers:collectRegisters()};
 }
 function renderCostPlan(){
  const container=el("planRows");container.replaceChildren();

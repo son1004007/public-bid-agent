@@ -46,7 +46,7 @@ class WorkforceContractTests(unittest.TestCase):
         self.assertEqual(result["grade_counts"], {"junior":1, "intermediate":0, "senior":1})
         self.assertEqual(result["roles"][0]["available_mm"], None)
         self.assertEqual(result["capacity_status"], "UNKNOWN")
-        self.assertEqual(result["staff"][2]["annual_assumed_salary_krw"], None)
+        self.assertEqual(result["staff"][2]["grade"], None)
         self.assertEqual(result["eligibility_status"], "NOT_ASSESSED")
 
     def test_known_capacity_zero_and_positive_are_aggregated(self):
@@ -129,6 +129,7 @@ class WorkforceHTTPTests(unittest.TestCase):
         self.assertEqual(code,200)
         self.assertEqual(response["storage"],"LOCAL_JSON")
         self.assertEqual(response["workforce"]["delivery_headcount"],2)
+        self.assertNotIn("staff",response["workforce"])
         self.assertEqual(before,path.read_bytes())
 
     def test_bad_private_data_fails_closed_without_exposing_content(self):
@@ -149,6 +150,18 @@ class WorkforceHTTPTests(unittest.TestCase):
             self.fail("503 expected")
         except HTTPError as error:
             self.assertEqual(error.code,503)
+
+    def test_detail_requires_local_csrf_and_can_return_synthetic_staff(self):
+        path=self.root/"workforce.json"
+        path.write_text(json.dumps(sample()),encoding="utf-8")
+        with self.assertRaises(HTTPError) as err:
+            urlopen(self.base+"/api/workforce?detail=1",timeout=5)
+        self.assertEqual(err.exception.code,403)
+        req=Request(self.base+"/api/workforce?detail=1",
+                    headers={"X-Local-CSRF":server.TOKEN})
+        with urlopen(req,timeout=5) as response:
+            view=json.load(response)["workforce"]
+        self.assertEqual(len(view["staff"]),3)
 
     def test_host_header_rejected(self):
         request=Request(self.base+"/api/workforce",headers={"Host":"attacker.invalid"})

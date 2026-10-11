@@ -25,6 +25,17 @@ TECH_ROLES = frozenset(("analyst", "developer"))
 STAFF_FIELDS = frozenset(("id", "role", "grade", "lead", "skills",
                           "skills_evidence", "responsibility",
                           "responsibility_evidence", "available_mm"))
+# 공개 코드에는 정형 담당분야 어휘만 기록. 실제 직원과 분류 매핑은 PC 비공개에 보관한다.
+RESPONSIBILITIES = frozenset((
+    "경비 정산 및 회계 지원", "부서 운영 및 사업 의사결정",
+    "데이터 수집·정제 및 SQL 분석", "AI 분석 설계 및 모델 결과 검증",
+    "데이터 분석·지표 설계", "데이터 전처리·적재",
+    "데이터 품질 검증·보고", "머신러닝 모델링·성능 평가",
+    "데이터 아키텍처·DB 분석", "AI 서비스 요구분석·품질 검증",
+    "Java 백엔드·업무 API 개발", "개발 총괄·설계 검토·코드 리뷰",
+    "Python API·AI 서비스 연계", "데이터 연계·서비스 API 개발",
+    "Java 백엔드 및 데이터 처리 개발", "합성 담당 분야",
+))
 MAX_STAFF = 100
 
 
@@ -76,15 +87,13 @@ def validate(data):
             raise ValueError("보유기술 목록 오류")
         if role not in TECH_ROLES and skills:
             raise ValueError("비기술 인력 기술 추정을 등록하지 않습니다")
-        if person["skills_evidence"] not in ("ASSUMED", "VERIFIED", "UNKNOWN") or (
-            person["responsibility_evidence"] not in ("ASSUMED", "VERIFIED", "UNKNOWN")
+        if person["skills_evidence"] not in ("ASSUMED", "UNKNOWN") or (
+            person["responsibility_evidence"] not in ("ASSUMED", "UNKNOWN")
         ):
-            raise ValueError("기술·담당분야 근거 구분 오류")
+            raise ValueError("실제 기술·담당 확인은 증빙 스키마 도입 후에만 승인됩니다")
         responsibility = person["responsibility"]
-        if not isinstance(responsibility, str) or len(responsibility) > 100:
-            raise ValueError("담당분야 길이 오류")
-        if any(c in responsibility for c in ("@", "\x00", "\r", "\n")):
-            raise ValueError("담당분야 형식 오류")
+        if not isinstance(responsibility, str) or responsibility not in RESPONSIBILITIES:
+            raise ValueError("담당분야는 승인된 일반 분류에서 선택해야 합니다")
         mm = _valid_mm(person["available_mm"])
         clean.append({**person, "available_mm": mm})
     return {"schema_version": 1, "annual_grade_rates_krw": dict(rates), "staff": clean}
@@ -117,7 +126,8 @@ def summary(data):
             if count:
                 members = [p for p in delivery if p["role"] == role and p["grade"] == grade]
                 known_capacity = all(p["available_mm"] is not None for p in members)
-                available = (float(sum(Decimal(str(p["available_mm"])) for p in members))
+                available = (float(sum((Decimal(str(p["available_mm"])) for p in members),
+                                      Decimal("0")).quantize(Decimal("0.01")))
                              if known_capacity else None)
                 roles.append({"role": ROLES[role] + " " + GRADES[grade],
                               "role_code": role, "grade": grade, "headcount": count,
@@ -134,11 +144,10 @@ def summary(data):
         "monthly_assumed_salary_total_krw": sum(_monthly(rates[p["grade"]]) for p in delivery),
         "pricing_basis": "ANNUAL_SALARY_ASSUMPTION_DIVIDED_BY_12",
         "pricing_excludes": ["임원·경리 원가", "법정부담금", "퇴직급여", "간접비", "위험충당금"],
-        "capacity_status": "UNKNOWN" if any(p["available_mm"] is None for p in delivery) else "KNOWN",
+        "capacity_status": ("NOT_CONFIGURED" if not delivery else
+                            "UNKNOWN" if any(p["available_mm"] is None for p in delivery) else "KNOWN"),
         "roles": roles,
-        "staff": [{**p, "annual_assumed_salary_krw": (
-            rates[p["grade"]] if p["role"] in TECH_ROLES else None
-        )} for p in staff],
+        "staff": list(staff),
         "eligibility_status": "NOT_ASSESSED",
         "fit_status": "NEEDS_RFP_REQUIREMENTS_AND_CONFIRMED_SKILLS",
     }

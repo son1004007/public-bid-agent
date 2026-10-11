@@ -51,6 +51,18 @@ class CostUnitTests(unittest.TestCase):
   self.assertEqual(result["expected_profit_krw"],12195000)
   self.assertEqual(result["expected_margin_pct"],24.4)
   self.assertEqual(result["warnings"],[])
+ def test_salary_only_with_unknown_capacity_has_no_profit(self):
+  raw={**MOCK_PROFILE,"cost_basis":"SALARY_ONLY",
+       "roles":[{**MOCK_PROFILE["roles"][0],"available_mm":None}]}
+  profile=clean_profile(raw)
+  plan=clean_plan({**MOCK_PLAN,"entries":[{"role":"Python 백엔드","mm":1}]},profile)
+  result=calculate(profile,plan)
+  self.assertGreater(result["labor_krw"],0)
+  self.assertIsNone(result["expected_profit_krw"])
+  self.assertIsNone(result["expected_margin_pct"])
+  self.assertEqual(result["status"],"NEEDS_REVIEW")
+  self.assertTrue(any("연봉 가정" in w for w in result["warnings"]))
+
  def test_no_price_is_not_zero_profit(self):
   p=clean_profile(MOCK_PROFILE)
   data={**MOCK_PLAN,"proposed_supply_price_krw":None}

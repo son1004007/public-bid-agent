@@ -489,7 +489,8 @@
   async function refreshWorkforce(){
     workforcePanel.hidden=false;
     try{
-      const response=await fetch('/api/workforce',{cache:'no-store'});
+      const response=await fetch('/api/workforce?detail=1',
+        {cache:'no-store',headers:{'X-Local-CSRF':csrf}});
       if(!response.ok)throw Error('로컬 인력 파일 조회 실패');
       const data=(await response.json()).workforce;
       workforceRows.replaceChildren();
@@ -510,7 +511,8 @@
         box.append(el('strong','',heading),
           el('span','muted','담당분야: '+person.responsibility+' (임시 배정)'),
           el('span','muted','기술: '+(person.skills.join(', ')||'미등록')+
-            ' / 근거: '+(person.skills_evidence==='VERIFIED'?'확인':'추정 또는 미확인')+
+            ' / 기술 근거: '+(person.skills_evidence==='ASSUMED'?'추정':'미확인')+
+            ' / 담당 근거: '+(person.responsibility_evidence==='ASSUMED'?'추정':'미확인')+
             ' / 가용 공수: '+(person.available_mm===null?'미정':person.available_mm+'MM')));
         workforceRows.append(box);
       });

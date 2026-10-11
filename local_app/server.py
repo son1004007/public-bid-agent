@@ -373,12 +373,17 @@ class Handler(BaseHTTPRequestHandler):
   if self.path=="/api/operations":
    with LOCK: profile=load_operations()
    return self.respond({"operations":profile,"sections":REFERENCE_SECTIONS})
-  if self.path=="/api/workforce":
+  if self.path in ("/api/workforce", "/api/workforce?detail=1"):
+   # 기본 응답은 인원 집계 전용. 개인별 코드/기술은 명시적 로컬 CSRF 토큰 요청 때만 제공.
+   details = self.path.endswith("?detail=1")
+   if details and self.headers.get("X-Local-CSRF") != TOKEN:
+    return self.respond({"error":"로컬 상세 조회 권한 없음"},403)
    try:
     with LOCK: data=load_workforce(ROOT / "workforce.json")
+    view = summarize_workforce(data) if data is not None else None
+    if view is not None and not details: view.pop("staff", None)
     return self.respond({"status":"LOCAL_ONLY" if data is not None else "NOT_CONFIGURED",
-                         "workforce":summarize_workforce(data) if data is not None else None,
-                         "storage":"LOCAL_JSON"})
+                         "workforce":view, "storage":"LOCAL_JSON"})
    except (ValueError, UnicodeError, json.JSONDecodeError, OSError):
     return self.respond({"error":"인력 설정 파일이 손상됐습니다. 로컬 원본을 확인하세요"},503)
   if self.path=="/api/state":

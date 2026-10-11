@@ -87,7 +87,8 @@ def clean_registers(value):
 
 def default_profile():
     return {"schema_version": 1, "revision": 0, "roles": [],
-            "overhead_pct": 0, "reserve_pct": 0, "registers":empty_registers(), "updated_at": None}
+            "overhead_pct": 0, "reserve_pct": 0, "cost_basis": "FULLY_LOADED",
+            "registers":empty_registers(), "updated_at": None}
 
 
 def clean_profile(value):
@@ -117,7 +118,10 @@ def clean_profile(value):
         })
     overhead = _number(value.get("overhead_pct", 0), "간접비율", 100)
     reserve = _number(value.get("reserve_pct", 0), "위험충당률", 100)
-    return {"schema_version": 1, "roles": cleaned,
+    basis=value.get("cost_basis", "FULLY_LOADED")  # 과거 파일은 기존 월 총원가 계약과 호환
+    if basis not in ("FULLY_LOADED", "SALARY_ONLY"):
+        raise ValueError("원가 산정 기준이 올바르지 않습니다")
+    return {"schema_version": 1, "roles": cleaned, "cost_basis": basis,
             "overhead_pct": float(overhead), "reserve_pct": float(reserve),
             "registers": clean_registers(value.get("registers"))}
 
@@ -159,10 +163,17 @@ def calculate(profile, plan):
     reserve = _won(Decimal(direct + overhead) * Decimal(str(profile["reserve_pct"])) / 100)
     total = direct + overhead + reserve + plan["proposal_krw"]
     price = plan["proposed_supply_price_krw"]
-    profit = price - total if price is not None else None
+    # 급여 가정이나 인력 가용 미정으로 사업원가/수행가능성이 확인되지 않으면 이익을 차단.
+    basis=profile.get("cost_basis", "FULLY_LOADED")
+    unknown_capacity=any(catalog[r["role"]]["available_mm"] is None and r["mm"] > 0
+                         for r in plan["entries"])
+    profit = (price - total if price is not None
+              and basis=="FULLY_LOADED" and not unknown_capacity else None)
     margin = float((Decimal(profit) * 100 / Decimal(price)).quantize(
-        Decimal("0.1"), rounding=ROUND_HALF_UP)) if price else None
+        Decimal("0.1"), rounding=ROUND_HALF_UP)) if price and profit is not None else None
     warnings = []
+    if basis=="SALARY_ONLY":
+        warnings.append("연봉 가정 급여만 반영됐습니다. 회사 총원가 미확인으로 사업이익·이익률 계산을 보류합니다")
     if not plan["entries"] or all(x["mm"] == 0 for x in plan["entries"]):
         warnings.append("투입 공수가 0입니다. 사업원가를 확정할 수 없습니다")
     for entry in plan["entries"]:
