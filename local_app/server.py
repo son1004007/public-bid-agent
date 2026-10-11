@@ -27,9 +27,13 @@ from decision_support import advise as advise_bid
 from decision_profiles import ProfileConflict, load_state as load_decision_profiles, next_state as update_decision_profiles
 from dashboard_backend import (
     ProviderError, DashboardConflict, read as read_dashboard, collect as fetch_official_notices,
-    update_collection, failed_collection, record_action, key_available, KEY_ENV,
+    update_collection, failed_collection, record_action, key_available, verify_key,
 )
 from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
+from procurement_credentials import (
+    CredentialError, active_key as procurement_key, status as procurement_key_status,
+    save_key as save_procurement_key, delete_key as delete_procurement_key,
+)
 
 GATES = [
  ("eligibility","입찰 등록·업종 적격성"),("licenses","면허·인증·보험·보증"),
@@ -319,6 +323,8 @@ class Handler(BaseHTTPRequestHandler):
    b=DOCUMENT_GUIDE.read_bytes()
    self.send_local_headers(200,"application/json; charset=utf-8",len(b))
    return self.wfile.write(b)
+  if self.path=="/api/procurement-key":
+   return self.respond({"credential":procurement_key_status(),"csrf":TOKEN})
   if self.path=="/api/dashboard":
    with LOCK:
     try: state=read_dashboard(ROOT / "dashboard.json")
@@ -362,12 +368,42 @@ class Handler(BaseHTTPRequestHandler):
     raise ValueError("본문 JSON 최대 4MB")
    payload=json.loads(self.rfile.read(size))
    if not isinstance(payload,dict): raise ValueError("JSON 객체만 지원")
+   if self.path=="/api/procurement-key/save":
+    if not procurement_key_status()["can_save"]:
+     return self.respond({"error":"인증키 웹 등록은 Windows 현재 사용자 PC에서만 지원합니다"},501)
+    with LOCK:
+     try: save_procurement_key(payload.get("key"))
+     except ValueError:
+      return self.respond({"error":"인증키 문자열 형식이 올바르지 않습니다"},400)
+     except (CredentialError,OSError):
+      return self.respond({"error":"Windows 사용자 암호화 저장에 실패했습니다"},503)
+    return self.respond({"ok":True,"credential":procurement_key_status()})
+   if self.path=="/api/procurement-key/delete":
+    with LOCK:
+     try: delete_procurement_key()
+     except (CredentialError,OSError):
+      return self.respond({"error":"로컬 인증키 삭제에 실패했습니다"},503)
+    return self.respond({"ok":True,"credential":procurement_key_status()})
+   if self.path=="/api/procurement-key/verify":
+    try:
+     key=procurement_key()
+     if key is None: return self.respond({"error":"등록된 인증키가 없습니다"},424)
+     verify_key(key)
+    except (CredentialError,ValueError):
+     return self.respond({"error":"저장된 인증키를 읽거나 해석할 수 없습니다"},503)
+    except ProviderError:
+     return self.respond({"error":"조달청 공식 API 인증 확인에 실패했습니다. 활용신청·승인·이용한도를 확인하세요"},502)
+    return self.respond({"ok":True,"verified":True,"message":"공식 API 응답 코드 00 확인. 공고 내용 전체 수집과는 별도입니다"})
    if self.path=="/api/dashboard/collect":
-    if not key_available():
-     return self.respond({"error":"공공데이터포털 API 활용신청과 DATA_GO_KR_SERVICE_KEY 환경변수 설정이 필요합니다"},424)
+    try:
+     key=procurement_key()
+    except (CredentialError,ValueError):
+     return self.respond({"error":"등록된 인증키를 읽을 수 없습니다. 다시 등록하세요"},503)
+    if not key:
+     return self.respond({"error":"공공데이터포털 인증키를 수집 관리 화면에서 등록하세요"},424)
     # 외부 통신 중 LOCK을 보유하지 않는다. 결과 저장 시 최신 파일을 다시 읽는다.
     try:
-     incoming, scanned=fetch_official_notices(os.environ[KEY_ENV])
+     incoming, scanned=fetch_official_notices(key)
     except ProviderError:
      with LOCK:
       try:

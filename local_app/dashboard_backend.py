@@ -153,11 +153,10 @@ def _fetch_json(query: dict, transport=None) -> dict:
 
 
 def collect(key: str, clock=None, transport=None) -> tuple[list[dict], int]:
-    if not key or len(key) > 512:
-        raise ProviderError("공공데이터포털 API 활용신청 및 인증키 설정이 필요합니다")
+    key = _validated_key(key)
     end = clock or datetime.now(KST)
     start = end - timedelta(days=1)
-    base = {"serviceKey": key, "type": "json", "inqryDiv": "1",
+    base = {"ServiceKey": key, "type": "json", "inqryDiv": "1",
             "inqryBgnDt": start.strftime("%Y%m%d%H%M"), "inqryEndDt": end.strftime("%Y%m%d%H%M"),
             "numOfRows": str(MAX_ROWS)}
     all_notices = {}
@@ -291,5 +290,34 @@ def record_action(state: dict, request: dict, profiles: dict, timestamp: str) ->
     return out
 
 
+def verify_key(key: str, transport=None) -> None:
+    """서비스 키만 검증. 공고를 저장하거나 전체 페이지를 수집하지 않는다."""
+    key = _validated_key(key)
+    clock = datetime.now(KST)
+    doc = _fetch_json({
+        "ServiceKey": key, "type": "json", "inqryDiv": "1",
+        "inqryBgnDt": (clock - timedelta(days=1)).strftime("%Y%m%d%H%M"),
+        "inqryEndDt": clock.strftime("%Y%m%d%H%M"),
+        "numOfRows": "1", "pageNo": "1",
+    }, transport=transport)
+    envelope = doc.get("response", {})
+    if not isinstance(envelope, dict) or not isinstance(envelope.get("header"), dict):
+        raise ProviderError("공식 API 응답 구조 오류")
+    if _str(envelope["header"].get("resultCode")) != "00":
+        raise ProviderError("공공데이터포털 인증/활용신청 상태 또는 요청 제한을 확인하세요")
+    if not isinstance(envelope.get("body"), dict):
+        raise ProviderError("공식 API 인증 응답 본문이 없습니다")
+
+
+def _validated_key(value: str) -> str:
+    # API 어댑터도 URL 인코딩/제어문자 입력을 다시 검사한다.
+    from procurement_credentials import clean_key
+    try:
+        return clean_key(value)
+    except ValueError as exc:
+        raise ProviderError("공식 API 인증키 형식 오류") from exc
+
+
 def key_available() -> bool:
-    return bool(os.environ.get(KEY_ENV))
+    from procurement_credentials import status
+    return status()["configured"]

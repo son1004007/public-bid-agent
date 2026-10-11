@@ -172,6 +172,27 @@ label{font-size:12px;color:#526780;font-weight:720}label>input,label>select{disp
 <div class="hgroup"><div><div class="eyebrow">COLLECTION SETTINGS</div><h1>정기 공고 수집</h1><p class="desc">수집 규칙과 실행 이력을 먼저 검토합니다. 자동화와 공식 API 연결은 다음 단계입니다.</p></div></div>
 <div class="banner"><strong>연동 예정</strong><span>이 화면의 실행 버튼은 가상 공고를 목록에 추가할 뿐 나라장터에 접속하지 않습니다. 주기 설정 역시 저장/예약되지 않습니다.</span></div>
 <p class="helper" id="collectionStatus" role="status">로컬 수집 연결 확인 전 · 화면 시연</p>
+<section class="card panel" id="procurementKeySettings" hidden>
+ <div class="panelTop">
+  <div><h2>나라장터 OpenAPI 인증키 설정</h2><p class="desc">현재 PC에만 등록합니다. 저장 후 키 값은 화면에서 다시 표시하지 않습니다.</p></div>
+  <a class="btn" href="https://www.data.go.kr/data/15129394/openapi.do" target="_blank" rel="noopener noreferrer">공공데이터포털 활용신청·키 발급</a>
+ </div>
+ <p class="helper">1. 공공데이터포털에서 조달청_나라장터 입찰공고정보서비스 활용신청과 승인 확인
+  2. 발급받은 일반 인증키 또는 인코딩 인증키를 아래에 입력
+  3. PC에 암호화 저장한 뒤 연결 확인</p>
+ <div class="fieldset">
+  <label>API 인증키
+   <input class="field" id="procurementKeyInput" type="password" autocomplete="new-password" spellcheck="false" maxlength="600" placeholder="발급받은 인증키 입력" aria-label="나라장터 API 인증키">
+  </label>
+ </div>
+ <div class="actions" style="margin-top:12px">
+  <button class="btn primary" type="button" id="procurementKeySave">이 PC에 키 저장</button>
+  <button class="btn" type="button" id="procurementKeyVerify">공식 API 연결 확인</button>
+  <button class="btn" type="button" id="procurementKeyDelete">저장된 키 삭제</button>
+ </div>
+ <p id="procurementKeyStatus" class="helper" role="status" aria-live="polite">키 상태 확인 중</p>
+ <p class="helper">Windows 현재 사용자 계정 범위 DPAPI 암호화 파일에 보관합니다. Git·일반 JSON·브라우저 저장소에 키 값을 저장하지 않습니다. 서버 주소는 127.0.0.1 전용이며 대외 공개 서버에서 키 등록 기능을 활성화하지 않습니다.</p>
+</section>
 <div class="collectionGrid"><div class="card"><div class="miniHead">수집 대상</div><h2>나라장터 공고</h2><p class="desc">AI 서비스 · 데이터 분석 · 소프트웨어 용역</p></div><div class="card"><div class="miniHead">수집 주기 (설계값)</div><h2>평일 오전 09:00</h2><p class="desc">최초 수집 및 정정공고 확인, 중복 방지</p></div><div class="card"><div class="miniHead">마지막 수집 (예시)</div><h2>2026.10.10 08:50</h2><p class="desc">8건 (합성) · 실제 작업 기록 아님</p></div></div>
 <div class="card panel"><div class="panelTop"><h2>수집 범위와 기준</h2><button class="btn primary" id="collect-action">가상 공고 1건 수집 시연</button></div>
 <div class="fieldset"><label>수집 채널<input class="field" value="나라장터 공식 공고 API (연동 예정)" disabled></label><label>주기<input class="field" value="평일 09:00 (예약 미구현)" disabled></label><label>대상 분야<input class="field" value="AI, 데이터분석, SW 서비스" disabled></label><label>갱신 전략<input class="field" value="공고번호+차수 중복 방지 / 정정 추적" disabled></label></div>

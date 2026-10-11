@@ -66,14 +66,14 @@ class ProcurementUnitTests(unittest.TestCase):
 
     def test_page_contract_and_fail_closed(self):
         t = FakeTransport([response([RAW])])
-        values, scanned = db.collect("fake-key", datetime(2026, 10, 11, tzinfo=timezone(timedelta(hours=9))), t)
+        values, scanned = db.collect("synthetic-test-key-12345", datetime(2026, 10, 11, tzinfo=timezone(timedelta(hours=9))), t)
         self.assertEqual(scanned, 1)
         self.assertEqual(len(values), 1)
-        self.assertIn("serviceKey=fake-key", t.request.full_url)
+        self.assertIn("ServiceKey=synthetic-test-key-12345", t.request.full_url)
         self.assertEqual(t.count, 1)
         for wrong in (response([RAW], code="20"), {"response": {"header": {"resultCode": "00"}, "body": {}}}):
             with self.assertRaises(db.ProviderError):
-                db.collect("fake-key", transport=FakeTransport([wrong]))
+                db.collect("synthetic-test-key-12345", transport=FakeTransport([wrong]))
         with self.assertRaises(db.ProviderError):
             db.collect("", transport=t)
 

@@ -67,6 +67,58 @@
     byId('collect-action').textContent = result.collection_available ? '공식 공고 지금 수집' : '공공데이터 API 키 필요';
     byId('demo-collect').textContent = result.collection_available ? '공식 공고 수집' : 'API 키 미설정';
     byId('assess-all').textContent = '미판단 공고 일괄 확인 보류';
+    await refreshCredential();
+  }
+
+  async function refreshCredential() {
+    const response = await fetch('/api/procurement-key', {cache:'no-store', headers:{Accept:'application/json'}});
+    if (!response.ok) throw Error('인증키 상태 확인 실패');
+    const obj = await response.json();
+    const credential = obj.credential;
+    if (!credential || typeof credential.configured !== 'boolean') throw Error('인증키 설정 정보 오류');
+    byId('procurementKeySettings').hidden = false;
+    const source = credential.source === 'WINDOWS_DPAPI' ? '이 PC의 Windows 사용자 암호화 저장소'
+      : credential.source === 'ENVIRONMENT' ? '서버 환경변수' : '미등록';
+    byId('procurementKeyStatus').textContent = '현재 상태: ' + (credential.configured ? '등록됨' : '미등록')
+      + ' / 저장 위치: ' + source + ' / 공식 연결 검증은 별도 버튼으로 확인하세요.';
+    byId('procurementKeySave').disabled = !credential.can_save;
+    byId('procurementKeyDelete').disabled = !credential.can_delete;
+    byId('procurementKeyVerify').disabled = !credential.configured;
+    byId('collect-action').disabled = !credential.configured;
+    byId('demo-collect').disabled = !credential.configured;
+    byId('collect-action').textContent = credential.configured ? '공식 공고 지금 수집' : '인증키 먼저 등록';
+    byId('demo-collect').textContent = credential.configured ? '공식 공고 수집' : '인증키 미등록';
+  }
+
+  async function credentialAction(action) {
+    const input = byId('procurementKeyInput');
+    const status = byId('procurementKeyStatus');
+    if (action === 'save' && !input.value.trim()) { status.textContent = '인증키를 먼저 입력하세요.'; input.focus(); return; }
+    if (action === 'delete' && !window.confirm('이 PC에 저장된 나라장터 API 인증키를 삭제하시겠습니까?')) return;
+    const buttons = ['procurementKeySave','procurementKeyVerify','procurementKeyDelete'].map(byId);
+    buttons.forEach(button => button.disabled = true);
+    try {
+      const body = action === 'save' ? {key: input.value.trim()} : {};
+      const response = await fetch('/api/procurement-key/' + action, {
+        method:'POST',credentials:'same-origin',
+        headers:{'Content-Type':'application/json','X-Local-CSRF':csrf},
+        body:JSON.stringify(body)
+      });
+      const data = await response.json();
+      if (!response.ok || data.ok !== true) throw Error(data.error || '요청 실패 HTTP ' + response.status);
+      await refreshCredential();
+      const result = action === 'verify' ? '조달청 API 정상 응답 코드 00을 확인했습니다. 공고 수집은 별도로 실행하세요.'
+        : action === 'save' ? '인증키를 이 PC 사용자 범위로 암호화 저장했습니다. 공식 연결 확인 버튼을 누르세요.'
+        : '이 PC에 암호화 저장된 인증키를 삭제했습니다.';
+      status.textContent = result;
+      notify(result);
+    } catch (error) {
+      status.textContent = '인증키 작업 실패: ' + error.message;
+      notify('인증키 작업 실패: ' + error.message);
+    } finally {
+      input.value = '';
+      await refreshCredential().catch(() => {});
+    }
   }
 
   async function write(path, payload) {
@@ -223,6 +275,9 @@
   }
 
   reload().then(() => {
+    byId('procurementKeySave').addEventListener('click', () => void credentialAction('save'));
+    byId('procurementKeyVerify').addEventListener('click', () => void credentialAction('verify'));
+    byId('procurementKeyDelete').addEventListener('click', () => void credentialAction('delete'));
     replaceClick('demo-collect', () => void collectOfficial());
     replaceClick('collect-action', () => void collectOfficial());
     replaceClick('assess-all', async () => {

@@ -151,3 +151,10 @@ Windows에서는 npm의 `codex` 쉘 스크립트를 Python subprocess로 직접 
 Windows CSRF 거절 응답의 TCP 연결 종료를 안정화하기 위해 한도 내 POST 요청 본문을 제한시간으로 소비한 뒤 403을 반환합니다. 출처/CSRF 검사 정책은 변함없습니다.
 
 수집 창은 최근 24시간 용역 공고를 최대 20페이지(페이지당 100행)까지 확인합니다. 불완전한 페이지 조회는 성공으로 저장하지 않습니다.
+
+
+### 나라장터 인증키 웹 등록 (2026-10-11)
+
+대시보드 /decision-preview → 수집 관리 → 나라장터 OpenAPI 인증키 설정에서 **공식 활용신청 페이지 이동, 개인 키 입력·PC 암호화 저장·1건 연결 확인·저장 키 삭제**를 수행할 수 있습니다. 원격 공개 호스팅이 아닌 Windows 사용자 로컬 127.0.0.1 전용이며 DPAPI 암호문은 `%LOCALAPPDATA%/PublicBidAgent/secrets/g2b_servicekey.dpapi`에 분리 저장합니다. 별도의 환경변수 키가 이미 존재하면 암호문 저장 키가 우선입니다. **키가 브라우저 GET 응답에 포함되거나 대시보드 JSON에 저장되지 않습니다.** 서버 실행 계정이 바뀌면 기존 DPAPI 키를 복호화할 수 없을 수 있습니다.
+
+GET `/api/procurement-key`, POST `/api/procurement-key/save`, POST `/api/procurement-key/verify`, POST `/api/procurement-key/delete`가 추가되었습니다. 검증은 공식 API 한 페이지/1건만 조회하여 결과코드 00인지 확인합니다. 성공 시 공고 수집은 별도 버튼으로 진행하며, 활용신청/승인은 본인 계정에서 해야 합니다. `ServiceKey`는 첨부 OpenAPI v1.2 요청 필드 대소문자를 준수합니다. Windows 외 OS는 웹 등록 미지원, 기존 환경변수 설정만 가능합니다.

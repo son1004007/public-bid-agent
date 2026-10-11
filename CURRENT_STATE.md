@@ -338,3 +338,12 @@
 - 공식 공공데이터포털 API 키 미설정 → 수집 POST는 HTTP 424, dashboard.json 자동 생성 없음. 실제 공식 공고 HTTP 수집은 **BLOCKED**. 중앙 [USER ACTION #20](https://github.com/son1004007/ai-agent-workflow-playbook/issues/20).
 - 최종 코드/보안 독립 검수 및 UX 사용자 승인은 미완료. Draft PR/main merge HOLD.
 - [Windows 브라우저·HTTP 검증 보고서](docs/reviews/DASHBOARD_BACKEND_WINDOWS_E2E_2026-10-11.md).
+
+
+## 2026-10-11 나라장터 API 인증키 웹 등록 기능
+
+- 사용자: 키를 이미 발급받음. 화면에서 공공데이터포털 활용신청 링크·인증키 입력·PC 저장·연결 확인까지 직접 사용하도록 변경 요청.
+- 새 모듈 `local_app/procurement_credentials.py`: Windows 현재 사용자 DPAPI 암복호화, `LOCALAPPDATA/PublicBidAgent/secrets/g2b_servicekey.dpapi` 파일에 암호문 원자 저장. 입력키 평문/일부 글자/API query를 API 응답·파일 JSON에 반환하지 않음. 환경변수 기존 경로 보존.
+- 기존 로컬 앱 `/api/procurement-key` GET (상태만), `/save`·`/verify`·`/delete` POST, 브라우저 `수집 관리` 패널 연동. 공식 사이트 링크는 신청 페이지에 이동하되 로그인/신청 대행 안 함.
+- 첨부한 조달청 API v1.2 참조 문서에서 용역 검색 오퍼레이션 `getBidPblancListInfoServcPPSSrch`와 요청키 명 `ServiceKey` 확인해 어댑터 수정.
+- 현재 단계: 로컬 합성/격리 검증, 사용자 발급 키 **실제 입력·연결 확인 아직 수행 전**. Windows 브라우저 및 GitHub CI/최종 보안 검수 결과 별도 추적. Draft PR 및 main HOLD.
