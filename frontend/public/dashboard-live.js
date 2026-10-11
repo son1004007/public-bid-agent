@@ -27,6 +27,9 @@
     notices = state.notices;
     logs = state.history;
     if (!notices.some(n => n.id === selected)) selected = notices.length ? notices[0].id : null;
+    document.body.dataset.bidSource = 'official';
+    document.querySelector('#view-collection h1').textContent = '공식 입찰공고 수동 수집';
+    document.querySelector('#view-collection .hgroup .desc').textContent = '최근 24시간 또는 7일을 선택해 공식 공고를 조회합니다. 정기 자동 수집은 구현 전입니다.';
     byId('storageMode').textContent = '나라장터 공식 API에서 수집한 데이터만 표시합니다. 자격·기술·원가·AI 적합도는 미검증 상태이며 담당자 결정은 별도 저장합니다.';
     document.querySelector('.stage').textContent = '공식 공고 목록';
     document.querySelector('.topright span').textContent = 'PC 로컬 저장';
