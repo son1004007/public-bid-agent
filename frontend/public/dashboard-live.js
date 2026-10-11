@@ -13,7 +13,7 @@
   let connected = false;
   let revision = 0;
   let csrf = '';
-  let departmentProfile = {revision:0,categories:['AI','SW','DATA','SECURITY'],include_review:true};
+  let departmentProfile = {revision:0,categories:['AI','SW','DATA','SECURITY'],include_review:false};
 
   // 기본은 마감 전·확인필요만 표시하되, 모든 API 원본을 DB에 그대로 남긴다.
   window.officialListFilter = function(n) {

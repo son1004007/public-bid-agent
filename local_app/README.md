@@ -176,3 +176,5 @@ GET `/api/procurement-key`, POST `/api/procurement-key/save`, POST `/api/procure
 검토대기 포함 기본 설정은 false입니다. 조달 분류/RFP 확인 전 generic '개발·구축'은 SW 자동 후보로 확정하지 않고 REVIEW로 유지합니다.
 
 규칙 기반 복합 키워드(예: AI 데이터 분석 플랫폼)는 AI/DATA 복수 카테고리 근거로 분류합니다. 담당자 최종 Bid/No-Bid 이력은 재분류 시에도 유지합니다.
+
+로컬 신규 화면에서 부서 프로필 비동기 로드 전 일시적인 검토대기 과다 표시를 막기 위해 JS 기본 include_review를 false로 통일합니다. 검토대기는 별도 화면 필터에서 계속 접근할 수 있습니다.
