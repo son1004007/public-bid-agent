@@ -305,3 +305,9 @@ POST /api/dashboard/related 는 저장된 공고 ID 하나에 대해 고정 나�
 - `GET /api/dashboard/rfp-coverage`: dashboard.json + department_profile.json의 선택된 후보를 읽기 전용 집계하며, OPEN/REGISTRATION_REVIEW를 분리합니다.
 - `EXTRACTED_TEXT / FAILED_ATTEMPT / READY_TO_FETCH / UNSUPPORTED_FORMAT / MISSING_OFFICIAL_LINK / INVALID_ATTACHMENTS` 상태별 건수, 현재 마감 전 추출 대기(`ready_active`)와 공식 상세조회 필요(`needs_related_lookup_active`) 건수를 반환합니다.
 - 개인정보, 부서 인력·원가, 인증키, 원문 텍스트, 첨부 URL 및 개별 공고명은 응답에 포함하지 않습니다. 실제 운영 8765 서버 적용은 별도 백업·재시작 검증 대상입니다.
+
+## 2026-10-12 긴 RFP 본문 청크 보존
+
+공식 RFP를 **새로** 추출하는 `rfp_batch.Manager`는 최대 44,000자의 파서 텍스트를 `<PUBLIC_BID_LOCAL_DATA>/rfp_fulltext/<ref>.json`에 SHA-256 기반 원자적 파일로 기록합니다. 청크는 최대 4,000자, 시작·끝은 파서가 반환한 문자열 기준 0-based 문자 offset입니다. `document_evidence`에는 `fulltext_ref`, `fulltext_chars`, `fulltext_reported_chars`, `fulltext_chunks`, `fulltext_truncated`, `fulltext_position_basis`만 추가되고 청크 전체 본문은 일반 대시보드 API에 반환하지 않습니다.
+
+`local_app/rfp_fulltext.py::load`는 로컬 내부 전용 함수로 청크 해시와 전체 텍스트 해시를 검증합니다. 공개 HTTP GET/모델 자동 연동 API를 새로 만들지 않습니다. 추출기 자체의 44,000자 한도·OCR/표/각주 누락·이전 70건의 소급 재처리·캐시 복구/청소/권한 분리는 후속 과제입니다. 로컬 사이드카는 평문이므로 개인 PC 데이터 보관 정책을 따릅니다. 테스트 `test_rfp_fulltext.py`; [설계](../docs/design/RFP_FULLTEXT_CHUNKS_2026-10-12.md).

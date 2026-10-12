@@ -520,3 +520,10 @@
 - 사용자 운영 dashboard/rfp_batch/cases/operations/workforce/(존재 시)department_profile 원본 SHA-256 전후 동일. 8765 운영 서버·원본 자료·main 미변경.
 - 본 작업은 공개 실자료를 이용한 **격리 수집 검증**이며 운영 적용·서비스 RELEASED 또는 실제 입찰 가능 확정을 뜻하지 않는다.
 - 상세 실증: [RFP 70건 격리 배치 보고](docs/reviews/RFP_ACTIVE_70_ISOLATED_E2E_2026-10-12.md).
+
+## 2026-10-12 신규 공식 RFP 전체 텍스트 로컬 청크 보존 - 한정 검증
+
+- 기존 문서당 excerpt 최대 6,000자는 UI 호환으로 유지, 새 배치가 추출한 텍스트 최대 44,000자는 비공개 `rfp_fulltext` 청크(JSON)로 보관. 메타데이터 ref만 기본 대시보드 반환.
+- CPython 3.12 로컬 200 unittest PASS. 실제 공개 공식 RFP 1건의 19,779자/5청크 및 추가 문서 3,823자/1청크 격리 수집 성공, 기존 사용자 JSON/판단·이력 SHA-256 불변.
+- 44,000자 초과 원문/표/각주/파서 OCR 완전성, 이미 추출된 70건 backfill, 파일 캐시 복구, 외부 AI 의미·법적 자격 분석, 운영 8765 적용/독립 최종 검수/main 병합은 미완료.
+- [설계](docs/design/RFP_FULLTEXT_CHUNKS_2026-10-12.md), [실증](docs/reviews/RFP_FULLTEXT_SINGLE_E2E_2026-10-12.md).

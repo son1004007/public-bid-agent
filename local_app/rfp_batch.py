@@ -2,7 +2,7 @@
 목적: 부서 후보를 제한된 양씩 직렬 추출하고 증거/실패를 기록한다.
 입력: 공식 공고/첨부 URL, 기존 추출기; 출력: 문서별 검증 전 추출 근거.
 신뢰경계: 고정 공식 HTTPS만 허용; 문서는 지시가 아닌 데이터.
-부작용: 기존 dashboard.json 특정 공고와 별도 rfp_batch.json 원자 갱신.
+부작용: 기존 dashboard.json과 rfp_batch.json 잠금 갱신, 비공개 RFP 텍스트 청크 파일 추가.
 실패: 제한된 다운로드·추출, 사용자 중단, 실패만 명시적 재시도.
 불변조건: 이미 성공한 공고/사람 결정 불변; 서버 재시작 후 재개 가능.
 검증: test_rfp_batch.py / docs/design/RFP_RESUMABLE_BATCH_2026-10-11.md.
@@ -16,6 +16,7 @@ from pathlib import PurePath
 from dashboard_backend import read as read_dashboard, merge_attachments, MAX_STORED_ATTACHMENTS, ProviderError
 from json_transaction import transaction as dashboard_transaction
 from department_profile import load as load_department_profile
+from rfp_fulltext import store as store_fulltext
 from procurement_documents import SUPPORTED, DocumentFetchError, fetch_attachment, official_url
 from procurement_filter import apply as reclassify
 
@@ -54,7 +55,7 @@ def ranked(notice):
     return [f for _,f in ranked_files]
 
 
-def analyze(notice, extractor, fetcher=fetch_attachment, related=None, key=None):
+def analyze(notice, extractor, fetcher=fetch_attachment, related=None, key=None, fulltext_writer=None):
     """공식 링크의 RFP/과업 문서 최대 2개를 처리하고 문서별 출처를 기록."""
     notice = copy.deepcopy(notice)
     files = ranked(notice)
@@ -90,9 +91,12 @@ def analyze(notice, extractor, fetcher=fetch_attachment, related=None, key=None)
             content=doc.get("text","") if isinstance(doc,dict) else ""
             if not isinstance(content,str) or not content.strip():
                 raise DocumentFetchError("본문 없음")
-            item.update({"status":"EXTRACTED","sha256":hashlib.sha256(raw).hexdigest(),
+            raw_sha256=hashlib.sha256(raw).hexdigest()
+            fulltext_meta=(fulltext_writer(raw_sha256,doc) if fulltext_writer else {})
+            item.update({"status":"EXTRACTED","sha256":raw_sha256,
                          "chars":len(content),"excerpt":content[:6000],
-                         "warnings":[str(w)[:90] for w in doc.get("warnings",[])[:5]]})
+                         "warnings":[str(w)[:90] for w in doc.get("warnings",[])[:5]],
+                         **fulltext_meta})
         except (DocumentFetchError,ValueError,OSError,TimeoutError):
             item.update({"status":"FAILED","error":"공식 첨부 다운로드 또는 추출 실패"})
         evidence.append(item)
@@ -270,7 +274,8 @@ class Manager:
                         need_related=not any(any(w in f["name"] for w in
                             ("제안요청","과업지시","과업내용")) for f in files)
                         key=self.key_getter() if need_related and self.key_getter else None
-                        result=analyze(notice,self.extractor,self.fetcher,self.related,key)
+                        result=analyze(notice,self.extractor,self.fetcher,self.related,key,
+                            fulltext_writer=lambda raw_sha,doc:store_fulltext(self.root,raw_sha,doc))
                     except Exception:
                         # 한 공고의 비신뢰 문서/스키마 오류가 나머지 대기열을 중단시키지 않는다.
                         result={"document_status":"FAILED","document_error":"처리 오류",
