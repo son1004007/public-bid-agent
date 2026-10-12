@@ -316,3 +316,7 @@ POST /api/dashboard/related 는 저장된 공고 ID 하나에 대해 고정 나�
 - `rfp_backfill.Backfill(root, target_ids, persist, extractor)`는 이전에 성공한 공식 문서의 해시·identity·글자수·발췌가 **재수집 결과와 동일할 때** `fulltext_ref` 등을 기존 `document_evidence`에 추가한다.
 - `run(1|3|10|25)`는 `rfp_backfill.json`을 이용해 안전 재개한다. SOURCE_CHANGED / PARSER_CHANGED / UNMATCHED / FETCH_FAILED는 자동 추천/수정 대상이 아니다. 기존 `rfp_text`, excerpt, 입찰 관련 사람 결정·이력은 보존한다.
 - 이관 CLI는 현재 개인 PC의 별도 비공개 stage에서만 수동 실행한다. 일반 HTTP API와 원본 운영 데이터를 자동 이관하지 않는다. 테스트 `test_rfp_backfill.py`; [상세 설계](../docs/design/RFP_BACKFILL_VERIFIED_2026-10-12.md).
+
+## 로컬 공식 RFP 이관 운영·복구 절차
+
+scripts/promote_verified_rfp_stage.py를 사용하여 70개 공식 RFP 공고 및 127개 추출 근거를 비공개 청크 파일과 함께 이관할 수 있다. 이관은 2,223개 공고의 사람 최종 결정/사유/이력 및 기존 143개 RFP 작업 목록을 보존하고, 70건 문서 상태만 완료로 갱신한다. 파일 단위 원자쓰기의 교차 파일 중단 위험은 배포 저널과 --recover 처리로 보호한다. local_app/server.py는 PREPARED 저널이 있을 때 서버 기동을 거부한다. 테스트: local_app/test_release_rfp_stage.py 및 별도 Windows 비공개 운영 사본 HTTP/Chrome 검증.

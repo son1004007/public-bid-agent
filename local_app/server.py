@@ -766,6 +766,13 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
  ROOT.mkdir(parents=True,exist_ok=True,mode=0o700)
+ # Fail closed if a two-file release was interrupted before finalization.
+ # The owner must run the explicit safe recovery CLI before serving data.
+ release_journal=ROOT / ".rfp-release-transaction.json"
+ if release_journal.exists():
+  release_state=json.loads(release_journal.read_text(encoding="utf-8"))
+  if release_state.get("status")!="COMPLETED":
+   raise RuntimeError("미완료 운영 배포 감지: 백업 기준 복구 후 시작")
  with LOCK: load()
  port=int(os.environ.get("PUBLIC_BID_LOCAL_PORT","8765"))
  server=ThreadingHTTPServer(("127.0.0.1",port),Handler)
