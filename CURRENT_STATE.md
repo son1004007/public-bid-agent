@@ -504,3 +504,10 @@
 - 설계·다음 단계: docs/design/RFP_RECOMMENDATION_SLICE_2026-10-12.md. 이 기능은 자동 Bid/No-Bid 결정이 아니라 상세검토 우선순위이다.
 
 - [2026-10-12 추천 웹] 2회 독립 Codex 지적 이후 URL/파일명 identity 검증·취소 대소문자·선택 필드 안전성 보완, Chrome 합성 추천 목록/상세 이동 PASS. 개인 PC 실제 공고 2,223건을 read-only 평가해 현행 검토 순위 후보 111건, 상위 30건, 원문 SHA 불변; 운영 8765 새 코드 적용/실제 입찰 추천 여부는 별도 검증 필요.
+
+## 2026-10-12 공식 RFP 원문 확보 병목 확인
+
+- **읽기 전용** /api/dashboard/rfp-coverage 및 /decision-preview 원문 확보 현황 패널 구현. 개인 인력/원가/공고 내용·첨부 URL은 응답에 포함하지 않는다.
+- 실제 로컬 저장 공고 2,223건 중 현재 선택 부서 CANDIDATE 143건(마감 전 110건). 전체 후보 저장 본문 39/공식 지원 링크 대기 87/미지원 4/링크 없음 13. 마감 전: 저장 본문 38/대기 70/미지원 1/링크 없음 1. 기록상 실패 0은 다운로드 장애가 없다는 뜻이 아니라 저장된 실패 상태가 0건이라는 뜻이다.
+- 실제 dashboard.json, department_profile.json SHA 비교 동일. 새 RFP 다운로드와 운영 8765 서버 변경은 하지 않았다.
+- Windows Python 전체 unittest 196건 PASS, 신규 진단 테스트 3건 PASS, Node JS 문법 및 git diff --check PASS. 사용자 실제 데이터 불변 확인. 원래 8765 운영 서버 미변경, GitHub CI는 푸시 후 확인.

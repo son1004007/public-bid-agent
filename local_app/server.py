@@ -44,6 +44,7 @@ from rfp_batch import Manager as RfpBatchManager, document_signature
 from json_transaction import transaction as dashboard_transaction
 from procurement_discovery import shortlist as shortlist_unreviewed
 from recommendations import shortlist as shortlist_recommendations
+from rfp_coverage import summarize as summarize_rfp_coverage
 from procurement_credentials import (
     CredentialError, active_key as procurement_key, status as procurement_key_status,
     save_key as save_procurement_key, delete_key as delete_procurement_key,
@@ -372,6 +373,17 @@ class Handler(BaseHTTPRequestHandler):
     return self.respond({"staffing":report,"storage":"LOCAL_JSON"})
    except (ValueError,UnicodeError,json.JSONDecodeError,OSError):
     return self.respond({"error":"공고·인력 로컬 파일 조회 오류. 원본 보존"},503)
+  if self.path=="/api/dashboard/rfp-coverage":
+   # 읽기 전용 비식별 RFP 수집 병목. 원문/첨부주소/인력·원가 정보 미반환.
+   try:
+    with LOCK:
+     state=read_dashboard(ROOT / "dashboard.json")
+     profile=load_department_profile(ROOT / "department_profile.json")
+    return self.respond({"coverage":summarize_rfp_coverage(state["notices"],profile),
+                         "dashboard_revision":state["revision"],
+                         "profile_revision":profile["revision"],"storage":"LOCAL_JSON"})
+   except (ValueError,TypeError,json.JSONDecodeError,OSError):
+    return self.respond({"error":"RFP 수집 상태를 조회할 수 없습니다. 원본은 보존됩니다"},503)
   if self.path=="/api/dashboard/discovery":
    try:
     with LOCK: state=read_dashboard(ROOT / "dashboard.json")

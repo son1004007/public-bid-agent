@@ -156,6 +156,7 @@
     await refreshCredential();
     await readDepartment();
     await refreshRecommendations();
+    await refreshRfpCoverage();
   }
 
   async function refreshCredential() {
@@ -557,6 +558,41 @@
     }catch(error){
       recommendationInfo.textContent='공고 우선순위 조회 실패: '+error.message;
       recommendationRows.replaceChildren();
+    }
+  }
+
+  // RFP 추출을 늘리기 전 기존 공식 공고의 병목만 집계한다.
+  const coveragePanel=el('section','card');
+  coveragePanel.id='rfpCoveragePanel';
+  const coverageTitle=el('h2','','RFP 원문 확보 현황과 다음 처리 대상');
+  const coverageInfo=el('p','muted','수집 상태를 조회하고 있습니다.');
+  coverageInfo.id='rfpCoverageInfo';
+  coverageInfo.setAttribute('role','status');
+  const coverageRows=el('div','');
+  const coverageButton=btn('RFP 확보 현황 갱신',()=>void refreshRfpCoverage());
+  coveragePanel.append(coverageTitle,coverageInfo,coverageButton,coverageRows);
+  byId('view-collection').append(coveragePanel);
+  async function refreshRfpCoverage(){
+    try{
+      const r=await fetch('/api/dashboard/rfp-coverage',{cache:'no-store'});
+      const body=await r.json();
+      if(!r.ok || !body.coverage)throw Error(body.error||'RFP 상태 조회 실패');
+      const summary=body.coverage, st=summary.by_state_active;
+      coverageInfo.textContent='부서 후보 전체 '+summary.candidate_count+
+        '건 / 현재 마감 전 '+summary.active_candidate_count+
+        '건 · 본문 확보 '+st.EXTRACTED_TEXT+'건';
+      coverageRows.replaceChildren();
+      [['READY_TO_FETCH','공식 문서 링크 있음 · 추출 대기'],
+       ['FAILED_ATTEMPT','추출 실패 · 원인 확인'],
+       ['UNSUPPORTED_FORMAT','지원되지 않는 첨부 형식'],
+       ['MISSING_OFFICIAL_LINK','공식 첨부 링크 없음 · 상세조회 필요'],
+       ['INVALID_ATTACHMENTS','첨부 목록 오류']].forEach(([key,label])=>{
+          coverageRows.append(el('div','requirementRow',label+': '+st[key]+'건'));
+       });
+      coverageRows.append(el('p','muted','본문 확보는 과업 전체 검증 및 입찰 적격 판단과 별개입니다. 조회는 기존 파일을 수정하지 않습니다.'));
+    }catch(error){
+      coverageInfo.textContent='RFP 확보 현황 조회 실패: '+error.message;
+      coverageRows.replaceChildren();
     }
   }
 
