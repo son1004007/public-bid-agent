@@ -511,3 +511,12 @@
 - 실제 로컬 저장 공고 2,223건 중 현재 선택 부서 CANDIDATE 143건(마감 전 110건). 전체 후보 저장 본문 39/공식 지원 링크 대기 87/미지원 4/링크 없음 13. 마감 전: 저장 본문 38/대기 70/미지원 1/링크 없음 1. 기록상 실패 0은 다운로드 장애가 없다는 뜻이 아니라 저장된 실패 상태가 0건이라는 뜻이다.
 - 실제 dashboard.json, department_profile.json SHA 비교 동일. 새 RFP 다운로드와 운영 8765 서버 변경은 하지 않았다.
 - Windows Python 전체 unittest 196건 PASS, 신규 진단 테스트 3건 PASS, Node JS 문법 및 git diff --check PASS. 사용자 실제 데이터 불변 확인. 원래 8765 운영 서버 미변경, GitHub CI는 푸시 후 확인.
+
+## 2026-10-12 마감 전 공식 RFP 70건 격리 확보 검증
+
+- Windows 개인 PC의 별도 비공개 stage에서 공식 원문 대기 70건을 25/25/20건으로 직렬 처리, **DONE 70 / FAILED 0 / PENDING 0**.
+- stage의 마감 전 CANDIDATE 110건 중 추출본문 확보 **38 -> 108**, 지원 형식 미비 1건, 공식 링크 없음 1건. 기존 공고 2,223건과 사용자 결정·이력 보존.
+- 신규 추출 evidence 기록 127건 중 발췌 6,000자 제한을 초과한 문서 **96건**, 파서 경고 **14건**. 문서 전체 표·각주·정정 정확성 및 AI 의미 분석은 미검증.
+- 사용자 운영 dashboard/rfp_batch/cases/operations/workforce/(존재 시)department_profile 원본 SHA-256 전후 동일. 8765 운영 서버·원본 자료·main 미변경.
+- 본 작업은 공개 실자료를 이용한 **격리 수집 검증**이며 운영 적용·서비스 RELEASED 또는 실제 입찰 가능 확정을 뜻하지 않는다.
+- 상세 실증: [RFP 70건 격리 배치 보고](docs/reviews/RFP_ACTIVE_70_ISOLATED_E2E_2026-10-12.md).
