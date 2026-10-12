@@ -294,3 +294,8 @@ POST /api/dashboard/related 는 저장된 공고 ID 하나에 대해 고정 나�
 - RFP 배치 재추출로 상위 2개 파일이 달라져도 이전 `document_evidence`의 독립 문서 식별자를 보존한다. 합성 원문이 같은 경우도 포함한다.
 - 독립 Codex 최종 수정 재검수: 위 3가지 **PASS**, 심각한 신규 회귀 미발견. 입력 SHA-256 `328a2d103cc60a04bbd228bf11419bd69a1865cab6f7c50267dd838dd1dbadcc`; 출력 원문은 개인 PC `user-json/rfp_evidence_review_retest.json`에 비공개 보관.
 - 최종 Windows 합성 Python 전체 **177 PASS**, JavaScript 문법/Git diff 검사 PASS, 실제 2,223건 `dashboard.json` 원본 SHA 보존 PASS. 8765 원본 서버 변경 없음. 본 변경의 범위는 협조 프로세스/로컬 파일 시스템이며 정전 내구성·임의 잠금파일 교체·대량 실 RFP 추출은 별도 검증이다.
+
+## 2026-10-12 공식 공고 읽기 전용 우선검토 순위
+- GET /api/dashboard/recommendations: 전체 공식 공고와 현재 부서 관심분야를 읽고, 현재 기한 조건에 맞는 상세검토 후보 상위 30건을 추천 순위로 표시. 분석 모드는 RULE_BASED_READ_ONLY. 실제 AI/법적 참가자격/기술 수행능력/가용인력/수익성 검증 상태는 UNVERIFIED.
+- /decision-preview 기존 수집관리 화면에 순위, 공식 분류/RFP 발췌 근거유형, 원문 미확인사항, 공고 상세 확인 버튼 연결. 비공개 인력·급여·RFP 본문·API 키는 추천 응답에 포함되지 않음.
+- 설계·다음 단계: docs/design/RFP_RECOMMENDATION_SLICE_2026-10-12.md. 이 기능은 자동 Bid/No-Bid 결정이 아니라 상세검토 우선순위이다.

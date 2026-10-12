@@ -43,6 +43,7 @@ from procurement_documents import extract as extract_official_document, Document
 from rfp_batch import Manager as RfpBatchManager, document_signature
 from json_transaction import transaction as dashboard_transaction
 from procurement_discovery import shortlist as shortlist_unreviewed
+from recommendations import shortlist as shortlist_recommendations
 from procurement_credentials import (
     CredentialError, active_key as procurement_key, status as procurement_key_status,
     save_key as save_procurement_key, delete_key as delete_procurement_key,
@@ -378,6 +379,17 @@ class Handler(BaseHTTPRequestHandler):
                          "storage":"LOCAL_JSON"})
    except (ValueError,json.JSONDecodeError,OSError):
     return self.respond({"error":"공고 데이터 읽기 실패; 기존 자료 보존"},503)
+  if self.path=="/api/dashboard/recommendations":
+   # 2,223건 전체의 읽기 전용 상세검토 우선순위. 비공개 인력/급여, RFP 원문 미반환.
+   try:
+    with LOCK:
+     state=read_dashboard(ROOT / "dashboard.json")
+     profile=load_department_profile(ROOT / "department_profile.json")
+    ranked=shortlist_recommendations(state["notices"],profile)
+    return self.respond({"recommendations":ranked,"dashboard_revision":state["revision"],
+                         "profile_revision":profile["revision"],"storage":"LOCAL_JSON"})
+   except (ValueError,TypeError,KeyError,json.JSONDecodeError,OSError):
+    return self.respond({"error":"공고 추천 근거 또는 부서 설정 조회 실패; 기존 파일 보존"},503)
   if self.path=="/api/rfp-batch":
    try:return self.respond({"batch":RFP_BATCH.status(),"csrf":TOKEN,"storage":"LOCAL_JSON"})
    except (ValueError,json.JSONDecodeError,OSError):

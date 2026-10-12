@@ -155,6 +155,7 @@
     byId('assess-all').textContent = '미판단 공고 일괄 확인 보류';
     await refreshCredential();
     await readDepartment();
+    await refreshRecommendations();
   }
 
   async function refreshCredential() {
@@ -510,6 +511,55 @@
     }catch(e){notify('RFP 분석 '+action+' 실패: '+e.message);}
     finally{await refreshBatch().catch(()=>{});}
   }
+  // 실제 전체 공고 + 제한된 RFP 근거를 사용한 검토 우선순위. 법적 입찰추천 아님.
+  const recommendationPanel=el('section','card');
+  recommendationPanel.id='officialRecommendationPanel';
+  const recommendationHeading=el('h2','','공고 분석 · 검토 추천 우선순위');
+  const recommendationInfo=el('p','muted','공식 공고와 RFP 발췌를 검토 중입니다.');
+  recommendationInfo.id='officialRecommendationInfo';
+  recommendationInfo.setAttribute('role','status');
+  const recommendationRows=el('div','');
+  recommendationRows.id='officialRecommendationRows';
+  const recommendationRefresh=btn('추천 검토 목록 새로고침',()=>void refreshRecommendations());
+  recommendationPanel.append(recommendationHeading,recommendationInfo,
+                             recommendationRefresh,recommendationRows);
+  byId('view-collection').append(recommendationPanel);
+
+  async function refreshRecommendations(){
+    try{
+      const r=await fetch('/api/dashboard/recommendations',
+                          {cache:'no-store',headers:{Accept:'application/json'}});
+      const response=await r.json();
+      if(!r.ok || !response.recommendations)
+        throw Error(response.error||'우선순위 계산 실패');
+      const report=response.recommendations;
+      recommendationInfo.textContent='전체 '+report.total_notices+'건 중 상세검토 우선 '+
+        report.review_priority_count+'건 (RFP 발췌 확보 '+report.rfp_evidence_count+
+        '건, 메타데이터 검토 '+report.metadata_only_count+
+        '건). 순위는 입찰 적격·수익성·AI 최종 추천이 아닙니다.';
+      recommendationRows.replaceChildren();
+      if(!report.results.length){
+        recommendationRows.append(el('p','muted','현재 마감 전 검토 후보가 없습니다. 부서 분야 설정과 RFP 추출 상태를 확인하세요.'));
+        return;
+      }
+      report.results.forEach(item=>{
+        const card=el('div','requirementRow');
+        card.append(el('strong','',item.review_rank+'위 · '+item.title),
+          el('span','muted',item.org+' / 마감 '+item.end+' / '+item.window_status),
+          el('span','muted',item.priority_label+' · '+item.basis),
+          el('span','muted','근거: '+(item.evidence.map(e=>e.category+' '+e.source).join(' · ')||'추가 확인 필요')),
+          el('span','muted','참가자격 / 기술 적합성 / 가용인력 / 원가: 모두 미검증'));
+        card.append(btn('공고 상세·RFP 확인',()=>{
+          selected=item.id;openFullDetail(item.id);
+        }));
+        recommendationRows.append(card);
+      });
+    }catch(error){
+      recommendationInfo.textContent='공고 우선순위 조회 실패: '+error.message;
+      recommendationRows.replaceChildren();
+    }
+  }
+
   // REVIEW 전수 수집 없이 공식 메타데이터 근거로 상세검토 순서만 제안.
   const discoveryPanel=el('section','card');
   const discoveryHeading=el('h2','','검토대기 공고 중 추가 발굴 (RFP 미확인)');
