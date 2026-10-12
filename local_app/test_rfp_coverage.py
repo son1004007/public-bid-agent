@@ -43,6 +43,8 @@ class CoverageTests(unittest.TestCase):
             "INVALID_ATTACHMENTS": 0})
         self.assertEqual(report["unprocessed_active"], 3)
         self.assertEqual(report["failed_active"], 1)
+        self.assertEqual(report["ready_active"], 1)
+        self.assertEqual(report["needs_related_lookup_active"], 1)
         self.assertNotIn("URL", json.dumps(report))
 
     def test_outside_profile_excluded_and_malformed_files_fail_closed(self):

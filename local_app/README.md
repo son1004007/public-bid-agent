@@ -299,3 +299,9 @@ POST /api/dashboard/related 는 저장된 공고 ID 하나에 대해 고정 나�
 - GET /api/dashboard/recommendations: 전체 공식 공고와 현재 부서 관심분야를 읽고, 현재 기한 조건에 맞는 상세검토 후보 상위 30건을 추천 순위로 표시. 분석 모드는 RULE_BASED_READ_ONLY. 실제 AI/법적 참가자격/기술 수행능력/가용인력/수익성 검증 상태는 UNVERIFIED.
 - /decision-preview 기존 수집관리 화면에 순위, 공식 분류/RFP 발췌 근거유형, 원문 미확인사항, 공고 상세 확인 버튼 연결. 비공개 인력·급여·RFP 본문·API 키는 추천 응답에 포함되지 않음.
 - 설계·다음 단계: docs/design/RFP_RECOMMENDATION_SLICE_2026-10-12.md. 이 기능은 자동 Bid/No-Bid 결정이 아니라 상세검토 우선순위이다.
+
+### 공식 RFP 확보 상태 진단 API
+
+- `GET /api/dashboard/rfp-coverage`: dashboard.json + department_profile.json의 선택된 후보를 읽기 전용 집계하며, OPEN/REGISTRATION_REVIEW를 분리합니다.
+- `EXTRACTED_TEXT / FAILED_ATTEMPT / READY_TO_FETCH / UNSUPPORTED_FORMAT / MISSING_OFFICIAL_LINK / INVALID_ATTACHMENTS` 상태별 건수, 현재 마감 전 추출 대기(`ready_active`)와 공식 상세조회 필요(`needs_related_lookup_active`) 건수를 반환합니다.
+- 개인정보, 부서 인력·원가, 인증키, 원문 텍스트, 첨부 URL 및 개별 공고명은 응답에 포함하지 않습니다. 실제 운영 8765 서버 적용은 별도 백업·재시작 검증 대상입니다.

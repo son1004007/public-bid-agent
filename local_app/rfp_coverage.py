@@ -81,6 +81,8 @@ def summarize(notices, profile):
                               + active["MISSING_OFFICIAL_LINK"]
                               + active["INVALID_ATTACHMENTS"],
         "failed_active": active["FAILED_ATTEMPT"],
+        "ready_active": active["READY_TO_FETCH"],
+        "needs_related_lookup_active": active["MISSING_OFFICIAL_LINK"],
         "mode": "READ_ONLY_DOCUMENT_COVERAGE",
         "scope": "현재 선택한 부서 관심분야의 CANDIDATE 공고, 실시간 재계산 마감상태",
         "interpretation": "추출 여부는 첨부 전체 파악·원문 정확도·실제 입찰 적격성이 아님",

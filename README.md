@@ -370,3 +370,9 @@ Windows에서 인증·CSRF 거절 POST의 요청 본문이 남아 연결이 강�
 - GET /api/dashboard/recommendations: 전체 공식 공고와 현재 부서 관심분야를 읽고, 현재 기한 조건에 맞는 상세검토 후보 상위 30건을 추천 순위로 표시. 분석 모드는 RULE_BASED_READ_ONLY. 실제 AI/법적 참가자격/기술 수행능력/가용인력/수익성 검증 상태는 UNVERIFIED.
 - /decision-preview 기존 수집관리 화면에 순위, 공식 분류/RFP 발췌 근거유형, 원문 미확인사항, 공고 상세 확인 버튼 연결. 비공개 인력·급여·RFP 본문·API 키는 추천 응답에 포함되지 않음.
 - 설계·다음 단계: docs/design/RFP_RECOMMENDATION_SLICE_2026-10-12.md. 이 기능은 자동 Bid/No-Bid 결정이 아니라 상세검토 우선순위이다.
+
+### RFP 원문 확보 현황 (로컬 개발 화면)
+
+- `GET /api/dashboard/rfp-coverage`는 기존 나라장터 공고와 현재 부서 관심 분야에서 본문 추출·공식 지원 링크·미지원 형식·링크 누락·실패 건수를 읽기 전용으로 집계합니다.
+- `/decision-preview` 수집관리에서 전체 부서 후보 및 현재 마감 전 후보의 확보 현황을 확인합니다. 공식 첨부를 자동 다운로드하거나 원본 JSON을 수정하지 않습니다.
+- 현재 추출된 본문은 부분 발췌일 수 있으며 법적 참가자격, 과업 적합성 및 최종 입찰 추천의 근거로 확정하지 않습니다. 상세 설계: [RFP 확보 현황 진단](docs/design/RFP_COVERAGE_2026-10-12.md).
