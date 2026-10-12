@@ -311,3 +311,8 @@ POST /api/dashboard/related 는 저장된 공고 ID 하나에 대해 고정 나�
 공식 RFP를 **새로** 추출하는 `rfp_batch.Manager`는 최대 44,000자의 파서 텍스트를 `<PUBLIC_BID_LOCAL_DATA>/rfp_fulltext/<ref>.json`에 SHA-256 기반 원자적 파일로 기록합니다. 청크는 최대 4,000자, 시작·끝은 파서가 반환한 문자열 기준 0-based 문자 offset입니다. `document_evidence`에는 `fulltext_ref`, `fulltext_chars`, `fulltext_reported_chars`, `fulltext_chunks`, `fulltext_truncated`, `fulltext_position_basis`만 추가되고 청크 전체 본문은 일반 대시보드 API에 반환하지 않습니다.
 
 `local_app/rfp_fulltext.py::load`는 로컬 내부 전용 함수로 청크 해시와 전체 텍스트 해시를 검증합니다. 공개 HTTP GET/모델 자동 연동 API를 새로 만들지 않습니다. 추출기 자체의 44,000자 한도·OCR/표/각주 누락·이전 70건의 소급 재처리·캐시 복구/청소/권한 분리는 후속 과제입니다. 로컬 사이드카는 평문이므로 개인 PC 데이터 보관 정책을 따릅니다. 테스트 `test_rfp_fulltext.py`; [설계](../docs/design/RFP_FULLTEXT_CHUNKS_2026-10-12.md).
+
+## 기존 6,000자 RFP 발췌의 검증 후 소급 이관
+- `rfp_backfill.Backfill(root, target_ids, persist, extractor)`는 이전에 성공한 공식 문서의 해시·identity·글자수·발췌가 **재수집 결과와 동일할 때** `fulltext_ref` 등을 기존 `document_evidence`에 추가한다.
+- `run(1|3|10|25)`는 `rfp_backfill.json`을 이용해 안전 재개한다. SOURCE_CHANGED / PARSER_CHANGED / UNMATCHED / FETCH_FAILED는 자동 추천/수정 대상이 아니다. 기존 `rfp_text`, excerpt, 입찰 관련 사람 결정·이력은 보존한다.
+- 이관 CLI는 현재 개인 PC의 별도 비공개 stage에서만 수동 실행한다. 일반 HTTP API와 원본 운영 데이터를 자동 이관하지 않는다. 테스트 `test_rfp_backfill.py`; [상세 설계](../docs/design/RFP_BACKFILL_VERIFIED_2026-10-12.md).

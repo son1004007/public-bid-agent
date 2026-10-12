@@ -212,3 +212,8 @@ Codex 1개가 선택된 경우 LangGraph는 independent_analysis에서 1회 호�
 ## 2026-10-12 비공개 문서 청크 저장 경계 (개발 브랜치)
 
 기존 `dashboard.json`의 요약 발췌는 유지하고, 신규 RFP 배치가 반환받은 본문 최대 44,000자를 별도 로컬 content-addressed JSON 캐시에 4,000자 청크로 저장한다. 기존 일반 GET 응답은 레퍼런스/해시/글자수/절단 상태만 포함하며 본문 청크는 공개하지 않는다. 추출 문자열 offset은 실제 PDF/HWP 페이지·표 위치와 다르며, 파서의 44,000자 절단은 그대로 경고한다. 사이드카 파일과 대시보드 참조는 단일 DB 트랜잭션으로 커밋되지 않으므로 지연 재처리·복구/청소 정책은 후속 구현한다. [설계](design/RFP_FULLTEXT_CHUNKS_2026-10-12.md).
+
+## 2026-10-12 구 RFP 증거의 청크 이관 버전 검증
+- 신규 RFP 청크 저장소와 별도로 기존 EXTRACTED의 `document_evidence.sha256`, 첨부 identity, chars, excerpt를 공개 원본의 재다운로드·파싱 결과와 대조한다.
+- 전부 일치한 경우 기존 evidence에 `fulltext_ref`만 증분 기록하고 별도 작업 원장으로 수동 25문서 단위 재개한다. 다른 SHA/발췌·첨부 링크는 격리하며 사람 결정/기존 RFP 요약은 불변.
+- 비공개 개인 PC 검증 전용이며 더 최신 공고 정정 여부, 참가자격의 확정, 인가·호스팅·AI 모델 전송 보장과 별개다. [설계](design/RFP_BACKFILL_VERIFIED_2026-10-12.md).

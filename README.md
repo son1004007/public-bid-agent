@@ -384,3 +384,9 @@ Windows에서 인증·CSRF 거절 POST의 요청 본문이 남아 연결이 강�
 파서의 44,000자 추출 제한 또는 스캔·표 처리 누락은 이 기능으로 해소되지 않습니다. **기존에 이미 EXTRACTED인 70건은 자동 재다운로드/소급 청크 생성되지 않습니다.** 해당 원문은 다음 검증·재처리 단계가 필요합니다. `fulltext_position_basis=EXTRACTED_TEXT_OFFSETS_NOT_ORIGINAL_PAGES`는 PDF 실제 페이지·표·각주 좌표가 아닙니다. `fulltext_truncated`는 파서의 절단 여부를 표시하며, 참이면 요구사항 전체 분석을 보류해야 합니다.
 
 검증: 합성 Python 전체 200건 PASS, 비공개 격리 실제 공식 RFP 한 공고에서 19,779자(5청크)와 부속 문서 3,823자(1청크) 보존 및 원본 JSON SHA 불변 확인. 현재 운영 8765 서버/실사용 자료·main 미적용. [세부 설계](docs/design/RFP_FULLTEXT_CHUNKS_2026-10-12.md), [격리 실증 보고](docs/reviews/RFP_FULLTEXT_SINGLE_E2E_2026-10-12.md).
+
+## 2026-10-12 기존 RFP 청크 소급 보완 경로 (개발 브랜치)
+- `local_app/rfp_backfill.py`: 기존 EXTRACTED 문서의 공식 첨부를 재다운로드한 뒤 첨부 URL/파일명 identity, 바이너리 SHA-256, 파서 글자수, 기존 6,000자 발췌 접두부를 모두 대조한다. 동일 문서만 비공개 전체 텍스트 청크에 보존하고 evidence metadata를 보완한다.
+- 문서 변경/파서 불일치/공식 다운로드 실패/첨부 식별 모호는 서로 다른 보류 상태로 기록하고 기존 본문·담당자 결정을 변경하지 않는다. `rfp_backfill.json` 원장으로 1/3/10/25개 문서씩 안전 재개한다.
+- 현재는 개인 PC **비공개 격리 작업 사본의 검증 기능**이다. 기존 8765 서버와 원본 파일, 공개 GitHub에는 실제 공고/RFP 내용을 반영하지 않았다. 정정·취소 공고의 최신성 검증, 파서 44,000자 한도 및 전체 RFP 의미 검토/AI 추천은 후속 단계다.
+- [안전 이관 설계](docs/design/RFP_BACKFILL_VERIFIED_2026-10-12.md) / [회귀 테스트](local_app/test_rfp_backfill.py).

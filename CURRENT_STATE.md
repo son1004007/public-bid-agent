@@ -527,3 +527,11 @@
 - CPython 3.12 로컬 200 unittest PASS. 실제 공개 공식 RFP 1건의 19,779자/5청크 및 추가 문서 3,823자/1청크 격리 수집 성공, 기존 사용자 JSON/판단·이력 SHA-256 불변.
 - 44,000자 초과 원문/표/각주/파서 OCR 완전성, 이미 추출된 70건 backfill, 파일 캐시 복구, 외부 AI 의미·법적 자격 분석, 운영 8765 적용/독립 최종 검수/main 병합은 미완료.
 - [설계](docs/design/RFP_FULLTEXT_CHUNKS_2026-10-12.md), [실증](docs/reviews/RFP_FULLTEXT_SINGLE_E2E_2026-10-12.md).
+
+## 2026-10-12 공식 RFP 70개 공고 / 127개 문서 청크 소급 이관
+
+- Windows 개인 PC 별도 격리 stage에서 과거 공식 RFP 추출 evidence **127개 전부** 원본 바이너리 SHA-256과 기존 발췌·파서 문자 수 재검증 뒤 청크 참조 보강. 3/25/25/25/25/24개로 단계 실행, DONE 127 / 불일치·다운로드 오류 0 / pending 0.
+- 문서 증거 127개, 보존 청크 578개, content-addressed sidecar 124파일, 미참조 0파일. 예전 6,000자 발췌를 넘은 문서 96개는 추가 추출 본문을 보관했고 14개는 파서 44,000자 상한으로 원문 전체 보존 미확인.
+- 공고 2,223건 기존 업무필드/사람 판단·이력/RFP 발췌 불변. 사용자 원본 및 이전 별도 검증 사본 SHA 불변. 운영 8765 서버와 main 변경 없음.
+- 합성 신규 회귀 10개 포함 개인 PC Python unittest **210 PASS**. Codex 1차 코드 지적의 metadata 임의 덮어쓰기·캐시 검증 부족·동시 worker 보호 보완. AGY 최종 검수 출력은 시간 제한으로 확보하지 못하여 승인/릴리스 아님.
+- [설계](docs/design/RFP_BACKFILL_VERIFIED_2026-10-12.md), [실증·잔여 위험](docs/reviews/RFP_BACKFILL_VERIFIED_E2E_2026-10-12.md).
