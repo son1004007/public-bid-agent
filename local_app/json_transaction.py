@@ -38,7 +38,7 @@ def _local_lock(path: Path, timeout: float):
 @contextmanager
 def transaction(root: Path, timeout: float = 10.0, *, name: str = _LOCK_FILE):
     """프로세스 경계의 변경 트랜잭션; POSIX flock / Windows msvcrt byte lock."""
-    if timeout < 0 or name not in (_LOCK_FILE, ".rfp-batch-worker.lock"):
+    if timeout < 0 or name not in (_LOCK_FILE, ".rfp-batch-worker.lock", ".rfp-server-lease.lock"):
         raise ValueError("잠금 설정 오류")
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True, mode=0o700)

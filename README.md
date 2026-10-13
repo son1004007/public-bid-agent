@@ -409,3 +409,14 @@ Windows에서 인증·CSRF 거절 POST의 요청 본문이 남아 연결이 강�
 ## 2026-10-12 개인 PC 로컬 8765 안전 배포
 
 검증된 70개 공고와 127개 RFP 문서 청크는 scripts/promote_verified_rfp_stage.py로 로컬 데이터에 병합한다. 코드 실행 전 운영 서버 중지, 검증 사본 준비, 신규 백업 디렉터리와 사용자 판단 보존이 필수다. 기본 실행은 dry-run, --apply --backup은 오프라인 병합, --recover --backup은 중단된 JSON 이중 쓰기의 복구, --rollback --backup은 후속 편집이 없는 배포의 복원이다. 배포 저널이 PREPARED인 동안 서버는 실행을 거부하며, 백업과 청크 파일은 자동 삭제하지 않는다. 독립 검수는 사용자 지시대로 Codex만 수행한다. 원문 44,000자 상한 및 공고 최신 자격 검증은 미완료이다.
+
+
+## 2026-10-13 로컬 RFP 배포 안전성 보강 (개발 브랜치)
+
+Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 동기식 PREPARED/COMPLETED 복구 의도, Windows 파일교체 MoveFileExW WRITE_THROUGH 및 POSIX 디렉터리 fsync, Windows junction/reparse 경로 거부와 파일 동일성 재검증, 중단된 부분 백업의 원본 SHA 확인 후 재개 절차를 추가했습니다. 복구 의도 SQLite는 `PRAGMA synchronous=FULL`과 DELETE 저널을 사용합니다. 원래 `.rfp-release-transaction.json`도 유지합니다. SQLite가 PREPARED인 동안 서버 시작과 요청을 차단합니다. 로컬 서버가 실행 중이면 오프라인 배포/롤백/복구 도구는 별도 OS 프로세스 잠금 충돌로 거부됩니다.
+
+배포 작업은 로컬 Windows 사용자 데이터와 별도 백업 경로가 있어야 하며 서버 종료 뒤 실행합니다. 부분 백업 재개는 `.backup-intent.json`의 기존 운영 JSON 해시가 동일하고 알 수 없는 파일이 없는 경우만 허용합니다. `recover`는 텍스트 저널이 사라졌어도 SQLite PREPARED 의도로부터 두 파일을 검증된 세대로 복구합니다. 버전이 다른 JSON은 제공하지 않고 서버가 실패하도록 설정했습니다.
+
+**제한:** Windows 파일시스템·장치의 물리적 전원 장애를 여기서 직접 시험하거나 완전한 영속성을 보장하지는 않습니다. Microsoft MoveFileExW의 WRITE_THROUGH는 파일 이동을 플러시하지만, 모든 같은 볼륨 메타데이터 영속성의 증명은 아닙니다. SQLite FULL의 내구성도 OS/디스크의 fsync/FlushFileBuffers 계약에 의존합니다. 실제 종료 및 완전한 검수 전까지 공개 운영 배포와 main 통합은 별도 승인 대상입니다.
+
+실행: `python -m unittest discover -s local_app -p 'test_*.py'` 및 독립 Codex 읽기 전용 재검수. 실제 사용 데이터의 손상·이력 보존은 테스트 폴더와 별도 원본 해시 점검으로 확인합니다.

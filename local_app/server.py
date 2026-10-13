@@ -42,6 +42,8 @@ from procurement_related import fetch as fetch_related_constraints
 from procurement_documents import extract as extract_official_document, DocumentFetchError
 from rfp_batch import Manager as RfpBatchManager, document_signature
 from json_transaction import transaction as dashboard_transaction
+from release_lease import exclusive_release_access, guard_ready, acquire_guard
+from release_lease import exclusive_release_access, guard_ready, acquire_guard
 from procurement_discovery import shortlist as shortlist_unreviewed
 from recommendations import shortlist as shortlist_recommendations
 from rfp_coverage import summarize as summarize_rfp_coverage
@@ -318,6 +320,8 @@ class Handler(BaseHTTPRequestHandler):
   self.wfile.write(b)
  def host_ok(self): return self.headers.get("Host")==f"127.0.0.1:{self.server.server_port}"
  def do_GET(self):
+  try: acquire_guard(ROOT)
+  except Exception: return self.respond({"error":"배포 중이므로 복구가 필요합니다"},503)
   if not self.host_ok(): return self.respond({"error":"Host 검증 실패"},403)
   if self.path=="/":
    b=HTML.read_bytes()
@@ -440,6 +444,10 @@ class Handler(BaseHTTPRequestHandler):
    return self.respond({"csrf":TOKEN,"data":data,"gates":GATES,"factors":FACTORS})
   return self.respond({"error":"없는 경로"},404)
  def do_POST(self):
+  try: acquire_guard(ROOT)
+  except Exception: return self.respond({"error":"배포 중이므로 복구가 필요합니다"},503)
+  try: acquire_guard(ROOT)
+  except Exception: return self.respond({"error":"배포 중이므로 복구가 필요합니다"},503)
   if not self.host_ok() or self.headers.get("Origin")!=f"http://127.0.0.1:{self.server.server_port}" or self.headers.get("X-Local-CSRF")!=TOKEN:
    # Windows에서는 요청 body가 남은 채 응답 연결을 닫으면 TCP reset이 발생할 수 있다.
    # Content-Length가 한도 이내인 경우만 짧은 제한시간으로 읽고 403을 반환한다.
@@ -773,15 +781,17 @@ def main():
   release_state=json.loads(release_journal.read_text(encoding="utf-8"))
   if release_state.get("status")!="COMPLETED":
    raise RuntimeError("미완료 운영 배포 감지: 백업 기준 복구 후 시작")
- with LOCK: load()
- port=int(os.environ.get("PUBLIC_BID_LOCAL_PORT","8765"))
- server=ThreadingHTTPServer(("127.0.0.1",port),Handler)
- address=f"http://127.0.0.1:{server.server_port}/"
- print("로컬 전용 Public Bid Agent:",address,flush=True)
- print("내 PC JSON:",FILE,flush=True)
- if "--no-browser" not in sys.argv: webbrowser.open(address)
- try: server.serve_forever()
- except KeyboardInterrupt: pass
- finally: server.server_close()
+ with exclusive_release_access(ROOT, timeout=0):
+  guard_ready(ROOT)
+  with LOCK: load()
+  port=int(os.environ.get("PUBLIC_BID_LOCAL_PORT","8765"))
+  server=ThreadingHTTPServer(("127.0.0.1",port),Handler)
+  address=f"http://127.0.0.1:{server.server_port}/"
+  print("로컬 전용 Public Bid Agent:",address,flush=True)
+  print("내 PC JSON:",FILE,flush=True)
+  if "--no-browser" not in sys.argv: webbrowser.open(address)
+  try: server.serve_forever()
+  except KeyboardInterrupt: pass
+  finally: server.server_close()
 
 if __name__=="__main__": main()

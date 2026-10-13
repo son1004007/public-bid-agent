@@ -232,5 +232,73 @@ class ReleaseStageTests(unittest.TestCase):
                 plan(self.live,self.stage)
 
 
+    def test_running_server_lease_blocks_upgrade(self):
+        from release_lease import exclusive_release_access
+        with exclusive_release_access(self.live, timeout=0):
+            with self.assertRaises(TimeoutError):
+                apply(self.live, self.stage, self.backup)
+        self.assertFalse(self.backup.exists())
+
+    def test_sqlite_intent_blocks_when_json_journal_missing(self):
+        from release_lease import save_intent, guard_ready, read_intent
+        from promote_verified_rfp_stage import recover, JOURNAL
+        import shutil
+        self.backup.mkdir()
+        hashes = {name:digest(self.live/name) for name in ("dashboard.json","rfp_batch.json")}
+        for name in hashes:
+            shutil.copy2(self.live/name,self.backup/name)
+        state = {"status":"PREPARED","backup_path":str(self.backup),
+                 "original_files":hashes,
+                 "expected_new_files":{n:"0"*64 for n in hashes}}
+        save_intent(self.live,"PREPARED",state)
+        self.assertFalse((self.live/JOURNAL).exists())
+        with self.assertRaises(RuntimeError):
+            guard_ready(self.live)
+        self.assertEqual(read_intent(self.live)["status"],"PREPARED")
+        self.assertEqual(recover(self.live,self.backup)["result"],"RECOVERED_ROLLBACK")
+        for n,sha in hashes.items():
+            self.assertEqual(digest(self.live/n),sha)
+
+    def test_partial_release_backup_can_resume_if_live_unchanged(self):
+        import promote_verified_rfp_stage as mod
+        from unittest.mock import patch
+        actual = mod.shutil.copy2
+        calls=[0]
+        def fail_first_copy(src,dst,*args,**kwargs):
+            calls[0]+=1
+            if calls[0]==1:
+                raise OSError("synthetic backup preparation crash")
+            return actual(src,dst,*args,**kwargs)
+        before = {n:digest(self.live/n) for n in ("dashboard.json","rfp_batch.json")}
+        with patch.object(mod.shutil,"copy2",side_effect=fail_first_copy):
+            with self.assertRaises(OSError):
+                apply(self.live,self.stage,self.backup)
+        self.assertTrue((self.backup/".backup-intent.json").exists())
+        self.assertEqual(before,{n:digest(self.live/n) for n in before})
+        result=apply(self.live,self.stage,self.backup)
+        self.assertEqual(result["result"],"APPLIED")
+
+    def test_reparse_root_denied(self):
+        from unittest.mock import patch
+        from release_lease import reject_reparse
+        import os
+        actual=os.path.isjunction
+        def fake_junction(p):
+            if str(p)==str(self.stage):
+                return True
+            return actual(p)
+        import os
+        with patch("os.path.isjunction",side_effect=fake_junction):
+            with self.assertRaises(ValueError):
+                reject_reparse(self.stage)
+
+    def test_intent_complete_verifies_then_allows_normal_updates(self):
+        from release_lease import save_intent, guard_ready, read_intent
+        hashes={n:digest(self.live/n) for n in ("dashboard.json","rfp_batch.json")}
+        save_intent(self.live,"COMPLETED",{"expected_new_files":hashes})
+        guard_ready(self.live)
+        self.assertEqual(read_intent(self.live)["status"],"VERIFIED")
+
+
 if __name__=="__main__":
     unittest.main()
