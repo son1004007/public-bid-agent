@@ -16,6 +16,7 @@ import re
 import shutil
 import sys
 import tempfile
+from contextlib import ExitStack
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,7 +26,7 @@ from dashboard_backend import read as read_dashboard
 from rfp_fulltext import load as load_fulltext
 from procurement_documents import official_url
 from json_transaction import transaction
-from release_lease import (exclusive_release_access, reject_reparse, safe_read, save_intent, read_intent)
+from release_lease import (exclusive_release_access, reject_reparse, safe_read, save_intent, read_intent, pin_directories)
 
 REF_RE = re.compile(r"^[0-9a-f]{64}$")
 JOURNAL = ".rfp-release-transaction.json"
@@ -208,12 +209,13 @@ def guard_no_incomplete_journal(root):
 
 def apply(live_root, stage_root, backup_root):
     live_root, stage_root, backup_root = map(reject_reparse, (live_root, stage_root, backup_root))
-    with exclusive_release_access(live_root, timeout=0), transaction(live_root):
+    with ExitStack() as pins, pin_directories(live_root, stage_root, backup_root.parent, stage_root/'rfp_fulltext'), exclusive_release_access(live_root, timeout=0), transaction(live_root):
         guard_no_incomplete_journal(live_root)
         candidate, ledger, refs, summary = plan(live_root, stage_root)
         originals = ("dashboard.json", "rfp_batch.json")
         original_hash = {name: digest(live_root/name) for name in originals}
         prepare_backup(live_root, backup_root, original_hash)
+        pins.enter_context(pin_directories(backup_root))
         for name in originals:
             shutil.copy2(live_root / name, backup_root / name)
         if not all(digest(backup_root/name)==original_hash[name] for name in originals):
@@ -232,6 +234,7 @@ def apply(live_root, stage_root, backup_root):
         added = 0
         directory = live_root / "rfp_fulltext"
         directory.mkdir(mode=0o700, exist_ok=True)
+        pins.enter_context(pin_directories(directory))
         # Copy fully-verified content-addressed files before publishing any references.
         for ref in sorted(refs):
             src = stage_root / "rfp_fulltext" / (ref + ".json")
@@ -309,7 +312,7 @@ def _copy_atomic(source, destination):
 def recover(live_root, backup_root):
     """Resolve an interrupted multi-file rollout before accepting any web requests."""
     live_root, backup_root = reject_reparse(live_root), reject_reparse(backup_root)
-    with exclusive_release_access(live_root, timeout=0), transaction(live_root):
+    with pin_directories(live_root, backup_root), exclusive_release_access(live_root, timeout=0), transaction(live_root):
         path = live_root / JOURNAL
         state = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
         intent = read_intent(live_root)
@@ -348,7 +351,7 @@ def recover(live_root, backup_root):
 def rollback(live_root, backup_root):
     live_root, backup_root = reject_reparse(live_root), reject_reparse(backup_root)
     meta = json.loads((backup_root / "restore_metadata.json").read_text(encoding="utf-8"))
-    with exclusive_release_access(live_root, timeout=0), transaction(live_root):
+    with pin_directories(live_root, backup_root), exclusive_release_access(live_root, timeout=0), transaction(live_root):
         guard_no_incomplete_journal(live_root)
         board = read_dashboard(live_root / "dashboard.json")
         ledger = json.loads((live_root / "rfp_batch.json").read_text(encoding="utf-8"))

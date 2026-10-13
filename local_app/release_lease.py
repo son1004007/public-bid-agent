@@ -115,3 +115,58 @@ def acquire_guard(root):
     state = read_intent(root)
     if state and state["status"] == "PREPARED":
         raise RuntimeError("release recovery required")
+
+
+@contextmanager
+def pin_directories(*paths):
+    """Hold Windows directory handles with FILE_SHARE_DELETE omitted.
+
+    Windows keeps sharing modes active for each open handle. Holding handles
+    from drive root down prevents renaming a validated ancestor during
+    the entire sensitive release operation. POSIX uses already checked
+    private local paths and release lease.
+    """
+    if os.name != "nt":
+        for p in paths:
+            reject_reparse(p)
+        yield
+        return
+    import ctypes
+    from contextlib import ExitStack
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    create = kernel.CreateFileW
+    create.argtypes = (ctypes.c_wchar_p, ctypes.c_uint32, ctypes.c_uint32,
+                       ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_void_p)
+    create.restype = ctypes.c_void_p
+    close = kernel.CloseHandle
+    close.argtypes = (ctypes.c_void_p,)
+    close.restype = ctypes.c_int
+    invalid = ctypes.c_void_p(-1).value
+    handles = []
+    seen = set()
+    try:
+        for candidate in paths:
+            node = Path(os.path.abspath(str(candidate)))
+            ancestors = [*reversed(node.parents), node]
+            for item in ancestors:
+                if not item.exists():
+                    continue
+                if not item.is_dir():
+                    continue
+                key = os.path.normcase(str(item))
+                if key in seen:
+                    continue
+                reject_reparse(item)
+                h = create(str(item), 0x80000000, 0x1 | 0x2, None, 3,
+                           0x02000000 | 0x00200000, None)
+                if not h or h == invalid:
+                    raise ctypes.WinError(ctypes.get_last_error())
+                handles.append(h)
+                seen.add(key)
+                # The directory cannot be renamed/deleted while this handle
+                # denies sharing delete access, including by another process.
+                reject_reparse(item)
+        yield
+    finally:
+        for h in reversed(handles):
+            close(h)

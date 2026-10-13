@@ -300,5 +300,16 @@ class ReleaseStageTests(unittest.TestCase):
         self.assertEqual(read_intent(self.live)["status"],"VERIFIED")
 
 
+    def test_windows_directory_pin_prevents_swap(self):
+        import os
+        from release_lease import pin_directories
+        if os.name != "nt":
+            self.skipTest("Windows CreateFileW lease test")
+        with pin_directories(self.stage):
+            with self.assertRaises((PermissionError,OSError)):
+                self.stage.rename(self.root/"swapped-stage")
+        self.assertTrue(self.stage.exists())
+
+
 if __name__=="__main__":
     unittest.main()
