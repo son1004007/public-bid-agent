@@ -33,6 +33,7 @@ from dashboard_backend import (
 from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
 from workforce import load as load_workforce, summary as summarize_workforce
 from staffing_requirements import assess as assess_staffing
+from rfp_requirements import structure as structure_rfp_requirements, EvidenceError
 from department_profile import (
     DepartmentProfileConflict, load as load_department_profile,
     modify as modify_department_profile,
@@ -357,6 +358,25 @@ class Handler(BaseHTTPRequestHandler):
    return self.respond({"profile":profile,"csrf":TOKEN,"categories":{
     "AI":"AI 서비스·LLM","SW":"SW·업무시스템 개발",
     "DATA":"데이터 수집·분석·플랫폼","SECURITY":"보안·인증·감사 지원 SW"}})
+  if self.path.startswith("/api/dashboard/rfp-requirements?"):
+   # 읽기 전용 근거 후보: source SHA 및 비공개 44,000자 청크를 대조하고
+   # 화면으로는 일부 발췌/추출 문자 위치만 제한하여 반환한다.
+   query=urlsplit(self.path)
+   params=parse_qs(query.query,keep_blank_values=True)
+   if query.path!="/api/dashboard/rfp-requirements" or set(params)!={"id"} or len(params["id"])!=1:
+    return self.respond({"error":"공고 식별자 형식 오류"},400)
+   ident=params["id"][0]
+   if len(ident)>120 or re.fullmatch(r"G2B-[A-Za-z0-9-]+",ident) is None:
+    return self.respond({"error":"공고 식별자 형식 오류"},400)
+   try:
+    with LOCK:
+     state=read_dashboard(ROOT/"dashboard.json")
+     notice=next((n for n in state["notices"] if n["id"]==ident),None)
+     if notice is None:return self.respond({"error":"공고 없음"},404)
+     report=structure_rfp_requirements(notice,ROOT)
+    return self.respond({"requirements":report,"storage":"LOCAL_READ_ONLY"})
+   except (EvidenceError,ValueError,TypeError,KeyError,OSError,UnicodeError,json.JSONDecodeError):
+    return self.respond({"error":"RFP 근거 또는 로컬 캐시 검증 실패. 기존 자료는 보존됩니다"},503)
   if self.path.startswith("/api/dashboard/staffing?"):
    # 조회 전용 RFP 인력요건 예비검토. 공고와 사용자 JSON에 변화 없음.
    query=urlsplit(self.path)

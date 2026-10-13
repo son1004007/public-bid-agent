@@ -1,5 +1,7 @@
 # 현재 개발 상태
 
+> **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-13 로컬 운영 공고는 3,049건(취소 167/구차수 229, STALE 8), RFP 구조화 Stage 1 소스 검증 274 PASS·독립 Codex GO이며 **서버 실제 배포·웹 새 버튼 승인은 별도**입니다.
+
 ## 2026-10-13 실제 구현·검증 상태 (최신 기준)
 
 **현재 기준 화면은 `http://127.0.0.1:8765/decision-preview`입니다.** 개인 Windows PC의 `local_app/server.py`가 Python 표준 HTTP 서버로 제공하며, `frontend/public/bid-decision-dashboard-preview.html`과 `frontend/public/dashboard-live.js`가 실제 API에 연결됩니다. `bid-management-preview.html`은 초기 정적 퍼블리싱 시안이며 `frontend/` React + `backend/` FastAPI는 현재 운영 서버와 별도인 합성 개발 자산/공개 서비스 장기 계획입니다.
@@ -606,3 +608,15 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 - 기존 3,049건 원본에 정정/취소 수명주기만 직접 반영: CURRENT 2,653 / CANCELLED 167 / SUPERSEDED 229, RFP 재검증 STALE 8. 운영 반영 전 JSON 6개와 RFP sidecar 124개 백업, 변경 후 공고 ID 3,049/3,049, 과거 판단·RFP·이력 불변, 다른 JSON 5/5 및 캐시 124/124 SHA 일치.
 - 8765 서버 재기동, 실제 Chrome 목록·상세·수집관리, API 추천 결과 검증 완료: 추천 내 CANCELLED/SUPERSEDED/STALE 0. 상세: docs/reviews/OFFICIAL_AMEND_CANCEL_LOCAL_VERIFY_2026-10-13.md.
 - 7일 API 오류 분석은 사용자 요청에 따라 수행하지 않았으며 다음 기능 방향은 사용자가 결정. STALE 자동 재검증/공식 변경이력 별도 API 재조회/다른 공고번호 재공고 매핑은 미구현.
+
+
+## 2026-10-13 RFP 요건 구조화 1단계 (진행 중, 검증 상태는 최신 보고로 확인)
+- `rfp_requirements.py`는 공고·공식 첨부 identity·원본 SHA·기존 private fulltext 청크를 검증하고 8개 요건 분야의 제한된 표현 후보와 문자 위치를 JSON으로 제공. `server.py` 로컬 GET, `frontend/public/dashboard-live.js` 수동 조회 UI 연동. 원본 사용자 판단/공고 JSON 쓰기 없음.
+- 실제 운영 데이터 read-only 샘플: 검증 가능 청크를 가진 현행 후보 66건, 그중 20건의 8개 분야 표현 후보 561건, 실패/0건 0건, 일부 텍스트 절단 표본 4건. 본문/개인자료는 repo에 기록하지 않음.
+- 8개 STALE 공고는 분석 보류. 기존 7일 수집 API 오류 분석 제외. 원본 페이지 번호/필수·선택/입찰 적격/AI 의미 추출은 이 스프린트 미구현.
+
+
+## 2026-10-14 사용자 결정 원본 문서화 / RFP Stage 1 소스 검증
+- **[DECISIONS.md](DECISIONS.md)를 사용자 확정 결정의 정식 진입점으로 지정**. `AGENTS.md`, `AI_CONTEXT.md`, `README.md`, `local_app/README.md`, `TASKS.md`에서 참조. 이전에 남은 2,223건/자동수집 미구현 등의 날짜별 과거 문구와 실제 현재 상황을 구분하도록 현재 컨텍스트 정리.
+- RFP 구조화 1단계 `rfp_requirements.py` 및 로컬 GET/UI 수동 조회 기능 소스 작성. Windows 3.12 전체 회귀 274 PASS, 읽기 전용 Codex NO_GO 2회 수정 후 **3차 GO** (신뢰 단일 사용자 localhost). 실제 RFP 20건 비식별 샘플의 텍스트 표현 후보 561건(일부 문서 절단 4건). `docs/reviews/RFP_REQUIREMENTS_CODEX_REVIEW_2026-10-14.md` 참고.
+- **미완료:** 최신 소스를 실제 8765 로컬 서버에 재시작 반영, Chrome 새 버튼 검증 및 40개 기존 private JSON+124개 RFP sidecar SHA 재대조. 이 증거 확보 전에는 Stage 1을 `LOCAL_APPLIED`/사용자 UI 승인으로 표시하지 않음. 다음 구현 단계는 사용자 선택 후 진행. 기존 7일 API 실패 원인 분석은 D-10에 따라 제외.

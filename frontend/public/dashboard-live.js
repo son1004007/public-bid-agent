@@ -369,6 +369,47 @@
        ['면허·지역 상세 API','조회: '+(n.related_status||'아직 미조회')]]));
       section.append(btn('공식 면허·지역·e발주 첨부 추가조회',()=>void fetchOfficialConstraints(n.id)));
 
+      // 공식 문서의 원문 결속형 JSON 요구사항 후보를 사용자가 명시적으로 요청할 때만 확인.
+      // 원본 PDF/HWP 페이지 번호는 기록되어 있지 않으므로 문자 위치만 표시한다.
+      const requirementsPanel=detailBlock('공식 RFP 요구사항 구조화 (근거 확인)');
+      const requirementsInfo=el('p','muted','8개 유형을 규칙으로 탐지합니다. 필수조건·업체 적격·원본 페이지는 확인이 필요합니다.');
+      requirementsInfo.setAttribute('role','status');
+      const requirementsRows=el('div','');
+      const requirementsButton=btn('RFP 요구사항·출처 근거 확인',async()=>{
+        requirementsButton.disabled=true;
+        requirementsInfo.textContent='기존 비공개 RFP 청크 무결성을 확인하고 있습니다.';
+        requirementsRows.replaceChildren();
+        try{
+          const response=await fetch('/api/dashboard/rfp-requirements?id='+encodeURIComponent(n.id),{cache:'no-store'});
+          const payload=await response.json();
+          if(!response.ok || !payload.requirements)throw Error(payload.error||'RFP 요구사항 검증 실패');
+          const report=payload.requirements;
+          requirementsInfo.textContent='상태 '+report.state+' / 사용한 검증 문서 '+report.sources_used+
+            '개 / 근거 표현 후보 '+report.requirement_count+'건 / 분석 방식 '+report.analysis_mode+
+            ' / 텍스트 범위 '+report.source_coverage+'. '+report.uncertainty;
+          (report.warnings||[]).forEach(message=>requirementsRows.append(el('p','muted','주의: '+message)));
+          (report.requirements||[]).forEach(category=>{
+            const group=detailBlock(category.label+' · '+category.count+'건');
+            if(!category.count)group.append(el('p','muted','탐지된 표현 없음. 실제 요건이 없다는 뜻은 아닙니다.'));
+            (category.items||[]).forEach(item=>{
+              const e=item.evidence;
+              group.append(el('div','requirementRow',
+                '' )); // 근거는 뒤이어 텍스트 노드로 안전하게 표시
+              const row=group.lastElementChild;
+              row.append(el('span','evidence',e.excerpt),
+                el('span','muted','파일: '+e.file+' / SHA-256: '+e.source_sha256+
+                  ' / 추출 텍스트 문자 위치 '+e.offset_start+'-'+e.offset_end+
+                  ' / 페이지: 미확인 / 범위: '+e.source_mode+
+                  ' / 판정: 원문 표현 후보 (사람 검증 필요)'));
+            });
+            requirementsRows.append(group);
+          });
+        }catch(error){requirementsInfo.textContent='구조화 근거 조회 실패: '+error.message;}
+        finally{requirementsButton.disabled=false;}
+      });
+      requirementsPanel.append(requirementsInfo,requirementsButton,requirementsRows);
+      section.append(requirementsPanel);
+
       // 사용자 요청 시에만 기존 RFP 본문에서 명시적 인력 요건 후보를 추출한다.
       const staffPanel=detailBlock('RFP 인력요건·부서 역량 예비 검토');
       const staffInfo=el('p','muted','검토 버튼을 누르면 공식 첨부 발췌에서 역할·등급·인원 후보를 찾습니다. 실제 참가자격·기술자 등급·가용 공수는 미확인입니다.');

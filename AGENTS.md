@@ -1,5 +1,13 @@
 # AI 개발 작업 규칙 (AGENTS.md)
 
+> **새 AI/Codex 시작 순서 (2026-10-14 확정):**
+> 1. 전역 `son1004007/ai-agent-workflow-playbook/CONTROL.md`와 이 `AGENTS.md`
+> 2. **[`DECISIONS.md`](DECISIONS.md): 사용자 확정 결정·이번 작업 범위·제외 사항·다음 단계 승인 경계**
+> 3. [`AI_CONTEXT.md`](AI_CONTEXT.md) → [`CURRENT_STATE.md`](CURRENT_STATE.md) → [`TASKS.md`](TASKS.md)
+> 4. 최신 코드/commit/CI/로컬 실행 근거. **과거 2,223건 등 날짜별 수치를 현재 상태로 재사용하지 않는다.**
+>
+> 결정 변경 사항은 먼저 `DECISIONS.md`에 기록하며, AI/코드 테스트 결과와 사용자 최종 결정을 혼동하지 않는다.
+
 ## 0. 전역 규칙
 
 이 저장소에서 작업하는 Codex 및 다른 AI 개발 도구는 실질적인 작업 전에 다음 원본 규칙을 읽어야 합니다.
@@ -28,19 +36,20 @@
 ## 2. 필수 문서 확인 순서
 
 1. `AGENTS.md`
-2. `AI_CONTEXT.md`
-3. `CURRENT_STATE.md`
-4. `TASKS.md`
-5. `docs/07-agile-development-workflow.md`
-6. `docs/00-project-context.md`
-7. `docs/01-requirements.md`
-8. `docs/02-architecture.md`
-9. `docs/03-test-plan.md`
-10. `docs/04-operation-and-deployment.md`
-11. `docs/05-coding-standards.md`
-12. `docs/06-source-layout.md`
-13. [UI 퍼블리싱 설계 검증 가이드](docs/ui/SCREEN_REVIEW_GUIDE.md), [현재 구현 지속 지시서](docs/implementation/CONTINUE_IMPLEMENTATION_PROMPT_2026-10-09.md), [Sprint 1 실행안내](docs/implementation/SPRINT1_RUNBOOK.md)
-14. 작업 관련 공통 표준과 ADR, 실제 코드, 테스트, 최신 GitHub 증거
+2. **`DECISIONS.md` (2026-10-14 사용자 명시 결정 원본)**
+3. `AI_CONTEXT.md`
+4. `CURRENT_STATE.md`
+5. `TASKS.md`
+6. `docs/07-agile-development-workflow.md`
+7. `docs/00-project-context.md`
+8. `docs/01-requirements.md`
+9. `docs/02-architecture.md`
+10. `docs/03-test-plan.md`
+11. `docs/04-operation-and-deployment.md`
+12. `docs/05-coding-standards.md`
+13. `docs/06-source-layout.md`
+14. [UI 퍼블리싱 설계 검증 가이드](docs/ui/SCREEN_REVIEW_GUIDE.md), [현재 구현 지속 지시서](docs/implementation/CONTINUE_IMPLEMENTATION_PROMPT_2026-10-09.md), [Sprint 1 실행안내](docs/implementation/SPRINT1_RUNBOOK.md)
+15. 작업 관련 공통 표준과 ADR, 실제 코드, 테스트, 최신 GitHub 증거
 
 ## 3. 증거와 작업 순서
 
