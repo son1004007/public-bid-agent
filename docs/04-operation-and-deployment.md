@@ -2,9 +2,9 @@
 
 ## 현재 상태
 
-**호스팅 대상, 실제 배포, 백업/복구 테스트 모두 미정 및 미실행.** 이 문서의 공개 운영 게이트는 애자일 로컬 개발 착수 조건이 아니다. 실제 사용자에게 특정 기능을 공개하는 시점에 활성 기능과 관련된 통제를 검증한다([애자일 실행 기준](07-agile-development-workflow.md)).
+**로컬 배포와 인터넷 공개 서비스를 분리합니다.** 2026-10-13 개인 Windows PC의 `127.0.0.1:8765/decision-preview`에서 공고 2,223건과 관련 로컬 API 조회에 성공했습니다. 2026-10-12 RFP 70개 공고/127개 문서 이관의 배포 저널 `COMPLETED`, 비공개 본문 캐시 124개·백업 1개도 확인했습니다. 이는 **로컬 이관 완료 확인**이며 전체 브라우저 사용자 검수/복구 품질 보증/앱 전체 Codex 보안 최종 검수/인터넷 공개 배포의 완료가 아닙니다. 아래 HTTPS·React·FastAPI·PostgreSQL·Google 로그인은 미구현 공개 인터넷 서비스의 **목표 운영 설계**입니다. 인터넷 호스팅은 미정이며 현재 출시 대상이 아닙니다.
 
-## 서비스 구성과 환경
+## 향후 인터넷 공개 서비스 구성과 환경 (미구현)
 
 - HTTPS edge/reverse proxy → React 정적 웹 → FastAPI BFF/API → 비공개 PostgreSQL. 하나의 backend로 시작한다.
 - Google OAuth/OIDC client ID·client secret, 공공데이터 service key, 세션 비밀, DB 자격증명, 승인된 모델 provider 인증정보는 서버 전용 보안 저장소를 사용하며 Git에 기록하지 않는다.
