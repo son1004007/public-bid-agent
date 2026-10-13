@@ -565,3 +565,12 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 - 수정 커밋 d8b7007, 4077ff5. Windows Python 전체 227 PASS, 디렉터리 이름 변경 실 OS 거부 PASS. 독립 Codex 1차 NO_GO(경로 교체 경쟁), Windows CreateFileW 디렉터리 핀 보완 후 2차 범위 한정 GO(단일 신뢰 사용자, localhost 오프라인 배포).
 - 서버 수명 잠금, SQLite FULL/PREPARED 복구 의도, Windows WRITE_THROUGH 및 해시 세대 검증, junction/reparse 경로 검사·디렉터리 핸들 유지, 중단된 백업 준비 재개를 구현. 상세: docs/reviews/LOCAL_RFP_RELEASE_REVIEW_2026-10-13.md.
 - 개인 PC의 기존 8765 실행 코드는 아직 교체하지 않았으며 실사용 JSON에 대한 신규 배포/롤백 없음. main 및 외부 배포 별도 보류. 물리 전원 장애 및 동일 계정 악성 프로세스 위협은 범위 밖.
+
+
+## 2026-10-13 검수 승인 코드 로컬 8765 실배포·웹 검증
+- 개인 PC 운영 코드를 c0a1115 -> fe499d8 Fast-forward 후 서버 재시작. 원본 데이터는 이미 70건 RFP가 반영된 상태라 중복 적용하지 않음.
+- 원본의 JSON 6건, RFP sidecar 124건을 서버 중지 상태로 백업하여 SHA-256 130/130 동일 확인. 서버 기동·브라우저 테스트 후에도 130/130 원본 동일.
+- localhost GET 9/9 HTTP 200, 실제 Chrome: 공식 2,223건 목록 바인딩·상세 클릭, 수집관리 RFP 표시, 추천·진단 API, 390px 레이아웃 PASS.
+- 실제 운영 원본 복사본에서 SQLite PREPARED + 텍스트 저널 누락 + JSON 1개 세대 불일치를 재현, recover의 양쪽 원본 2/2 SHA 복구 PASS. 운영 자료에는 변경 없음.
+- 현 RFP 원장 DONE 109 / PENDING 34 / FAILED 0 (PAUSED), 마감 전 후보 106 중 원문 EXTRACTED 104, 미지원 1, 링크 없음 1. 새로운 분석/추천 결과가 아니라 현재 저장 공고 상태임.
+- 상세 검증: docs/reviews/LOCAL_RUNTIME_VERIFY_2026-10-13.md. 로컬 기능 확인 후 외부 공개 배포 및 main 병합은 여전히 미실행.
