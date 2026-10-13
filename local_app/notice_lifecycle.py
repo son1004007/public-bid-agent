@@ -87,10 +87,19 @@ def reconcile(notices, timestamp):
                                       reason="공식 공고번호의 후속 차수 확인"))
                 changes += int(mark_stale(item, timestamp, "공식 후속 차수 공고 존재"))
             elif ambiguous:
-                changes += int(record(item, "REVIEW", timestamp,
-                                      reason="동일 공고번호·동차수 표기가 복수이므로 수동 확인"))
+                # 형식만 다른 동차수에 하나라도 공식 취소 기록이 있으면
+                # 취소를 유지한다. 혼합 상태를 일반공고로 복귀시키지 않는다.
+                cancelled = any(is_cancel_kind(n.get("notice_kind"))
+                                or n.get("notice_lifecycle") == "CANCELLED" for n in newer)
+                status = "CANCELLED" if cancelled else "REVIEW"
+                changes += int(record(item, status, timestamp,
+                                      reason="동일 공고번호·동차수 중 취소 확인" if cancelled
+                                      else "동일 공고번호·동차수 표기가 복수이므로 수동 확인"))
+                if cancelled:
+                    changes += int(mark_stale(item, timestamp, "동차수 공식 취소공고"))
             else:
-                state = "CANCELLED" if is_cancel_kind(item.get("notice_kind")) else "CURRENT"
+                state = ("CANCELLED" if is_cancel_kind(item.get("notice_kind"))
+                         or item.get("notice_lifecycle") == "CANCELLED" else "CURRENT")
                 changes += int(record(item, state, timestamp,
                                       reason="공식 공고종류 취소 확인" if state == "CANCELLED" else None))
                 if state == "CANCELLED":

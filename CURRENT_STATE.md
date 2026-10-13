@@ -593,3 +593,9 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 - `local_app/notice_lifecycle.py`: 공식 공고번호/숫자 차수로 같은 원공고의 후속 차수 연결, 최신 공식 종류가 취소면 취소 상태, 이전 차수 SUPERSEDED, 중요 메타 변경 시 기추출 RFP STALE 표시. 사람 결정·증거·이력은 보존.
 - `local_app/dashboard_backend.py`의 실제/예약 수집 병합 이후 상태 재평가, `recommendations.py`의 부적합 최신성 추천 차단, `frontend/public/dashboard-live.js`의 상세 표시. `notice_lifecycle_cli.py`는 기존 데이터 preview/apply를 API 호출 없이 수행.
 - 7일 API 오류 분석은 사용자 명시 제외. 다음 개발 방향은 이 기능의 검증 결과를 보고받은 뒤 사용자가 결정.
+
+
+## 2026-10-13 정정·취소 Codex NO_GO 지적 보완
+- 1차 Codex: P1 취소가 이후 일반공고 응답으로 해제될 위험, P1 차수 `00` vs `000` 별도 저장·취소 손실, P2 기존 STALE 재추출 후 자동 회복 부재, P2 기본 목록 구차수 노출 지적.
+- P1 수정: 동일 숫자 차수는 기존 공식 저장 ID에 병합, 동일 차수 취소는 최신 일반공고 응답에도 유지, 기존의 동일 차수 중복 레코드에 취소가 있으면 모두 추천 제외. 기본 목록에서 SUPERSEDED/CANCELLED/REVIEW 제외(전체 보기는 유지).
+- P2 STALE 복구 자동 전이는 설계 범위 밖으로 명시: 공식 새 RFP 검증 전까지 추천 보류, 향후 별도 판단 이후 구현. 정정·취소/기초 원문·판단 이력 보존 우선.

@@ -154,5 +154,53 @@ class OfficialLifecycleTests(unittest.TestCase):
         self.assertEqual(rows["002"]["notice_lifecycle"], "CANCELLED")
 
 
+    def test_sticky_same_revision_cancellation_after_generic_refresh(self):
+        canceled = notice(self.no, "000", kind="취소공고")
+        state = self.merge(blank(), [canceled])
+        generic = notice(self.no, "000", kind="일반공고")
+        state = self.merge(state, [generic])
+        self.assertEqual(len(state["notices"]), 1)
+        self.assertEqual(state["notices"][0]["notice_lifecycle"], "CANCELLED")
+        self.assertEqual(shortlist(state["notices"], self.profile)["results"], [])
+
+    def test_alias_order_cancellation_preserves_existing_user_and_rfp(self):
+        old = notice(self.no, "00", kind="일반공고")
+        old["final"] = "human_bid"
+        old["rfp_text"] = "원문 보존"
+        old["document_status"] = "EXTRACTED"
+        state = self.merge(blank(), [old])
+        cancel_variant = notice(self.no, "000", kind="취소공고")
+        result = self.merge(state, [cancel_variant])
+        self.assertEqual(len(result["notices"]), 1)
+        item = result["notices"][0]
+        self.assertEqual(item["id"], old["id"])
+        self.assertEqual(item["bid_order"], "00")
+        self.assertEqual(item["notice_lifecycle"], "CANCELLED")
+        self.assertEqual(item["rfp_review_status"], "STALE")
+        self.assertEqual(item["final"], "human_bid")
+        self.assertEqual(item["rfp_text"], "원문 보존")
+        self.assertEqual(shortlist(result["notices"], self.profile)["results"], [])
+        result = self.merge(result, [notice(self.no, "0", kind="일반공고")])
+        self.assertEqual(len(result["notices"]), 1)
+        self.assertEqual(result["notices"][0]["notice_lifecycle"], "CANCELLED")
+
+    def test_alias_order_same_batch_deduplicates_to_one(self):
+        variant_a = notice(self.no, "00")
+        variant_b = notice(self.no, "000", kind="취소공고")
+        state = self.merge(blank(), [variant_a, variant_b])
+        self.assertEqual(len(state["notices"]), 1)
+        self.assertEqual(state["notices"][0]["notice_lifecycle"], "CANCELLED")
+
+    def test_existing_duplicate_aliases_with_cancel_never_reopen(self):
+        a = notice(self.no, "00", kind="일반공고")
+        b = notice(self.no, "000", kind="취소공고")
+        state = blank()
+        state["notices"] = [a, b]
+        result = self.merge(state, [])
+        self.assertEqual(len(result["notices"]), 2)
+        self.assertTrue(all(n["notice_lifecycle"] == "CANCELLED" for n in result["notices"]))
+        self.assertEqual(shortlist(result["notices"], self.profile)["results"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

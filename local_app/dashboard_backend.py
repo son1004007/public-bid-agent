@@ -283,8 +283,28 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
         raise ValueError("수집 결과 계약 오류")
     out = copy.deepcopy(state)
     existing = {n["id"]: n for n in out["notices"]}
+    # 차수 표기 00/000/0은 동일 공식 숫자 차수. 기존 식별자와
+    # 사람 판단·RFP 증거를 유지한 채 새로운 표기를 기존 레코드에 병합한다.
+    by_number = {}
+    for saved in out["notices"]:
+        try:
+            number = (saved.get("bid_no"), int(str(saved.get("bid_order"))))
+        except (TypeError, ValueError):
+            continue
+        if (saved.get("source") == "G2B_OFFICIAL_API"
+                and saved.get("id") == "G2B-"+str(saved.get("bid_no"))+"-"+str(saved.get("bid_order"))):
+            by_number.setdefault(number, []).append(saved)
     changed = 0
     for item in notices:
+        if item["id"] not in existing and item.get("source") == "G2B_OFFICIAL_API":
+            try:
+                same_revision = by_number.get((item["bid_no"], int(item["bid_order"])), [])
+            except (ValueError, TypeError, KeyError):
+                same_revision = []
+            if len(same_revision) == 1:
+                # 외부 신규 메타데이터는 내부 저장 식별자를 바꾸지 않는다.
+                item = {**item, "id": same_revision[0]["id"],
+                        "bid_order": same_revision[0]["bid_order"]}
         if item["id"] in existing:
             old = existing[item["id"]]
             # 공식 정정은 RFP 원문을 덮지 않고 재검증 필요 여부만 기록한다.
@@ -311,6 +331,10 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
             # 신규 공고도 같은 상한/증거 보존 정책. 초과 시 잘라 저장하지 않는다.
             new_item["attachments"] = merge_attachments([],new_item.get("attachments", []))
             existing[item["id"]] = new_item
+            try:
+                by_number.setdefault((new_item["bid_no"], int(new_item["bid_order"])), []).append(new_item)
+            except (KeyError, TypeError, ValueError):
+                pass
             changed += 1
     if len(existing) > 10000:
         raise ValueError("저장 가능한 공고 수 초과")

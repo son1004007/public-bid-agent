@@ -19,7 +19,9 @@
   window.officialListFilter = function(n) {
     const deadline = byId('deadlineView').value;
     const windowStatus = n.window_status || 'UNKNOWN';
-    if (deadline !== 'all' && (windowStatus === 'CANCELLED' || windowStatus === 'CLOSED')) return false;
+    const lifecycle = n.notice_lifecycle || 'CURRENT';
+    if (deadline !== 'all' && (['CANCELLED','SUPERSEDED','REVIEW'].includes(lifecycle)
+        || windowStatus === 'CANCELLED' || windowStatus === 'SUPERSEDED' || windowStatus === 'CLOSED')) return false;
     if (deadline === 'open' && windowStatus !== 'OPEN') return false;
     const selected = departmentProfile.categories || [];
     const matched = (n.department_categories || []).some(k => selected.includes(k));
