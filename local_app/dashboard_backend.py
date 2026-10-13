@@ -188,6 +188,7 @@ def collect(key: str, clock=None, transport=None) -> tuple[list[dict], int]:
             "numOfRows": str(MAX_ROWS)}
     all_notices = {}
     scanned = 0
+    expected_total = None
     for page in range(1, MAX_PAGES + 1):
         document = _fetch_json({**base, "pageNo": str(page)}, transport=transport)
         header = document.get("response", {}).get("header", {})
@@ -218,11 +219,19 @@ def collect(key: str, clock=None, transport=None) -> tuple[list[dict], int]:
             total = int(count)
         else:
             raise ProviderError("공식 API 총건수 불명확")
+        if expected_total is None:
+            expected_total = total
+        elif total != expected_total:
+            raise ProviderError("공식 API 페이지 간 총건수 변경: 재조회 필요")
+        if not items and scanned < total:
+            raise ProviderError("공식 API 공고 페이지 누락: 부분 수집 거부")
         if page * MAX_ROWS >= total:
             break
     else:
         if scanned < total:
             raise ProviderError("공고가 페이지 상한을 초과했습니다. 일부 조회를 전체 수집으로 저장하지 않습니다")
+    if scanned != expected_total:
+        raise ProviderError("공식 API 총건수와 실제 반환 행 수 불일치: 부분 수집 거부")
     return list(all_notices.values()), scanned
 
 

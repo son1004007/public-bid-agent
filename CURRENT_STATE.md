@@ -574,3 +574,9 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 - 실제 운영 원본 복사본에서 SQLite PREPARED + 텍스트 저널 누락 + JSON 1개 세대 불일치를 재현, recover의 양쪽 원본 2/2 SHA 복구 PASS. 운영 자료에는 변경 없음.
 - 현 RFP 원장 DONE 109 / PENDING 34 / FAILED 0 (PAUSED), 마감 전 후보 106 중 원문 EXTRACTED 104, 미지원 1, 링크 없음 1. 새로운 분석/추천 결과가 아니라 현재 저장 공고 상태임.
 - 상세 검증: docs/reviews/LOCAL_RUNTIME_VERIFY_2026-10-13.md. 로컬 기능 확인 후 외부 공개 배포 및 main 병합은 여전히 미실행.
+
+
+## 2026-10-13 다음 구현: 로컬 공식 공고 예약 수집 1단계
+- 신규 `local_app/scheduled_collection.py`에서 사용자 DPAPI 키로 과거 7개 24시간 구간을 오래된 순으로 조회, 공고 ID 중복은 최신 데이터 우선, 기존 사람 판단·RFP 본문·이력 보존. API 전체 일자 성공 후에만 OS 잠금 하에 최신 JSON 병합.
+- 기존 조달청 API 수집 로직의 페이지 totalCount 변동/누락 검증을 강화함. 원문 분류/입찰 가능 확정과 자동 RFP 새로 추출 기능은 없음.
+- Windows 작업 스케줄러 등록 스크립트(`scripts/install_local_collection_schedule.ps1`) 및 합성 실패·동시 수정·보존·비밀키 출력 금지 테스트를 추가. 실제 설치/운영 수집 및 Codex 최종 검수는 검증 실행 결과가 확보된 뒤 별도로 기록해야 함.

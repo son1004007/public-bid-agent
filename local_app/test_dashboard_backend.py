@@ -80,6 +80,19 @@ class ProcurementUnitTests(unittest.TestCase):
         with self.assertRaises(db.ProviderError):
             db.collect("", transport=t)
 
+    def test_api_partial_page_rejected_even_when_last_page_reached(self):
+        response_data = response([RAW], total=2)
+        with self.assertRaises(db.ProviderError):
+            db.collect("synthetic-test-key-12345", transport=FakeTransport([response_data]))
+
+    def test_api_total_count_change_between_pages_rejected(self):
+        first = response([{**RAW, "bidNtceNo": str(i).zfill(12)}
+                          for i in range(100)], total=101)
+        second = response([{**RAW, "bidNtceNo": "202610110099"}], total=102)
+        with self.assertRaises(db.ProviderError):
+            db.collect("synthetic-test-key-12345",
+                       transport=FakeTransport([first, second]))
+
     def test_snapshot_decision_and_revision(self):
         state = db.blank()
         notice = db.normalize(RAW)

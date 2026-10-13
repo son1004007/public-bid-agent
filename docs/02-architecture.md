@@ -234,3 +234,8 @@ Codex 1개가 선택된 경우 LangGraph는 independent_analysis에서 1회 호�
 - 신규 RFP 청크 저장소와 별도로 기존 EXTRACTED의 `document_evidence.sha256`, 첨부 identity, chars, excerpt를 공개 원본의 재다운로드·파싱 결과와 대조한다.
 - 전부 일치한 경우 기존 evidence에 `fulltext_ref`만 증분 기록하고 별도 작업 원장으로 수동 25문서 단위 재개한다. 다른 SHA/발췌·첨부 링크는 격리하며 사람 결정/기존 RFP 요약은 불변.
 - 비공개 개인 PC 검증 전용이며 더 최신 공고 정정 여부, 참가자격의 확정, 인가·호스팅·AI 모델 전송 보장과 별개다. [설계](design/RFP_BACKFILL_VERIFIED_2026-10-12.md).
+
+
+## Windows 로컬 예약 공식 공고 갱신 (2026-10-13, 구현 단위)
+
+Windows 사용자 로그인 세션의 Task Scheduler (일일 09:00) → 같은 사용자 Python 3.12 `local_app/scheduled_collection.py` → DPAPI 인증키 복호화(프로세스 메모리 전용) → 공식 용역 OpenAPI 지난 7일 구간 순차 요청 → 페이지별 총건수와 중단 검증 → 공고 ID 최신 데이터 병합 → 운영 `dashboard.json` 최신 revision 재조회와 공통 OS 파일 잠금 → 기존 담당자 결정, 이력, 첨부/RFP 원문 보존한 원자 저장. 서버가 실행 중인 경우에도 같은 JSON 잠금을 사용한다. 모델/외부 AI 전송 없음. 배포 저널 PREPARED 또는 임의 변조/손상 감지 시 갱신 중지. API 통신 실패 시 기존 공고는 그대로 보존하고 수집 상태만 실패로 표시할 수 있음. 원문 정정감지·기존 RFP stale 표시 및 AI 의미 분석은 다음 단계.

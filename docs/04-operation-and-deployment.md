@@ -104,3 +104,13 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 **제한:** Windows 파일시스템·장치의 물리적 전원 장애를 여기서 직접 시험하거나 완전한 영속성을 보장하지는 않습니다. Microsoft MoveFileExW의 WRITE_THROUGH는 파일 이동을 플러시하지만, 모든 같은 볼륨 메타데이터 영속성의 증명은 아닙니다. SQLite FULL의 내구성도 OS/디스크의 fsync/FlushFileBuffers 계약에 의존합니다. 실제 종료 및 완전한 검수 전까지 공개 운영 배포와 main 통합은 별도 승인 대상입니다.
 
 실행: `python -m unittest discover -s local_app -p 'test_*.py'` 및 독립 Codex 읽기 전용 재검수. 실제 사용 데이터의 손상·이력 보존은 테스트 폴더와 별도 원본 해시 점검으로 확인합니다.
+
+
+## 2026-10-13 Windows 로컬 공식 공고 예약 갱신 (개발 기능)
+
+- `local_app/scheduled_collection.py`: 사용자 DPAPI 조달청 인증키를 이용하여 공식 전체 용역 공고를 **7개 연속 24시간 구간**으로 조회. 오래된 순서에서 최신 순서로 동일 공고 식별자를 병합하고, 기존 담당자 판단·판단이력·저장 RFP 추출 본문은 변경하지 않음. 제목 키워드로 원천 공고를 제외하지 않음.
+- `--data-dir "<사용자 비공개 데이터 폴더>" --days 7`은 원천 API 조회만 하는 **dry-run**이며, `--apply`를 붙일 때만 로컬 `dashboard.json`을 공통 다중 프로세스 잠금 후 병합 저장. `collection.mode=SCHEDULED_INCREMENTAL`, `lookback_days`, `window_end`를 기록함.
+- 공식 API 한 일자라도 실패하거나 페이지 총건수 불일치 시 전체 적용을 중단. 조회 과정의 실패는 `collection.status=ERROR`로 기록할 수 있지만 기존 공고·사람 판단은 보존. 외부 API 키·원본/비밀 데이터는 로그에 출력하지 않음. **일시적인 공식 API 연결 실패는 동일 구간을 한 번 재시도하며, 상세 RFP 원문 자동 갱신은 아직 미구현**.
+- Windows Task Scheduler: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install_local_collection_schedule.ps1 -Action Install`을 실행하면 **매일 오전 09:00 (PC 로컬 시각)**, 로그인된 현재 Windows 사용자로 7일 중첩 갱신을 수행하도록 등록. 기본 설정은 노트북 배터리 허용, 일정이 누락되면 가능할 때 실행, 중복 인스턴스 방지, 최대 60분. PC 로그인 세션이 없는 경우에는 실행되지 않음.
+- 작업 확인/해제: 같은 스크립트에 `-Action Status` 또는 `-Action Remove` 지정. 키는 해당 사용자 Windows DPAPI 보관소에 있으며 스케줄러 인수/파일에 포함되지 않음. 실제 정정/취소의 자동 판별과 RFP 근거 무효화·AI 추천은 후속 구현 및 검증 대상.
+- 로컬 웹서버는 기존 `127.0.0.1:8765` 실행 상태와 공통 JSON 잠금을 공유하며 서버를 강제로 종료하지 않음. 배포 `PREPARED` 저널 상태일 때 갱신 요청을 거부함.
