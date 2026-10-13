@@ -599,3 +599,10 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 - 1차 Codex: P1 취소가 이후 일반공고 응답으로 해제될 위험, P1 차수 `00` vs `000` 별도 저장·취소 손실, P2 기존 STALE 재추출 후 자동 회복 부재, P2 기본 목록 구차수 노출 지적.
 - P1 수정: 동일 숫자 차수는 기존 공식 저장 ID에 병합, 동일 차수 취소는 최신 일반공고 응답에도 유지, 기존의 동일 차수 중복 레코드에 취소가 있으면 모두 추천 제외. 기본 목록에서 SUPERSEDED/CANCELLED/REVIEW 제외(전체 보기는 유지).
 - P2 STALE 복구 자동 전이는 설계 범위 밖으로 명시: 공식 새 RFP 검증 전까지 추천 보류, 향후 별도 판단 이후 구현. 정정·취소/기초 원문·판단 이력 보존 우선.
+
+
+## 2026-10-13 공식 정정·취소 최종 로컬 운영 적용
+- 코드 23ff078 CI success, Windows 전체 258 PASS, Codex 재재검수 GO(신뢰 단일 사용자 localhost). 이전 NO_GO 취소 sticky·차수 표기 통합 2건 보완.
+- 기존 3,049건 원본에 정정/취소 수명주기만 직접 반영: CURRENT 2,653 / CANCELLED 167 / SUPERSEDED 229, RFP 재검증 STALE 8. 운영 반영 전 JSON 6개와 RFP sidecar 124개 백업, 변경 후 공고 ID 3,049/3,049, 과거 판단·RFP·이력 불변, 다른 JSON 5/5 및 캐시 124/124 SHA 일치.
+- 8765 서버 재기동, 실제 Chrome 목록·상세·수집관리, API 추천 결과 검증 완료: 추천 내 CANCELLED/SUPERSEDED/STALE 0. 상세: docs/reviews/OFFICIAL_AMEND_CANCEL_LOCAL_VERIFY_2026-10-13.md.
+- 7일 API 오류 분석은 사용자 요청에 따라 수행하지 않았으며 다음 기능 방향은 사용자가 결정. STALE 자동 재검증/공식 변경이력 별도 API 재조회/다른 공고번호 재공고 매핑은 미구현.
