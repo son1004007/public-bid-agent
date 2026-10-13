@@ -500,3 +500,13 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 **제한:** Windows 파일시스템·장치의 물리적 전원 장애를 여기서 직접 시험하거나 완전한 영속성을 보장하지는 않습니다. Microsoft MoveFileExW의 WRITE_THROUGH는 파일 이동을 플러시하지만, 모든 같은 볼륨 메타데이터 영속성의 증명은 아닙니다. SQLite FULL의 내구성도 OS/디스크의 fsync/FlushFileBuffers 계약에 의존합니다. 실제 종료 및 완전한 검수 전까지 공개 운영 배포와 main 통합은 별도 승인 대상입니다.
 
 실행: `python -m unittest discover -s local_app -p 'test_*.py'` 및 독립 Codex 읽기 전용 재검수. 실제 사용 데이터의 손상·이력 보존은 테스트 폴더와 별도 원본 해시 점검으로 확인합니다.
+
+
+## 2026-10-13 로컬 승격 독립 검수 완료(한정)
+- [x] HIGH 서버 실행 중 승격 경합: 수명 잠금과 미완료 상태 GET/POST 안전 차단
+- [x] HIGH Windows 장애 복구: SQLite FULL PREPARED 저널, 두 JSON 해시·복구, Windows 이동 플러시, 모의 장애 회귀
+- [x] MEDIUM junction/reparse 경로 교체: Windows 디렉터리 핸들 pin과 실 rename 거부 테스트
+- [x] MEDIUM 중단된 부분 백업: 원본 SHA 기반 소유권 검증·안전 재개
+- [x] Windows Python 전체 227 PASS, Codex 1차 NO_GO 지적 추가 수정 후 Codex 2차 localhost 신뢰 사용자 범위 GO
+- [ ] 기존 8765 로컬 서버에 새 코드 반영 및 별도 실제 웹 E2E (이번 변경 범위 밖)
+- [ ] main 병합 및 인터넷 공개 호스팅 검수·승인 (별도 단계)

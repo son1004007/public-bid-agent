@@ -558,3 +558,10 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 **제한:** Windows 파일시스템·장치의 물리적 전원 장애를 여기서 직접 시험하거나 완전한 영속성을 보장하지는 않습니다. Microsoft MoveFileExW의 WRITE_THROUGH는 파일 이동을 플러시하지만, 모든 같은 볼륨 메타데이터 영속성의 증명은 아닙니다. SQLite FULL의 내구성도 OS/디스크의 fsync/FlushFileBuffers 계약에 의존합니다. 실제 종료 및 완전한 검수 전까지 공개 운영 배포와 main 통합은 별도 승인 대상입니다.
 
 실행: `python -m unittest discover -s local_app -p 'test_*.py'` 및 독립 Codex 읽기 전용 재검수. 실제 사용 데이터의 손상·이력 보존은 테스트 폴더와 별도 원본 해시 점검으로 확인합니다.
+
+
+## 2026-10-13 로컬 RFP 배포 4건 수정·Codex 재재검수
+
+- 수정 커밋 d8b7007, 4077ff5. Windows Python 전체 227 PASS, 디렉터리 이름 변경 실 OS 거부 PASS. 독립 Codex 1차 NO_GO(경로 교체 경쟁), Windows CreateFileW 디렉터리 핀 보완 후 2차 범위 한정 GO(단일 신뢰 사용자, localhost 오프라인 배포).
+- 서버 수명 잠금, SQLite FULL/PREPARED 복구 의도, Windows WRITE_THROUGH 및 해시 세대 검증, junction/reparse 경로 검사·디렉터리 핸들 유지, 중단된 백업 준비 재개를 구현. 상세: docs/reviews/LOCAL_RFP_RELEASE_REVIEW_2026-10-13.md.
+- 개인 PC의 기존 8765 실행 코드는 아직 교체하지 않았으며 실사용 JSON에 대한 신규 배포/롤백 없음. main 및 외부 배포 별도 보류. 물리 전원 장애 및 동일 계정 악성 프로세스 위협은 범위 밖.
