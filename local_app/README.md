@@ -341,3 +341,7 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 - Windows Task Scheduler: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install_local_collection_schedule.ps1 -Action Install`을 실행하면 **매일 오전 09:00 (PC 로컬 시각)**, 로그인된 현재 Windows 사용자로 7일 중첩 갱신을 수행하도록 등록. 기본 설정은 노트북 배터리 허용, 일정이 누락되면 가능할 때 실행, 중복 인스턴스 방지, 최대 60분. PC 로그인 세션이 없는 경우에는 실행되지 않음.
 - 작업 확인/해제: 같은 스크립트에 `-Action Status` 또는 `-Action Remove` 지정. 키는 해당 사용자 Windows DPAPI 보관소에 있으며 스케줄러 인수/파일에 포함되지 않음. 실제 정정/취소의 자동 판별과 RFP 근거 무효화·AI 추천은 후속 구현 및 검증 대상.
 - 로컬 웹서버는 기존 `127.0.0.1:8765` 실행 상태와 공통 JSON 잠금을 공유하며 서버를 강제로 종료하지 않음. 배포 `PREPARED` 저널 상태일 때 갱신 요청을 거부함.
+
+
+### 2026-10-13 예약 수집 등록·실검증 상태
+Windows SID 동등성으로 예약 작업 소유자를 확인하도록 등록 스크립트를 보완했습니다. 개인 PC `TD-kiseok`에 **매일 09:00** 현재 사용자 로그인 세션으로 예약 작업을 등록했으며 다음 실행은 **2026-10-14 09:00**입니다. 실제 API 7일 DRY_RUN 3,053건 성공, 첫 7일 APPLY는 ProviderError로 안전 중단 후 1일 APPLY 826건 신규 저장 성공, 기존 공고는 2,223건에서 총 3,049건으로 증가했습니다. 기존 사람 판단 이력과 RFP 보호 필드 13종 불변, 나머지 비공개 JSON 4개 해시 동일, Chrome 목록·상세·수집관리 PASS. 실제 Task Scheduler 예약 실행은 아직 이루어지지 않았으며, 7일 예약 배치의 운영 안정성은 추가 확인 대상입니다. 상세 근거: [자동 수집 검증](docs/reviews/AUTO_G2B_COLLECTION_2026-10-13.md).

@@ -6,8 +6,20 @@ $ErrorActionPreference='Stop'
 $name='PublicBidAgent-OfficialCollection'
 if ([Environment]::OSVersion.Platform -ne 'Win32NT') { throw 'Windows 전용' }
 $existing=Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
-$owner=[Security.Principal.WindowsIdentity]::GetCurrent().Name
-if ($existing -and $existing.Principal.UserId -ine $owner) { throw '동일 이름의 다른 사용자 예약 작업이 이미 존재합니다' }
+$identity=[Security.Principal.WindowsIdentity]::GetCurrent()
+$owner=$identity.Name
+if ($existing) {
+ $taskUser=[string]$existing.Principal.UserId
+ try {
+  $taskSid=if ($taskUser -eq $identity.User.Value) { $taskUser } else {
+   ([Security.Principal.NTAccount]::new($taskUser)).Translate([Security.Principal.SecurityIdentifier]).Value
+  }
+ } catch { throw '예약 작업 실행 계정을 식별할 수 없습니다' }
+ if ($taskSid -ne $identity.User.Value) { throw '동일 이름의 다른 사용자 예약 작업이 이미 존재합니다' }
+ if ($existing.Actions.Count -ne 1 -or -not ($existing.Actions[0].Arguments -like '*scheduled_collection.py*')) {
+  throw '동일 이름의 다른 용도 예약 작업을 변경할 수 없습니다'
+ }
+}
 if ($Action -eq 'Status') {
  if (-not $existing) { Write-Output 'STATUS=NOT_REGISTERED'; exit 0 }
  $info=Get-ScheduledTaskInfo -TaskName $name

@@ -580,3 +580,10 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 - 신규 `local_app/scheduled_collection.py`에서 사용자 DPAPI 키로 과거 7개 24시간 구간을 오래된 순으로 조회, 공고 ID 중복은 최신 데이터 우선, 기존 사람 판단·RFP 본문·이력 보존. API 전체 일자 성공 후에만 OS 잠금 하에 최신 JSON 병합.
 - 기존 조달청 API 수집 로직의 페이지 totalCount 변동/누락 검증을 강화함. 원문 분류/입찰 가능 확정과 자동 RFP 새로 추출 기능은 없음.
 - Windows 작업 스케줄러 등록 스크립트(`scripts/install_local_collection_schedule.ps1`) 및 합성 실패·동시 수정·보존·비밀키 출력 금지 테스트를 추가. 실제 설치/운영 수집 및 Codex 최종 검수는 검증 실행 결과가 확보된 뒤 별도로 기록해야 함.
+
+
+## 2026-10-13 자동 공식 공고 수집 1단계 완료·잔여 위험
+- Windows 전체 unittest 240 PASS, Codex 독립 재검수 GO (개인 PC 단일 사용자), GitHub 코드 CI 성공. 실제 공식 API 최근 1일 dry-run 820건, 최근 7일 dry-run 3,053건.
+- 첫 실제 7일 저장 API 오류로 안전 중단, 이후 1일 실제 저장 826건 성공. 공고 2,223 -> 3,049건, 기존 사용자 판단/원문 필드 13종 및 이력 불변, 다른 JSON 4개 SHA 동일, Chrome UI PASS.
+- Windows Task Scheduler `PublicBidAgent-OfficialCollection` 등록 Ready, 다음 실행 2026-10-14 09:00. 현재 Task LastRun은 미실행. 등록 사용자 SID 비교 보완.
+- 자동 7일 예약 작업 실사용 성공과 API 안정성은 미확인. 기존 공고의 뒤늦은 정정/취소 상세 갱신과 RFP 근거 stale 전파는 미구현. 보고서: docs/reviews/AUTO_G2B_COLLECTION_2026-10-13.md.
