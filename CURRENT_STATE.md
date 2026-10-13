@@ -587,3 +587,9 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 - 첫 실제 7일 저장 API 오류로 안전 중단, 이후 1일 실제 저장 826건 성공. 공고 2,223 -> 3,049건, 기존 사용자 판단/원문 필드 13종 및 이력 불변, 다른 JSON 4개 SHA 동일, Chrome UI PASS.
 - Windows Task Scheduler `PublicBidAgent-OfficialCollection` 등록 Ready, 다음 실행 2026-10-14 09:00. 현재 Task LastRun은 미실행. 등록 사용자 SID 비교 보완.
 - 자동 7일 예약 작업 실사용 성공과 API 안정성은 미확인. 기존 공고의 뒤늦은 정정/취소 상세 갱신과 RFP 근거 stale 전파는 미구현. 보고서: docs/reviews/AUTO_G2B_COLLECTION_2026-10-13.md.
+
+
+## 2026-10-13 공식 공고 정정·취소 반영 단위
+- `local_app/notice_lifecycle.py`: 공식 공고번호/숫자 차수로 같은 원공고의 후속 차수 연결, 최신 공식 종류가 취소면 취소 상태, 이전 차수 SUPERSEDED, 중요 메타 변경 시 기추출 RFP STALE 표시. 사람 결정·증거·이력은 보존.
+- `local_app/dashboard_backend.py`의 실제/예약 수집 병합 이후 상태 재평가, `recommendations.py`의 부적합 최신성 추천 차단, `frontend/public/dashboard-live.js`의 상세 표시. `notice_lifecycle_cli.py`는 기존 데이터 preview/apply를 API 호출 없이 수행.
+- 7일 API 오류 분석은 사용자 명시 제외. 다음 개발 방향은 이 기능의 검증 결과를 보고받은 뒤 사용자가 결정.

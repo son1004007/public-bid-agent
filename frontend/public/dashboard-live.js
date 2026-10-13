@@ -282,6 +282,9 @@
       ['부서 분류', (n.department_categories||[]).join(', ')||'검토 필요'],
       ['사업 검토 상태', n.department_status || 'REVIEW'],
       ['입찰 기한 상태', n.window_status || 'UNKNOWN'],
+       ['공식 정정·취소 상태', n.notice_lifecycle || '확인 전'],
+       ['후속 차수 공고', n.superseded_by || '없음'],
+       ['기존 RFP 근거', n.rfp_review_status === 'STALE' ? '최신성 재검증 필요' : '변경 감지 없음'],
       ['법적 참가 자격', '미확인'], ['예산 (API 원문값)', n.budget],
       ['마감 (API 원문값)', n.end], ['판단 권고', n.rec || '판단 전'],
       ['사람 최종결정', n.final || '미결정']]));
@@ -305,6 +308,9 @@
       ['부서 관심분야', (n.department_categories||[]).join(', ')||'분류 검토 필요'],
       ['부서 판단', n.department_status || 'REVIEW'],
       ['입찰 기한 상태', n.window_status || 'UNKNOWN'],
+       ['공식 정정·취소 상태', n.notice_lifecycle || '확인 전'],
+       ['후속 차수 공고', n.superseded_by || '없음'],
+       ['기존 RFP 근거', n.rfp_review_status === 'STALE' ? '최신성 재검증 필요' : '변경 감지 없음'],
       ['법적 입찰 참가자격', '실제 업체 자격 미검증'],
       ['예산 API 값', n.budget], ['마감 API 값', n.end], ['API 관측 시각', n.observed_at]]));
     const tabs = byId('fullDetailTabs');
@@ -315,6 +321,10 @@
       b.tabIndex = active ? 0 : -1;
     });
     pane.append(el('div', 'detailNotice', '공식 목록 메타데이터만 검증 전 상태로 저장했습니다. 원문·자격·기술점수·이익률을 추정하지 않습니다.'));
+     if (['CANCELLED','SUPERSEDED','REVIEW'].includes(n.notice_lifecycle))
+       pane.append(el('div','detailNotice','공식 취소·후속차수·중복 차수로 자동 추천에서 제외됐습니다.'));
+     if (n.rfp_review_status === 'STALE')
+       pane.append(el('div','detailNotice','저장된 RFP는 이력으로 보존하며 최신성 재검증이 필요합니다.'));
     const section = detailBlock(fullDetailTab === 'overview' ? '공식 공고 기본정보' :
       fullDetailTab === 'requirements' ? '참가자격·과업 확인' :
       fullDetailTab === 'evaluation' ? '영향인자·원가 확인' : '참여 판단·담당자 결정');

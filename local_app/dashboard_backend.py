@@ -20,6 +20,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from decision_profiles import clean_policy, clean_weights
+from notice_lifecycle import reconcile, mark_if_metadata_changed
 from procurement_filter import apply as apply_department_filter
 
 API_URL = "https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch"
@@ -136,6 +137,8 @@ def normalize(item: dict) -> dict | None:
         "participation_restriction": _str(item.get("bidPrtcptLmtYn"), 3),
         "contract_method": _str(item.get("cntrctCnclsMthdNm"), 110),
         "requirements_status": "UNKNOWN",
+        "notice_lifecycle": "CANCELLED" if "취소" in _str(item.get("ntceKindNm"), 60) else "CURRENT",
+        "superseded_by": None,
         "attachments": attachments,
         "rfp_text": "",
         "document_status": "PENDING" if attachments else "NOT_AVAILABLE",
@@ -284,6 +287,8 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
     for item in notices:
         if item["id"] in existing:
             old = existing[item["id"]]
+            # 공식 정정은 RFP 원문을 덮지 않고 재검증 필요 여부만 기록한다.
+            changed += int(mark_if_metadata_changed(old, item, timestamp))
             # 변경된 공식 메타데이터만 덮어쓰며 사람 결정 및 판단 이력은 보존한다.
             for key in ("title", "org", "cat", "budget", "end", "source_url", "observed_at",
                         "notice_kind", "notice_published_at", "qualification_deadline",
@@ -310,6 +315,12 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
     if len(existing) > 10000:
         raise ValueError("저장 가능한 공고 수 초과")
     out["notices"] = list(existing.values())
+    changed += reconcile(out["notices"], timestamp)
+    for entry in out["notices"]:
+        if entry.get("notice_lifecycle") == "CANCELLED":
+            entry["window_status"] = "CANCELLED"
+        elif entry.get("notice_lifecycle") == "SUPERSEDED":
+            entry["window_status"] = "SUPERSEDED"
     out["revision"] += 1
     out["collection"] = {
         "status": "SUCCESS", "last_attempt": timestamp, "last_success": timestamp,

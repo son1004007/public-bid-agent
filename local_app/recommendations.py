@@ -105,6 +105,11 @@ def evaluate(notice, profile):
             or not re.fullmatch(r"[0-9]{1,5}",order)
             or notice.get("source")!="G2B_OFFICIAL_API"):
         return None
+    # 정정/취소 공고 및 과거 RFP는 법적 적격과 무관하게 추천 대상에서 제외.
+    if notice.get("notice_lifecycle") in ("CANCELLED", "SUPERSEDED", "REVIEW"):
+        return None
+    if notice.get("rfp_review_status") == "STALE":
+        return None
     human_raw=_safe(notice.get("final"),50).strip().casefold()
     if human_raw in EXCLUDED_DECISIONS:
         return None
