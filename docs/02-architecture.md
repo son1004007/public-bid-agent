@@ -1,10 +1,10 @@
 # Public Bid Agent 아키텍처 및 구현 경계
 
-> 최신 구조는 프로젝트 루트 [README.md](../README.md)의 2절을 먼저 읽습니다. 이 문서는 상세 구조와 미완료 게이트를 설명합니다. 기준일: 2026-10-09.
+> **2026-10-13 구분:** Windows 로컬 `/decision-preview`는 `frontend/public/bid-decision-dashboard-preview.html`+`dashboard-live.js`와 `local_app/server.py`의 Python HTTP API에 연결된 실제 구현입니다. 로컬 `/` 수동 AI 분석 화면, `bid-management-preview.html` 초기 정적 시안, React/FastAPI 합성 앱, 장기 공개 웹 아키텍처를 구별합니다. 실제 현황·검증 상태는 [CURRENT_STATE.md](../CURRENT_STATE.md)를 따릅니다.
 
 ## 1. 실제 구현: 개인 컴퓨터 로컬 우선 구조
 
-- **UI**: 사용자 PC 브라우저에서 로컬 `http://127.0.0.1:8765/`로 접속하는 HTML/JavaScript.
+- **UI**: `/`은 수동 AI 분석/검토, `/decision-preview`는 실제 공식 공고 목록·상세/수집/부서 기준/순위 UI입니다. 두 화면 모두 `127.0.0.1:8765`의 Python 로컬 서버에 연결되며 공개 웹서비스가 아닙니다.
 - **서버**: `local_app/server.py` 표준 Python HTTP 서버. Host 검증/Origin/CSRF, JSON 파일 원자 저장.
 - **파일**: 최대 10MiB 인입 → 로컬 `extractors.py` 별도 프로세스/포맷 검사/리소스 상한 → 텍스트·오류/한도 메타데이터 반환. OCR은 로컬 Tesseract+한국어 모델 사용.
 - **분석**: 사용자가 동의한 provider 목록만 LangGraph StateGraph로 실행.
@@ -45,7 +45,7 @@
 
 ## 현재 상태
 
-**애자일 Sprint 1 합성 공고 검색/상세 소스 작성 중 / 공개 서비스 활성화 HOLD.** 로컬 백엔드 pytest 일부 PASS, 프런트엔드 빌드·최종 검수·공개 배포는 미실행이다. 합성 fixture 기반 로컬 공고 검색 수직 슬라이스는 먼저 구현하고, 사용되는 경계에 대한 계약과 테스트를 반복적으로 확장한다. 장기 설계 요소는 현재 구현의 필수 선행조건이 아니다.
+**2026-10-09 당시 합성 Sprint 1 이력: 합성 공고 검색/상세 소스 작성 중 / 공개 서비스 활성화 HOLD.**** 로컬 백엔드 pytest 일부 PASS, 프런트엔드 빌드·최종 검수·공개 배포는 미실행이다. 합성 fixture 기반 로컬 공고 검색 수직 슬라이스는 먼저 구현하고, 사용되는 경계에 대한 계약과 테스트를 반복적으로 확장한다. 장기 설계 요소는 현재 구현의 필수 선행조건이 아니다.
 
 ## 구현 순서와 설계의 성격
 
