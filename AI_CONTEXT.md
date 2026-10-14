@@ -19,7 +19,14 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
-### 2026-10-13 실제 로컬 운영에 반영된 사실
+### 2026-10-15 최신 로컬 운영 및 검증
+
+- **로컬 서버·실제 Chrome 검증 완료:** `TD-kiseok`의 기존 로컬 시작 스크립트로 127.0.0.1:8765 기동. 공식 공고 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313), STALE RFP 10건. RFP fulltext 참조가 있는 현행·비STALE 공고 65건.
+- RFP 요구사항 구조화 읽기 전용 GET에서 8개 유형/원문 표현 후보 31개/출처 문서 1개, 파일 SHA 및 추출 문자 위치, `page=null`, 법적 적격 `UNVERIFIED` 확인. 취소·구차수·STALE 분석 보류 및 잘못된 ID 처리 확인.
+- **Chrome 실제 UI:** 공고 목록→상세→참가자격·과업→RFP 요구사항 근거 조회 버튼과 출력 PASS. 모바일 390px PASS. 비공개 JSON 40개 + RFP 캐시 124개 **SHA-256 164/164 동일**, Python 전체 **274 PASS**, JS·문서 동기화 PASS, Codex 독립 GO, GitHub CI 성공.
+- **상태:** `LOCAL_APPLIED` + `CHROME_E2E_VERIFIED`. 사용자 화면 최종 승인, `main` 병합, 인터넷 공개, 다음 Stage 2와 보류된 7일 API 실패 원인 조사는 미수행. [실제 검증 보고](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md).
+
+### 2026-10-13 실제 로컬 운영에 반영된 사실 (당시 기록)
 
 - 공식 공고 저장 **3,049건**: `CURRENT 2,653`, `CANCELLED 167`, `SUPERSEDED 229`. 정정/취소 반영 뒤 구차수와 취소 공고를 기본 추천에서 제외했다.
 - 중요 메타 변경으로 원문 확인이 필요한 RFP `STALE 8건`: 원문·판단·이력 보존, 재확인 전 추천/구조화 보류.
@@ -27,12 +34,12 @@
 - 현재의 규칙 기반 추천은 상세 검토 순위이고 법적 입찰 가능·수주 확률·회사 적격성 확정이 아니다.
 - 근거: [정정·취소 확인](docs/reviews/OFFICIAL_AMEND_CANCEL_LOCAL_VERIFY_2026-10-13.md), [자동수집](docs/reviews/AUTO_G2B_COLLECTION_2026-10-13.md).
 
-### 2026-10-13~14 RFP 요구사항 구조화 1단계: 소스 검증 완료, 로컬 서버 적용 별도
+### 2026-10-13~14 RFP 요구사항 구조화 1단계: 당시 소스 검수 기록
 
 - `local_app/rfp_requirements.py`: 공식 첨부 identity/원본 SHA-256/개인 PC의 44,000자 RFP 청크에서 **8개 유형의 원문 표현 후보** 추출; 누락/절단 경고와 추출 텍스트 시작·끝 offset, `page=null` 반환.
 - `GET /api/dashboard/rfp-requirements?id=...` / 상세 화면 `RFP 요구사항·출처 근거 확인` 버튼 추가 개발. 취소·구차수·STALE 공고 분석 보류, AI 추론/법적 필수요건 확정 없음, 소스 저장·외부 전송 없음.
 - 실제 비공개 데이터 **후보 66건 중 균등 20건** 샘플: 원문 표현 후보 **561건**, 텍스트 일부 보존 4건, 오류/0건 0. 구체적인 문서 내용은 공개 repo에 기록하지 않았다.
-- **Windows 회귀 274 PASS, Codex NO_GO 지적 3종 수정 후 독립 최종 GO** (신뢰된 개인 Windows localhost 전제). 소스·테스트 검수와 **실제 PC 서버 재시작/브라우저 새 버튼 확인/로컬 적용**은 서로 다르며 뒤 항목은 별도 증거가 확보돼야 완료로 변경한다.
+- **Windows 회귀 274 PASS, Codex NO_GO 지적 3종 수정 후 독립 최종 GO** (신뢰된 개인 Windows localhost 전제). 소스·테스트 검수와 **실제 PC 서버 재시작/브라우저 새 버튼 확인/로컬 적용**은 서로 다르며 뒤 항목은 2026-10-15 최신 로컬 검증 절에 확인 결과가 기록됐다.
 - 근거: [설계](docs/design/RFP_REQUIREMENTS_SLICE_2026-10-13.md), [대표 20건 검증](docs/reviews/RFP_REQUIREMENTS_LOCAL_EVIDENCE_2026-10-13.md), `local_app/test_rfp_requirements.py`.
 
 ## 3. 현재 승인/보류 범위

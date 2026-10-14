@@ -1,10 +1,21 @@
 # 애자일 작업 백로그
 
-> **2026-10-15 최신 실행 상태:** RFP Stage 1 소스·테스트·Codex 검수·GitHub CI는 완료. 하지만 개인 Windows PC `TD-kiseok`가 오프라인이라 로컬 8765 서버 적용 및 Chrome E2E·원본 SHA 사후 검증은 `BLOCKED` 상태입니다. 온라인 복귀 뒤 [Stage 1 로컬 적용·인수 검증 체크리스트](docs/implementation/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md)를 먼저 실행하세요. 사용자가 보류한 7일 API 실패 진단이나 Stage 2는 수행하지 않습니다.
+> **2026-10-15 최신 실제 완료 상태:** Windows PC 온라인 재연결 후 8765 로컬 서버 기동, 실제 Chrome 목록→상세→RFP 구조화 버튼과 근거 출력 PASS. 저장 공고 3,777건, 현행 RFP fulltext 후보 65건. 비공개 JSON 40개 + RFP 캐시 124개 **164/164 SHA 불변**, Windows 전체 Python **274 PASS**, JS·문서 검사 PASS, Codex 최종 GO·GitHub CI 성공. [실제 검증](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). **사용자 UI 최종 승인 및 다음 단계 결정만 대기**합니다. 7일 API 오류 원인 진단은 계속 보류합니다.
 
 > **현재 작업 선택 기준:** [DECISIONS.md](DECISIONS.md)의 사용자 결정 D-10(7일 API 오류 선제 진단 제외), D-11(RFP 구조화 1단계), D-12(다음 단계 사용자 재결정)을 우선합니다. 아래 2026-10-13 이전의 '우선 작업'은 역사적 백로그이며, 실제 완료·보류 상태는 최신 하단 이력 및 [AI_CONTEXT.md](AI_CONTEXT.md)를 확인하십시오.
 
-## 2026-10-13 우선 작업 (현재 기준)
+## 2026-10-15 RFP Stage 1 로컬 인수 완료·남은 결정
+
+- [x] TD-kiseok PC 온라인 복구 및 검수된 코드 확인, Git 문서 변경 fast-forward
+- [x] 로컬 서버 기동 및 실제 공고 3,777건 목록·상세·수집관리/추천 API 검증
+- [x] 현행 RFP fulltext 후보 65건 중 실제 문서의 8개 유형/31개 근거 표현과 취소·구차수·STALE 차단 확인
+- [x] 실제 Chrome 요구사항 버튼 클릭·근거 출력, 모바일 390px 확인
+- [x] 사용자 JSON 40개, RFP 캐시 124개 전후 SHA **164/164 동일**
+- [x] Windows Python 전체 274 PASS, JS·문서 동기화 PASS, Codex 3차 GO, GitHub CI 성공
+- [ ] 사용자 직접 화면 확인과 다음 개발 방향 결정 (Stage 2 등). 이를 사용자 최종 승인으로 기록하지 않음
+- [ ] 명시 제외: 7일 API 오류 이전 원인 진단, STALE 자동 해제, main 병합·대외 공개
+
+## 2026-10-13 우선 작업 (당시 기록)
 
 - [x] 로컬 `/decision-preview` HTTP 및 API 읽기 전용 확인: 공고 2,223건, 마감 전 109건, RFP 본문 상태 연결 후보 107건/메타데이터만 2건(원문 의미 검증 완료 아님).
 - [x] 10월 12일 RFP 격리 이관 **70공고·127문서 지정 범위에 한해** 로컬 운영 이관 저널 `COMPLETED`; 전체 배치는 `PAUSED / DONE 109 / PENDING 34`, 본문 파일 124개·백업 1개 존재 확인(127문서와 124파일의 대응은 미검증). **로컬 적용 범위 한정**.

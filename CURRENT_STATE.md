@@ -1,8 +1,16 @@
 # 현재 개발 상태
 
-> **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-13 로컬 운영 공고는 3,049건(취소 167/구차수 229, STALE 8), RFP 구조화 Stage 1 소스 검증 274 PASS·독립 Codex GO이며 **서버 실제 배포·웹 새 버튼 승인은 별도**입니다.
+> **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-15 로컬 운영 공고는 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE 10), RFP 구조화 Stage 1 실제 8765 서버·Chrome 기능 검증 및 원본 SHA 164/164 일치, 전체 274 PASS·Codex GO를 확인했습니다. **사용자의 최종 UI 승인, main 병합, 공개 릴리스는 별도**입니다.
 
-## 2026-10-13 실제 구현·검증 상태 (최신 기준)
+## 2026-10-15 최신 RFP 구조화 1단계 로컬 적용 결과
+
+- `TD-kiseok`에서 검수된 소스 `e02dfbc` 및 최신 문서 `3a7fb51`을 확인하고 기존 127.0.0.1:8765 서버를 기동했습니다. 3,777건의 실제 공고와 비STALE RFP fulltext 참조 후보 65건이 확인됐습니다.
+- 실제 GET: RFP 8개 유형, 근거 표현 31개/문서 1개, SHA·추출 문자 위치·원본 페이지 미추정·법적 적격 UNVERIFIED; 취소·구차수·STALE 차단, 잘못된 ID 400/없는 ID 404 확인.
+- 실제 Chrome: 공식 목록 3,777 → 상세 → 참가자격·과업 → RFP 요구사항 버튼 클릭 및 근거 출력, 기존 홈/수집관리와 모바일 390px PASS.
+- 사용자 JSON 40개 및 RFP 캐시 124개 **164/164 SHA 동일**, 파일 추가/삭제/변경 0건. Windows 전체 Python 274 PASS, JS·문서 동기화 PASS, Codex 독립 GO와 GitHub CI 성공.
+- 상태 `LOCAL_APPLIED`, `CHROME_E2E_VERIFIED`. 사용자 최종 UI 승인, main 통합, 인터넷 공개, 다음 Stage 2, 7일 API 실패 원인 진단은 미실행. [현장 검증 보고](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md).
+
+## 2026-10-13 실제 구현·검증 상태 (당시 기록)
 
 **현재 기준 화면은 `http://127.0.0.1:8765/decision-preview`입니다.** 개인 Windows PC의 `local_app/server.py`가 Python 표준 HTTP 서버로 제공하며, `frontend/public/bid-decision-dashboard-preview.html`과 `frontend/public/dashboard-live.js`가 실제 API에 연결됩니다. `bid-management-preview.html`은 초기 정적 퍼블리싱 시안이며 `frontend/` React + `backend/` FastAPI는 현재 운영 서버와 별도인 합성 개발 자산/공개 서비스 장기 계획입니다.
 

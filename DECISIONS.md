@@ -1,6 +1,6 @@
 # 프로젝트 결정사항 - Public Bid Agent
 
-- 마지막 갱신: 2026-10-14 (Asia/Seoul)
+- 마지막 갱신: 2026-10-15 (Asia/Seoul)
 - 적용 범위: `son1004007/public-bid-agent`
 - 상태: 사용자 명시 결정은 **확정(DECIDED)**, 구현·검수·운영 배포 상태는 각기 분리함
 - 목적: 다른 ChatGPT, Codex, AI 개발자가 이전 대화를 다시 묻지 않고 동일한 방향으로 작업하기 위한 **사용자 결정의 단일 진입점**
@@ -36,12 +36,12 @@
 - 공식 1일 신규 826건 수집이 실증됐고, Windows Task Scheduler 매일 오전 9시 로컬 사용자 로그인 세션으로 등록됨. 첫 7일 실제 반영 시 API 오류가 한 번 있었으나 **D-10에 따라 원인 조사는 보류**. 이후 실행 상태는 로컬 증거로 새로 확인할 것.
 - 근거: [정정·취소 적용 보고](docs/reviews/OFFICIAL_AMEND_CANCEL_LOCAL_VERIFY_2026-10-13.md), [예약 수집 보고](docs/reviews/AUTO_G2B_COLLECTION_2026-10-13.md).
 
-### 2.2 현재 개발 중인 RFP 구조화 1단계 (서버 배포/브라우저 인수와 구분)
+### 2.2 RFP 구조화 1단계 (2026-10-15 로컬 적용 및 Chrome E2E 완료)
 
 - `local_app/rfp_requirements.py`: 읽기 전용, 공식 첨부 identity/원문 SHA/비공개 청크 검증 후 8개 분류별 근거 후보 반환. `local_app/server.py`의 `GET /api/dashboard/rfp-requirements?id=...`, `frontend/public/dashboard-live.js` 요구사항 탭 조회 버튼과 연결.
 - 실제 원본을 수정하지 않는 표본: 현행·비STALE·문서 추출·부서 후보 중 fulltext 참조 공고 66건에서 ID 오름차순 균등 인덱스 20건 선정. 탐지된 **텍스트 표현 561건**, 일부 절단/부분 보존 **4건**, 오류/빈 결과 **0건**. 이는 실제 **필수 참가요건 561건을 확정한 결과가 아님**.
 - **2026-10-13 현재** Windows 전체 회귀 **274 PASS**, Codex 독립 검수에서 앞선 NO_GO 지적 3건(공식 첨부 파일명 결속, 실패 evidence 뒤 정상 기록 탐색, 첨부 목록 상한 누락 표시) 보완 후 **세 번째 검수 GO** (단일 Windows 사용자 localhost 범위).
-- 소스 검수/테스트와 별개로 **실제 사용자 PC의 실행 중 서버 재시작·Chrome 새 버튼 동작 확인·원본 전후 SHA 재대조·최종 릴리스 표시는 아직 수행되지 않은 것으로 기록**한다. 다른 AI가 이 단계의 운영 적용을 주장하려면 구체적인 최신 실행 로그/CI를 확보해야 한다.
+- **2026-10-15 로컬 적용 확인:** `TD-kiseok`의 127.0.0.1:8765에서 Chrome 목록→상세→RFP 요구사항 버튼과 근거 표시 PASS. 저장 공고 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313), STALE RFP 10건, 현행 fulltext 후보 65건, 실제 API 근거 표현 31개/문서 1개. 원본 JSON 40개 + RFP 캐시 124개 **SHA-256 164/164 동일**, 전체 Python 274 PASS, JS·문서 검사 PASS, Codex 3차 GO·GitHub CI 성공. 사용자 UI 최종 승인·main 병합·인터넷 공개는 별도. [실제 검증](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md).
 - 근거: [설계](docs/design/RFP_REQUIREMENTS_SLICE_2026-10-13.md), [20건 비식별 검증](docs/reviews/RFP_REQUIREMENTS_LOCAL_EVIDENCE_2026-10-13.md), `test_rfp_requirements.py`.
 
 ## 3. 명시적으로 미결정·미완료된 항목 (DECISION PENDING)

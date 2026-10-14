@@ -2,6 +2,8 @@
 
 > **AI/Codex에게:** 사용자 확정 결정은 [DECISIONS.md](../DECISIONS.md), 현재 실제 사용/보안 경계는 [AI_CONTEXT.md](../AI_CONTEXT.md), 검수·배포 범위는 [AGENTS.md](../AGENTS.md), 최근 실행 결과는 [CURRENT_STATE.md](../CURRENT_STATE.md)와 [TASKS.md](../TASKS.md)를 먼저 확인하십시오. 2026-10-13 이전 자료의 공고 건수는 과거 스냅샷입니다.
 
+> **2026-10-15 로컬 실증:** 기존 127.0.0.1:8765 서버/Chrome RFP 구조화 근거 버튼·모바일 PASS, 개인 JSON/캐시 164/164 SHA 일치, 전체 Python 274 PASS. [실제 인수 검증](../docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 사용자 UI 최종 승인/외부 공개와 구분합니다.
+
 > 기준: **CPython 3.12.x / Python 표준 로컬 HTTP 서버 / 데이터는 PC의 JSON**. 전체 현재·목표 아키텍처, 설정, 신뢰 경계는 [루트 README](../README.md) 기준입니다.
 
 ## 준비 및 실행

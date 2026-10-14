@@ -1,8 +1,8 @@
 # Public Bid Agent | 공공 입찰 참여 의사결정 지원
 
-> **다른 AI/Codex를 위한 현재 작업 기준:** [DECISIONS.md](DECISIONS.md)에는 사용자의 확정 요구사항·제외한 작업·사용자 최종 승인 경계를, [AI_CONTEXT.md](AI_CONTEXT.md)에는 2026-10-14 기준 실행 환경과 검증 근거를 정리했습니다. 개발 시작 시 [AGENTS.md](AGENTS.md) → **[DECISIONS.md](DECISIONS.md)** → [AI_CONTEXT.md](AI_CONTEXT.md) → [CURRENT_STATE.md](CURRENT_STATE.md) → [TASKS.md](TASKS.md)를 차례로 확인하십시오.
+> **다른 AI/Codex를 위한 현재 작업 기준:** [DECISIONS.md](DECISIONS.md)에는 사용자의 확정 요구사항·제외한 작업·사용자 최종 승인 경계를, [AI_CONTEXT.md](AI_CONTEXT.md)에는 2026-10-15 기준 실행 환경과 검증 근거를 정리했습니다. 개발 시작 시 [AGENTS.md](AGENTS.md) → **[DECISIONS.md](DECISIONS.md)** → [AI_CONTEXT.md](AI_CONTEXT.md) → [CURRENT_STATE.md](CURRENT_STATE.md) → [TASKS.md](TASKS.md)를 차례로 확인하십시오.
 >
-> **현재 구분:** 2026-10-13 로컬 저장 공고 3,049건(취소 167/구차수 229, STALE RFP 8), 매일 09시 예약 수집 등록. RFP 요구사항 구조화 Stage 1은 실제 20건 샘플·Windows 274 PASS·Codex GO까지 검증했으나 **로컬 운영 서버 새 코드 적용과 사용자의 UI 승인/인터넷 공개는 별도**입니다. 아래 과거의 2,223건·예약 미구현 문장은 당시 시점 기록입니다.
+> **2026-10-15 최신:** 로컬 저장 공고 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE RFP 10), 예약 수집 등록 상태 유지. Stage 1 RFP 구조화는 실제 8765 서버/Chrome 목록→상세→근거 버튼 검증 PASS, 개인 JSON 40개·RFP 캐시 124개 SHA **164/164 동일**, Windows 전체 Python 274 PASS, Codex GO 및 GitHub CI 성공. **사용자 UI 최종 승인·main 병합·인터넷 공개는 별도**입니다. [실제 검증 보고](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 아래 2,223건/3,049건 등의 수치는 당시 기록입니다.
 
 > 구현 단계: **Windows 로컬 Python MVP 실행·RFP 로컬 운영 이관 확인**. React/FastAPI는 별도의 합성 개발 자산입니다. 외부 공개 배포·RFP 전체 의미 검증·전체 앱 최종 보안 검수는 미완료입니다.
 >

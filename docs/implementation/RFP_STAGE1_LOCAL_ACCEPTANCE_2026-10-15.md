@@ -1,5 +1,7 @@
 # RFP 요구사항 구조화 1단계: 로컬 적용·인수 검증 체크리스트
 
+> **상태 갱신 (2026-10-15):** 작성 당시 개인 PC 오프라인으로 중단됐으나, 이후 연결 복구와 로컬 서버 적용·Chrome E2E·개인 파일 SHA 164/164 일치·전체 Python 274 PASS까지 확인되어 블로커가 해소됐습니다. 아래 오프라인 표시와 절차는 당시 기록입니다. 결과: [실제 로컬 검증 보고](../reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md).
+
 - 기준일: 2026-10-15 (Asia/Seoul)
 - 대상: 개발 브랜치 `feat/sprint1-search-demo`, 검증 완료 코드 `e02dfbc`
 - 사용자 결정: [DECISIONS.md](../../DECISIONS.md) D-10~D-12. **7일 공식 API 오류 분석 제외**, Stage 2 자동 진행 금지.
