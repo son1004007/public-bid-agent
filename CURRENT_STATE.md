@@ -2,6 +2,11 @@
 
 > **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-15 로컬 운영 공고는 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE 10), RFP 구조화 Stage 1 실제 8765 서버·Chrome 기능 검증 및 원본 SHA 164/164 일치, 전체 274 PASS·Codex GO를 확인했습니다. **사용자의 최종 UI 승인, main 병합, 공개 릴리스는 별도**입니다.
 
+## 2026-10-15 RFP 원문 우선 화면 개선 (D-15)
+
+- RFP 구조화 API·원본 JSON·캐시·수집 로직은 변경 없이 `dashboard-live.js`와 `bid-decision-dashboard-preview.html`만 UI 변경. 원문 표현 1열 카드, 파일명·SHA-256·문자 위치는 항목별 기본 접힌 `details/summary` 메타정보에 표시. [UI 검증 보고](docs/reviews/RFP_ORIGINAL_FIRST_UI_2026-10-15.md).
+- 실제 Chrome 원문 표현 31개/접힘 31개, 펼치기·닫기, 모바일 390px 가로 넘침 없음, Windows 전체 **274/274 PASS**, 사용자 비공개 파일 **164/164 SHA-256 일치**. Codex 1차 NO_GO(CSS 글로벌 범위) 지적 수정 후 **2차 독립 GO**. 사용자 최종 화면 승인은 별도.
+
 ## 2026-10-15 최신 RFP 구조화 1단계 로컬 적용 결과
 
 - `TD-kiseok`에서 검수된 소스 `e02dfbc` 및 최신 문서 `3a7fb51`을 확인하고 기존 127.0.0.1:8765 서버를 기동했습니다. 3,777건의 실제 공고와 비STALE RFP fulltext 참조 후보 65건이 확인됐습니다.

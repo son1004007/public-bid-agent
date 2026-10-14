@@ -372,6 +372,7 @@
       // 공식 문서의 원문 결속형 JSON 요구사항 후보를 사용자가 명시적으로 요청할 때만 확인.
       // 원본 PDF/HWP 페이지 번호는 기록되어 있지 않으므로 문자 위치만 표시한다.
       const requirementsPanel=detailBlock('공식 RFP 요구사항 구조화 (근거 확인)');
+      requirementsPanel.classList.add('rfpEvidencePanel');
       const requirementsInfo=el('p','muted','8개 유형을 규칙으로 탐지합니다. 필수조건·업체 적격·원본 페이지는 확인이 필요합니다.');
       requirementsInfo.setAttribute('role','status');
       const requirementsRows=el('div','');
@@ -384,23 +385,36 @@
           const payload=await response.json();
           if(!response.ok || !payload.requirements)throw Error(payload.error||'RFP 요구사항 검증 실패');
           const report=payload.requirements;
-          requirementsInfo.textContent='상태 '+report.state+' / 사용한 검증 문서 '+report.sources_used+
-            '개 / 근거 표현 후보 '+report.requirement_count+'건 / 분석 방식 '+report.analysis_mode+
-            ' / 텍스트 범위 '+report.source_coverage+'. '+report.uncertainty;
+          requirementsInfo.textContent='원문 표현 후보 '+report.requirement_count+'건 · 검증된 문서 '+
+            report.sources_used+'개 · 상태 '+report.state+'. '+report.uncertainty;
+          const scope=el('p','rfpEvidenceScope','분석 범위: '+report.source_coverage+
+            ' · 분석 방식: '+report.analysis_mode+' · 필수조건 및 법적 적격 여부는 사람 확인이 필요합니다.');
+          requirementsRows.append(scope);
           (report.warnings||[]).forEach(message=>requirementsRows.append(el('p','muted','주의: '+message)));
           (report.requirements||[]).forEach(category=>{
             const group=detailBlock(category.label+' · '+category.count+'건');
+            group.classList.add('rfpEvidenceCategory');
             if(!category.count)group.append(el('p','muted','탐지된 표현 없음. 실제 요건이 없다는 뜻은 아닙니다.'));
             (category.items||[]).forEach(item=>{
               const e=item.evidence;
-              group.append(el('div','requirementRow',
-                '' )); // 근거는 뒤이어 텍스트 노드로 안전하게 표시
-              const row=group.lastElementChild;
-              row.append(el('span','evidence',e.excerpt),
-                el('span','muted','파일: '+e.file+' / SHA-256: '+e.source_sha256+
-                  ' / 추출 텍스트 문자 위치 '+e.offset_start+'-'+e.offset_end+
-                  ' / 페이지: 미확인 / 범위: '+e.source_mode+
-                  ' / 판정: 원문 표현 후보 (사람 검증 필요)'));
+              const row=el('article','rfpEvidenceItem');
+              row.append(el('p','rfpOriginalText',e.excerpt));
+              const source=el('details','rfpEvidenceSource');
+              source.append(el('summary','','출처 및 검증 정보 펼치기'));
+              const metadata=el('dl','rfpEvidenceMetadata');
+              [
+                ['원본 파일',e.file],
+                ['원본 SHA-256',e.source_sha256],
+                ['추출 텍스트 문자 위치',e.offset_start+'–'+e.offset_end],
+                ['원본 페이지','미확인'],
+                ['근거 범위',e.source_mode],
+                ['판정','원문 표현 후보 (사람 검증 필요)']
+              ].forEach(([label,value])=>{
+                metadata.append(el('dt','',label),el('dd','',String(value??'미확인')));
+              });
+              source.append(metadata);
+              row.append(source);
+              group.append(row);
             });
             requirementsRows.append(group);
           });

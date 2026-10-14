@@ -4,6 +4,8 @@
 >
 > **2026-10-15 최신:** 로컬 저장 공고 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE RFP 10), 예약 수집 등록 상태 유지. Stage 1 RFP 구조화는 실제 8765 서버/Chrome 목록→상세→근거 버튼 검증 PASS, 개인 JSON 40개·RFP 캐시 124개 SHA **164/164 동일**, Windows 전체 Python 274 PASS, Codex GO 및 GitHub CI 성공. **사용자 UI 최종 승인·main 병합·인터넷 공개는 별도**입니다. [실제 검증 보고](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 아래 2,223건/3,049건 등의 수치는 당시 기록입니다.
 
+> **2026-10-15 RFP UI 개선:** 상세보기의 `참가자격·과업 확인` → `RFP 요구사항·출처 근거 확인` 결과는 원문 표현을 전체 너비 세로 목록으로 보여주고 원본 파일·SHA-256·문자 위치·검증 상태는 항목별 `출처 및 검증 정보 펼치기`에 접어 둡니다. 이는 표현 후보의 시각화 개선이며 법적 참여자격 판정이나 원문 누락을 해결하지 않습니다. [D-15](DECISIONS.md), [UI 검증 보고](docs/reviews/RFP_ORIGINAL_FIRST_UI_2026-10-15.md).
+
 > 구현 단계: **Windows 로컬 Python MVP 실행·RFP 로컬 운영 이관 확인**. React/FastAPI는 별도의 합성 개발 자산입니다. 외부 공개 배포·RFP 전체 의미 검증·전체 앱 최종 보안 검수는 미완료입니다.
 >
 > Python 기준: **CPython 3.12.x** (CI: Python 3.12). 자세한 의존성·고지 의무는 [라이선스 검토](docs/DEPENDENCIES_AND_LICENSES.md)에 기록합니다.

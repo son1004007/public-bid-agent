@@ -112,6 +112,21 @@ label{font-size:12px;color:#526780;font-weight:720}label>input,label>select{disp
 .requirementRow:last-child{border-bottom:0}.requirementRow strong{color:#314862}
 .requirementRow .evidence{color:#7c8fa5;font-size:11px}
 .requirementRow small{display:block;color:#91a1b3;margin-top:4px}
+/* 공식 RFP 원문 표현 후보: 본문은 전체 너비, 출처/해시는 기본 접힘. 다른 requirementRow 화면에는 영향 없음. */
+.rfpEvidencePanel .rfpEvidenceScope{margin:12px 0 16px;font-size:12px;color:#5e748d;line-height:1.7;overflow-wrap:anywhere}
+.rfpEvidencePanel .rfpEvidenceCategory{margin-top:14px;background:#fbfcff;padding:17px}
+.rfpEvidencePanel .rfpEvidenceCategory h3{font-size:14px;color:#233e63;margin-bottom:8px}
+.rfpEvidencePanel .rfpEvidenceItem{display:block;min-width:0;padding:16px 2px;border-bottom:1px solid #e3eaf4}
+.rfpEvidencePanel .rfpEvidenceItem:last-child{border-bottom:0;padding-bottom:4px}
+.rfpEvidencePanel .rfpOriginalText{font-size:14px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;color:#23364e;margin:0 0 11px}
+.rfpEvidencePanel .rfpEvidenceSource{border:1px solid #d9e5f3;border-radius:7px;background:#fff;padding:0;min-width:0}
+.rfpEvidencePanel .rfpEvidenceSource summary{cursor:pointer;color:#2357a0;font-size:12px;font-weight:700;padding:10px 12px;list-style:revert}
+.rfpEvidencePanel .rfpEvidenceSource summary:focus-visible{outline:2px solid #2664c7;outline-offset:2px}
+.rfpEvidencePanel .rfpEvidenceSource[open] summary{border-bottom:1px solid #e3eaf4}
+.rfpEvidencePanel .rfpEvidenceMetadata{display:grid;grid-template-columns:minmax(110px,160px) minmax(0,1fr);gap:9px 14px;margin:0;padding:13px 14px;font-size:12px;line-height:1.55}
+.rfpEvidencePanel .rfpEvidenceMetadata dt{font-weight:700;color:#5b6e86}
+.rfpEvidencePanel .rfpEvidenceMetadata dd{margin:0;color:#30445d;overflow-wrap:anywhere;min-width:0}
+@media(max-width:550px){.rfpEvidencePanel .rfpEvidenceCategory{padding:12px}.rfpEvidencePanel .rfpOriginalText{font-size:13px}.rfpEvidencePanel .rfpEvidenceMetadata{grid-template-columns:1fr;gap:4px}.rfpEvidencePanel .rfpEvidenceMetadata dd{margin-bottom:8px}}
 .detailNotice{background:#fffbf4;border:1px solid #efdfbe;padding:13px 15px;border-radius:8px;color:#805f25;font-size:12px;line-height:1.7;margin-bottom:17px}
 .metricBar{height:7px;background:#e8eff7;border-radius:6px;overflow:hidden;margin-top:6px}
 .metricBar i{display:block;height:100%;background:#4b79c6}

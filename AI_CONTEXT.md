@@ -19,6 +19,11 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-15 RFP 원문 우선 UI 개선 (D-15)
+
+- 사용자 요청에 따라 RFP 요구사항 표현 후보는 전체 너비 원문 세로 목록으로 보여 주고, 원본 파일·SHA-256·추출 문자 위치 등은 각 항목별 기본 접힌 네이티브 `details/summary`에서만 펼쳐 본다. 다른 `requirementRow` 기능/API/원본 자료는 변경하지 않음.
+- 실제 Windows Chrome 공식 공고 → 상세 → RFP 구조화: 원문 후보 31건, 메타정보 접힘 31/31, 펼치기·접기 PASS, 모바일 390px 가로 넘침 없음. Python 전체 274 PASS, 비공개 파일 164/164 SHA-256 기존 기준값과 일치. **Codex 신규 UI 변경 독립 검수 1차 NO_GO CSS 격리 지적 수정 후 2차 GO**. [UI 변경·검증](docs/reviews/RFP_ORIGINAL_FIRST_UI_2026-10-15.md).
+
 ### 2026-10-15 최신 로컬 운영 및 검증
 
 - **로컬 서버·실제 Chrome 검증 완료:** `TD-kiseok`의 기존 로컬 시작 스크립트로 127.0.0.1:8765 기동. 공식 공고 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313), STALE RFP 10건. RFP fulltext 참조가 있는 현행·비STALE 공고 65건.
