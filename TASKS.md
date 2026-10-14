@@ -1,5 +1,7 @@
 # 애자일 작업 백로그
 
+> **2026-10-15 최신 실행 상태:** RFP Stage 1 소스·테스트·Codex 검수·GitHub CI는 완료. 하지만 개인 Windows PC `TD-kiseok`가 오프라인이라 로컬 8765 서버 적용 및 Chrome E2E·원본 SHA 사후 검증은 `BLOCKED` 상태입니다. 온라인 복귀 뒤 [Stage 1 로컬 적용·인수 검증 체크리스트](docs/implementation/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md)를 먼저 실행하세요. 사용자가 보류한 7일 API 실패 진단이나 Stage 2는 수행하지 않습니다.
+
 > **현재 작업 선택 기준:** [DECISIONS.md](DECISIONS.md)의 사용자 결정 D-10(7일 API 오류 선제 진단 제외), D-11(RFP 구조화 1단계), D-12(다음 단계 사용자 재결정)을 우선합니다. 아래 2026-10-13 이전의 '우선 작업'은 역사적 백로그이며, 실제 완료·보류 상태는 최신 하단 이력 및 [AI_CONTEXT.md](AI_CONTEXT.md)를 확인하십시오.
 
 ## 2026-10-13 우선 작업 (현재 기준)
