@@ -84,7 +84,10 @@ def analyze(notice, extractor, fetcher=fetch_attachment, related=None, key=None,
             evidence.append(previous[identity])
             continue
         item={"identity":identity,"name":f["name"][:200],
-              "source":str(f.get("source","공식 첨부"))[:80]}
+              "source":str(f.get("source","공식 첨부"))[:80],
+              "notice_id":notice.get("id"),
+              "notice_bid_no":notice.get("bid_no"),
+              "notice_bid_order":notice.get("bid_order")}
         try:
             raw=fetcher(f["url"])
             doc=extractor(f["name"],raw)

@@ -55,9 +55,15 @@ def store(root, source_sha256, doc):
     directory = Path(root) / "rfp_fulltext"
     directory.mkdir(mode=0o700, parents=False, exist_ok=True)
     path = directory / (reference + ".json")
+    def require_compatible():
+        old = load(root, reference)
+        if (old["text_sha256"] != text_digest
+                or old["reported_chars"] != reported
+                or old["truncated_by_parser"] != record["truncated_by_parser"]):
+            raise ValueError("동일 RFP 텍스트의 파서 길이·절단 메타데이터 불일치; 기존 캐시 보존")
+
     if path.exists():
-        if load(root, reference)["text_sha256"] != text_digest:
-            raise ValueError("기존 RFP 청크 캐시 불일치")
+        require_compatible()
     else:
         filename = None
         try:
@@ -68,7 +74,12 @@ def store(root, source_sha256, doc):
                 json.dump(record, output, ensure_ascii=False, separators=(",", ":"))
                 output.flush()
                 os.fsync(output.fileno())
-            os.replace(filename, path)
+            # 같은 디렉터리의 완성된 임시 파일을 원자적 hard-link로 등록한다.
+            # os.replace는 다른 프로세스가 생성한 동명 캐시를 덮으므로 금지.
+            try:
+                os.link(filename, path)
+            except FileExistsError:
+                require_compatible()
         finally:
             if filename and os.path.exists(filename):
                 os.unlink(filename)

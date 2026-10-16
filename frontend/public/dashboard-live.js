@@ -424,6 +424,54 @@
       requirementsPanel.append(requirementsInfo,requirementsButton,requirementsRows);
       section.append(requirementsPanel);
 
+      // 공식 원본 파일을 사용자가 로컬에서 선택해야만 서버 메모리로 전송해 대조.
+      // 저장 당시 파서 버전/페이지/표/OCR 완전성은 언제나 별도 미확인 상태.
+      const originalPanel=detailBlock('공식 RFP 원본·저장 근거 대조 (로컬, 원본 미보관)');
+      const originalInfo=el('p','muted','PC에 별도로 확보한 공식 첨부 파일을 선택하면 원본 SHA, 저장 근거·캐시와 현재 추출기의 일치 여부만 확인합니다. 원본 파일은 저장하지 않으며 실제 필수 요건의 완전성은 별도 검증이 필요합니다.');
+      originalInfo.setAttribute('role','status');
+      const originalSelect=el('select','');
+      const options=(Array.isArray(n.document_evidence)?n.document_evidence:[]).filter(p=>p&&p.status==='EXTRACTED'&&/^[a-f0-9]{64}$/.test(p.identity||'')&&/^[a-f0-9]{64}$/.test(p.fulltext_ref||''));
+      options.forEach((proof,i)=>{
+        const hasVersion=proof.notice_id===n.id&&proof.notice_bid_no===n.bid_no&&
+          proof.notice_bid_order===n.bid_order;
+        const label=String(proof.name||'저장 증거 #'+(i+1)).slice(0,95)+
+          (hasVersion?'':' (구형 증거: 공고 차수 검증 불가)');
+        const option=el('option','',label);
+        option.value=proof.identity;originalSelect.append(option);
+      });
+      const originalFile=el('input','');
+      originalFile.type='file';
+      originalFile.accept='.pdf,.hwp,.hwpx,.docx,.txt,.md';
+      const originalCheck=btn('로컬 원본 대조 실행',async()=>{
+        const file=originalFile.files?.[0];
+        if(!file||!originalSelect.value){originalInfo.textContent='원본 파일과 추출된 저장 증거를 각각 선택하세요.';return;}
+        if(file.size>8*1024*1024||file.size===0){originalInfo.textContent='원본 파일은 1바이트 이상 8MiB 이하만 지원합니다.';return;}
+        originalCheck.disabled=true;
+        try{
+          const bytes=new Uint8Array(await file.arrayBuffer());
+          let binary='';
+          for(let i=0;i<bytes.length;i+=32768)binary+=String.fromCharCode(...bytes.subarray(i,i+32768));
+          const resp=await fetch('/api/dashboard/rfp-original-compare',{
+            method:'POST',credentials:'same-origin',
+            headers:{'Content-Type':'application/json','X-Local-CSRF':csrf},
+            body:JSON.stringify({id:n.id,identity:originalSelect.value,base64:btoa(binary)})
+          });
+          const response=await resp.json();
+          if(!resp.ok||response.ok!==true||response.storage!=='LOCAL_MEMORY_ONLY')
+            throw Error(response.error||'원본 대조 요청 실패');
+          const report=response.comparison;
+          originalInfo.textContent='대조 상태: '+String(report.status)+
+            ' / 원본 SHA 일치: '+String(report.source_sha_matched??'미확인')+
+            ' / 저장 텍스트 재현: '+String(report.text_prefix_matched??'미확인')+
+            ' / 파서 버전·OCR 동일성: NOT_VERIFIED / 페이지·표·각주·원문 누락률: NOT_VERIFIED'+
+            ' / 원본 파일 미보관';
+        }catch(error){originalInfo.textContent='대조 실패: '+error.message;}
+        finally{originalCheck.disabled=false;}
+      });
+      originalCheck.disabled=!options.length;
+      originalPanel.append(originalInfo,originalSelect,originalFile,originalCheck);
+      section.append(originalPanel);
+
       // 사용자 요청 시에만 기존 RFP 본문에서 명시적 인력 요건 후보를 추출한다.
       const staffPanel=detailBlock('RFP 인력요건·부서 역량 예비 검토');
       const staffInfo=el('p','muted','검토 버튼을 누르면 공식 첨부 발췌에서 역할·등급·인원 후보를 찾습니다. 실제 참가자격·기술자 등급·가용 공수는 미확인입니다.');
@@ -494,6 +542,25 @@
         e.category+' 근거: '+(e.sources||[]).join(', '))));
       section.append(el('p', 'muted', '기업 보유 역량·실적·원가와 RFP 원문 검증 전까지 점수를 계산하지 않습니다.'));
       factors.forEach(([, label]) => section.append(el('div', 'requirementRow', label + ' · 미확인')));
+      const readinessPanel=detailBlock('부서 증빙 준비 상태 (입찰 적격 판정 아님)');
+      const readinessInfo=el('p','muted','운영자료 확인표에 기록된 정보의 준비 상태를 조회합니다. 실제 면허·실적·인력·수익성은 별도 검증합니다.');
+      const readinessRows=el('div','');
+      const readinessButton=btn('부서 증빙 준비 현황 확인',async()=>{
+        readinessButton.disabled=true;readinessRows.replaceChildren();
+        try{
+          const response=await fetch('/api/dashboard/readiness?id='+encodeURIComponent(n.id),{cache:'no-store'});
+          const payload=await response.json();
+          if(!response.ok||!payload.readiness)throw Error(payload.error||'준비도 확인 실패');
+          const report=payload.readiness;
+          readinessInfo.textContent='현재 상태: '+report.status+
+            ' / 입찰 자격·기술·투입 가능성·수익성: 모두 UNVERIFIED';
+          report.checks.forEach(row=>readinessRows.append(el('div','requirementRow',
+            row.label+' · '+row.status)));
+        }catch(error){readinessInfo.textContent='조회 실패: '+error.message;}
+        finally{readinessButton.disabled=false;}
+      });
+      readinessPanel.append(readinessInfo,readinessButton,readinessRows);
+      section.append(readinessPanel);
     } else {
       section.append(el('p', 'muted', '규칙 기반 보류 권고와 담당자 결정은 별개입니다. 사람의 결정에는 사유가 필요합니다.'));
       section.append(btn('증빙 미확인 권고 기록', () => void decide(n, 'recommendation')));
@@ -515,6 +582,43 @@
       if (!entries.length) history.append(el('p', 'muted', '아직 저장된 판단 이력이 없습니다.'));
       entries.forEach(x => history.append(el('p', '', x.stamp + ' · ' + x.actor + ' · ' + x.reason + ' · ' + x.version)));
       section.append(history);
+      const outcomePanel=detailBlock('제출·평가·수주 결과 (담당자 직접 확인)');
+      const recorded=Array.isArray(n.submission_events)?n.submission_events:[];
+      const outcomeInfo=el('p','muted','실제 나라장터 제출·선정 상태는 자동 확인하지 않습니다. 확인한 자료와 날짜를 적으면 이력에 추가되며 이전 결정을 덮어쓰지 않습니다.');
+      recorded.forEach(event=>outcomePanel.append(el('p','muted',
+        event.stage+' / '+event.observed_on+' / '+event.evidence_reference+
+        (event.evaluation_score===null?'':' / 점수 '+event.evaluation_score)+
+        ' · 담당자 입력, 공식 검증 전')));
+      const select=el('select','');
+      [['SUBMITTED','실제 제안서 제출'],['EVALUATED','평가 점수 확인'],
+       ['AWARDED','선정 결과 확인'],['NOT_AWARDED','미선정 결과 확인'],
+       ['WITHDRAWN','제출 후 철회']].forEach(([value,label])=>{
+        const option=el('option','',label);option.value=value;select.append(option);
+      });
+      const observed=el('input','');observed.type='date';
+      const proof=el('input','');proof.type='text';proof.maxLength=160;
+      proof.placeholder='확인한 자료/문서 식별 설명 (필수, 비밀정보 제외)';
+      const score=el('input','');score.type='number';score.min='0';score.max='100';
+      score.step='0.01';score.placeholder='평가 점수 (있을 때만)';
+      const save=btn('제출·평가 이력 수동 기록',async()=>{
+        if(!observed.value||!proof.value.trim()){
+          outcomeInfo.textContent='확인 날짜와 근거 자료 설명을 모두 입력하세요.';return;
+        }
+        save.disabled=true;
+        try{
+          const result=await write('/api/dashboard/outcome',{
+            id:n.id,expected_revision:revision,stage:select.value,
+            observed_on:observed.value,evidence_reference:proof.value.trim(),
+            evaluation_score:score.value.trim()?Number(score.value):null
+          });
+          if(!result.ok)throw Error(result.error||'이력 저장 실패');
+          outcomeInfo.textContent='이력을 로컬에 저장했습니다. 자동 제출/공식 낙찰 확정과 무관합니다.';
+          await reload();
+        }catch(error){outcomeInfo.textContent='저장 실패: '+error.message;}
+        finally{save.disabled=false;}
+      });
+      outcomePanel.append(outcomeInfo,select,observed,proof,score,save);
+      section.append(outcomePanel);
     }
     pane.append(section);
   };

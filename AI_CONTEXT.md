@@ -19,6 +19,10 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-16 원본 업로드·캐시 안전성·부서 준비도·제출/평가 이력 (후속 연결)
+
+- 선택한 공식 RFP 원본의 로컬 메모리 SHA·캐시 대조 API/화면, 원자적 청크 등록과 메타데이터 충돌 안전 실패, 부서 6개 증빙 준비도, 담당자 수동 제출→평가→선정/미선정 이력을 추가. **신규 추출 근거에만 공고 번호/차수 결속**, 구형 데이터는 차수 검증 불가로 보류. Windows 전체 **308 PASS**, Codex **2차 GO**, 8765 새 API smoke PASS, 사용자 JSON/청크 캐시 **164개 SHA 불변**. 실 PDF/HWP 원문 전체 완전성, 직원/회사 자격 확정, AI 종합 자동추천, 실제 제출·낙찰 인수·Chrome GUI 사용자 승인/공개 배포는 미완료. [현재 실행/잔여 범위](docs/design/STAGE2_4_EXECUTION_PROGRESS_2026-10-16.md), [검증 보고](docs/reviews/RFP_FOLLOWUP_STAGE2_4_2026-10-16.md).
+
 ### 2026-10-16 공식 원본·캐시 오프라인 비교 준비 (후속 5단위)
 
 - `rfp_original_compare.py`는 공식 원본 바이트를 **별도 확보한 경우에 한해** SHA·첨부 identity·검증된 캐시의 5개 증거 필드·현재 파서 재추출 텍스트와 길이를 비교하는 독립 순수 함수(파서 version/OCR `NOT_VERIFIED`). Windows **299 PASS**, Codex **3차 GO**, 기존 비공개 164개 SHA 집계 불변. 원본 PDF/HWP 실제 대조와 웹서버 신규 기능 적용은 **NOT RUN**. [후속 10단계 계획](docs/design/RFP_ORIGINAL_AUDIT_PLAN_2026-10-16.md).

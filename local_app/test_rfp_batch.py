@@ -39,6 +39,9 @@ class RfpBatchTests(unittest.TestCase):
         self.assertEqual(len(result["document_evidence"]),2)
         self.assertEqual(result["document_evidence"][0]["chars"],12)
         self.assertEqual(len(result["document_evidence"][0]["sha256"]),64)
+        self.assertEqual(result["document_evidence"][0]["notice_id"],n["id"])
+        self.assertEqual(result["document_evidence"][0]["notice_bid_no"],n["bid_no"])
+        self.assertEqual(result["document_evidence"][0]["notice_bid_order"],n["bid_order"])
 
     def test_only_failed_document_retried(self):
         n=notice("1")

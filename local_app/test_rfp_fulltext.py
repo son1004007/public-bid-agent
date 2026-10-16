@@ -51,6 +51,53 @@ class RfpFulltextTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 store(root, digest, doc)
 
+    def test_two_process_conflicting_creation_never_overwrites_first(self):
+        import os
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as td:
+            source = hashlib.sha256(b"concurrent synthetic original").hexdigest()
+            code = (
+                "import sys;from rfp_fulltext import store;"
+                "root,source,reported=sys.argv[1:4];"
+                "doc={'text':'synthetic body','characters':int(reported),'truncated':True};"
+                "store(root,source,doc)"
+            )
+            env = os.environ.copy()
+            env["PYTHONPATH"] = str(Path(__file__).parent) + os.pathsep + env.get("PYTHONPATH","")
+            procs=[subprocess.Popen([sys.executable,"-c",code,td,source,str(x)],
+                       env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+                   for x in (120,121)]
+            outcome=[p.communicate(timeout=12) for p in procs]
+            self.assertEqual(sorted(p.returncode for p in procs),[0,1])
+            self.assertEqual(len(list((Path(td)/"rfp_fulltext").glob("*.json"))),1)
+            winner = [p for p in procs if p.returncode==0]
+            self.assertEqual(len(winner),1)
+            # 충돌 뒤에도 단 하나의 완전하고 무결한 파일을 보관한다.
+            import json
+            stored=json.loads(next((Path(td)/"rfp_fulltext").glob("*.json")).read_text(encoding="utf-8"))
+            loaded=load(Path(td), hashlib.sha256((source+":"+stored["text_sha256"]).encode()).hexdigest())
+            self.assertIn(loaded["reported_chars"],(120,121))
+            self.assertEqual(loaded["stored_chars"],len("synthetic body"))
+
+    def test_existing_cache_conflicting_parser_metadata_fail_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = hashlib.sha256(b"synthetic fixed source").hexdigest()
+            initial = {"text": "동일한 원문 텍스트", "characters": 123, "truncated": True}
+            meta = store(root, source, initial)
+            path = root / "rfp_fulltext" / (meta["fulltext_ref"] + ".json")
+            original = path.read_bytes()
+            for altered in (
+                {"text": initial["text"], "characters": 124, "truncated": True},
+                {"text": initial["text"], "characters": 122, "truncated": False},
+                {"text": initial["text"], "characters": len(initial["text"]), "truncated": False},
+            ):
+                with self.subTest(altered=altered), self.assertRaisesRegex(ValueError, "불일치"):
+                    store(root, source, altered)
+                self.assertEqual(path.read_bytes(), original)
+            self.assertEqual(store(root, source, initial), meta)
+
     def test_invalid_and_oversized_fail_closed(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

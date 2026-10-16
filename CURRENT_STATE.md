@@ -2,6 +2,10 @@
 
 > **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-15 로컬 운영 공고는 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE 10), RFP 구조화 Stage 1 실제 8765 서버·Chrome 기능 검증 및 원본 SHA 164/164 일치, 전체 274 PASS·Codex GO를 확인했습니다. **사용자의 최종 UI 승인, main 병합, 공개 릴리스는 별도**입니다.
 
+## 2026-10-16 후속 단계 2~9 로컬 수직 연결 (D-18, 일부 기능과 경계)
+
+- 실제 로컬 원본 PDF/HWP 선택→공식 증거 SHA·캐시·현재 파서 재추출 비교, 동일 캐시 동시 생성/길이 충돌 원자적 안전 실패, 비식별 부서 증빙 준비도, 담당자 수동 제출/평가/선정·미선정 이력 API/UI 구현. 신규 RFP 증거만 공고 번호·차수 결속하고 **기존 구형 근거는 `PROVENANCE_VERSION_UNVERIFIED`로 보류**. Windows 전체 **308 PASS**, Codex 1차 NO_GO 2건 해결 후 **2차 GO**, localhost 8765 재기동 뒤 페이지/JS/API HTTP 200·원본 대조 불량 요청 400, 비공개 파일 164개 SHA 동일. 실제 원본 PDF/HWP 파일 대조 및 사용자 Chrome GUI 클릭은 **NOT RUN**. 법적 적격·회사 실증·전체 문서 Recall·AI 종합 자동추천·사용자 UI 승인/main/공개 배포 미완료. [검증 보고](docs/reviews/RFP_FOLLOWUP_STAGE2_4_2026-10-16.md), [10단계 계획](docs/design/STAGE2_4_EXECUTION_PROGRESS_2026-10-16.md).
+
 ## 2026-10-16 공식 원본·캐시 오프라인 비교 준비 (D-17 후속 5단위)
 
 - [설계 및 전체 후속 작업](docs/design/RFP_ORIGINAL_AUDIT_PLAN_2026-10-16.md): 기존 보관 청크에서 PDF/HWP 원본 바이너리를 복원할 수 없음을 명시. `rfp_original_compare.py`는 원본을 별도 제공받으면 공식 첨부 identity/SHA, 증거 측 5개 fulltext 필드·캐시와 현재 로컬 파서의 추출 텍스트·길이 재현 여부만 검사(방법·버전·OCR `NOT_VERIFIED`). 합성 PDF·HWPX·TXT 집중 **7 PASS**, Windows 전체 **299 PASS**, Codex NO_GO 2회 보완 뒤 **3차 GO**. 비공개 JSON/RFP 캐시 **164개 SHA-256 집계 동일**. 실제 원본 파일 대조/Chrome 새 UI/운영 서버 신규 API 배포는 **NOT RUN**(이번 변경은 오프라인 순수 함수). [검증 기록](docs/reviews/RFP_ORIGINAL_COMPARISON_2026-10-16.md).

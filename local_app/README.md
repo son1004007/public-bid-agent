@@ -4,6 +4,8 @@
 
 > **2026-10-15 로컬 실증:** 기존 127.0.0.1:8765 서버/Chrome RFP 구조화 근거 버튼·모바일 PASS, 개인 JSON/캐시 164/164 SHA 일치, 전체 Python 274 PASS. [실제 인수 검증](../docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 사용자 UI 최종 승인/외부 공개와 구분합니다.
 
+> **2026-10-16 RFP 운영 후속 기능:** `POST /api/dashboard/rfp-original-compare`는 선택된 파일을 루프백 CSRF·8 MiB로 제한해 메모리에서 저장 증거와 대조하며 파일 영구 보관 없음. `GET /api/dashboard/readiness?id=...`는 운영자료 **확인 상태만** 비식별 조회하고 참가자격·실제 MM/수익을 확정하지 않음. `POST /api/dashboard/outcome`은 사용자 수동으로 제출→평가→선정/미선정/철회 이력을 revision 보호하에 기록하며 기존 사람 판단은 보존. 실제 원본 전체 Recall·법적 적격·실제 제출/낙찰 확인과 구분. [현황·남은 작업](../docs/design/STAGE2_4_EXECUTION_PROGRESS_2026-10-16.md).
+
 > **2026-10-16 원본 대조 엔진(오프라인·입력 제공 시만):** `rfp_original_compare.compare(official_attachment, extracted_evidence, loaded_fulltext_record, original_bytes, server.extract_in_subprocess)`는 원본 공식 링크 결속·SHA·캐시·**현재 지정된 로컬 파서로 재추출한 텍스트**가 저장된 결과와 일치하는지만 검사합니다. 기존 추출 당시 파서와 버전·OCR 방식이 동일하다는 뜻은 아닙니다. 검증된 `rfp_fulltext.load()` 출력과 신뢰된 로컬 subprocess 파서를 전달해야 합니다. 자동 다운로드/원본 복구/파일 저장/전송·새 API는 없습니다. 원본을 별도로 확보하지 않았다면 원본 완전성은 `NOT_VERIFIED`. [실행 및 후속 작업](../docs/design/RFP_ORIGINAL_AUDIT_PLAN_2026-10-16.md).
 
 > **2026-10-16 추출 문자 손실 집계:** `/api/dashboard/rfp-coverage`에 `extraction_loss_all/active`와 `loss_mode=STORED_PARSER_METADATA_UNVERIFIED_ORIGINAL` 추가. 신뢰할 수 있는 형식의 `fulltext_truncated=true`, `fulltext_chars`, `fulltext_reported_chars`, 64자리 캐시 참조 메타데이터의 **신고된 미보관 문자 수 차이**만 합산하며 손실 미계산/불일치/파서 경고를 분리합니다. 기존 JSON/캐시, 자동 수집, LLM 동작은 변경하지 않습니다. [한계·테스트](../docs/reviews/RFP_EXTRACTION_LOSS_LENGTH_2026-10-16.md).

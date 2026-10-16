@@ -48,6 +48,9 @@ from release_lease import exclusive_release_access, guard_ready, acquire_guard
 from procurement_discovery import shortlist as shortlist_unreviewed
 from recommendations import shortlist as shortlist_recommendations
 from rfp_coverage import summarize as summarize_rfp_coverage
+from rfp_original_workflow import verify as verify_rfp_original
+from bid_outcomes import record as record_bid_outcome, OutcomeConflict
+from bid_readiness import assess as assess_bid_readiness
 from procurement_credentials import (
     CredentialError, active_key as procurement_key, status as procurement_key_status,
     save_key as save_procurement_key, delete_key as delete_procurement_key,
@@ -402,6 +405,24 @@ class Handler(BaseHTTPRequestHandler):
     return self.respond({"staffing":report,"storage":"LOCAL_JSON"})
    except (ValueError,UnicodeError,json.JSONDecodeError,OSError):
     return self.respond({"error":"공고·인력 로컬 파일 조회 오류. 원본 보존"},503)
+  if self.path.startswith("/api/dashboard/readiness?"):
+   query=urlsplit(self.path)
+   params=parse_qs(query.query,keep_blank_values=True)
+   if query.path!="/api/dashboard/readiness" or set(params)!={"id"} or len(params["id"])!=1:
+    return self.respond({"error":"공고 ID 형식 오류"},400)
+   ident=params["id"][0]
+   if not re.fullmatch(r"G2B-[A-Za-z0-9-]{4,100}",ident):
+    return self.respond({"error":"공고 ID 형식 오류"},400)
+   try:
+    with LOCK:
+     board=read_dashboard(ROOT / "dashboard.json")
+     n=next((x for x in board["notices"] if x["id"]==ident),None)
+     if n is None:return self.respond({"error":"공고 없음"},404)
+     ops=load_operations()
+    return self.respond({"readiness":assess_bid_readiness(n,ops),
+                         "storage":"LOCAL_READ_ONLY"})
+   except (ValueError,TypeError,KeyError,OSError,json.JSONDecodeError):
+    return self.respond({"error":"입찰 근거 준비도 조회 오류; 원본 보존"},503)
   if self.path=="/api/dashboard/rfp-coverage":
    # 읽기 전용 비식별 RFP 수집 병목. 원문/첨부주소/인력·원가 정보 미반환.
    try:
@@ -495,6 +516,27 @@ class Handler(BaseHTTPRequestHandler):
     raise ValueError("본문 JSON 최대 4MB")
    payload=json.loads(self.rfile.read(size))
    if not isinstance(payload,dict): raise ValueError("JSON 객체만 지원")
+   if self.path=="/api/dashboard/rfp-original-compare":
+    # 명시적으로 선택한 로컬 파일만 메모리에서 검사. 파일/진단 원문 보관·외부 요청 없음.
+    ident, identity, encoded = payload.get("id"),payload.get("identity"),payload.get("base64")
+    if (not isinstance(ident,str) or not re.fullmatch(r"G2B-[A-Za-z0-9-]{4,100}",ident)
+        or not isinstance(identity,str) or not re.fullmatch(r"[a-f0-9]{64}",identity)
+        or not isinstance(encoded,str) or not 1<=len(encoded)<=11_200_000):
+     raise ValueError("공식 공고·첨부 선택 또는 원본 크기 오류")
+    try: raw=base64.b64decode(encoded,validate=True)
+    except (ValueError,base64.binascii.Error):
+     raise ValueError("파일 인코딩 오류")
+    if not 0<len(raw)<=8*1024*1024:
+     raise ValueError("공식 원본은 최대 8MiB")
+    with LOCK:
+     try: state=read_dashboard(ROOT / "dashboard.json")
+     except (ValueError,OSError,UnicodeError,json.JSONDecodeError):
+      return self.respond({"error":"공고 자료 조회 실패; 파일은 보존됩니다"},503)
+     found=next((n for n in state["notices"] if n["id"]==ident),None)
+    if found is None:return self.respond({"error":"공고 식별자 없음"},404)
+    result=verify_rfp_original(found,ROOT,identity,raw,extract_in_subprocess)
+    return self.respond({"ok":True,"comparison":result,"storage":"LOCAL_MEMORY_ONLY",
+                         "original_file_retained":False})
    if self.path=="/api/procurement-key/save":
     if not procurement_key_status()["can_save"]:
      return self.respond({"error":"인증키 웹 등록은 Windows 현재 사용자 PC에서만 지원합니다"},501)
@@ -688,6 +730,18 @@ class Handler(BaseHTTPRequestHandler):
      return self.respond({"ok":True,"dashboard":current,"attempted":len(ids),
                           "applied":applied,"skipped_conflicts":conflicts,
                           "extracted":extracted,"storage":"LOCAL_JSON"})
+   if self.path=="/api/dashboard/outcome":
+    # 제출/평가 결과의 담당자 수동 기록. 외부 나라장터 제출·서명과 무관.
+    with LOCK, dashboard_transaction(ROOT):
+     try: state=read_dashboard(ROOT / "dashboard.json")
+     except (ValueError,OSError,json.JSONDecodeError):
+      return self.respond({"error":"공고 저장 자료 손상; 원본 보존"},503)
+     try: updated=record_bid_outcome(state,payload,now())
+     except OutcomeConflict as error:
+      return self.respond({"error":str(error)},409)
+     persist(updated,ROOT / "dashboard.json")
+    return self.respond({"ok":True,"dashboard":updated,"storage":"LOCAL_JSON",
+                         "source":"HUMAN_DECLARED_UNVERIFIED"})
    if self.path=="/api/dashboard/action":
     with LOCK, dashboard_transaction(ROOT):
      try:
