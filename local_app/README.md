@@ -4,6 +4,10 @@
 
 > **2026-10-15 로컬 실증:** 기존 127.0.0.1:8765 서버/Chrome RFP 구조화 근거 버튼·모바일 PASS, 개인 JSON/캐시 164/164 SHA 일치, 전체 Python 274 PASS. [실제 인수 검증](../docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 사용자 UI 최종 승인/외부 공개와 구분합니다.
 
+> **프로세스 자원/영속 라벨 검증:** PDF/HWPX 위험 진단은 Windows Job Object 강제 프로세스 메모리 상한(512 MiB)/종료 연동, POSIX rlimit, 35초 제한을 적용하며 실패 시 고정 `UNAVAILABLE`. 라벨 JSON의 event exact-key schema, SHA/offset, category/source/provenance, TZ 포함 시간 기록 검증 실패 시 읽기/집계 중단. 테스트 `test_process_limits.py` 및 `test_rfp_audit_labels.py`.
+
+> **2026-10-16 로컬 사람 검토·품질 진단:** `POST /api/dashboard/rfp-original-compare`의 SHA 재현 성공 시 `document_quality.py`를 별도 subprocess로 호출해 비식별 페이지별 텍스트 길이·이미지 수 또는 HWPX 표/각주 마커만 반환. `GET /api/dashboard/rfp-review-queue`는 공고 ID/위험 플래그만 반환. `GET /api/dashboard/rfp-audit?id=...`, `POST /api/dashboard/rfp-audit/save`는 RFP 참가자격·평가기준·과업 텍스트 후보를 수동 표시하고 **비공개 별도 JSON**에 excerpt SHA/offset/문서 SHA·공고차수/사람 라벨만 저장. 정정·중복 라벨은 근거별 최신값만 집계, 과거 기록 보존. 원본 전체 라벨·TP/FP/FN/Recall은 검증되지 않음. [단계 실행표](../docs/design/REMAINING_EXECUTION_ROADMAP_2026-10-16.md).
+
 > **2026-10-16 RFP 운영 후속 기능:** `POST /api/dashboard/rfp-original-compare`는 선택된 파일을 루프백 CSRF·8 MiB로 제한해 메모리에서 저장 증거와 대조하며 파일 영구 보관 없음. `GET /api/dashboard/readiness?id=...`는 운영자료 **확인 상태만** 비식별 조회하고 참가자격·실제 MM/수익을 확정하지 않음. `POST /api/dashboard/outcome`은 사용자 수동으로 제출→평가→선정/미선정/철회 이력을 revision 보호하에 기록하며 기존 사람 판단은 보존. 실제 원본 전체 Recall·법적 적격·실제 제출/낙찰 확인과 구분. [현황·남은 작업](../docs/design/STAGE2_4_EXECUTION_PROGRESS_2026-10-16.md).
 
 > **2026-10-16 원본 대조 엔진(오프라인·입력 제공 시만):** `rfp_original_compare.compare(official_attachment, extracted_evidence, loaded_fulltext_record, original_bytes, server.extract_in_subprocess)`는 원본 공식 링크 결속·SHA·캐시·**현재 지정된 로컬 파서로 재추출한 텍스트**가 저장된 결과와 일치하는지만 검사합니다. 기존 추출 당시 파서와 버전·OCR 방식이 동일하다는 뜻은 아닙니다. 검증된 `rfp_fulltext.load()` 출력과 신뢰된 로컬 subprocess 파서를 전달해야 합니다. 자동 다운로드/원본 복구/파일 저장/전송·새 API는 없습니다. 원본을 별도로 확보하지 않았다면 원본 완전성은 `NOT_VERIFIED`. [실행 및 후속 작업](../docs/design/RFP_ORIGINAL_AUDIT_PLAN_2026-10-16.md).

@@ -8,6 +8,7 @@
 import base64
 import copy
 import io
+import hashlib
 import json
 import os
 import re
@@ -51,6 +52,10 @@ from rfp_coverage import summarize as summarize_rfp_coverage
 from rfp_original_workflow import verify as verify_rfp_original
 from bid_outcomes import record as record_bid_outcome, OutcomeConflict
 from bid_readiness import assess as assess_bid_readiness
+from process_limits import run_limited as run_quality_limited
+from rfp_review_queue import build as build_rfp_review_queue
+from rfp_audit_labels import (initial as initial_rfp_audit, validate as validate_rfp_audit,
+    append as append_rfp_audit, summarize as summarize_rfp_audit, AuditConflict)
 from procurement_credentials import (
     CredentialError, active_key as procurement_key, status as procurement_key_status,
     save_key as save_procurement_key, delete_key as delete_procurement_key,
@@ -88,6 +93,7 @@ WORKFORCE_DETAILS_ENABLED = os.environ.get("PUBLIC_BID_WORKFORCE_DETAILS", "") =
 LIMIT = 10*1024*1024
 MAX_POST = 15*1024*1024
 EXTRACTOR = Path(__file__).with_name("extractors.py")
+DOCUMENT_QUALITY = Path(__file__).with_name("document_quality.py")
 
 def now():
  return datetime.now(timezone.utc).isoformat()
@@ -181,6 +187,20 @@ def extract_in_subprocess(name, raw):
  if not extracted.get("ok"):
   raise ValueError(str(extracted.get("error") or "문서 추출 실패")[:240])
  return extracted
+
+def quality_in_subprocess(name,raw):
+ """공식 원본 재현이 확인된 경우에만 별도 프로세스의 구조적 위험 메타만 표시."""
+ if len(raw)>8*1024*1024 or not isinstance(name,str) or len(name)>200:
+  return {"mode":"UNAVAILABLE","original_completeness":"NOT_VERIFIED"}
+ try:
+  stdout=run_quality_limited([sys.executable,str(DOCUMENT_QUALITY),name],raw,
+                             timeout=35)
+  result=json.loads(stdout.decode("utf-8"))
+  if result.get("ok") is not True or not isinstance(result.get("quality"),dict):
+   raise ValueError("진단 불가")
+  return result["quality"]
+ except (OSError,ValueError,UnicodeError,subprocess.TimeoutExpired,json.JSONDecodeError):
+  return {"mode":"UNAVAILABLE","original_completeness":"NOT_VERIFIED"}
 
 def normalize(raw):
  if not isinstance(raw,dict): raise ValueError("AI 출력 JSON 객체 오류")
@@ -385,6 +405,26 @@ class Handler(BaseHTTPRequestHandler):
     return self.respond({"requirements":report,"storage":"LOCAL_READ_ONLY"})
    except (EvidenceError,ValueError,TypeError,KeyError,OSError,UnicodeError,json.JSONDecodeError):
     return self.respond({"error":"RFP 근거 또는 로컬 캐시 검증 실패. 기존 자료는 보존됩니다"},503)
+  if self.path.startswith("/api/dashboard/rfp-audit?"):
+   query=urlsplit(self.path)
+   params=parse_qs(query.query,keep_blank_values=True)
+   if query.path!="/api/dashboard/rfp-audit" or set(params)!={"id"} or len(params["id"])!=1:
+    return self.respond({"error":"공고 검토 ID 오류"},400)
+   ident=params["id"][0]
+   if not re.fullmatch(r"G2B-[A-Za-z0-9-]{4,100}",ident):
+    return self.respond({"error":"공고 검토 ID 오류"},400)
+   try:
+    with LOCK:
+     board=read_dashboard(ROOT/"dashboard.json")
+     notice=next((n for n in board["notices"] if n["id"]==ident),None)
+     if notice is None:return self.respond({"error":"공고 없음"},404)
+     report=structure_rfp_requirements(notice,ROOT)
+     file=ROOT/"rfp_review_annotations.json"
+     annotations=validate_rfp_audit(json.loads(file.read_text(encoding="utf-8"))) if file.exists() else initial_rfp_audit()
+     result=summarize_rfp_audit(annotations,notice,report)
+    return self.respond({"audit":result,"storage":"LOCAL_READ_ONLY"})
+   except (EvidenceError,ValueError,TypeError,KeyError,OSError,UnicodeError,json.JSONDecodeError):
+    return self.respond({"error":"RFP 원문 라벨 조회/증거 불일치. 기존 자료 보존"},503)
   if self.path.startswith("/api/dashboard/staffing?"):
    # 조회 전용 RFP 인력요건 예비검토. 공고와 사용자 JSON에 변화 없음.
    query=urlsplit(self.path)
@@ -423,6 +463,15 @@ class Handler(BaseHTTPRequestHandler):
                          "storage":"LOCAL_READ_ONLY"})
    except (ValueError,TypeError,KeyError,OSError,json.JSONDecodeError):
     return self.respond({"error":"입찰 근거 준비도 조회 오류; 원본 보존"},503)
+  if self.path=="/api/dashboard/rfp-review-queue":
+   try:
+    with LOCK:
+     board=read_dashboard(ROOT/"dashboard.json")
+     profile=load_department_profile(ROOT/"department_profile.json")
+    return self.respond({"queue":build_rfp_review_queue(board["notices"],profile),
+                         "storage":"LOCAL_READ_ONLY"})
+   except (ValueError,TypeError,KeyError,OSError,json.JSONDecodeError):
+    return self.respond({"error":"RFP 검토 큐를 읽을 수 없습니다. 기존 자료 보존"},503)
   if self.path=="/api/dashboard/rfp-coverage":
    # 읽기 전용 비식별 RFP 수집 병목. 원문/첨부주소/인력·원가 정보 미반환.
    try:
@@ -516,6 +565,24 @@ class Handler(BaseHTTPRequestHandler):
     raise ValueError("본문 JSON 최대 4MB")
    payload=json.loads(self.rfile.read(size))
    if not isinstance(payload,dict): raise ValueError("JSON 객체만 지원")
+   if self.path=="/api/dashboard/rfp-audit/save":
+    # 사람의 텍스트 표현 라벨만 분리된 로컬 파일로 append; 근거/공고 원본은 불변.
+    with LOCK, dashboard_transaction(ROOT):
+     try:
+      board=read_dashboard(ROOT/"dashboard.json")
+      notice=next((n for n in board["notices"] if n["id"]==payload.get("id")),None)
+      if notice is None:return self.respond({"error":"공고 없음"},404)
+      report=structure_rfp_requirements(notice,ROOT)
+      file=ROOT/"rfp_review_annotations.json"
+      current=validate_rfp_audit(json.loads(file.read_text(encoding="utf-8"))) if file.exists() else initial_rfp_audit()
+      updated=append_rfp_audit(current,notice,report,payload,now())
+     except AuditConflict as e:
+      return self.respond({"error":str(e)},409)
+     except (EvidenceError,ValueError,TypeError,KeyError,OSError,UnicodeError,json.JSONDecodeError):
+      return self.respond({"error":"현재 공고·RFP 출처를 확인할 수 없어 원본과 이력은 보존합니다"},503)
+     persist(updated,file)
+    return self.respond({"ok":True,"audit":summarize_rfp_audit(updated,notice,report),
+                         "storage":"LOCAL_AUDIT_JSON"})
    if self.path=="/api/dashboard/rfp-original-compare":
     # 명시적으로 선택한 로컬 파일만 메모리에서 검사. 파일/진단 원문 보관·외부 요청 없음.
     ident, identity, encoded = payload.get("id"),payload.get("identity"),payload.get("base64")
@@ -535,6 +602,13 @@ class Handler(BaseHTTPRequestHandler):
      found=next((n for n in state["notices"] if n["id"]==ident),None)
     if found is None:return self.respond({"error":"공고 식별자 없음"},404)
     result=verify_rfp_original(found,ROOT,identity,raw,extract_in_subprocess)
+    if result["status"] in ("REPRODUCED_TEXT","REPRODUCED_TRUNCATED_PREFIX"):
+     official=next((a for a in found.get("attachments",[])[:120]
+       if isinstance(a,dict) and isinstance(a.get("name"),str)
+       and isinstance(a.get("url"),str) and
+       hashlib.sha256((a["url"]+"\n"+a["name"]).encode()).hexdigest()==identity),None)
+     result["quality"]=quality_in_subprocess(official["name"],raw) if official else {
+       "mode":"UNAVAILABLE","original_completeness":"NOT_VERIFIED"}
     return self.respond({"ok":True,"comparison":result,"storage":"LOCAL_MEMORY_ONLY",
                          "original_file_retained":False})
    if self.path=="/api/procurement-key/save":

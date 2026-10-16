@@ -19,6 +19,11 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-16 P00~P11 잔여 실행표 및 텍스트 라벨링·문서 품질 위험 진단
+
+- Windows 전체 **319 PASS**, Codex 독립 2차 **GO**, 로컬 /api/dashboard/rfp-audit /api/dashboard/rfp-review-queue smoke 및 Chrome headless 위험 패널 검증 PASS, 사용자 JSON/RFP 캐시 **164개 SHA 불변**. 구형 증거/실제 원본 전수·법적 적격/실 AI/GUI 최종 승인/배포는 미완료.
+- 필독: [실행 순서/선행조건/검증/미완료](docs/design/REMAINING_EXECUTION_ROADMAP_2026-10-16.md). PDF/HWPX 구조 위험 메타 분석 `local_app/document_quality.py`, 실원본 SHA 일치 뒤 subprocess 호출. `local_app/rfp_audit_labels.py`는 사람 검토를 별도 비공개 JSON 이력으로 보존하며 현재 근거 SHA·offset에 결속. 화면 후보 라벨의 갱신은 전체 원문 TP/FP/FN/Recall이 아님. `rfp_review_queue.py`는 비식별 신호 기반 처리 큐. 실제 회사 근거/원문 독립 라벨·비공개 외부 AI 승인/사용자 UI 승인·main/공개 배포는 진행되지 않았음.
+
 ### 2026-10-16 원본 업로드·캐시 안전성·부서 준비도·제출/평가 이력 (후속 연결)
 
 - 선택한 공식 RFP 원본의 로컬 메모리 SHA·캐시 대조 API/화면, 원자적 청크 등록과 메타데이터 충돌 안전 실패, 부서 6개 증빙 준비도, 담당자 수동 제출→평가→선정/미선정 이력을 추가. **신규 추출 근거에만 공고 번호/차수 결속**, 구형 데이터는 차수 검증 불가로 보류. Windows 전체 **308 PASS**, Codex **2차 GO**, 8765 새 API smoke PASS, 사용자 JSON/청크 캐시 **164개 SHA 불변**. 실 PDF/HWP 원문 전체 완전성, 직원/회사 자격 확정, AI 종합 자동추천, 실제 제출·낙찰 인수·Chrome GUI 사용자 승인/공개 배포는 미완료. [현재 실행/잔여 범위](docs/design/STAGE2_4_EXECUTION_PROGRESS_2026-10-16.md), [검증 보고](docs/reviews/RFP_FOLLOWUP_STAGE2_4_2026-10-16.md).

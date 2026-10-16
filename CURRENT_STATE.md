@@ -2,6 +2,11 @@
 
 > **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-15 로컬 운영 공고는 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE 10), RFP 구조화 Stage 1 실제 8765 서버·Chrome 기능 검증 및 원본 SHA 164/164 일치, 전체 274 PASS·Codex GO를 확인했습니다. **사용자의 최종 UI 승인, main 병합, 공개 릴리스는 별도**입니다.
 
+## 2026-10-16 P00~P03·P06 개발 추가 (합성 검증 / 실원본 미검증)
+
+- 2026-10-16 Windows 전체 **319 PASS**, Codex 1차 NO_GO 2건 수정→2차 **GO**, 8765 재기동 후 라벨/검토 큐 GET smoke, Chrome headless 위험 패널 렌더링 확인. 사용자 JSON+RFP 캐시 164개 SHA-256 불변. 실 PDF/HWP 원본 대조·수동 라벨 GUI 클릭·실 Recall, 사용자 최종 승인·main/외부 배포는 NOT RUN.
+- 문서화: [P00~P11 전수 실행표](docs/design/REMAINING_EXECUTION_ROADMAP_2026-10-16.md). 새 `document_quality.py`는 재현이 확인된 로컬 선택 원본에서 PDF 페이지별 문자 수/이미지 객체 및 HWPX 표·각주 메타만 별도 프로세스로 추출. `rfp_audit_labels.py`는 실제 RFP 추출 문자 후보에 대한 사람의 분류 검토를 **비공개 독립 로컬 JSON**에 기록하고, 현재 추출 텍스트 SHA/offset과 달라지면 과거 라벨 STALE로 표시. 수정 이벤트는 보존하고 현재 집계는 최신 라벨만 계산. `rfp_review_queue.py`는 공식 공고 ID/고정 위험만 반환. 원본 페이지 전체 정답·실제 Recall·법적 적격·AI 자동 적격 추천은 **미검증**. 테스트/독립 검수/CI/로컬 반영 결과는 별도 검증 보고에 명시.
+
 ## 2026-10-16 후속 단계 2~9 로컬 수직 연결 (D-18, 일부 기능과 경계)
 
 - 실제 로컬 원본 PDF/HWP 선택→공식 증거 SHA·캐시·현재 파서 재추출 비교, 동일 캐시 동시 생성/길이 충돌 원자적 안전 실패, 비식별 부서 증빙 준비도, 담당자 수동 제출/평가/선정·미선정 이력 API/UI 구현. 신규 RFP 증거만 공고 번호·차수 결속하고 **기존 구형 근거는 `PROVENANCE_VERSION_UNVERIFIED`로 보류**. Windows 전체 **308 PASS**, Codex 1차 NO_GO 2건 해결 후 **2차 GO**, localhost 8765 재기동 뒤 페이지/JS/API HTTP 200·원본 대조 불량 요청 400, 비공개 파일 164개 SHA 동일. 실제 원본 PDF/HWP 파일 대조 및 사용자 Chrome GUI 클릭은 **NOT RUN**. 법적 적격·회사 실증·전체 문서 Recall·AI 종합 자동추천·사용자 UI 승인/main/공개 배포 미완료. [검증 보고](docs/reviews/RFP_FOLLOWUP_STAGE2_4_2026-10-16.md), [10단계 계획](docs/design/STAGE2_4_EXECUTION_PROGRESS_2026-10-16.md).

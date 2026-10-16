@@ -159,6 +159,7 @@
     await readDepartment();
     await refreshRecommendations();
     await refreshRfpCoverage();
+    await refreshRfpReviewQueue();
   }
 
   async function refreshCredential() {
@@ -385,11 +386,24 @@
           const payload=await response.json();
           if(!response.ok || !payload.requirements)throw Error(payload.error||'RFP 요구사항 검증 실패');
           const report=payload.requirements;
+          // 사람의 라벨은 별도 localhost JSON에만 보관한다. 구형·누락된
+          // 독립 원본 정답이 없으므로 TP/FP 자체도 공식 적격/Recall 판정이 아니다.
+          let audit=null;
+          try{
+            const ar=await fetch('/api/dashboard/rfp-audit?id='+encodeURIComponent(n.id),{cache:'no-store'});
+            const response=await ar.json();
+            if(ar.ok&&response.audit) audit=response.audit;
+          }catch(_){}
           if(!window.rfpEvidenceSummary)throw Error('RFP 화면 요약 스크립트가 누락됐습니다');
           requirementsInfo.textContent=window.rfpEvidenceSummary.summary(report);
           const scope=el('p','rfpEvidenceScope','분석 범위: '+report.source_coverage+
             ' · 분석 방식: '+report.analysis_mode+' · 필수조건 및 법적 적격 여부는 사람 확인이 필요합니다.');
           requirementsRows.append(scope);
+          const auditInfo=el('p','muted',audit?
+            '담당자 텍스트 후보 검토: '+JSON.stringify(audit.current_label_counts)+
+            ' / '+audit.metrics_state+' / Recall '+audit.recall:
+            '담당자 검토 기록을 조회하지 못했습니다. 저장은 비활성화합니다.');
+          requirementsRows.append(auditInfo);
           (report.warnings||[]).forEach(message=>requirementsRows.append(el('p','muted','주의: '+message)));
           (report.requirements||[]).forEach(category=>{
             const group=detailBlock(window.rfpEvidenceSummary.category(category));
@@ -414,6 +428,42 @@
               });
               source.append(metadata);
               row.append(source);
+              if(['participation','evaluation','scope'].includes(category.category)
+                  && typeof e.fulltext_ref==='string' && audit){
+                const choice=el('select','');
+                [['UNCERTAIN','추가 검증 필요'],['SUPPORTED_SIGNAL','이 표현이 해당 분류 근거라고 판단'],
+                 ['FALSE_POSITIVE','분류 오탐이라고 판단']].forEach(([value,label])=>{
+                  const opt=el('option','',label);opt.value=value;choice.append(opt);
+                });
+                const saveLabel=btn('원문 표현 검토 기록',async()=>{
+                  saveLabel.disabled=true;
+                  try{
+                    const bytes=new TextEncoder().encode(e.excerpt);
+                    const digest=await crypto.subtle.digest('SHA-256',bytes);
+                    const excerpt_sha256=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+                    const resp=await fetch('/api/dashboard/rfp-audit/save',{
+                      method:'POST',credentials:'same-origin',
+                      headers:{'Content-Type':'application/json','X-Local-CSRF':csrf},
+                      body:JSON.stringify({
+                        expected_revision:audit.revision,id:n.id,
+                        category:category.category,label:choice.value,
+                        evidence:{source_sha256:e.source_sha256,fulltext_ref:e.fulltext_ref,
+                          offset_start:e.offset_start,offset_end:e.offset_end,excerpt_sha256}
+                      })
+                    });
+                    const result=await resp.json();
+                    if(!resp.ok || result.ok!==true) throw Error(result.error||'라벨 저장 실패');
+                    audit=result.audit;
+                    auditInfo.textContent='담당자 텍스트 후보 검토: '+
+                      JSON.stringify(audit.current_label_counts)+' / '+audit.metrics_state+
+                      ' / Recall '+audit.recall;
+                  }catch(err){
+                    auditInfo.textContent='검토 라벨 저장 실패: '+err.message+
+                      '. 다른 창에서 수정됐을 수 있으므로 요구사항을 다시 조회하세요.';
+                  }finally{saveLabel.disabled=false;}
+                });
+                row.append(choice,saveLabel);
+              }
               group.append(row);
             });
             requirementsRows.append(group);
@@ -460,9 +510,15 @@
           if(!resp.ok||response.ok!==true||response.storage!=='LOCAL_MEMORY_ONLY')
             throw Error(response.error||'원본 대조 요청 실패');
           const report=response.comparison;
+          const quality=report.quality;
+          const qualityHint=quality&&quality.mode==='STRUCTURAL_RISK_HINTS_ONLY'?
+            ' / 원본 구조 위험 신호: '+(quality.flags||[]).join(', ')+
+            ' / PDF 페이지별 문자 수: '+(quality.pages||[]).map(p=>p.page+':'+p.extracted_chars).join(', ').slice(0,500):
+            ' / 원본 구조 위험 진단: '+String(quality?.mode||'미수행');
           originalInfo.textContent='대조 상태: '+String(report.status)+
             ' / 원본 SHA 일치: '+String(report.source_sha_matched??'미확인')+
             ' / 저장 텍스트 재현: '+String(report.text_prefix_matched??'미확인')+
+            qualityHint+
             ' / 파서 버전·OCR 동일성: NOT_VERIFIED / 페이지·표·각주·원문 누락률: NOT_VERIFIED'+
             ' / 원본 파일 미보관';
         }catch(error){originalInfo.textContent='대조 실패: '+error.message;}
@@ -799,6 +855,38 @@
     }catch(error){
       coverageInfo.textContent='RFP 확보 현황 조회 실패: '+error.message;
       coverageRows.replaceChildren();
+    }
+  }
+
+  // 비식별 RFP 위험 신호별 건별 검토 큐. 원문 확인 버튼은 기존 상세 화면으로 이동.
+  const reviewPanel=el('section','card');
+  const reviewHeading=el('h2','','RFP 검증 우선 처리 목록 (실제 적격·정답 아님)');
+  const reviewInfo=el('p','muted','파서 경고·절단·증거 누락 위험을 메타데이터로 탐색합니다.');
+  const reviewRows=el('div','');
+  const reviewRefresh=btn('RFP 검증 대상 갱신',()=>void refreshRfpReviewQueue());
+  reviewPanel.append(reviewHeading,reviewInfo,reviewRefresh,reviewRows);
+  byId('view-collection').append(reviewPanel);
+  async function refreshRfpReviewQueue(){
+    try{
+      const r=await fetch('/api/dashboard/rfp-review-queue',{cache:'no-store'});
+      const data=await r.json();
+      if(!r.ok||!data.queue)throw Error(data.error||'RFP 검증 큐 조회 실패');
+      const q=data.queue;
+      reviewInfo.textContent='현재 마감 전 부서 후보 중 위험 신호 '+q.total+
+        '건 / 표시 '+q.results.length+'건 / 생략 '+q.omitted_count+
+        '건. 원본·페이지·법적 적격·정답은 모두 별도 검증합니다.';
+      reviewRows.replaceChildren();
+      q.results.forEach(item=>{
+        const row=el('div','requirementRow');
+        row.append(el('strong','',item.id+' · 위험 순위 가중치 '+item.priority),
+          el('span','muted',item.document_state+' / '+item.flags.join(', ')),
+          el('span','muted','원본 확인·정정 차수·표/각주/OCR 및 필수요건 모두 확인 필요'));
+        row.append(btn('공고·원문 근거 확인',()=>{selected=item.id;openFullDetail(item.id);}));
+        reviewRows.append(row);
+      });
+    }catch(error){
+      reviewInfo.textContent='RFP 검증 우선순위 조회 실패: '+error.message;
+      reviewRows.replaceChildren();
     }
   }
 

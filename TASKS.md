@@ -4,6 +4,22 @@
 
 > **현재 작업 선택 기준:** [DECISIONS.md](DECISIONS.md)의 사용자 결정 D-10(7일 API 오류 선제 진단 제외), D-11(RFP 구조화 1단계), D-12(다음 단계 사용자 재결정)을 우선합니다. 아래 2026-10-13 이전의 '우선 작업'은 역사적 백로그이며, 실제 완료·보류 상태는 최신 하단 이력 및 [AI_CONTEXT.md](AI_CONTEXT.md)를 확인하십시오.
 
+## 2026-10-16 실제 잔여 작업 실행 로드맵 (D-18 후속)
+
+- 전체 작업 12항목과 선행조건·검증·보류 사유: [P00~P11 실행표](docs/design/REMAINING_EXECUTION_ROADMAP_2026-10-16.md). 전부 완료라는 뜻이 아님.
+- [x] P00 작업 목록/상태/승인 경계 문서화, 기존 개발 브랜치·원본 보존 규칙 확인
+- [x] P01 합성 PDF 페이지별 텍스트 희소/이미지 메타데이터, HWPX 표·각주 마커 진단 모듈과 로컬 원본 SHA 재현 API 연결 (실 PDF/HWP 독립 원문 검증은 NOT RUN)
+- [x] P02 수동 텍스트 분류 라벨·근거 SHA/offset/공고 ID·차수 로컬 append-only 별도 JSON API/UI 및 변경 충돌 방어
+- [x] P03 화면에 표시된 RFP 표현 후보 라벨의 최신값 집계; 독립 전체 정답 없는 Recall은 `NOT_MEASURABLE` 유지
+- [x] P06 메타데이터 위험 기반 마감 전 부서후보 검토 큐 API/UI (원본/개별 비공개 텍스트 미반환)
+- [ ] P04 파서 방법/버전/OCR provenance fingerprint를 **향후 추출 시** 저장하고 기존 구형 캐시는 차수/버전 미확인 유지
+- [ ] P05 실제 공식 PDF/HWP 원본 버전 대조 및 STALE 안전 재검증·원본 전수 대조
+- [ ] P07 회사 면허·실적·인력·원가의 승인된 실제 증빙 비교 E2E
+- [ ] P08 승인된 외부 AI 이용 조건·정답 데이터 및 RAG/LangGraph 실서비스 품질 검증
+- [ ] P09 실제 브라우저 파일 업로드/수동 이력·복구 E2E, 사용자 최종 UI 승인
+- [ ] P10 사용자 별도 승인 후 main 통합·공개 배포 (자동 진행 금지)
+- [ ] P11 과거 7일 배치 API 오류 분석은 D-10에 따라 명시 보류
+
 ## 2026-10-16 전 단계 순차 진행 (D-18)
 
 - [x] 로컬 사용자가 별도 확보한 원본 파일의 RFP 선택→공식 첨부·캐시·동일 source SHA 대조 API와 상세 화면(원본 미저장, 비공개 LLM 미전송)
@@ -15,6 +31,7 @@
 - [ ] 회사 비공개 문서의 외부 LLM 사용 동의·승인/개별 공급자 인증 및 품질 기준 확보 후 AI 설명·RAG/LangGraph 검증. 승인 전 전송 금지
 - [ ] 사용자 실제 Chrome·모바일 RFP 파일 선택/제출이력 E2E 최종 확인, 복원·보안 검수, UI 승인 및 main/공개 배포 사용자 결정
 - [x] 신규 기능 Windows 전체 **308 PASS**, Codex **1차 NO_GO 2건 수정 후 2차 GO**, 8765 새 API smoke(200·400) PASS, 사용자 원본 164개 SHA 불변. 실제 PDF/HWP 원본 업로드·제출정보 실사용과 Chrome GUI E2E는 NOT RUN.
+- [x] 이번 P00~P03·P06 단위 Windows Python 전체 **319 PASS**, Codex NO_GO 2건 수정 후 **2차 GO**, 루프백 새 API smoke/Chrome headless 검토 큐 렌더 PASS, 비공개 164개 SHA 불변. 실제 원본 독립 정답 및 사용자 상세 GUI 클릭·최종 승인은 NOT RUN.
 - 상세: [10단계 실제 완료·차단/검증 계획](docs/design/STAGE2_4_EXECUTION_PROGRESS_2026-10-16.md), [테스트/독립 검수](docs/reviews/RFP_FOLLOWUP_STAGE2_4_2026-10-16.md). 7일 API 과거 오류 조사는 보류.
 
 ## 2026-10-16 후속 구현 순서 (D-17)
