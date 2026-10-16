@@ -4,6 +4,8 @@
 
 > **2026-10-15 로컬 실증:** 기존 127.0.0.1:8765 서버/Chrome RFP 구조화 근거 버튼·모바일 PASS, 개인 JSON/캐시 164/164 SHA 일치, 전체 Python 274 PASS. [실제 인수 검증](../docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 사용자 UI 최종 승인/외부 공개와 구분합니다.
 
+> **2026-10-16 확보 품질 진단:** 로컬 `/decision-preview` → 수집 관리 → `RFP 확보 현황 갱신`에서 `GET /api/dashboard/rfp-coverage`가 반환하는 `by_quality_all`, `by_quality_active`를 표시합니다. 인식된 전체 텍스트 캐시 **참조만** 나타내며 해당 캐시의 SHA는 이 집계에서 검사하지 않습니다. 최신성 보류/발췌/파서 경고/분석 상한을 구분하고 공고명·원문·첨부주소·개별 SHA·원가를 응답하지 않습니다. [검증 범위](../docs/reviews/RFP_QUALITY_METADATA_2026-10-16.md).
+
 > **2026-10-16 3유형 분류 평가:** `rfp_taxonomy_benchmark.evaluate(lines, origin='SYNTHETIC')`는 라벨이 붙은 **추출 텍스트 한 줄**의 참가자격·평가기준·과업 분류에 대한 TP/FP/FN 및 P/R/F1만 숫자로 반환합니다. 외부 모델/개인 원본 읽기·저장 없음. 실제 전체 RFP 누락률/법적 적격성은 측정하지 않습니다. [평가 프로토콜](../docs/reviews/RFP_TAXONOMY_BENCHMARK_PROTOCOL_2026-10-16.md).
 
 > **2026-10-16 표시 상한 경고:** RFP 요구사항 읽기 전용 응답은 `candidate_display_limit_per_category=5`, `omitted_candidate_count`, 유형별 `omitted_count`를 포함합니다. 중복 제외된 규칙 매칭 후보 중 화면에 생략된 건수이며 전체 RFP 요구사항 개수/Recall이 아닙니다. 5건 초과 시 `source_coverage=PARTIAL`로 표시합니다.

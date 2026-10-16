@@ -2,6 +2,10 @@
 
 > **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-15 로컬 운영 공고는 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE 10), RFP 구조화 Stage 1 실제 8765 서버·Chrome 기능 검증 및 원본 SHA 164/164 일치, 전체 274 PASS·Codex GO를 확인했습니다. **사용자의 최종 UI 승인, main 병합, 공개 릴리스는 별도**입니다.
 
+## 2026-10-16 RFP 확보 품질 메타데이터 진단 (D-17 후속 3단위)
+
+- 기존 `/api/dashboard/rfp-coverage`에 `by_quality_all/active` 비식별 상태 집계를 추가하고 수집 화면에 표시. 취소·구차수·REVIEW는 활성 후보에서 제외. Windows Python 전체 **287 PASS**, 집중 6 PASS, Codex 최초 NO_GO 지적 수정 후 최종 **GO**. 검증된 코드로 8765 서버 안전 재기동, 화면/품질 API HTTP 200, 실제 메타데이터 기반 부서 후보 287·마감 전 180 중 캐시 참조 57·발췌 31·파서 절단 12·경고 21 확인. 사용자 파일 SHA-256 집계 164/164 불변. 실제 Chrome 클릭·사용자 UI 승인 및 원본 PDF/HWP 전체 Recall은 **미검증**. [검증 보고](docs/reviews/RFP_QUALITY_METADATA_2026-10-16.md).
+
 ## 2026-10-16 RFP 정량 평가 도구 (D-17 후속)
 
 - `rfp_taxonomy_benchmark.py`는 사람이 사전 지정한 추출 문장 라벨만으로 3분류 혼동 집계/Precision·Recall·F1을 산출하며, 실제 원문 전수 누락률이나 법적 참가자격을 판정하지 않는다. 합성·오류 경계 **5개 테스트 PASS**, Windows 전체 **284 PASS**, Codex 지적(F1 null/0 및 문서 건수) 수정 후 최종 GO. [평가 프로토콜 및 검수 근거](docs/reviews/RFP_TAXONOMY_BENCHMARK_PROTOCOL_2026-10-16.md). 실 RFP 독립 라벨링과 원본 전체 추출 손실 평가는 별도 미완료.

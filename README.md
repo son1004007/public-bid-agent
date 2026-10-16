@@ -4,6 +4,8 @@
 >
 > **2026-10-15 최신:** 로컬 저장 공고 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE RFP 10), 예약 수집 등록 상태 유지. Stage 1 RFP 구조화는 실제 8765 서버/Chrome 목록→상세→근거 버튼 검증 PASS, 개인 JSON 40개·RFP 캐시 124개 SHA **164/164 동일**, Windows 전체 Python 274 PASS, Codex GO 및 GitHub CI 성공. **사용자 UI 최종 승인·main 병합·인터넷 공개는 별도**입니다. [실제 검증 보고](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 아래 2,223건/3,049건 등의 수치는 당시 기록입니다.
 
+> **2026-10-16 원문 품질 메타데이터 진단:** `GET /api/dashboard/rfp-coverage`와 로컬 수집 화면에서 마감 전 부서 후보의 RFP 최신성·발췌본/청크 참조·파서 절단/경고·공식 증거 처리 상한을 **중복 가능 공고 건수**로 확인합니다. 원본 문서/캐시를 다시 읽지 않으므로 SHA 무결성 및 전체 원문 누락률은 검증하지 않습니다. [범위 및 테스트](docs/reviews/RFP_QUALITY_METADATA_2026-10-16.md).
+
 > **2026-10-16 3유형 분류 평가 도구:** 실제 원문 전체 정확도를 주장하지 않도록, 독립 라벨이 지정된 **추출 텍스트 한 줄**에 대해서만 3유형별 TP/FP/FN·Precision/Recall/F1 집계를 계산하는 순수 읽기 전용 도구를 추가했습니다. 실제 인적 라벨링 전에는 합성 정답 테스트에 한정됩니다. [평가 프로토콜](docs/reviews/RFP_TAXONOMY_BENCHMARK_PROTOCOL_2026-10-16.md).
 
 > **2026-10-16 RFP 후보 상한 가시화:** 요구사항 조회에서 유형별 최대 5건 표시 제한을 유지하면서, 검증된 추출 텍스트에 추가로 매칭된 **중복 제외 생략 후보 수**를 별도로 표시합니다. `omitted_count`는 원문 전체 누락률이나 법적 필수요건 수가 아니며, 완전성은 여전히 미검증입니다. [D-17](DECISIONS.md).

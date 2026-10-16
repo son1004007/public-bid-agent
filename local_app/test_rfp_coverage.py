@@ -60,6 +60,83 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(summarize([broken],{"categories":[]})["candidate_count"],0)
         with self.assertRaises(ValueError):summarize({},PROFILE)
 
+    def test_quality_flags_distinguish_unverified_refs_excerpts_and_parser_losses(self):
+        mixed=item("1",state="EXTRACTED",excerpt="합성 발췌")
+        mixed["document_evidence"]=[
+            {"status":"EXTRACTED","fulltext_ref":"a"*64,"fulltext_truncated":True,
+             "warnings":["합성: 표 미확인"],"secret":"NEVER_RETURN_MARKER"},
+            {"status":"EXTRACTED","excerpt":"합성 발췌"},
+            {"status":"EXTRACTED","fulltext_ref":"b"*64},
+        ]
+        legacy=item("2",state="EXTRACTED",excerpt="예전 합성 발췌")
+        legacy["document_evidence"]=[]
+        stale=item("3",state="EXTRACTED",excerpt="과거 발췌")
+        stale["rfp_review_status"]="STALE"
+        cancelled=item("4",state="EXTRACTED",excerpt="철회")
+        cancelled["notice_lifecycle"]="CANCELLED"
+        report=summarize([mixed,legacy,stale,cancelled],PROFILE)
+        active=report["by_quality_active"]
+        self.assertEqual(report["candidate_count"],4)
+        self.assertEqual(report["active_candidate_count"],3)
+        self.assertEqual(active["FULLTEXT_REFERENCE_UNVERIFIED"],1)
+        self.assertEqual(active["EXCERPT_OR_LEGACY_ONLY"],1)
+        self.assertEqual(active["EXTRACTED_WITHOUT_PROVENANCE"],2)
+        self.assertEqual(active["PARSER_TRUNCATION_REPORTED"],1)
+        self.assertEqual(active["PARSER_WARNING_REPORTED"],1)
+        self.assertEqual(active["EXTRACTED_EVIDENCE_OVER_TWO"],1)
+        self.assertEqual(active["STALE_RFP"],1)
+        self.assertEqual(report["by_quality_all"]["CANCELLED_OR_SUPERSEDED"],1)
+        self.assertEqual(active["CANCELLED_OR_SUPERSEDED"],0)
+        self.assertEqual(report["quality_mode"],"UNVERIFIED_STORED_METADATA_ONLY")
+        raw=json.dumps(report,ensure_ascii=False)
+        self.assertNotIn("NEVER_RETURN_MARKER",raw)
+        self.assertNotIn("합성: 표 미확인",raw)
+        self.assertNotIn("합성 발췌",raw)
+
+    def test_quality_flags_detect_metadata_limits_and_malformed_evidence(self):
+        over=item("1",state="EXTRACTED",excerpt="합성")
+        over["attachments"]=[{"name":"자료", "url": URL}]*401
+        over["document_evidence"]=[{"status":"FAILED"}]*121+[None]
+        report=summarize([over],PROFILE)
+        q=report["by_quality_active"]
+        self.assertEqual(q["ATTACHMENT_SCAN_OVER_LIMIT"],1)
+        self.assertEqual(q["EVIDENCE_SCAN_OVER_LIMIT"],1)
+        # 121번째 이후의 잘못된 레코드는 탐색 상한 밖이므로 독립 플래그에 전파 금지.
+        self.assertEqual(q["MALFORMED_EVIDENCE"],0)
+        self.assertEqual(q["EXTRACTED_WITHOUT_PROVENANCE"],1)
+        self.assertEqual(q["PARSER_TRUNCATION_REPORTED"],0)
+        malformed=item("2",state="EXTRACTED",excerpt="합성")
+        malformed["document_evidence"]={"broken":"UNSAFE"}
+        result=summarize([malformed],PROFILE)
+        self.assertEqual(result["by_quality_active"]["MALFORMED_EVIDENCE"],1)
+
+    def test_review_is_not_cancelled_and_limit_ignores_tail_entries(self):
+        review=item("77",state="EXTRACTED",excerpt="합성")
+        review["notice_lifecycle"]="REVIEW"
+        old=item("78",state="EXTRACTED",excerpt="합성")
+        old["notice_lifecycle"]="SUPERSEDED"
+        cancel=item("79",state="EXTRACTED",excerpt="합성")
+        cancel["notice_kind"]="취소공고"
+        excessive=item("80",state="EXTRACTED",excerpt="합성")
+        excessive["document_evidence"]=[{"status":"FAILED"}]*120+[
+            {"status":"EXTRACTED","fulltext_ref":"a"*64,"fulltext_truncated":True,
+             "warnings":["MUST_NOT_SURFACE"]},None,
+        ]
+        report=summarize([review,old,cancel,excessive],PROFILE)
+        self.assertEqual(report["candidate_count"],4)
+        self.assertEqual(report["active_candidate_count"],1)
+        self.assertEqual(report["by_quality_all"]["LIFECYCLE_REVIEW"],1)
+        self.assertEqual(report["by_quality_all"]["CANCELLED_OR_SUPERSEDED"],2)
+        self.assertEqual(report["by_quality_active"]["CANCELLED_OR_SUPERSEDED"],0)
+        q=report["by_quality_active"]
+        self.assertEqual(q["EVIDENCE_SCAN_OVER_LIMIT"],1)
+        self.assertEqual(q["EXTRACTED_WITHOUT_PROVENANCE"],1)
+        self.assertEqual(q["MALFORMED_EVIDENCE"],0)
+        self.assertEqual(q["FULLTEXT_REFERENCE_UNVERIFIED"],0)
+        self.assertEqual(q["PARSER_TRUNCATION_REPORTED"],0)
+        self.assertEqual(q["PARSER_WARNING_REPORTED"],0)
+        self.assertNotIn("MUST_NOT_SURFACE",json.dumps(report))
+
     def test_local_http_no_secret_fields_no_original_writes(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td)
@@ -83,6 +160,9 @@ class CoverageTests(unittest.TestCase):
                         self.assertEqual(response.status,200)
                         result=json.load(response)
                     self.assertEqual(result["coverage"]["candidate_count"],1)
+                    self.assertIn("by_quality_active",result["coverage"])
+                    self.assertEqual(result["coverage"]["by_quality_active"]["FULLTEXT_REFERENCE_UNVERIFIED"],0)
+                    self.assertEqual(result["coverage"]["quality_mode"],"UNVERIFIED_STORED_METADATA_ONLY")
                     self.assertEqual(result["storage"],"LOCAL_JSON")
                     self.assertNotIn("SECRET_DO_NOT_RETURN",json.dumps(result))
                     self.assertNotIn("https://",json.dumps(result))

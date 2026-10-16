@@ -10,12 +10,73 @@ from pathlib import PurePath
 
 from procurement_documents import SUPPORTED, official_url
 from procurement_filter import bid_window
+from notice_lifecycle import is_cancel_kind
 
 STATES = (
     "EXTRACTED_TEXT", "FAILED_ATTEMPT", "READY_TO_FETCH",
     "UNSUPPORTED_FORMAT", "MISSING_OFFICIAL_LINK", "INVALID_ATTACHMENTS"
 )
 ACTIVE = {"OPEN", "REGISTRATION_REVIEW"}
+
+# 각 수치는 공고 건수이며 서로 중첩될 수 있다. 원문 캐시를 열어 검증하지 않는다.
+MAX_EVIDENCE_SCAN = 120
+QUALITY_FLAGS = (
+    "STALE_RFP",
+    "LIFECYCLE_REVIEW",
+    "CANCELLED_OR_SUPERSEDED",
+    "FULLTEXT_REFERENCE_UNVERIFIED",
+    "EXCERPT_OR_LEGACY_ONLY",
+    "EXTRACTED_WITHOUT_PROVENANCE",
+    "PARSER_TRUNCATION_REPORTED",
+    "PARSER_WARNING_REPORTED",
+    "EXTRACTED_EVIDENCE_OVER_TWO",
+    "ATTACHMENT_SCAN_OVER_LIMIT",
+    "EVIDENCE_SCAN_OVER_LIMIT",
+    "MALFORMED_EVIDENCE",
+)
+
+
+def _quality_flags(notice):
+    """비신뢰 메타데이터에서 집계 표시만 생성. 원문·링크·파일명은 읽거나 반환하지 않는다."""
+    flags = set()
+    if notice.get("rfp_review_status") == "STALE":
+        flags.add("STALE_RFP")
+    if (notice.get("notice_lifecycle") in ("CANCELLED", "SUPERSEDED")
+            or is_cancel_kind(notice.get("notice_kind"))):
+        flags.add("CANCELLED_OR_SUPERSEDED")
+    if notice.get("notice_lifecycle") == "REVIEW":
+        flags.add("LIFECYCLE_REVIEW")
+    attachments = notice.get("attachments", [])
+    if isinstance(attachments, list) and len(attachments) > 400:
+        flags.add("ATTACHMENT_SCAN_OVER_LIMIT")
+    evidence = notice.get("document_evidence", [])
+    if not isinstance(evidence, list):
+        flags.add("MALFORMED_EVIDENCE")
+        evidence = []
+    if len(evidence) > MAX_EVIDENCE_SCAN:
+        flags.add("EVIDENCE_SCAN_OVER_LIMIT")
+    # 상한을 넘는 비신뢰 메타데이터는 이후 어떤 품질 플래그에도 영향을 주지 않는다.
+    scanned = evidence[:MAX_EVIDENCE_SCAN]
+    if any(not isinstance(e, dict) for e in scanned):
+        flags.add("MALFORMED_EVIDENCE")
+    extracted = [e for e in scanned if isinstance(e, dict) and e.get("status") == "EXTRACTED"]
+    if len(extracted) > 2:
+        flags.add("EXTRACTED_EVIDENCE_OVER_TWO")
+    if notice.get("document_status") == "EXTRACTED":
+        refs = [e for e in extracted if isinstance(e.get("fulltext_ref"), str)
+                and len(e["fulltext_ref"]) == 64
+                and all(c in "0123456789abcdef" for c in e["fulltext_ref"])]
+        if refs:
+            flags.add("FULLTEXT_REFERENCE_UNVERIFIED")
+        if extracted and len(refs) < len(extracted):
+            flags.add("EXCERPT_OR_LEGACY_ONLY")
+        if not extracted:
+            flags.add("EXTRACTED_WITHOUT_PROVENANCE")
+    if any(e.get("fulltext_truncated") is True for e in extracted):
+        flags.add("PARSER_TRUNCATION_REPORTED")
+    if any(isinstance(e.get("warnings"), list) and bool(e["warnings"]) for e in extracted):
+        flags.add("PARSER_WARNING_REPORTED")
+    return flags
 
 
 def _status(notice):
@@ -53,6 +114,8 @@ def summarize(notices, profile):
     selected = set(categories)
     total = {key: 0 for key in STATES}
     active = {key: 0 for key in STATES}
+    quality_all = {key: 0 for key in QUALITY_FLAGS}
+    quality_active = {key: 0 for key in QUALITY_FLAGS}
     reviewed = 0
     active_count = 0
     for n in notices:
@@ -66,17 +129,29 @@ def summarize(notices, profile):
         if not selected.intersection(x for x in found if isinstance(x, str)):
             continue
         status = _status(n)
+        flags = _quality_flags(n)
         total[status] += 1
+        for flag in flags:
+            quality_all[flag] += 1
         reviewed += 1
-        if bid_window(n.get("end"), n.get("notice_kind", ""),
-                      n.get("qualification_deadline", "")) in ACTIVE:
+        if (not flags.intersection(("CANCELLED_OR_SUPERSEDED", "LIFECYCLE_REVIEW"))
+                and bid_window(n.get("end"), n.get("notice_kind", ""),
+                               n.get("qualification_deadline", "")) in ACTIVE):
             active_count += 1
             active[status] += 1
+            for flag in flags:
+                quality_active[flag] += 1
     return {
         "candidate_count": reviewed,
         "active_candidate_count": active_count,
         "by_state_all": total,
         "by_state_active": active,
+        "by_quality_all": quality_all,
+        "by_quality_active": quality_active,
+        "quality_mode": "UNVERIFIED_STORED_METADATA_ONLY",
+        "quality_interpretation": (
+            "품질 위험별 공고 건수는 중복 가능. 캐시 SHA/원문 페이지/누락률은 검증하지 않음"
+        ),
         "unprocessed_active": active["READY_TO_FETCH"] + active["UNSUPPORTED_FORMAT"]
                               + active["MISSING_OFFICIAL_LINK"]
                               + active["INVALID_ATTACHMENTS"],

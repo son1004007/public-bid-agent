@@ -656,7 +656,25 @@
        ['INVALID_ATTACHMENTS','첨부 목록 오류']].forEach(([key,label])=>{
           coverageRows.append(el('div','requirementRow',label+': '+st[key]+'건'));
        });
-      coverageRows.append(el('p','muted','본문 확보는 과업 전체 검증 및 입찰 적격 판단과 별개입니다. 조회는 기존 파일을 수정하지 않습니다.'));
+      // 이 표는 저장된 증거 메타데이터의 위험 신호만 집계한다. 원문 SHA 재검증과는 별개.
+      const quality=summary.by_quality_active;
+      if(quality){
+        coverageRows.append(el('h3','','마감 전 후보의 RFP 증거 품질 · 메타데이터 기준'));
+        [['FULLTEXT_REFERENCE_UNVERIFIED','전체 텍스트 캐시 참조 존재 (무결성 미검증)'],
+         ['EXCERPT_OR_LEGACY_ONLY','발췌만 존재하거나 일부 문서가 발췌본'],
+         ['EXTRACTED_WITHOUT_PROVENANCE','추출 상태이나 공식 증거 기록 없음'],
+         ['PARSER_TRUNCATION_REPORTED','파서 절단 신호 기록'],
+         ['PARSER_WARNING_REPORTED','파서 경고 기록'],
+         ['EXTRACTED_EVIDENCE_OVER_TWO','추출 증거 2개 초과 · 분석 상한 위험'],
+         ['ATTACHMENT_SCAN_OVER_LIMIT','공식 첨부 400개 초과 · 탐색 상한'],
+         ['EVIDENCE_SCAN_OVER_LIMIT','근거 기록 120개 초과 · 탐색 상한'],
+         ['STALE_RFP','정정 후 RFP 최신성 검증 대기'],
+         ['MALFORMED_EVIDENCE','근거 메타데이터 형식 오류']].forEach(([key,label])=>{
+          coverageRows.append(el('div','requirementRow',label+': '+
+            (Number.isSafeInteger(quality[key])&&quality[key]>=0?quality[key]:'미확인')+'건'));
+        });
+      }
+      coverageRows.append(el('p','muted','표시 건수는 위험별로 중복될 수 있습니다. 문서 원본과 캐시 SHA·표/각주·OCR·전체 요구사항 누락률은 검사하지 않았으며, 입찰 적격 여부도 판단하지 않습니다. 조회는 파일을 수정하지 않습니다.'));
     }catch(error){
       coverageInfo.textContent='RFP 확보 현황 조회 실패: '+error.message;
       coverageRows.replaceChildren();

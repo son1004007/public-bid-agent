@@ -19,6 +19,10 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-16 RFP 확보 품질 메타데이터 진단 (후속 3단위)
+
+- 기존 RFP 확보 진단/API·로컬 수집 화면에 `STALE`, 원문 캐시 참조(무결성 미검증), 발췌/근거 부재, 파서 절단/경고·처리 상한의 **중복 가능 비식별 건수** 추가. Windows 전체 **287 PASS**, Codex 최종 GO; 8765 로컬 GET에서 부서 후보 287·활성 180, 파일 SHA 164/164 동일 확인. 실제 Chrome 조작/전체 RFP Recall·법적 적격은 미검증. [검증 기록](docs/reviews/RFP_QUALITY_METADATA_2026-10-16.md).
+
 ### 2026-10-16 분류 정량 평가 도구 추가 (후속 2단위)
 
 - 순수 메모리 입력·숫자 집계만 수행하는 `local_app/rfp_taxonomy_benchmark.py`로 **독립 라벨링된 추출 텍스트 한 줄**의 3분류 TP/FP/FN·Precision/Recall/F1을 계산. 실제 원본 전체 라벨 데이터는 없으므로 실 RFP 정량 정확도는 미측정. [범위 및 라벨링 절차](docs/reviews/RFP_TAXONOMY_BENCHMARK_PROTOCOL_2026-10-16.md).
