@@ -385,14 +385,14 @@
           const payload=await response.json();
           if(!response.ok || !payload.requirements)throw Error(payload.error||'RFP 요구사항 검증 실패');
           const report=payload.requirements;
-          requirementsInfo.textContent='원문 표현 후보 '+report.requirement_count+'건 · 검증된 문서 '+
-            report.sources_used+'개 · 상태 '+report.state+'. '+report.uncertainty;
+          if(!window.rfpEvidenceSummary)throw Error('RFP 화면 요약 스크립트가 누락됐습니다');
+          requirementsInfo.textContent=window.rfpEvidenceSummary.summary(report);
           const scope=el('p','rfpEvidenceScope','분석 범위: '+report.source_coverage+
             ' · 분석 방식: '+report.analysis_mode+' · 필수조건 및 법적 적격 여부는 사람 확인이 필요합니다.');
           requirementsRows.append(scope);
           (report.warnings||[]).forEach(message=>requirementsRows.append(el('p','muted','주의: '+message)));
           (report.requirements||[]).forEach(category=>{
-            const group=detailBlock(category.label+' · '+category.count+'건');
+            const group=detailBlock(window.rfpEvidenceSummary.category(category));
             group.classList.add('rfpEvidenceCategory');
             if(!category.count)group.append(el('p','muted','탐지된 표현 없음. 실제 요건이 없다는 뜻은 아닙니다.'));
             (category.items||[]).forEach(item=>{

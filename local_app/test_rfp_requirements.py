@@ -76,6 +76,89 @@ class StructuredRequirementsTests(unittest.TestCase):
                                  evidence["excerpt"])
                 self.assertLessEqual(len(evidence["excerpt"]),220)
 
+    def test_display_cap_reports_unique_omitted_candidates_without_false_recall_claim(self):
+        # 로컬 임시 합성 본문만 사용. 동일 표현은 중복 계수하지 않는다.
+        text = "\n".join(
+            f"입찰참가자격: 분야 {index} 사업자 등록 및 직접생산확인서 제출"
+            for index in range(7)
+        ) + "\n입찰참가자격: 분야 6 사업자 등록 및 직접생산확인서 제출\n"
+        ref = store_fulltext(self.root, self.sha, {
+            "text": text, "characters": len(text), "truncated": False,
+        })
+        n = copy.deepcopy(self.notice)
+        n["document_evidence"][0].update(ref)
+        n["document_evidence"][0]["excerpt"] = text
+        n["rfp_text"] = text
+        out = structure(n, self.root)
+        categories = {item["category"]: item for item in out["requirements"]}
+        self.assertEqual(out["candidate_display_limit_per_category"], 5)
+        self.assertEqual(categories["participation"]["count"], 5)
+        self.assertEqual(categories["participation"]["omitted_count"], 2)
+        self.assertEqual(out["omitted_candidate_count"], 2)
+        self.assertEqual(out["source_coverage"], "PARTIAL")
+        self.assertTrue(any("표시 상한" in msg for msg in out["warnings"]))
+        self.assertEqual(out["legal_eligibility"], "UNVERIFIED")
+
+    def test_omission_aggregation_and_source_sha_dedup_across_two_documents(self):
+        text = "\n".join(
+            [f"입찰참가자격: 참가 등록 제한 조건 {i}번" for i in range(6)]
+            + [f"평가기준: 정량평가 항목 {i}번 배점" for i in range(6)]
+        )
+        for different_sha, omitted in ((False, 2), (True, 14)):
+            with self.subTest(different_sha=different_sha):
+                n = copy.deepcopy(self.notice)
+                n["attachments"], n["document_evidence"] = [], []
+                for index in range(2):
+                    sha = (hashlib.sha256(f"synthetic-{index}".encode()).hexdigest()
+                           if different_sha else self.sha)
+                    name = f"가상RFP{index}.pdf"
+                    url = f"https://www.g2b.go.kr/synthetic{index}.pdf"
+                    ref = store_fulltext(self.root, sha, {
+                        "text": text, "characters": len(text), "truncated": False,
+                    })
+                    n["attachments"].append({"name": name, "url": url})
+                    n["document_evidence"].append({
+                        "identity": hashlib.sha256((url+"\n"+name).encode()).hexdigest(),
+                        "name": name, "status": "EXTRACTED", "sha256": sha,
+                        "excerpt": text, **ref,
+                    })
+                report = structure(n, self.root)
+                cats = {item["category"]: item for item in report["requirements"]}
+                self.assertEqual(report["sources_used"], 2)
+                self.assertEqual(cats["participation"]["count"], 5)
+                self.assertEqual(cats["evaluation"]["count"], 5)
+                self.assertEqual(report["omitted_candidate_count"], omitted)
+                self.assertEqual(cats["participation"]["omitted_count"], omitted//2)
+                self.assertEqual(cats["evaluation"]["omitted_count"], omitted//2)
+                self.assertEqual(report["source_coverage"], "PARTIAL")
+
+    def test_blocked_notice_reports_no_omitted_candidates(self):
+        blocked = []
+        for state in ("CANCELLED", "SUPERSEDED", "REVIEW"):
+            n = copy.deepcopy(self.notice)
+            n["notice_lifecycle"] = state
+            blocked.append((n, "EXCLUDED_NOTICE"))
+        stale = copy.deepcopy(self.notice)
+        stale["rfp_review_status"] = "STALE"
+        blocked.append((stale, "STALE_RFP"))
+        failed = copy.deepcopy(self.notice)
+        failed["document_status"] = "FAILED"
+        blocked.append((failed, "NO_EXTRACTED_RFP"))
+        untrusted = copy.deepcopy(self.notice)
+        untrusted["document_evidence"][0]["identity"] = "0"*64
+        blocked.append((untrusted, "NO_TRUSTED_EVIDENCE"))
+        for n, expected in blocked:
+            with self.subTest(state=expected):
+                out = structure(n, self.root)
+                self.assertEqual(out["state"], expected)
+                self.assertEqual(out["omitted_candidate_count"], 0)
+                self.assertEqual(out["candidate_display_limit_per_category"], 5)
+                self.assertTrue(all(x["omitted_count"] == 0 for x in out["requirements"]))
+                if expected != "NO_TRUSTED_EVIDENCE":
+                    self.assertEqual(out["source_coverage"], "NONE")
+                else:
+                    self.assertIn(out["source_coverage"], ("NONE", "PARTIAL"))
+
     def test_incomplete_or_stale_rfp_does_not_analyze(self):
         for state in ("CANCELLED","SUPERSEDED","REVIEW"):
             n=copy.deepcopy(self.notice)
@@ -229,7 +312,23 @@ class StructuredRequirementsTests(unittest.TestCase):
                     response=json.load(res)
                     self.assertEqual(res.status,200)
                 self.assertEqual(response["requirements"]["sources_used"],1)
+                with urlopen(url+"/rfp-evidence-summary.js",timeout=8) as script_res:
+                    self.assertEqual(script_res.status,200)
+                    self.assertIn("javascript",script_res.headers["Content-Type"])
+                    self.assertIn(b"rfpEvidenceSummary",script_res.read())
+                self.assertEqual(response["requirements"]["omitted_candidate_count"],0)
+                self.assertTrue(all(x["omitted_count"]==0 for x in response["requirements"]["requirements"]))
                 self.assertEqual(response["storage"],"LOCAL_READ_ONLY")
+                # HTTP 게이트에서도 보류 상태의 표시 상한 생략 건수가 0으로 반환된다.
+                paused=copy.deepcopy(self.notice)
+                paused["rfp_review_status"]="STALE"
+                data["notices"]=[paused]
+                dashboard.write_text(json.dumps(data,ensure_ascii=False),encoding="utf-8")
+                with urlopen(url+"/api/dashboard/rfp-requirements?id="+self.notice["id"],timeout=8) as res:
+                    status=json.load(res)["requirements"]
+                self.assertEqual(status["state"],"STALE_RFP")
+                self.assertEqual(status["omitted_candidate_count"],0)
+                dashboard.write_bytes(raw)
                 for bad in ("missing","../foo"):
                     with self.assertRaises(HTTPError) as ctx:
                         urlopen(url+"/api/dashboard/rfp-requirements?id="+bad,timeout=8)

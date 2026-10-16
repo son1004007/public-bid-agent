@@ -77,6 +77,7 @@ DOCUMENT_GUIDE = Path(__file__).with_name("document_guide.json")
 DECISION_PREVIEW = Path(__file__).resolve().parents[1] / "frontend" / "public" / "bid-decision-dashboard-preview.html"
 DECISION_PREVIEW_JS = DECISION_PREVIEW.with_suffix(".js")
 DASHBOARD_LIVE_JS = DECISION_PREVIEW.with_name("dashboard-live.js")
+RFP_SUMMARY_JS = DECISION_PREVIEW.with_name("rfp-evidence-summary.js")
 LOCK = threading.RLock()
 TOKEN = secrets.token_urlsafe(32)
 # CSRF 토큰은 인증 수단이 아니다. 개인별 인력 상세는 로컬 관리자 opt-in 실행에서만 허용.
@@ -342,6 +343,10 @@ class Handler(BaseHTTPRequestHandler):
    return self.wfile.write(b)
   if self.path=="/dashboard-live.js":
    b=DASHBOARD_LIVE_JS.read_bytes()
+   self.send_local_headers(200,"text/javascript; charset=utf-8",len(b))
+   return self.wfile.write(b)
+  if self.path=="/rfp-evidence-summary.js":
+   b=RFP_SUMMARY_JS.read_bytes()
    self.send_local_headers(200,"text/javascript; charset=utf-8",len(b))
    return self.wfile.write(b)
   if self.path=="/document-guide.json":

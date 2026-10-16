@@ -4,6 +4,8 @@
 
 > **2026-10-15 로컬 실증:** 기존 127.0.0.1:8765 서버/Chrome RFP 구조화 근거 버튼·모바일 PASS, 개인 JSON/캐시 164/164 SHA 일치, 전체 Python 274 PASS. [실제 인수 검증](../docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 사용자 UI 최종 승인/외부 공개와 구분합니다.
 
+> **2026-10-16 표시 상한 경고:** RFP 요구사항 읽기 전용 응답은 `candidate_display_limit_per_category=5`, `omitted_candidate_count`, 유형별 `omitted_count`를 포함합니다. 중복 제외된 규칙 매칭 후보 중 화면에 생략된 건수이며 전체 RFP 요구사항 개수/Recall이 아닙니다. 5건 초과 시 `source_coverage=PARTIAL`로 표시합니다.
+
 > **2026-10-15 RFP 후보 분류:** `GET /api/dashboard/rfp-requirements?id=...`의 schema v2는 참가자격·평가기준/선정방식·과업 요구사항을 포함한 **9개 유형**입니다. 공통으로 `TEXTUAL_SIGNAL_REVIEW_REQUIRED`, SHA 결속·원본 페이지 미확인 및 법적 적격 `UNVERIFIED`를 유지합니다. [실제 RFP 점검 보고](../docs/reviews/RFP_TAXONOMY_3WAY_2026-10-15.md).
 
 > **2026-10-15 RFP 원문 중심 UI:** RFP 요구사항 후보를 1열 원문 목록으로 표시합니다. 원본 파일, SHA-256, 추출 문자 위치, 판정 등의 세부 근거는 각 표현 아래 기본 접힌 `출처 및 검증 정보 펼치기`에서 확인합니다. [실제 UI 검증](../docs/reviews/RFP_ORIGINAL_FIRST_UI_2026-10-15.md). 인력 요건 예비 검토의 기존 3열 레이아웃은 그대로 유지합니다.

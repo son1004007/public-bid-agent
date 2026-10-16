@@ -5,7 +5,7 @@
 신뢰 경계: 비신뢰 문서 본문을 자연어 데이터로만 취급; 유료 AI/API/도구 지시 금지.
 부작용: 없음. 호출 시 파일을 쓰지 않고 저장 RFP/담당자 판단을 보존.
 실패: 원문 청크 무결성·첨부 identity 불일치 시 사용 거부; STALE·취소·구차수는 분석 보류.
-불변조건: 추출된 표현은 참가자격 충족 판정이 아니며, 원문 PDF/HWP 페이지·표 위치를 추정하지 않는다.
+불변조건: 추출된 표현과 5건 표시 상한 이후의 생략 후보 수는 원문 전체 필수요건/Recall 또는 참가자격 판정이 아니다. 원본 PDF/HWP 페이지·표 위치를 추정하지 않는다.
 관련: rfp_fulltext.py, rfp_batch.py, test_rfp_requirements.py, docs/design/RFP_REQUIREMENTS_SLICE_2026-10-13.md.
 """
 import hashlib
@@ -262,6 +262,10 @@ def structure(notice, root):
             out["source_coverage"] = "PARTIAL"
         return out
     groups = {key: [] for key, _, _ in COMPILED}
+    # 화면에 표시하지 못한 후보도 검증된 추출 텍스트 범위에서만 계수한다.
+    # 이 수치는 원본 RFP 전체 요구사항 수나 분류 Recall이 아니다.
+    seen = {key: set() for key, _, _ in COMPILED}
+    omitted = {key: 0 for key, _, _ in COMPILED}
     for doc in docs:
         # 문단 줄바꿈을 보존; 원문 페이지 위치라고 표시하지 않는다.
         for line in re.finditer(r"[^\r\n]+", doc["text"]):
@@ -270,8 +274,6 @@ def structure(notice, root):
                 continue
             matched = _category_matches(part)
             for key, _, _ in COMPILED:
-                if len(groups[key]) >= MAX_MATCHES_PER_CATEGORY:
-                    continue
                 match = matched.get(key)
                 if match is None:
                     continue
@@ -281,9 +283,12 @@ def structure(notice, root):
                 raw_excerpt = part[lo:hi]
                 leading = len(raw_excerpt) - len(raw_excerpt.lstrip())
                 excerpt = raw_excerpt.strip()
-                if len(excerpt) < 7 or any(v["evidence"]["excerpt"]==excerpt
-                                               and v["evidence"]["source_sha256"]==doc["source_sha256"]
-                                               for v in groups[key]):
+                fingerprint = (doc["source_sha256"], excerpt)
+                if len(excerpt) < 7 or fingerprint in seen[key]:
+                    continue
+                seen[key].add(fingerprint)
+                if len(groups[key]) >= MAX_MATCHES_PER_CATEGORY:
+                    omitted[key] += 1
                     continue
                 start=line.start()+lo+leading
                 groups[key].append({
@@ -294,6 +299,8 @@ def structure(notice, root):
                         "offset_start":start, "offset_end":start+len(excerpt),
                         "position_basis":doc["position_basis"],
                         "source_mode":doc["mode"], "page":None, "excerpt":excerpt}})
+    if any(omitted.values()):
+        warnings.append("유형별 표시 상한으로 일부 추가 텍스트 후보가 생략됨: 각 유형의 생략 건수 확인")
     limited = any(doc["truncated"] for doc in docs)
     if limited: warnings.append("파서 절단 또는 6천자 발췌만 사용: 누락 가능")
     if any(doc["parser_warnings"] for doc in docs):
@@ -305,7 +312,10 @@ def structure(notice, root):
         "state":"EVIDENCE_CANDIDATES" if count else "NO_TEXTUAL_SIGNALS",
         "analysis_mode":"RULE_BASED_TEXTUAL_EVIDENCE_ONLY",
         "requirements":[{"category":key,"label":label,"items":groups[key],
-                         "count":len(groups[key])} for key,label,_ in COMPILED],
+                         "count":len(groups[key]),"omitted_count":omitted[key]}
+                        for key,label,_ in COMPILED],
+        "candidate_display_limit_per_category":MAX_MATCHES_PER_CATEGORY,
+        "omitted_candidate_count":sum(omitted.values()),
         "requirement_count":count,
         "sources_used":len(docs),"source_coverage":"PARTIAL" if warning else "EXTRACTED_TEXT_ONLY",
         "warnings":warning,
@@ -318,8 +328,10 @@ def structure(notice, root):
 def _empty(notice, state, reason):
     return {"schema_version":SCHEMA_VERSION,"id":notice.get("id"),"state":state,
             "analysis_mode":"RULE_BASED_TEXTUAL_EVIDENCE_ONLY",
-            "requirements":[{"category":key,"label":label,"items":[],"count":0}
+            "requirements":[{"category":key,"label":label,"items":[],"count":0,"omitted_count":0}
                             for key,label,_ in COMPILED],
+            "candidate_display_limit_per_category":MAX_MATCHES_PER_CATEGORY,
+            "omitted_candidate_count":0,
             "requirement_count":0,"sources_used":0,"source_coverage":"NONE",
             "warnings":[reason], "uncertainty":"원문 검증 전 판단 보류",
             "legal_eligibility":"UNVERIFIED","technical_fit":"UNVERIFIED",

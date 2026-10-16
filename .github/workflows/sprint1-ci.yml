@@ -50,6 +50,9 @@ jobs:
           node --check local_app/app.js
           node --check frontend/public/bid-decision-dashboard-preview.js
           node --check frontend/public/dashboard-live.js
+          node --check frontend/public/rfp-evidence-summary.js
+      - name: RFP UI omitted-count contract
+        run: node --test scripts/test_rfp_evidence_summary.cjs
       - name: Static publishing preview syntax and boundaries
         run: python scripts/check_ui_preview.py
       - name: Verify standalone preview included in build
@@ -89,6 +92,7 @@ jobs:
             frontend/public/bid-decision-dashboard-preview.html
             frontend/public/bid-decision-dashboard-preview.js
             frontend/public/dashboard-live.js
+            frontend/public/rfp-evidence-summary.js
             local_app/cross_review.py
             local_app/extractors.py
             local_app/index.html
