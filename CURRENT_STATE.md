@@ -2,6 +2,10 @@
 
 > **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-15 로컬 운영 공고는 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE 10), RFP 구조화 Stage 1 실제 8765 서버·Chrome 기능 검증 및 원본 SHA 164/164 일치, 전체 274 PASS·Codex GO를 확인했습니다. **사용자의 최종 UI 승인, main 병합, 공개 릴리스는 별도**입니다.
 
+## 2026-10-16 RFP 정량 평가 도구 (D-17 후속)
+
+- `rfp_taxonomy_benchmark.py`는 사람이 사전 지정한 추출 문장 라벨만으로 3분류 혼동 집계/Precision·Recall·F1을 산출하며, 실제 원문 전수 누락률이나 법적 참가자격을 판정하지 않는다. 합성·오류 경계 **5개 테스트 PASS**, Windows 전체 **284 PASS**, Codex 지적(F1 null/0 및 문서 건수) 수정 후 최종 GO. [평가 프로토콜 및 검수 근거](docs/reviews/RFP_TAXONOMY_BENCHMARK_PROTOCOL_2026-10-16.md). 실 RFP 독립 라벨링과 원본 전체 추출 손실 평가는 별도 미완료.
+
 ## 2026-10-16 RFP 표시 상한 가시화 (D-17)
 
 - 9개 분류 후보는 카테고리별 5건 표시 상한을 그대로 유지하되, 검증된 청크에서 같은 SHA+표현 중복을 제거해 **상한으로 생략된 추가 표현 후보** 수를 응답과 UI에 포함한다. 생략이 있으면 `source_coverage=PARTIAL`; 원본 요구사항 전체 누락률과는 다르다.

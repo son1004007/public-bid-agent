@@ -4,6 +4,8 @@
 
 > **2026-10-15 로컬 실증:** 기존 127.0.0.1:8765 서버/Chrome RFP 구조화 근거 버튼·모바일 PASS, 개인 JSON/캐시 164/164 SHA 일치, 전체 Python 274 PASS. [실제 인수 검증](../docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 사용자 UI 최종 승인/외부 공개와 구분합니다.
 
+> **2026-10-16 3유형 분류 평가:** `rfp_taxonomy_benchmark.evaluate(lines, origin='SYNTHETIC')`는 라벨이 붙은 **추출 텍스트 한 줄**의 참가자격·평가기준·과업 분류에 대한 TP/FP/FN 및 P/R/F1만 숫자로 반환합니다. 외부 모델/개인 원본 읽기·저장 없음. 실제 전체 RFP 누락률/법적 적격성은 측정하지 않습니다. [평가 프로토콜](../docs/reviews/RFP_TAXONOMY_BENCHMARK_PROTOCOL_2026-10-16.md).
+
 > **2026-10-16 표시 상한 경고:** RFP 요구사항 읽기 전용 응답은 `candidate_display_limit_per_category=5`, `omitted_candidate_count`, 유형별 `omitted_count`를 포함합니다. 중복 제외된 규칙 매칭 후보 중 화면에 생략된 건수이며 전체 RFP 요구사항 개수/Recall이 아닙니다. 5건 초과 시 `source_coverage=PARTIAL`로 표시합니다.
 
 > **2026-10-15 RFP 후보 분류:** `GET /api/dashboard/rfp-requirements?id=...`의 schema v2는 참가자격·평가기준/선정방식·과업 요구사항을 포함한 **9개 유형**입니다. 공통으로 `TEXTUAL_SIGNAL_REVIEW_REQUIRED`, SHA 결속·원본 페이지 미확인 및 법적 적격 `UNVERIFIED`를 유지합니다. [실제 RFP 점검 보고](../docs/reviews/RFP_TAXONOMY_3WAY_2026-10-15.md).
