@@ -373,7 +373,7 @@
       // 원본 PDF/HWP 페이지 번호는 기록되어 있지 않으므로 문자 위치만 표시한다.
       const requirementsPanel=detailBlock('공식 RFP 요구사항 구조화 (근거 확인)');
       requirementsPanel.classList.add('rfpEvidencePanel');
-      const requirementsInfo=el('p','muted','8개 유형을 규칙으로 탐지합니다. 필수조건·업체 적격·원본 페이지는 확인이 필요합니다.');
+      const requirementsInfo=el('p','muted','참가자격·평가기준·과업범위를 포함한 9개 유형의 원문 표현 후보입니다. 분류·필수조건·업체 적격·원본 페이지는 확인이 필요합니다.');
       requirementsInfo.setAttribute('role','status');
       const requirementsRows=el('div','');
       const requirementsButton=btn('RFP 요구사항·출처 근거 확인',async()=>{

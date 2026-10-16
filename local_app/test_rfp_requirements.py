@@ -17,7 +17,7 @@ from urllib.request import urlopen
 import server
 from dashboard_backend import blank, normalize
 from rfp_fulltext import store as store_fulltext
-from rfp_requirements import structure, EvidenceError
+from rfp_requirements import structure, EvidenceError, COMPILED, SCHEMA_VERSION
 
 TEXT = (
     "입찰참가자격: 소프트웨어사업자 등록 및 중소기업확인서 제출\n"
@@ -28,6 +28,7 @@ TEXT = (
     "투입인력: 중급 기술자 2명, 총 6 M/M\n"
     "사업기간: 계약일부터 8개월 이내\n"
     "사업비: 추정가격 500,000,000원 부가가치세 별도\n"
+    "평가기준: 기술평가 80점, 가격평가 20점, 동점자는 고득점 순으로 선정\n"
 )
 
 
@@ -54,14 +55,16 @@ class StructuredRequirementsTests(unittest.TestCase):
                                                   "status":"EXTRACTED","sha256":self.sha,
                                                   "excerpt":TEXT[:6000],**self.ref}]})
 
-    def test_all_eight_categories_with_grounded_char_offsets_and_no_page_guess(self):
+    def test_all_nine_categories_with_grounded_char_offsets_and_no_page_guess(self):
         result=structure(self.notice,self.root)
         self.assertEqual(result["state"],"EVIDENCE_CANDIDATES")
         self.assertEqual(result["sources_used"],1)
         self.assertEqual(result["legal_eligibility"],"UNVERIFIED")
         self.assertEqual(result["technical_fit"],"UNVERIFIED")
         self.assertEqual(result["source_coverage"],"EXTRACTED_TEXT_ONLY")
-        self.assertEqual(len(result["requirements"]),8)
+        self.assertEqual(result["schema_version"],SCHEMA_VERSION)
+        self.assertEqual(SCHEMA_VERSION,2)
+        self.assertEqual(len(result["requirements"]),9)
         self.assertTrue(all(x["count"]>=1 for x in result["requirements"]))
         for category in result["requirements"]:
             for item in category["items"]:

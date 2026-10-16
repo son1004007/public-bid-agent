@@ -2,6 +2,12 @@
 
 > **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-15 로컬 운영 공고는 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE 10), RFP 구조화 Stage 1 실제 8765 서버·Chrome 기능 검증 및 원본 SHA 164/164 일치, 전체 274 PASS·Codex GO를 확인했습니다. **사용자의 최종 UI 승인, main 병합, 공개 릴리스는 별도**입니다.
 
+## 2026-10-15 RFP 유형 분류 개선 (D-16)
+
+- 기존 단순 `공동수급` 참가기준 오탐을 수정하고 평가기준·선정방식을 독립 유형으로 추가. 9개(schema v2), 제목/계약변경/학습 점수 등 주요 오탐 억제. 기존 SHA 검증·원본 보존·취소/구차수/STALE 차단 유지.
+- **실제 검토:** 당시 현행·비STALE fulltext 보유 공고 65건 중 균등 표본 20건을 로컬에서 읽기 전용 분석. 상한 내 참가자격 93·평가기준 95·과업 표현 20개 분류 후보를 확인. 이 수치는 완전성/Recall/Precision의 통계적 추정치가 아님. [점검 보고](docs/reviews/RFP_TAXONOMY_3WAY_2026-10-15.md).
+- 실제 Windows 로컬 서버 schema v2 재기동 및 Chrome 9개 분류·32개 원문/출처 접힘·모바일 PASS, Codex 1~3차 NO_GO 지적 수정 후 4차 GO, 전체 Python 276 PASS, 개인 비공개 파일 SHA 164/164 일치. 사용자 최종 UI 승인 및 Stage 2 진행 결정은 별개.
+
 ## 2026-10-15 RFP 원문 우선 화면 개선 (D-15)
 
 - RFP 구조화 API·원본 JSON·캐시·수집 로직은 변경 없이 `dashboard-live.js`와 `bid-decision-dashboard-preview.html`만 UI 변경. 원문 표현 1열 카드, 파일명·SHA-256·문자 위치는 항목별 기본 접힌 `details/summary` 메타정보에 표시. [UI 검증 보고](docs/reviews/RFP_ORIGINAL_FIRST_UI_2026-10-15.md).

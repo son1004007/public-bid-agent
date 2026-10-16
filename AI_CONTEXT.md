@@ -19,6 +19,12 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-15 RFP 후보 3분류 개선 (D-16)
+
+- 규칙 기반 기존 8개 유형에 `evaluation`(평가기준·선정방식) 신설, **9개/schema_version=2**. 공동수급 허용/구성과 공동수급 평가 점수, 사업 과업과 평가·목차·계약관리 안내를 구분하도록 필터 강화. `참가자격/evaluation/scope` 3그룹에 대해 정답이 지정된 합성 문장 테스트와 실제 RFP 20건 읽기 전용 표본을 확인. **Recall·법적 적격성·완전성 미확인**.
+- 실제 로컬 8765 서버의 schema v2 전환 및 Chrome 9개 분류·32개 원문/출처 접힘·390px 모바일 PASS, 전체 Python 276 PASS, Codex 1~3차 NO_GO 지적 수정 후 4차 GO, 사용자 데이터 SHA 164/164 동일. 사용자 UI 승인과 main 병합은 별도.
+- 근거: [실제 분류 표본·한계](docs/reviews/RFP_TAXONOMY_3WAY_2026-10-15.md), [결정](DECISIONS.md) D-16. 2026-10-13 당시 8유형 및 561개 표현 수치는 과거 버전 기록임.
+
 ### 2026-10-15 RFP 원문 우선 UI 개선 (D-15)
 
 - 사용자 요청에 따라 RFP 요구사항 표현 후보는 전체 너비 원문 세로 목록으로 보여 주고, 원본 파일·SHA-256·추출 문자 위치 등은 각 항목별 기본 접힌 네이티브 `details/summary`에서만 펼쳐 본다. 다른 `requirementRow` 기능/API/원본 자료는 변경하지 않음.
@@ -27,7 +33,7 @@
 ### 2026-10-15 최신 로컬 운영 및 검증
 
 - **로컬 서버·실제 Chrome 검증 완료:** `TD-kiseok`의 기존 로컬 시작 스크립트로 127.0.0.1:8765 기동. 공식 공고 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313), STALE RFP 10건. RFP fulltext 참조가 있는 현행·비STALE 공고 65건.
-- RFP 요구사항 구조화 읽기 전용 GET에서 8개 유형/원문 표현 후보 31개/출처 문서 1개, 파일 SHA 및 추출 문자 위치, `page=null`, 법적 적격 `UNVERIFIED` 확인. 취소·구차수·STALE 분석 보류 및 잘못된 ID 처리 확인.
+- 2026-10-15 UI 개편 이전 실증한 RFP 요구사항 구조화 읽기 전용 GET의 **당시 8개 유형/schema v1**에서 원문 표현 후보 31개/출처 문서 1개, 파일 SHA 및 추출 문자 위치, `page=null`, 법적 적격 `UNVERIFIED` 확인. 취소·구차수·STALE 분석 보류 및 잘못된 ID 처리 확인.
 - **Chrome 실제 UI:** 공고 목록→상세→참가자격·과업→RFP 요구사항 근거 조회 버튼과 출력 PASS. 모바일 390px PASS. 비공개 JSON 40개 + RFP 캐시 124개 **SHA-256 164/164 동일**, Python 전체 **274 PASS**, JS·문서 동기화 PASS, Codex 독립 GO, GitHub CI 성공.
 - **상태:** `LOCAL_APPLIED` + `CHROME_E2E_VERIFIED`. 사용자 화면 최종 승인, `main` 병합, 인터넷 공개, 다음 Stage 2와 보류된 7일 API 실패 원인 조사는 미수행. [실제 검증 보고](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md).
 
