@@ -4,6 +4,8 @@
 
 > **2026-10-15 로컬 실증:** 기존 127.0.0.1:8765 서버/Chrome RFP 구조화 근거 버튼·모바일 PASS, 개인 JSON/캐시 164/164 SHA 일치, 전체 Python 274 PASS. [실제 인수 검증](../docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 사용자 UI 최종 승인/외부 공개와 구분합니다.
 
+> **2026-10-16 원본 대조 엔진(오프라인·입력 제공 시만):** `rfp_original_compare.compare(official_attachment, extracted_evidence, loaded_fulltext_record, original_bytes, server.extract_in_subprocess)`는 원본 공식 링크 결속·SHA·캐시·**현재 지정된 로컬 파서로 재추출한 텍스트**가 저장된 결과와 일치하는지만 검사합니다. 기존 추출 당시 파서와 버전·OCR 방식이 동일하다는 뜻은 아닙니다. 검증된 `rfp_fulltext.load()` 출력과 신뢰된 로컬 subprocess 파서를 전달해야 합니다. 자동 다운로드/원본 복구/파일 저장/전송·새 API는 없습니다. 원본을 별도로 확보하지 않았다면 원본 완전성은 `NOT_VERIFIED`. [실행 및 후속 작업](../docs/design/RFP_ORIGINAL_AUDIT_PLAN_2026-10-16.md).
+
 > **2026-10-16 추출 문자 손실 집계:** `/api/dashboard/rfp-coverage`에 `extraction_loss_all/active`와 `loss_mode=STORED_PARSER_METADATA_UNVERIFIED_ORIGINAL` 추가. 신뢰할 수 있는 형식의 `fulltext_truncated=true`, `fulltext_chars`, `fulltext_reported_chars`, 64자리 캐시 참조 메타데이터의 **신고된 미보관 문자 수 차이**만 합산하며 손실 미계산/불일치/파서 경고를 분리합니다. 기존 JSON/캐시, 자동 수집, LLM 동작은 변경하지 않습니다. [한계·테스트](../docs/reviews/RFP_EXTRACTION_LOSS_LENGTH_2026-10-16.md).
 
 > **2026-10-16 확보 품질 진단:** 로컬 `/decision-preview` → 수집 관리 → `RFP 확보 현황 갱신`에서 `GET /api/dashboard/rfp-coverage`가 반환하는 `by_quality_all`, `by_quality_active`를 표시합니다. 인식된 전체 텍스트 캐시 **참조만** 나타내며 해당 캐시의 SHA는 이 집계에서 검사하지 않습니다. 최신성 보류/발췌/파서 경고/분석 상한을 구분하고 공고명·원문·첨부주소·개별 SHA·원가를 응답하지 않습니다. [검증 범위](../docs/reviews/RFP_QUALITY_METADATA_2026-10-16.md).

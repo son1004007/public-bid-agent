@@ -19,6 +19,10 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-16 공식 원본·캐시 오프라인 비교 준비 (후속 5단위)
+
+- `rfp_original_compare.py`는 공식 원본 바이트를 **별도 확보한 경우에 한해** SHA·첨부 identity·검증된 캐시의 5개 증거 필드·현재 파서 재추출 텍스트와 길이를 비교하는 독립 순수 함수(파서 version/OCR `NOT_VERIFIED`). Windows **299 PASS**, Codex **3차 GO**, 기존 비공개 164개 SHA 집계 불변. 원본 PDF/HWP 실제 대조와 웹서버 신규 기능 적용은 **NOT RUN**. [후속 10단계 계획](docs/design/RFP_ORIGINAL_AUDIT_PLAN_2026-10-16.md).
+
 ### 2026-10-16 RFP 추출 문자 손실 정량 진단 (후속 4단위)
 
 - 문서별 파서 메타데이터의 저장 문자 수 차이를 비식별 집계하여 로컬 수집 화면/API에 표시. 절단/검증 불가/불일치·경고를 분리. **Windows 292 PASS, Codex GO, 로컬 8765 API PASS, 비공개 자료 SHA 164/164 동일**, 실제 파서 보고 657453자(12공고). 원본 PDF/HWP의 실제 문자·표·각주·요건 손실은 증명하지 않는다. [변경/검증 기록](docs/reviews/RFP_EXTRACTION_LOSS_LENGTH_2026-10-16.md).

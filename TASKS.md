@@ -11,7 +11,12 @@
 - [x] 실제 원문 전체 독립 라벨링과 별도로, **추출 문장 라벨** 전용 TP/FP/FN·Precision/Recall/F1 도구·합성 5건·전체 284건 PASS, Codex 최종 GO, 평가 프로토콜 작성. [검증 및 프로토콜](docs/reviews/RFP_TAXONOMY_BENCHMARK_PROTOCOL_2026-10-16.md)
 - [x] RFP 확보 품질 진단 12종 비식별 메타데이터 집계(발췌·캐시 참조·파서 절단/경고·처리 상한·STALE) 및 수집 화면. Python 전체 **287 PASS**, 집중 6 PASS, Codex 최종 **GO**, 로컬 8765 품질 GET HTTP 200, 비공개 파일 SHA 164/164 불변. PDF/HWP 실제 누락률·Chrome 최종 UI 승인 미검증. [검증 보고](docs/reviews/RFP_QUALITY_METADATA_2026-10-16.md).
 - [x] 저장 파서 메타데이터의 미보관 문자 수 차이·검증 불가·불일치·경고를 비식별 API와 수집 화면에 추가. **Python 전체 292 PASS / Codex GO / 실제 8765 API HTTP 200 / 원본 164개 SHA 동일**. 메타데이터 신고 손실 657453자(12후보/13증거), 실제 PDF/HWP 요건 손실과 혼동 금지. [검증 기록](docs/reviews/RFP_EXTRACTION_LOSS_LENGTH_2026-10-16.md)
+- [x] 오프라인 공식 원본·기존 캐시/증거 5개 필드·현재 지정 로컬 파서 재추출 텍스트 결속 모듈과 합성 PDF/HWPX/TXT 검증 구현. Windows **전체 299 PASS**, 집중 7 PASS, Codex NO_GO 수정 후 **3차 GO**, 원본 164개 SHA 집계 동일. 원본을 실제 제공하지 않았으므로 실 RFP 바이너리 비교·원문 누락률 검증은 **NOT RUN**. [설계·후속 10단계](docs/design/RFP_ORIGINAL_AUDIT_PLAN_2026-10-16.md), [검증 기록](docs/reviews/RFP_ORIGINAL_COMPARISON_2026-10-16.md)
+- [ ] 사용자가 제공/별도 승인한 실제 원본 PDF/HWP bytes와 저장 증거 SHA 결속 대조·다운로드/버전/정정 상태 검증. 기존 저장 캐시에는 원본 바이너리 없음
 - [ ] 원본 PDF/HWP 페이지/표/각주·44,000자·스캔 OCR 구간의 완전성 평가 및 독립 실사용 라벨 수집 (실제 전수 Recall은 미측정)
+- [ ] `rfp_fulltext.store` 동일 SHA+동일 텍스트 재저장 시 기존 캐시의 전체 문자 수·절단 표시와 신규 메타데이터 충돌 정책 보완(원본 보존·무중단 실패 테스트 선행)
+- [ ] 로컬에서 원본 선택/인적 검수·안전한 이벤트 기록 및 취소/STALE/구차수 차단 화면 구축. 실제 원본·부서 비공개 정보 외부 전송 금지
+- [ ] 원본 대조 결과와 3분류 독립 인적 라벨(참가자격·평가기준·과업), 분류 FP/FN 분리 및 단계별 검증. [10단계 전체 실행/완료 기준](docs/design/RFP_ORIGINAL_AUDIT_PLAN_2026-10-16.md)
 - [ ] 부서 기술·면허·실적·투입 인력·가용 MM·원가에 대한 **확인된 비공개** 근거 비교 (합성 시험을 통과하더라도 법적 적격/이익 확정 금지)
 - [ ] 출처 기반 AI 추천 초안과 사람의 최종 판단 분리 (비공개 원문 모델 전송에는 별도 명시적 동의 필수)
 - [ ] 제출·평가·결과 기록 UI/API와 실제 운영 데이터 보존·복구/E2E 검증
