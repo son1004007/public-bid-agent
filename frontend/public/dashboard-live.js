@@ -674,6 +674,23 @@
             (Number.isSafeInteger(quality[key])&&quality[key]>=0?quality[key]:'미확인')+'건'));
         });
       }
+      const loss=summary.extraction_loss_active;
+      if(loss&&summary.loss_mode==='STORED_PARSER_METADATA_UNVERIFIED_ORIGINAL'){
+        const validCount=(v)=>Number.isSafeInteger(v)&&v>=0?v.toLocaleString('ko-KR'):'미확인';
+        coverageRows.append(el('h3','','마감 전 후보의 보관 문자 손실 진단 · 파서 메타데이터 기준'));
+        [['extracted_records','추출 성공 증거 기록 수'],
+         ['truncation_records','절단됨으로 표시된 증거 기록 수'],
+         ['quantified_truncation_records','문자 수 차이를 계산할 수 있는 증거'],
+         ['unquantified_truncation_records','절단 표시 있으나 수치 확인 불가'],
+         ['notices_with_reported_loss','미보관 문자 발생이 보고된 공고 수'],
+         ['reported_unstored_characters','저장 기록상 미보관 문자 수 합계'],
+         ['inconsistent_metadata_records','길이·절단 상태 불일치 기록'],
+         ['warning_records','파서 경고가 기록된 증거 수']].forEach(([key,label])=>{
+          coverageRows.append(el('div','requirementRow',label+': '+validCount(loss[key])+
+            (key==='reported_unstored_characters'?'자':'건')));
+        });
+        coverageRows.append(el('p','muted','이는 파서가 신고한 저장 전후 길이 차이이며 동일 증거의 중복 집계가 가능하고 원본 문서와 대조한 실제 누락 문자/필수 요건 수가 아닙니다.'));
+      }
       coverageRows.append(el('p','muted','표시 건수는 위험별로 중복될 수 있습니다. 문서 원본과 캐시 SHA·표/각주·OCR·전체 요구사항 누락률은 검사하지 않았으며, 입찰 적격 여부도 판단하지 않습니다. 조회는 파일을 수정하지 않습니다.'));
     }catch(error){
       coverageInfo.textContent='RFP 확보 현황 조회 실패: '+error.message;

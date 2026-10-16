@@ -11,6 +11,7 @@ from pathlib import PurePath
 from procurement_documents import SUPPORTED, official_url
 from procurement_filter import bid_window
 from notice_lifecycle import is_cancel_kind
+from rfp_extraction_loss import empty as empty_loss, inspect as inspect_loss, accumulate as accumulate_loss
 
 STATES = (
     "EXTRACTED_TEXT", "FAILED_ATTEMPT", "READY_TO_FETCH",
@@ -116,6 +117,10 @@ def summarize(notices, profile):
     active = {key: 0 for key in STATES}
     quality_all = {key: 0 for key in QUALITY_FLAGS}
     quality_active = {key: 0 for key in QUALITY_FLAGS}
+    loss_all = empty_loss()
+    loss_active = empty_loss()
+    loss_notices_all = 0
+    loss_notices_active = 0
     reviewed = 0
     active_count = 0
     for n in notices:
@@ -130,6 +135,10 @@ def summarize(notices, profile):
             continue
         status = _status(n)
         flags = _quality_flags(n)
+        loss = inspect_loss(n)
+        accumulate_loss(loss_all, loss)
+        if loss["reported_unstored_characters"] > 0:
+            loss_notices_all += 1
         total[status] += 1
         for flag in flags:
             quality_all[flag] += 1
@@ -139,6 +148,9 @@ def summarize(notices, profile):
                                n.get("qualification_deadline", "")) in ACTIVE):
             active_count += 1
             active[status] += 1
+            accumulate_loss(loss_active, loss)
+            if loss["reported_unstored_characters"] > 0:
+                loss_notices_active += 1
             for flag in flags:
                 quality_active[flag] += 1
     return {
@@ -148,6 +160,10 @@ def summarize(notices, profile):
         "by_state_active": active,
         "by_quality_all": quality_all,
         "by_quality_active": quality_active,
+        "extraction_loss_all": {**loss_all, "notices_with_reported_loss": loss_notices_all},
+        "extraction_loss_active": {**loss_active, "notices_with_reported_loss": loss_notices_active},
+        "loss_mode": "STORED_PARSER_METADATA_UNVERIFIED_ORIGINAL",
+        "loss_interpretation": "원본 PDF/HWP 대조 전: 증거 기록별 저장 길이 차이 합계이며 동일 문서 중복 가능. 필수요건 누락 수 아님",
         "quality_mode": "UNVERIFIED_STORED_METADATA_ONLY",
         "quality_interpretation": (
             "품질 위험별 공고 건수는 중복 가능. 캐시 SHA/원문 페이지/누락률은 검증하지 않음"

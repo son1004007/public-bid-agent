@@ -2,6 +2,10 @@
 
 > **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-15 로컬 운영 공고는 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE 10), RFP 구조화 Stage 1 실제 8765 서버·Chrome 기능 검증 및 원본 SHA 164/164 일치, 전체 274 PASS·Codex GO를 확인했습니다. **사용자의 최종 UI 승인, main 병합, 공개 릴리스는 별도**입니다.
 
+## 2026-10-16 RFP 추출 문자 손실 정량 진단 (D-17 후속 4단위)
+
+- 기존 `/api/dashboard/rfp-coverage`에 `extraction_loss_all/active` 추가: 저장 메타데이터 신고 문자 수 차이만 비식별 집계, 불확실/경고 별도 표시. **Windows Python 전체 292 PASS, Codex GO**, 로컬 8765 재기동 후 페이지/API HTTP 200. 마감 전 180후보, 절단 증거 13/공고 12, 기록된 미보관 합계 657453자; 비공개 JSON/캐시 **164개 SHA-256 집계 동일**. 실제 PDF/HWP 원문 누락·요건 Recall 및 Chrome GUI 동작은 **미검증**. [검증 기록](docs/reviews/RFP_EXTRACTION_LOSS_LENGTH_2026-10-16.md).
+
 ## 2026-10-16 RFP 확보 품질 메타데이터 진단 (D-17 후속 3단위)
 
 - 기존 `/api/dashboard/rfp-coverage`에 `by_quality_all/active` 비식별 상태 집계를 추가하고 수집 화면에 표시. 취소·구차수·REVIEW는 활성 후보에서 제외. Windows Python 전체 **287 PASS**, 집중 6 PASS, Codex 최초 NO_GO 지적 수정 후 최종 **GO**. 검증된 코드로 8765 서버 안전 재기동, 화면/품질 API HTTP 200, 실제 메타데이터 기반 부서 후보 287·마감 전 180 중 캐시 참조 57·발췌 31·파서 절단 12·경고 21 확인. 사용자 파일 SHA-256 집계 164/164 불변. 실제 Chrome 클릭·사용자 UI 승인 및 원본 PDF/HWP 전체 Recall은 **미검증**. [검증 보고](docs/reviews/RFP_QUALITY_METADATA_2026-10-16.md).

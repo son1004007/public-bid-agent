@@ -163,6 +163,8 @@ class CoverageTests(unittest.TestCase):
                     self.assertIn("by_quality_active",result["coverage"])
                     self.assertEqual(result["coverage"]["by_quality_active"]["FULLTEXT_REFERENCE_UNVERIFIED"],0)
                     self.assertEqual(result["coverage"]["quality_mode"],"UNVERIFIED_STORED_METADATA_ONLY")
+                    self.assertEqual(result["coverage"]["loss_mode"],"STORED_PARSER_METADATA_UNVERIFIED_ORIGINAL")
+                    self.assertEqual(result["coverage"]["extraction_loss_active"]["reported_unstored_characters"],0)
                     self.assertEqual(result["storage"],"LOCAL_JSON")
                     self.assertNotIn("SECRET_DO_NOT_RETURN",json.dumps(result))
                     self.assertNotIn("https://",json.dumps(result))
