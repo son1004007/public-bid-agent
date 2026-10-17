@@ -2,6 +2,17 @@
 
 > **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-15 로컬 운영 공고는 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE 10), RFP 구조화 Stage 1 실제 8765 서버·Chrome 기능 검증 및 원본 SHA 164/164 일치, 전체 274 PASS·Codex GO를 확인했습니다. **사용자의 최종 UI 승인, main 병합, 공개 릴리스는 별도**입니다.
 
+## 2026-10-18 P04 NO_GO 지적 2건 수정 (독립 재검수 대기)
+
+- PDF fingerprint에 기존 OCR 이미지 의존성 Pillow의 버전을 포함. 저장·현재 provenance에 같은 strict schema 검사를 적용하여 현재 schema `True`/`1.0`의 거짓 일치 판정을 차단. OCR 실행 파일·언어팩 버전은 `NOT_CAPTURED`, 구형 증거는 `NOT_VERIFIED` 유지. 캐시 마이그레이션 없음.
+- Windows CPython 3.12.0, 합성 fixture만 사용. 새 회귀 테스트로 수정 전 Pillow 변경/boolean·float schema의 3개 실패를 재현했고 수정 후 `python -B -m unittest test_rfp_original_compare test_rfp_batch -v` **20 PASS** (`local_app`에서 실행).
+- 추가 `python -B -m unittest test_extractors -v`: **7 PASS / 1 ERROR / 2 SKIPPED**. OCR 시험은 `pytesseract` 미설치로 ERROR(환경 BLOCKED), HWP 및 XLS 시험은 의존성 미설치로 SKIPPED. 환경/의존성 변경 없이 제한을 기록. 전체 회귀·실제 원본 검증·운영 롤백·배포는 **NOT RUN**, 독립 Codex 재검수는 대기.
+- 이번 작업에서 비공개 사용자 JSON/RFP/회사 증빙 접근·전송, main 수정, add/commit/push, 운영 반영 없음. D-10 조사는 계속 보류.
+
+## 2026-10-16 P04 신규 RFP 파서 설정 fingerprint (실원본 미검증)
+
+- `local_app/extractors.py`에서 공개 파서 코드 SHA·Python 버전·관련 패키지/상한/실행 방법의 정규화 fingerprint를 합성 문서에 기록. 신규 `rfp_batch.py` 추출 proof에만 엄격한 schema로 추가, 원본 재추출에서는 해당 fingerprint의 일치 여부를 별도 표시. **구형 증거는 `NOT_VERIFIED`, OCR 실행 바이너리·언어팩 버전은 `NOT_CAPTURED`; 원문 페이지/표/각주·전체 Recall은 미확인**. 이미 저장된 사용자 RFP 캐시/사람 판단을 소급 수정하지 않음. [실행표](docs/design/REMAINING_EXECUTION_ROADMAP_2026-10-16.md).
+
 ## 2026-10-16 P00~P03·P06 개발 추가 (합성 검증 / 실원본 미검증)
 
 - 2026-10-16 Windows 전체 **319 PASS**, Codex 1차 NO_GO 2건 수정→2차 **GO**, 8765 재기동 후 라벨/검토 큐 GET smoke, Chrome headless 위험 패널 렌더링 확인. 사용자 JSON+RFP 캐시 164개 SHA-256 불변. 실 PDF/HWP 원본 대조·수동 라벨 GUI 클릭·실 Recall, 사용자 최종 승인·main/외부 배포는 NOT RUN.

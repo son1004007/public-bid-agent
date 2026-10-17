@@ -10,6 +10,7 @@
 import copy
 import hashlib
 import json
+import re
 import threading
 from datetime import datetime, timezone
 from pathlib import PurePath
@@ -100,6 +101,18 @@ def analyze(notice, extractor, fetcher=fetch_attachment, related=None, key=None,
                          "chars":len(content),"excerpt":content[:6000],
                          "warnings":[str(w)[:90] for w in doc.get("warnings",[])[:5]],
                          **fulltext_meta})
+            provenance=doc.get("parser_provenance")
+            if (isinstance(provenance,dict) and set(provenance)=={
+                    "schema_version","fingerprint_sha256","method",
+                    "ocr_binary_and_langpack_version"}
+                    and type(provenance["schema_version"]) is int
+                    and provenance["schema_version"]==1
+                    and isinstance(provenance["fingerprint_sha256"],str)
+                    and re.fullmatch(r"[a-f0-9]{64}",provenance["fingerprint_sha256"])
+                    and isinstance(provenance["method"],str)
+                    and 1<=len(provenance["method"])<=100
+                    and provenance["ocr_binary_and_langpack_version"]=="NOT_CAPTURED"):
+                item["parser_provenance"]=dict(provenance)
         except (DocumentFetchError,ValueError,OSError,TimeoutError):
             item.update({"status":"FAILED","error":"공식 첨부 다운로드 또는 추출 실패"})
         evidence.append(item)

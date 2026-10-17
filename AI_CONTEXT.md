@@ -19,6 +19,10 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-16 P04 미래 추출 parser provenance fingerprint
+
+- 신규 추출 근거에만 `parser_provenance` schema 1(코드/Python/패키지/환경 설정 및 method fingerprint, OCR 바이너리/언어팩 NOT_CAPTURED)을 남기고 재추출 일치 여부를 보수적으로 검사. 구형 근거는 `NOT_VERIFIED`; 기존 캐시를 수정하거나 실제 원본 전체 누락률을 확정하지 않음.
+
 ### 2026-10-16 P00~P11 잔여 실행표 및 텍스트 라벨링·문서 품질 위험 진단
 
 - Windows 전체 **319 PASS**, Codex 독립 2차 **GO**, 로컬 /api/dashboard/rfp-audit /api/dashboard/rfp-review-queue smoke 및 Chrome headless 위험 패널 검증 PASS, 사용자 JSON/RFP 캐시 **164개 SHA 불변**. 구형 증거/실제 원본 전수·법적 적격/실 AI/GUI 최종 승인/배포는 미완료.

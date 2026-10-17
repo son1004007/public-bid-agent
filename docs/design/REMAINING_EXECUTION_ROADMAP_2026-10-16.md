@@ -12,7 +12,7 @@
 | P01 | P00 | PDF 페이지 단위 문자 수·이미지 수 및 HWPX 표·각주 메타 위험을 로컬 subprocess에서 진단 | 합성 문서 페이지·스캔·오류·8 MiB·비노출 테스트, Windows Job Object 강제 메모리 제한. 원문 전체 Recall과 구분 | IMPLEMENTED/WINDOWS_TESTED/CODEX_GO/LOCAL_APPLIED; 실제 업무 원본 전수 인수 BLOCKED |
 | P02 | P00 | 사람이 RFP 세 가지 핵심 유형의 추출 후보를 판단한 기록을 별도 로컬 파일에 보관/조회 | 공고/차수/SHA/offset/분류 v2 및 저장 이벤트 strict validation, revision 충돌, 추출 변경 시 STALE, 텍스트 비보관 | IMPLEMENTED/WINDOWS_TESTED/CODEX_GO/LOCAL_APPLIED: 표시 후보에 한정; 실제 원본 독립 FN 라벨 BLOCKED |
 | P03 | P02 | 현재 텍스트 후보별 최신 사람 라벨 집계/변경 이력 보존 | 중복 수정 전부 보존하되 근거별 최신값만 count, 독립 원문 FN/Recall은 측정 불가 | PARTIAL/TESTED; 독립 전수 정답 라벨 구축 BLOCKED |
-| P04 | P00 | 44,000자 이후 추출 누락·파서 버전/방법 provenance 계획 보완 | 원본 위험 수·기존 meta와 파서 환경 차이를 명시. 기존 캐시 불변 | PARTIAL |
+| P04 | P00 | 새 추출 증거의 파서 코드·Python·라이브러리/설정 식별정보를 고정 fingerprint로 기록, 재추출 일치 시 비교 | 구형 증거는 NOT_VERIFIED, OCR 바이너리/언어팩 버전은 NOT_CAPTURED, 44,000자 이후 원본 누락/Recall 별도 | IMPLEMENTED/TESTED for future extractions; 실제 원본 재검증 BLOCKED |
 | P05 | P00 | 정정·취소·STALE와 구형 RFP version 증거 재검증·복원 경로 | 이전 결정·근거·기록 보존; 사용자가 승인한 원본이 없으면 STALE 자동 해제 금지 | PARTIAL; 실제 최신본 비교는 BLOCKED |
 | P06 | P02 | RFP 품질 위험 검토 큐 + 등록·실적·면허·가용공수/원가 근거별 비교 | 메타데이터 기반 큐 구현/테스트, 부서 준비도는 기존 API 재사용. 실제 회사 증빙 없으면 모두 UNVERIFIED | PARTIAL/TESTED; 회사 증빙/권한 BLOCKED |
 | P07 | P03/P06 | AI 분석 초안·근거 확인/불확실성 안내·안전한 fallback | AI 추천과 사람 최종 선택 분리, 출처 연결, 부정확 사례 검수; 외부 LLM은 사용자 매번 명시 동의 후 | PARTIAL; 비공개 전송은 BLOCKED |

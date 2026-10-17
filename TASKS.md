@@ -4,6 +4,13 @@
 
 > **현재 작업 선택 기준:** [DECISIONS.md](DECISIONS.md)의 사용자 결정 D-10(7일 API 오류 선제 진단 제외), D-11(RFP 구조화 1단계), D-12(다음 단계 사용자 재결정)을 우선합니다. 아래 2026-10-13 이전의 '우선 작업'은 역사적 백로그이며, 실제 완료·보류 상태는 최신 하단 이력 및 [AI_CONTEXT.md](AI_CONTEXT.md)를 확인하십시오.
 
+## 2026-10-16 P04 신규 파서 provenance 추적
+
+- [x] 2026-10-18 NO_GO 2건 보완: PDF Pillow 버전 fingerprint 반영, 저장·현재 provenance strict schema 검증. 패키지별 버전 변경 및 현재 boolean/float schema 회귀 포함 비교·배치 20 PASS.
+- [ ] 수정된 P04 변경분의 독립 Codex 재검수. 추가 추출기 시험은 7 PASS/1 ERROR(`pytesseract` 미설치)/2 SKIPPED(HWP/XLS 의존성 미설치); 전체 회귀 및 운영 반영 NOT RUN. 검수 통과·출시로 표시하지 않음.
+- [x] 새 추출 RFP 증거에 코드·Python·패키지·설정 fingerprint 저장(구형 증거는 소급 변경 금지). 재추출 시 기록 fingerprint와 비교하되 OCR 바이너리/언어팩 자체의 버전은 `NOT_CAPTURED`. 합성 문서·증거·구형 호환성 테스트 추가.
+- [ ] 실제 OCR 바이너리·언어팩 정보 수집 및 동일성 검증, 원본 44,000자 이후 완전성/인적 정답 검토(실원본/사용 권한 선행).
+
 ## 2026-10-16 실제 잔여 작업 실행 로드맵 (D-18 후속)
 
 - 전체 작업 12항목과 선행조건·검증·보류 사유: [P00~P11 실행표](docs/design/REMAINING_EXECUTION_ROADMAP_2026-10-16.md). 전부 완료라는 뜻이 아님.

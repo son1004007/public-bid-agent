@@ -4,6 +4,10 @@
 
 > **2026-10-15 로컬 실증:** 기존 127.0.0.1:8765 서버/Chrome RFP 구조화 근거 버튼·모바일 PASS, 개인 JSON/캐시 164/164 SHA 일치, 전체 Python 274 PASS. [실제 인수 검증](../docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 사용자 UI 최종 승인/외부 공개와 구분합니다.
 
+> **새 RFP 파서 설정 fingerprint:** `extractors.extract_document`가 파서 코드 SHA·Python/관련 패키지/상한 설정·방법을 정규화한 fingerprint를 반환하며, `rfp_batch.analyze`가 유효한 스키마만 신규 EXTRACTED 증거에 기록합니다. `rfp_original_compare.compare`는 재추출 때 해당 fingerprint만 비교해 `RECORDED_CONFIG_MATCHED_OCR_BINARY_UNVERIFIED` 또는 변경/미확인을 반환. 기존 캐시·구형 증거는 갱신하지 않음. OCR 바이너리/언어팩과 실제 원문 페이지·표/각주 완전성은 증명하지 못합니다.
+
+> **2026-10-18 P04 검수 지적 보완:** PDF fingerprint에 Pillow 버전을 포함하고, 저장·현재 provenance 모두 엄격한 schema 검증 후 비교합니다. 현재 schema의 `True`/`1.0`은 `RECORDED_CONFIG_CHANGED_OR_UNAVAILABLE`로 처리합니다. OCR 실행 파일·언어팩 버전은 `NOT_CAPTURED` 유지. 합성 비교·배치 20 PASS; 추출기 7 PASS/1 ERROR(`pytesseract` 미설치)/2 SKIPPED. 독립 재검수 대기이며 운영 반영은 하지 않았습니다.
+
 > **프로세스 자원/영속 라벨 검증:** PDF/HWPX 위험 진단은 Windows Job Object 강제 프로세스 메모리 상한(512 MiB)/종료 연동, POSIX rlimit, 35초 제한을 적용하며 실패 시 고정 `UNAVAILABLE`. 라벨 JSON의 event exact-key schema, SHA/offset, category/source/provenance, TZ 포함 시간 기록 검증 실패 시 읽기/집계 중단. 테스트 `test_process_limits.py` 및 `test_rfp_audit_labels.py`.
 
 > **2026-10-16 로컬 사람 검토·품질 진단:** `POST /api/dashboard/rfp-original-compare`의 SHA 재현 성공 시 `document_quality.py`를 별도 subprocess로 호출해 비식별 페이지별 텍스트 길이·이미지 수 또는 HWPX 표/각주 마커만 반환. `GET /api/dashboard/rfp-review-queue`는 공고 ID/위험 플래그만 반환. `GET /api/dashboard/rfp-audit?id=...`, `POST /api/dashboard/rfp-audit/save`는 RFP 참가자격·평가기준·과업 텍스트 후보를 수동 표시하고 **비공개 별도 JSON**에 excerpt SHA/offset/문서 SHA·공고차수/사람 라벨만 저장. 정정·중복 라벨은 근거별 최신값만 집계, 과거 기록 보존. 원본 전체 라벨·TP/FP/FN/Recall은 검증되지 않음. [단계 실행표](../docs/design/REMAINING_EXECUTION_ROADMAP_2026-10-16.md).

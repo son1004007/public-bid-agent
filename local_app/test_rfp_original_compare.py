@@ -5,8 +5,9 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
-from extractors import extract_document
+from extractors import extract_document, _parser_provenance
 from rfp_fulltext import store, load
 from rfp_original_compare import compare
 
@@ -27,6 +28,22 @@ def setup_fixture(root, name, raw, parser=extract_document):
 
 
 class CompareTests(unittest.TestCase):
+    def test_pdf_fingerprint_changes_with_each_package_version(self):
+        versions = {"pypdf": "5.0", "pypdfium2": "4.0",
+                    "pytesseract": "0.3", "Pillow": "11.0"}
+        with patch("extractors.package_version", side_effect=versions.__getitem__):
+            baseline = _parser_provenance(".pdf", "PDF 텍스트+OCR(1페이지)")
+            self.assertEqual(baseline, _parser_provenance(".pdf", "PDF 텍스트+OCR(1페이지)"))
+            for package, original in list(versions.items()):
+                with self.subTest(package=package):
+                    versions[package] = "12.0"
+                    changed = _parser_provenance(".pdf", "PDF 텍스트+OCR(1페이지)")
+                    self.assertNotEqual(baseline["fingerprint_sha256"],
+                                        changed["fingerprint_sha256"])
+                    self.assertEqual(changed["ocr_binary_and_langpack_version"],
+                                     "NOT_CAPTURED")
+                    versions[package] = original
+
     def test_synthetic_pdf_reproduces_stored_text_without_proving_layout(self):
         from reportlab.pdfgen import canvas
         stream = io.BytesIO()
@@ -59,6 +76,36 @@ class CompareTests(unittest.TestCase):
             result = compare(a, proof, cache, raw, extract_document)
             self.assertEqual(result["status"], "REPRODUCED_TEXT")
             self.assertEqual(result["original_page_table_ocr_coverage"], "NOT_VERIFIED")
+
+    def test_new_parser_configuration_fingerprint_is_compared_not_ocr_binary(self):
+        with tempfile.TemporaryDirectory() as td:
+            raw=b"Synthetic stable parser text"
+            a,proof,cache=setup_fixture(Path(td),"synthetic.txt",raw)
+            captured=extract_document("synthetic.txt",raw)["parser_provenance"]
+            self.assertEqual(captured["schema_version"],1)
+            self.assertEqual(captured["ocr_binary_and_langpack_version"],"NOT_CAPTURED")
+            self.assertEqual(len(captured["fingerprint_sha256"]),64)
+            proof["parser_provenance"]=captured
+            result=compare(a,proof,cache,raw,extract_document)
+            self.assertEqual(result["parser_method_version_ocr_reproducibility"],
+                             "RECORDED_CONFIG_MATCHED_OCR_BINARY_UNVERIFIED")
+            for version in (True, 1.0):
+                with self.subTest(current_schema_type=type(version).__name__):
+                    malformed = {"text": raw.decode(), "parser_provenance": {
+                        **captured, "schema_version": version}}
+                    result = compare(a, proof, cache, raw,
+                                     lambda _name, _raw: malformed)
+                    self.assertEqual(result["status"], "REPRODUCED_TEXT")
+                    self.assertEqual(result["parser_method_version_ocr_reproducibility"],
+                                     "RECORDED_CONFIG_CHANGED_OR_UNAVAILABLE")
+            changed={**proof,"parser_provenance":{**captured,
+                    "fingerprint_sha256":"0"*64}}
+            result=compare(a,changed,cache,raw,extract_document)
+            self.assertEqual(result["parser_method_version_ocr_reproducibility"],
+                             "RECORDED_CONFIG_CHANGED_OR_UNAVAILABLE")
+            legacy={k:v for k,v in proof.items() if k!="parser_provenance"}
+            self.assertEqual(compare(a,legacy,cache,raw,extract_document)[
+                "parser_method_version_ocr_reproducibility"],"NOT_VERIFIED")
 
     def test_source_sha_or_provenance_change_fails_before_parser(self):
         with tempfile.TemporaryDirectory() as td:

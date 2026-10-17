@@ -5,11 +5,16 @@
 부작용: 타사 모델/API 호출 금지; HWP 라이브러리용 임시파일은 자동 삭제.
 실패: 텍스트가 없거나 언어팩/라이브러리 미설치면 명확한 오류로 중단.
 제한: 단일 파일 10MB, 텍스트 44,000자, 가상 샌드박스가 아닌 OS subprocess 격리.
+불변조건: PDF 설정 지문은 Pillow를 포함한 관련 패키지 버전을 반영하며,
+  OCR 실행 파일·언어팩 버전은 NOT_CAPTURED로 남긴다.
 """
 from __future__ import annotations
 
 import io
+import hashlib
 import json
+import platform
+from importlib.metadata import version as package_version, PackageNotFoundError
 import os
 import re
 import shutil
@@ -194,6 +199,31 @@ def _hwp(raw: bytes) -> tuple[str, str, list[str]]:
             return "\n".join(paragraphs), "HWP 5.x 한컴 바이너리 파서", []
 
 
+def _parser_provenance(ext, method):
+    """새로 추출한 문서의 공개 파서 코드·라이브러리/설정 fingerprint.
+    OCR 바이너리 버전·언어 데이터 파일 버전은 이 단계에서 확인하지 않는다.
+    """
+    packages={".pdf":("pypdf","pypdfium2","pytesseract","Pillow"),
+              ".hwp":("python-hwpx",),".docx":("python-docx",),
+              ".xlsx":("openpyxl",),".xlsm":("openpyxl",),".xls":("xlrd",)}
+    versions={}
+    for name in packages.get(ext,()):
+        try:versions[name]=package_version(name)
+        except PackageNotFoundError:versions[name]="NOT_INSTALLED"
+    policy={"schema_version":1,"engine":"local_app.extractors",
+            "python_version":platform.python_version(),
+            "source_code_sha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "format":ext,"method":method[:100],
+            "dependencies":versions,
+            "config":{"max_text_chars":MAX_TEXT,"max_pdf_pages":MAX_PDF_PAGES,
+                      "max_ocr_pages":MAX_OCR_PAGES},
+            "ocr_binary_and_langpack_version":"NOT_CAPTURED"}
+    digest=hashlib.sha256(json.dumps(policy,ensure_ascii=True,sort_keys=True,
+                                      separators=(",",":")).encode()).hexdigest()
+    return {"schema_version":1,"fingerprint_sha256":digest,
+            "method":method[:100],
+            "ocr_binary_and_langpack_version":"NOT_CAPTURED"}
+
 def extract_document(name: str, raw: bytes) -> dict:
     ext = Path(name).suffix.lower()
     if ext not in {".txt", ".md", ".csv", ".json", ".pdf", ".docx", ".xlsx", ".xlsm", ".xls", ".hwpx", ".hwp"}:
@@ -230,7 +260,8 @@ def extract_document(name: str, raw: bytes) -> dict:
     truncated = len(text)>MAX_TEXT
     if truncated:
         warnings.append(f"추출 텍스트 {len(text):,}자 중 {MAX_TEXT:,}자만 보관. 일부 근거 누락 가능")
-    return {"text":text[:MAX_TEXT],"method":method,"warnings":warnings,"truncated":truncated,"characters":len(text)}
+    return {"text":text[:MAX_TEXT],"method":method,"warnings":warnings,"truncated":truncated,
+            "characters":len(text),"parser_provenance":_parser_provenance(ext,method)}
 
 
 def main() -> None:

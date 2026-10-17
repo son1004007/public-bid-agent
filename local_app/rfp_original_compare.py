@@ -2,7 +2,8 @@
 
 목적/책임: 사용자가 로컬에서 확보한 공식 첨부 bytes, 공고 내 공식 링크/증거,
   검증된 fulltext 캐시와 현재 지정된 파서의 재추출 텍스트·길이 일치만 판정한다.
-  기존 파서의 method/version/OCR 설정 동일성은 검증 불가능하며 명시적으로 NOT_VERIFIED.
+  저장·현재 provenance 모두 엄격한 schema 검증 후 기록 설정의 동일성을 비교한다.
+  구형 증거는 NOT_VERIFIED이며 OCR 실행 파일·언어팩 동일성은 검증하지 않는다.
 입력/출력: 공식 attachment, EXTRACTED proof, 이미 load()로 검증한 캐시 record,
   원본 bytes, 안전하게 분리 실행되는 로컬 parser callback -> 고정 상태 코드/정수.
 신뢰 경계: 링크 정합/원본 SHA/캐시 SHA·참조·텍스트 검사. 입력 원문/경고를
@@ -29,6 +30,16 @@ def _sha(raw):
 
 def _hex64(v):
     return isinstance(v, str) and len(v) == 64 and all(c in "0123456789abcdef" for c in v)
+
+
+def _valid_parser_provenance(value):
+    keys = {"schema_version", "fingerprint_sha256", "method",
+            "ocr_binary_and_langpack_version"}
+    return (isinstance(value, dict) and set(value) == keys
+            and type(value["schema_version"]) is int and value["schema_version"] == 1
+            and _hex64(value["fingerprint_sha256"])
+            and isinstance(value["method"], str) and 1 <= len(value["method"]) <= 100
+            and value["ocr_binary_and_langpack_version"] == "NOT_CAPTURED")
 
 
 def _result(status, **counts):
@@ -121,8 +132,19 @@ def compare(attachment, proof, record, raw, parser):
             (truncated or reported > len(fresh))
             != record.get("truncated_by_parser")):
         return _result("PARSER_METADATA_CHANGED")
+    # 새로 기록된 코드·라이브러리·설정 fingerprint에 한해 재추출 환경이
+    # 같은지 비교. OCR 바이너리/언어 데이터 버전은 별도 기록이 없어 계속 미검증.
+    saved=proof.get("parser_provenance")
+    current=parsed.get("parser_provenance")
+    config="NOT_VERIFIED"
+    if _valid_parser_provenance(saved):
+        config=("RECORDED_CONFIG_MATCHED_OCR_BINARY_UNVERIFIED"
+                if _valid_parser_provenance(current) and current==saved
+                else "RECORDED_CONFIG_CHANGED_OR_UNAVAILABLE")
     if truncated or reported > len(fresh):
         return _result("REPRODUCED_TRUNCATED_PREFIX", stored_chars=len(fresh),
-                       reported_chars=reported)
+                       reported_chars=reported,
+                       parser_method_version_ocr_reproducibility=config)
     return _result("REPRODUCED_TEXT", stored_chars=len(fresh),
-                   reported_chars=reported)
+                   reported_chars=reported,
+                   parser_method_version_ocr_reproducibility=config)

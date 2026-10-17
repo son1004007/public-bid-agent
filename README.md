@@ -4,6 +4,10 @@
 >
 > **2026-10-15 최신:** 로컬 저장 공고 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE RFP 10), 예약 수집 등록 상태 유지. Stage 1 RFP 구조화는 실제 8765 서버/Chrome 목록→상세→근거 버튼 검증 PASS, 개인 JSON 40개·RFP 캐시 124개 SHA **164/164 동일**, Windows 전체 Python 274 PASS, Codex GO 및 GitHub CI 성공. **사용자 UI 최종 승인·main 병합·인터넷 공개는 별도**입니다. [실제 검증 보고](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 아래 2,223건/3,049건 등의 수치는 당시 기록입니다.
 
+> **2026-10-16 파서 provenance 보완:** 신규 RFP 추출 때 코드·Python·패키지/설정 fingerprint를 공고별 추출 증거에 기록하고, 공식 원본 파일 재추출 시 동일 여부를 별도 표시합니다. 기존 구형 증거는 `NOT_VERIFIED`, OCR 바이너리/언어팩 일치는 계속 미검증. [남은 단계](docs/design/REMAINING_EXECUTION_ROADMAP_2026-10-16.md).
+
+> **2026-10-18 P04 검수 지적 보완:** PDF fingerprint에 Pillow 버전을 포함하고, 저장·현재 provenance 모두 엄격한 schema 검증 후 비교합니다. 현재 schema의 `True`/`1.0`은 설정 일치로 인정하지 않습니다. OCR 실행 파일·언어팩 버전은 `NOT_CAPTURED` 유지. 합성 비교·배치 20 PASS; 추출기 7 PASS/1 ERROR(`pytesseract` 미설치)/2 SKIPPED. 독립 재검수 대기이며 운영 반영은 하지 않았습니다.
+
 > **2026-10-16 RFP 검토 단계 추가:** PDF 페이지별 텍스트 희소·이미지 위험 및 HWPX 표/각주 메타데이터를 원본 일치 후 로컬 subprocess에서 진단, 3개 핵심 유형 표현 후보의 사람 라벨·이력은 별도 PC JSON 저장, RFP 위험 검토 큐는 공식 공고 ID/고정 플래그만 반환. 원본의 실제 완전성/Recall·자격/수익 확정은 불가능. [단계별 잔여 실행표](docs/design/REMAINING_EXECUTION_ROADMAP_2026-10-16.md).
 
 > **2026-10-16 후속 단계 연결:** 로컬 사용자가 보유한 공식 RFP 원본을 브라우저에서 선택하여 SHA/캐시/현재 파서 텍스트를 대조하는 API·화면, 동일 캐시의 파서 길이 충돌 방지, 회사 증빙 상태 준비도(실제 자격 미확인), 담당자 수동 제출·평가·낙찰 결과 이력(자동 제출 아님)을 개발했습니다. 회사 실증·원문 전체 누락률/AI 종합 추천·사용자 UI 승인 및 공개 배포는 별도. [전체 범위·잔여 승인 게이트](docs/design/STAGE2_4_EXECUTION_PROGRESS_2026-10-16.md).

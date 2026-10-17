@@ -43,6 +43,23 @@ class RfpBatchTests(unittest.TestCase):
         self.assertEqual(result["document_evidence"][0]["notice_bid_no"],n["bid_no"])
         self.assertEqual(result["document_evidence"][0]["notice_bid_order"],n["bid_order"])
 
+    def test_new_evidence_contains_parser_config_fingerprint_not_ocr_version_claim(self):
+        from extractors import extract_document
+        n=notice("1")
+        n["attachments"]=[{"name":"제안요청서.txt","url":ROOT_URL+"synthetic",
+                            "source":"공고규격서"}]
+        result=analyze(n,extract_document,
+                       fetcher=lambda url:b"Synthetic parser configuration")
+        self.assertEqual(result["document_status"],"EXTRACTED")
+        proof=result["document_evidence"][0]
+        self.assertEqual(proof["notice_bid_no"],n["bid_no"])
+        self.assertEqual(proof["notice_bid_order"],n["bid_order"])
+        self.assertEqual(proof["parser_provenance"]["schema_version"],1)
+        self.assertEqual(len(proof["parser_provenance"]["fingerprint_sha256"]),64)
+        self.assertEqual(proof["parser_provenance"]["ocr_binary_and_langpack_version"],
+                         "NOT_CAPTURED")
+        self.assertNotIn("Synthetic parser",repr(proof["parser_provenance"]))
+
     def test_only_failed_document_retried(self):
         n=notice("1")
         first=analyze(n,lambda name,raw:{"text":"OK"},fetcher=lambda url:b"data")
