@@ -1,5 +1,9 @@
 # 제3자 라이브러리·바이너리 라이선스 검토
 
+## 2026-10-18 Python SBOM 추가 증거
+
+- 현재 Windows Python 연결 패키지 48개 설치 메타데이터에서 CycloneDX 1.5/49개 의존 관계/48개 버전 관찰 pin 생성, 공식 스키마 오류 0. npm/외부 OCR·언어팩/PDFium/OS는 **별도**. SHA hash pin과 재현 가능한 wheel 집합·각 라이선스 원문 고지는 미완료. [검증 보고](reviews/PYTHON_SBOM_AND_BACKUP_CHECK_2026-10-18.md).
+
 ## 2026-10-18 현재 Windows 가상환경 검사 (기존 10월 9일 스냅샷과 구분)
 
 - 직접 선언 `local_app/requirements.txt` 10개 모두 버전 범위 충족, 설치 51개/전이 경로 48개 및 `pip check` PASS. 이전 10월 18일 P09 테스트 환경에서 기록한 `Pillow 10.3.0`·`python-docx 1.1.2` 미달은 **현재 이 별도 개발 가상환경에서 재현되지 않음**.

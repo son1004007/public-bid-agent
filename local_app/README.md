@@ -377,6 +377,11 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 실행: `python -m unittest discover -s local_app -p 'test_*.py'` 및 독립 Codex 읽기 전용 재검수. 실제 사용 데이터의 손상·이력 보존은 테스트 폴더와 별도 원본 해시 점검으로 확인합니다.
 
 
+## 2026-10-18 Python CycloneDX 메타데이터 출력
+
+- `scripts/export_python_sbom.py`는 공개 Python 의존성 인벤토리를 CycloneDX 1.5 및 관찰 버전 pin 형식으로 출력합니다. Windows 개발 환경 48 컴포넌트·49 dependency, 공식 스키마 0 오류, 합성 감사 테스트 총 14 PASS.
+- P09 운영 백업 318개와 현재 파일의 SHA 일치가 읽기 전용으로 확인됐습니다. 이는 실제 복원/재난 검증이 아닙니다. 모든 상세 파일·백업·회사 자료는 로컬에 보존. [검증 보고](../docs/reviews/PYTHON_SBOM_AND_BACKUP_CHECK_2026-10-18.md).
+
 ## 2026-10-18 의존성 감사 및 React 시안 보안 조치
 
 - Python 로컬 서비스 의존성 10/10 선언 버전 충족, 설치 51개 인벤토리와 전이 경로 수집. `scripts/audit_python_environment.py --requirements local_app/requirements.txt`는 `packaging`이 설치된 개발 가상환경에서 실행하며 서버 데이터/RFP에 접근하지 않습니다.

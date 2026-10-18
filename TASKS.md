@@ -1,5 +1,14 @@
 # 애자일 작업 백로그
 
+## 2026-10-18 Python SBOM / 백업 후속
+
+- [x] 설치 Python 연결 48개 CycloneDX 1.5 SBOM, 49개 dependency 관계 및 버전 관찰 pin 48개 생성. 공식 스키마 0 errors·전체 합성 테스트 14 PASS.
+- [x] Windows P09 운영 백업 318개 읽기 가능, 현재 318개와 해시 일치·누락/드리프트 0을 **읽기 전용**으로 확인.
+- [ ] OS/Python wheel 원본 아카이브 SHA-256 고정 배포용 lock, PDFium·OCR/언어팩 포함 전체 SBOM 및 LICENSE/NOTICE 원문 승인.
+- [ ] 격리된 환경에서 실제 복원 성공/재해 복구 시간 점검. 개인·회사 자료의 복원은 별도 계획·보호 조건 확인 후.
+- [검증 보고](docs/reviews/PYTHON_SBOM_AND_BACKUP_CHECK_2026-10-18.md). [실제 1~6단계 결과](docs/reviews/FOLLOWUP_SIX_STAGE_2026-10-18.md)
+
+
 ## 2026-10-18 공급망 후속 검증 완료 기록
 
 - [x] 공급망 보완 `d63adbb` 커밋·푸시, Codex read-only GO, [Sprint 1 CI SUCCESS](https://github.com/son1004007/public-bid-agent/actions/runs/39113379131), [Windows 합성 인수 CI SUCCESS](https://github.com/son1004007/public-bid-agent/actions/runs/39113379117).

@@ -1,5 +1,11 @@
 # 현재 개발 상태
 
+## 2026-10-18 Python SBOM / 운영 백업 읽기 전용 후속
+
+- P09 검증된 source 및 원본 보호 정책 유지. 실제 요청 1~6단계의 비식별 로컬 실측·남은 승인 경계는 [종합 검증](docs/reviews/FOLLOWUP_SIX_STAGE_2026-10-18.md)에 기록. 별도 읽기 전용 백업 검사에서 릴리스 백업 318개와 현행 318개 내용 해시 일치, 누락·오류 0. 복원 실험/운영 파일 수정은 수행하지 않음.
+- Python 연결 패키지 48개의 CycloneDX 1.5 SBOM 및 관찰 pin 48개 생성, dependency 관계 49개, 공식 JSON schema 오류 0. 감사·SBOM 합성 테스트 14 PASS. Python hash lock, LICENSE/NOTICE·외부 바이너리 통합은 계속 미완료. [검증](docs/reviews/PYTHON_SBOM_AND_BACKUP_CHECK_2026-10-18.md).
+
+
 ## 2026-10-18 공급망 보완의 최종 구현·CI 결과
 
 - `feat/sprint1-search-demo`의 `d63adbbf4c6f8bcbbf7d7a2141f51c7a2fc95d0d` 공급망 점검/Vite High 수정/React 잠금 파일/CI 보안 게이트·RFP 인수 절차 문서 반영.

@@ -1,5 +1,7 @@
 # AI 개발 작업 안내 - Public Bid Agent
 
+> **2026-10-18 SBOM/복구 진행:** Python 가상환경 연결 패키지 48개 CycloneDX 1.5 / 49 dependency / 관찰 pins 48개 공식 스키마 0 errors. P09 보호 백업 318개가 현행과 모두 일치하며 격리된 318개 복원 파일로 별도 localhost 서버 구동/읽기 전용 API smoke 성공을 확인. 실제 데이터 24건 준비도 GET 정상·Chrome 실제 UI E2E PASS. [1~6단계 검증](docs/reviews/FOLLOWUP_SIX_STAGE_2026-10-18.md). 실제 복원·전체 라이선스/배포 승인·회사 원본 인수는 별도. [실측 보고](docs/reviews/PYTHON_SBOM_AND_BACKUP_CHECK_2026-10-18.md).
+
 > **다른 AI/Codex가 이 저장소를 처음 읽을 때**
 >
 > 1. [AGENTS.md](AGENTS.md)와 전역 `son1004007/ai-agent-workflow-playbook/CONTROL.md` (보안·검수·구현 기준)

@@ -464,6 +464,12 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 실행: `python -m unittest discover -s local_app -p 'test_*.py'` 및 독립 Codex 읽기 전용 재검수. 실제 사용 데이터의 손상·이력 보존은 테스트 폴더와 별도 원본 해시 점검으로 확인합니다.
 
 
+## 2026-10-18 Python SBOM / 로컬 백업 비파괴 검사
+
+- 설치 Python 메타데이터를 CycloneDX 1.5 JSON 및 관찰 버전 pin 파일로 변환하는 `scripts/export_python_sbom.py` 추가. 로컬 컴포넌트 48개·dependency 관계 49개 생성, 공식 JSON Schema 검증 오류 0, 감사·SBOM 합성 회귀 14 PASS.
+- P09 로컬 릴리스 보호 파일 백업 318개를 읽기 전용으로 재검사해 백업과 현재 파일 318개 모두 일치 확인(복원 실행은 별도). [검증 보고](docs/reviews/PYTHON_SBOM_AND_BACKUP_CHECK_2026-10-18.md).
+- 이 파일은 해시 고정 배포 lock이 아닌 Windows 설치 스냅샷이며, 외부 바이너리·법적 LICENSE/NOTICE·실제 사업 문서 정답 검증을 포함하지 않습니다.
+
 ## 2026-10-18 의존성 현황과 Vite 보안 조치
 
 - Windows Python 가상환경에서 직접 의존성 10/10 선언 버전 충족, `pip check` PASS. `scripts/audit_python_environment.py`로 51개 설치 패키지/전이 관계·라이선스 메타데이터를 읽기 전용 점검하고 7개 합성 회귀를 추가했습니다. 감사 스크립트 실행에는 `packaging` 라이브러리가 필요하며 이 프로젝트 가상환경에 설치돼 있습니다.
