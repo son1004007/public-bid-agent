@@ -9,6 +9,13 @@
 >
 > 과거 파일의 오래된 수치보다 최신 실행 증거가 우선이다. **결정사항은 DECISIONS.md를 단일 원본으로 관리하며, 시점별 수치와 검수 결과를 사용자 결정으로 오해하지 않는다.**
 
+## 최신 검증 기준: 2026-10-18 P09 완료
+
+- `feat/sprint1-search-demo`의 P04~P09 구현/합성 검증 완료. P09 최종 실행 소스 커밋은 `f06a3faebbcf3995f6d1ac2fd3fe5c1f9b978c86`이며 Windows 로컬 서버 `127.0.0.1:8765`에 동일 SHA로 적용됨.
+- Windows `cp1252` 호환 파서·테스트 수정, Python 403 PASS, Windows 대응 52 PASS, Codex read-only GO, 두 GitHub Actions SUCCESS 및 배포 후 Chrome read-only E2E PASS. 실제 원본 보호 파일 318개 SHA 동일.
+- `CURRENT_STATE.md` 최신 섹션과 [P09 최종 실행 근거](docs/reviews/P09_WINDOWS_CI_FINAL_2026-10-18.md)를 우선 확인. 아래 P08/P09 독립 검수 대기/Chrome BLOCKED 항목은 당시 기록이다.
+- **잔여:** 실제 고객/회사 자료 기반 법적·기술적 충족 판정, 사용자 UI 인수, SBOM/라이선스·운영 복구 실증, P10 main/공개 릴리스 승인. P11/D-10 보류, 실제 입찰 자동 실행 금지.
+
 ## 1. 현재 프로젝트/실행 아키텍처
 
 - 목적: 공식 나라장터 용역공고 전체 수집 → 공고 상세/RFP 추출·분석 → 실제 부서의 입찰자격·실적·기술·인력·원가와 비교 → 사람의 참여 결정·제출·평가·수주 추적을 지원하는 근거 기반 웹서비스.

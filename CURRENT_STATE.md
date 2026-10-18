@@ -1,5 +1,14 @@
 # 현재 개발 상태
 
+## 최신 상태: 2026-10-18 P09 전체 합성 개발·CI·Windows 로컬 적용 검증 완료
+
+- 개발 브랜치 `feat/sprint1-search-demo`. P04~P08 완료 후 P09 초기 커밋 `bf3dca4`의 Windows CI에서 기본 로캘 `cp1252`와 한국어 UTF-8 출력/읽기의 불일치로 1 FAIL/1 ERROR가 발생했다. 두 오류를 재현한 후 `f06a3faebbcf3995f6d1ac2fd3fe5c1f9b978c86`에서 수정했다.
+- P09 현재 소스: Windows 기본 인코딩과 무관한 파서 ASCII-safe JSON 출력, UTF-8 테스트 파일 읽기, `PYTHONIOENCODING=cp1252` 교차 회귀. Windows 6개 모듈 **52 PASS**, 전체 Python **403 PASS**, 합성 Chrome 단독 E2E **PASS**, 별도 read-only Codex **VERDICT: GO**.
+- 동일 SHA의 GitHub **Sprint 1 CI** [39110626764](https://github.com/son1004007/public-bid-agent/actions/runs/39110626764)와 **Windows synthetic local acceptance** [39110626835](https://github.com/son1004007/public-bid-agent/actions/runs/39110626835) **모두 SUCCESS**.
+- Windows TD-kiseok `127.0.0.1:8765`에 검증된 Git SHA의 immutable source만 적용: HTTP/API 확인, 적용 후 read-only Chrome 8개 단계 **PASS**, 원본 보호 파일 **318개 SHA 불변**, 기존 원본 직접 갱신 없음. 실제 문서 법적 적격/전체 요건 Recall/회사 증빙과 사용자 UI 최종 승인은 여전히 **NOT VERIFIED**.
+- `main` 미병합, 인터넷 공개/실제 입찰 미실행, 외부 비공개 LLM 전송 없음. 이전 P09 NO_GO/BLOCKED 섹션은 수정 이전의 시점별 기록이며 현행 판정이 아니다. [종합 검증 보고](docs/reviews/P09_WINDOWS_CI_FINAL_2026-10-18.md).
+
+
 ## 2026-10-18 P09 NO_GO/P1 배치 fixture 격리 수정 (독립 재검수 대기)
 
 - 기존 `RFP_BATCH`가 운영 root를 유지하는 결함을 임시 root manager 교체·네 외부 어댑터 차단으로 수정. 운영 앱 코드 변경 없음. 메모리 차단자 아래 수정 전 GET 회귀 실패 재현, 수정 후 API **11 PASS**(IDLE·RUNNING 장부 및 실제 임시 worker lease 포함).

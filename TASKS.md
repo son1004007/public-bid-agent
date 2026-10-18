@@ -1,5 +1,15 @@
 # 애자일 작업 백로그
 
+## 최신 완료: 2026-10-18 P09 소스·인수·로컬 적용
+
+- [x] P04~P09 개발 브랜치 구현/수정 및 Codex 독립 읽기 전용 GO 완료. P09 Windows `cp1252` 실패 2건 재현 후 `f06a3fa` 최소 수정, Python 전체 403 PASS, Windows 대응 52 PASS.
+- [x] GitHub Actions Sprint 1 CI `39110626764` SUCCESS, Windows 합성 인수 CI `39110626835` SUCCESS 및 Chrome CI PASS.
+- [x] 승인된 source-only Windows 로컬 `127.0.0.1:8765` 적용. 보호 파일 318개 백업·SHA 불변, HTTP/API 및 배포 후 read-only Chrome E2E 8개 PASS.
+- [ ] 실제 RFP PDF/HWP 전체 페이지·표·각주/필수 조건 정답 대조와 회사 인력·원가·면허 증빙 검증. 지금 합성 테스트 성과로 실제 적격성·수주 가능성을 확정하지 않음.
+- [ ] 실제 사용자 UI 최종 인수, 정확한 잠금 의존성/SBOM·전이 라이선스·취약점·현장 복구 실증. P10 `main` 및 공개 릴리스는 별도 승인.
+- [ ] P11 이전 7일 API 오류 조사는 D-10에 따라 계속 보류. 아래 기존 P09 미완료 체크박스는 과거 구현 시점의 로그이며 최신 상태는 이 항목과 [최종 보고](docs/reviews/P09_WINDOWS_CI_FINAL_2026-10-18.md)를 우선 확인.
+
+
 ## 2026-10-18 P09 합성 인수·릴리스 게이트
 
 - [x] NO_GO/P1: fixture의 `RFP_BATCH`를 임시 manager로 교체하고 네 외부 어댑터 차단. 기존 manager/root 메모리 차단자 및 IDLE·RUNNING GET/worker lease 회귀 추가, API **11 PASS**. 아래 48 PASS는 수정 전 기록.
