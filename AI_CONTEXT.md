@@ -19,6 +19,17 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-18 P09 NO_GO/P1 배치 fixture 격리 수정
+
+- `RFP_BATCH`를 임시 root/차단된 외부 어댑터의 새 manager로 교체. 기존 manager/root 접근 거부와 IDLE·RUNNING GET/worker lock 회귀 추가, API **11 PASS**. 아래 최초 48 PASS는 배치 격리를 검증하지 못한 과거 기록이다.
+- Chrome 재실행도 sandbox 종료로 **BLOCKED**. 독립 재검수/Git 기록은 orchestrator 인계이며 GO 아님. 실제 자료·배포·main·add/commit/push 없음, D-10/P11 보류. [검증](docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
+
+### 2026-10-18 P09 Windows 합성 인수 게이트
+
+- 신규 API 8개 포함 보안·파서·이력·복구 회귀 **48 PASS**. Chrome 파일 선택/수기 저장·새로고침 runner 및 Windows CI 추가, 실제 앱 코드 변경 없음.
+- Chrome 155는 sandbox 진단과 함께 새 페이지 생성 중 종료(`2147483651`), **CHROME_E2E BLOCKED**. 테스트 작성/실제 브라우저 통과/사용자 UI 승인을 구분한다. 의존성 일부 누락·버전 불일치, 전체 라이선스/CI/독립 검수·운영 적용 미완료.
+- CONTROL/handbook 원본은 GitHub 연결로 확인. 공개 소스·합성 fixture만 사용했고 사용자 자료 접근·배포·Git 기록 없음. D-10/P11 보류. [검증·다음 실행](docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
+
 ### 2026-10-18 P08 수기 이력 복구 합성 회귀
 
 - 실행 코드/API/저장 형식은 유지하고 신규 11개 테스트 및 기존 백업 fixture를 보강했다. 수기 이력 재조회·중복·원자 저장 실패 후 재시도·실제 두 프로세스 revision 충돌과 백업/복구의 기존 이력·최신 편집 보호를 확인했다. 관련 Python **53 PASS**, 공백 검사 PASS, README 2종 동기화.

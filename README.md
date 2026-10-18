@@ -1,5 +1,9 @@
 # Public Bid Agent | 공공 입찰 참여 의사결정 지원
 
+> **2026-10-18 P09 NO_GO/P1 격리 수정:** 합성 fixture의 `RFP_BATCH`를 임시 root의 새 manager로 교체하고 네 외부 어댑터를 차단했습니다. 기존 manager/root 접근을 거부하는 GET 회귀와 합성 RUNNING worker lock 검증을 추가하여 API 인수 **11 PASS**. Chrome 재실행은 동일한 sandbox 종료로 **BLOCKED**이며 독립 재검수는 orchestrator 인계입니다. 아래 48 PASS는 수정 전 기록으로 배치 격리를 증명하지 않습니다. [수정·재현·재검증](docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
+
+> **2026-10-18 P09 합성 인수 게이트:** Windows API 보안·파서·이력·복구 **48 PASS**(신규 API 8개 포함). 새 Chrome 파일 선택/수기 이력 E2E와 Windows CI 경로를 추가했으나 이 환경에서는 Chrome 페이지 생성 중 종료되어 **CHROME_E2E BLOCKED**입니다. 운영 자료 접근·배포 없이 독립 검수/CI는 orchestrator 인계. 라이선스·패키지 버전·복구·사용자 UI 승인 게이트는 별도로 유지합니다. [재현 명령·배포 게이트·한계](docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
+
 > **2026-10-18 P08 합성 이력 복구 회귀:** 수기 제출·평가·선정/미선정 이력의 HTTP 재조회·중복·revision 충돌, 원자 저장 실패 후 재시도, 기존 백업·복구의 이력 보존과 최신 편집/변조 거부를 테스트로 보강합니다. 실행 코드·저장 형식 변경이나 이력 전용 자동 백업 추가는 없습니다. 실제 자료 접근·운영 반영·배포 없이 독립 검수는 orchestrator에 인계합니다. [검증 범위·실행 결과](docs/reviews/P08_SYNTHETIC_HISTORY_RECOVERY_2026-10-18.md).
 
 > **2026-10-18 P07 구형 검증 NO_GO/P2 보완:** 저장된 `verified=true`만으로 확인 완료로 계산하지 않습니다. 조언·API 요약·UI 지표/체크박스는 유효 상태/점수와 비공백 문자열 근거를 함께 확인합니다. 구형 공백 근거는 미검증으로 집계하고 가중지표를 보류하며 원본 기록·최종 결정·이력은 보존합니다. 합성 Python **88 PASS**, Node **11 PASS**, JS/공백 검사 PASS. 독립 재검수는 orchestrator 인계이며 운영 반영·배포 없음. [수정·검증 기록](docs/reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md).

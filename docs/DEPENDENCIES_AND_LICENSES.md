@@ -32,6 +32,12 @@
 
 ## 재배포 체크리스트
 
+### 2026-10-18 P09 검증 도구 경계
+
+- 신규 합성 테스트는 CPython 3.12 표준 라이브러리, Node 22 내장 모듈 및 별도 설치된 Chrome을 사용한다. 새 pip/npm 의존성이나 Chrome/드라이버/OCR 바이너리를 저장소에 추가·재배포하지 않는다.
+- 합성 API/TXT 테스트에 선택 의존성이 필요 없다는 사실은 전체 앱 의존성 충족/라이선스 승인이 아니다. 현재 환경은 python-docx 1.1.2·Pillow 10.3.0이 선언 최소 버전 미달이며 xlrd/pytesseract/python-hwpx/langgraph/langchain-core 미설치. 자동 설치·업그레이드는 하지 않았다.
+- **릴리스 게이트 유지:** 정확한 배포 후보의 고정 버전 목록, 전이 의존성 SBOM, 실제 배포 파일의 LICENSE/NOTICE, PDFium/Tesseract/언어팩 고지 및 해당 후보의 취약점 검증이 없으면 재배포 준비 완료로 판정하지 않는다. 이 작업에서 그 검증은 NOT RUN이다. [실행·인계](reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
+
 - [x] 직접 의존성 공식 라이선스 유형 조사 (라이선스 관점에서 Apache-2.0 프로젝트에 사용 가능)
 - [x] pyhwp(AGPL)를 새 기본 의존성으로 넣지 않음
 - [x] 개발용 사용자 PC 로컬 설치: 앱이 third-party 실행 파일/모델을 직접 배포하지 않는 구조

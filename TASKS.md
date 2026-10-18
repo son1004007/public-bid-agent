@@ -1,5 +1,17 @@
 # 애자일 작업 백로그
 
+## 2026-10-18 P09 합성 인수·릴리스 게이트
+
+- [x] NO_GO/P1: fixture의 `RFP_BATCH`를 임시 manager로 교체하고 네 외부 어댑터 차단. 기존 manager/root 메모리 차단자 및 IDLE·RUNNING GET/worker lease 회귀 추가, API **11 PASS**. 아래 48 PASS는 수정 전 기록.
+- [x] 수정 후 관련 6개 모듈 **51 PASS**, 어댑터 시험의 mock 선확인 보강 후 집중 재실행 **1 PASS**. 전체 저장소 회귀/CI는 NOT RUN.
+- [ ] 수정분 독립 Codex 재검수는 orchestrator 인계. Chrome 재실행은 동일 sandbox 종료로 BLOCKED이며 기존 NO_GO를 GO로 승격하지 않음. [후속 기록](docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
+- [x] 실제 Handler 보안 헤더/Host·Origin·CSRF 거부, JSON 오류, PREPARED/손상 복구 가드, 수기 저장 중복·재조회, 실제 subprocess TXT 대조 신규 8개 테스트.
+- [x] Windows 관련 6개 모듈 **48 PASS**; Node/Python 문법 검사 PASS. 운영 자료 접근 없이 기존 복구 경로만 합성 검증.
+- [x] 새 Chrome 프로필·임시 fixture 서버·외부 페이지 요청 차단·파일 선택/수기 이력/새로고침·390px E2E runner와 Windows CI 정의, README 2종 동기화.
+- [ ] Chrome 시나리오 실제 통과: 현 sandbox 환경에서 페이지 생성 중 exit `2147483651`, **BLOCKED**. 보안 완화 금지. [재현 명령·게이트](docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
+- [ ] orchestrator 독립 Codex 검수 및 이후 Git 기록/CI 실행. 이번 작업은 add/commit/push·main·배포 금지.
+- [ ] 선언 의존성 버전 충족, 배포 후보별 전체 전이 라이선스/NOTICE/SBOM/취약점 확인, 승인된 실제 복구·사용자 UI 인수. 합성 PASS를 P09 전체 완료/LOCAL_APPLIED/공개 릴리스로 표시하지 않음. D-10/P11 보류.
+
 ## 2026-10-18 P08 수기 이력 복구 합성 회귀
 
 - [x] 신규 11개 테스트 및 기존 fixture 보강: 수기 제출·평가·선정/미선정/철회 재조회, 저장 실패·재시도·중복, 실제 프로세스 revision 충돌, 백업/복원·변조/최신 기록 보호.

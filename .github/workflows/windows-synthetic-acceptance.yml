@@ -1,0 +1,37 @@
+name: Windows synthetic local acceptance
+on:
+  push:
+    branches: ['feat/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-acceptance:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # These synthetic TXT/API/recovery tests use the Python standard library.
+      # Missing optional OCR/AI packages do not qualify those separate release gates.
+      - name: API security, process limits and recovery gates (synthetic only)
+        env:
+          PYTHONPATH: local_app
+        run: >-
+          python -m unittest test_local_acceptance test_bid_outcome_recovery
+          test_bid_outcomes test_json_transaction test_release_rfp_stage
+          test_process_limits -v
+      - name: Chrome synthetic file input and manual history
+        shell: pwsh
+        run: |
+          $env:P09_PYTHON = (Get-Command python).Source
+          $env:P09_CHROME = Join-Path $env:ProgramFiles 'Google/Chrome/Application/chrome.exe'
+          if (-not (Test-Path -LiteralPath $env:P09_CHROME)) { throw 'BLOCKED: Chrome unavailable' }
+          node scripts/test_chrome_synthetic.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

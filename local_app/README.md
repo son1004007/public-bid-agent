@@ -1,5 +1,9 @@
 # Public Bid Agent — 로컬 실행 사용법
 
+> **2026-10-18 P09 NO_GO/P1 격리 수정:** 합성 fixture의 `RFP_BATCH`를 임시 root의 새 manager로 교체하고 네 외부 어댑터를 차단했습니다. 기존 manager/root 접근을 거부하는 GET 회귀와 합성 RUNNING worker lock 검증을 추가하여 API 인수 **11 PASS**. Chrome 재실행은 동일한 sandbox 종료로 **BLOCKED**이며 독립 재검수는 orchestrator 인계입니다. 아래 48 PASS는 수정 전 기록으로 배치 격리를 증명하지 않습니다. [수정·재현·재검증](../docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
+
+> **2026-10-18 P09 합성 인수 게이트:** Windows API 보안·파서·이력·복구 **48 PASS**(신규 API 8개 포함). `node scripts/test_chrome_synthetic.cjs`는 저장소 루트에서 임시 합성 서버/새 Chrome 프로필을 만들어 파일 선택과 수기 이력 저장·재조회를 검사합니다. 현재 환경은 Chrome 페이지 생성 중 종료되어 **CHROME_E2E BLOCKED**입니다. 실제 자료·운영 서버·배포에 접근하지 않으며, 독립 검수/CI 및 라이선스·사용자 인수는 별도입니다. [명령·게이트·한계](../docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
+
 > **2026-10-18 P08 합성 이력 복구 회귀:** `test_bid_outcome_recovery.py`와 `test_release_rfp_stage.py`에서 수기 제출·평가·선정/미선정 이력의 HTTP 재조회·중복·revision 충돌, 원자 저장 실패 후 재시도, 기존 백업·복구의 이력 보존과 최신 편집/변조 거부를 검증합니다. 실행 코드·저장 형식 변경이나 이력 전용 자동 백업 추가는 없습니다. 모든 파일·복구 대상은 테스트 소유 임시 합성 데이터이며 실제 운영 적용·배포 없음, 독립 검수는 orchestrator 인계입니다. [명령·결과·한계](../docs/reviews/P08_SYNTHETIC_HISTORY_RECOVERY_2026-10-18.md).
 
 > **2026-10-18 P07 구형 검증 NO_GO/P2 보완:** `effective_verified`를 조언·요약·저장 검증에 공통 적용하고 UI 계산/체크박스도 같은 조건을 사용합니다. 엄격한 `true`, 유효 Gate 상태 또는 1~5 정수 점수, 비공백 문자열 근거가 함께 있어야 확인 완료로 계산합니다. 기존 저장 플래그는 조회 중 재작성하지 않으며 최종 결정·이력을 보존합니다. 합성 Python **88 PASS**, Node **11 PASS**, JS/공백 검사 PASS. 독립 재검수는 orchestrator 인계이며 운영 반영·배포 없음. [실행 명령·계약](../docs/reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md).

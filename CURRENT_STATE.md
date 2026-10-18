@@ -1,5 +1,17 @@
 # 현재 개발 상태
 
+## 2026-10-18 P09 NO_GO/P1 배치 fixture 격리 수정 (독립 재검수 대기)
+
+- 기존 `RFP_BATCH`가 운영 root를 유지하는 결함을 임시 root manager 교체·네 외부 어댑터 차단으로 수정. 운영 앱 코드 변경 없음. 메모리 차단자 아래 수정 전 GET 회귀 실패 재현, 수정 후 API **11 PASS**(IDLE·RUNNING 장부 및 실제 임시 worker lease 포함).
+- 관련 6개 모듈 API·보안·복구 회귀 **51 PASS**(CPython 3.12.0); 어댑터 mock 선확인 보강 후 집중 재실행 **1 PASS**. 전체 저장소 회귀/CI는 NOT RUN.
+- Chrome 재실행은 sandbox 진단/exit `2147483651`로 **BLOCKED**, 보안 완화 없음. 아래 최초 48 PASS는 배치 격리 증거가 아니다. [재현·결과·한계](docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md). 독립 재검수/Git 기록은 orchestrator 인계, 사용자 자료 접근·배포·main·add/commit/push 없음. D-10/P11 보류.
+
+## 2026-10-18 P09 Windows 합성 API·복구 게이트
+
+- 신규 HTTP 인수 테스트 8개와 Chrome E2E runner, 배포 없는 Windows CI 경로 추가. 실행 앱 코드·저장 형식 변경 없음. 관련 Windows CPython 3.12.0 회귀 **48 PASS**, Python/Node 문법 검사 PASS.
+- Chrome 155.0.8059.40은 새 페이지 생성 단계에서 sandbox 진단 후 exit `2147483651`; 브라우저 시나리오는 **BLOCKED**, UI 승인 아님. 보안 완화 없이 종료했고 운영 서버/사용자 자료는 접근하지 않음.
+- 설치 의존성 일부 누락 및 선언 범위 불일치 확인; 전체 의존성/라이선스/SBOM·CI·독립 검수·실 운영 복구/배포는 별도 미완료. [명령·게이트·인계](docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md). add/commit/push·main·배포 없음, D-10/P11 보류.
+
 ## 2026-10-18 P08 수기 이력 복구 합성 회귀 (독립 검수 대기)
 
 - 실행 코드 변경 없이 신규 11개 테스트와 기존 백업 fixture/assertions 보강. 제출·평가·선정/미선정/철회 재조회, 실패 후 재시도·중복 거부, 실제 두 프로세스 revision 경합, 백업/복원 이력 보존·최신 편집/변조 거부 확인.

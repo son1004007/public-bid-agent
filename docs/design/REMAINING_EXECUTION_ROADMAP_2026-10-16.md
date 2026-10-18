@@ -17,11 +17,13 @@
 | P06 | P02 | RFP 품질 위험 검토 큐 + 등록·실적·면허·가용공수/원가 근거별 비교 | 메타데이터 기반 큐 구현/테스트, 부서 준비도는 기존 API 재사용. 실제 회사 증빙 없으면 모두 UNVERIFIED | PARTIAL/TESTED; 회사 증빙/권한 BLOCKED |
 | P07 | P03/P06 | AI 분석 초안·근거 확인/불확실성 안내·안전한 fallback | AI 추천과 사람 최종 선택 분리, 출처 연결, 부정확 사례 검수; 외부 LLM은 사용자 매번 명시 동의 후 | PARTIAL; 2026-10-18 NO_GO/P2 입력 절단 보완: 전달 범위·누락 표시/보수적 fallback, 합성 Python 82 PASS, Node 8 PASS. 독립 재검수 대기, 실 AI/비공개 전송 BLOCKED. [인계](../reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md) |
 | P08 | P00 | 제출·평가·수주 이력의 예외/복구/중복·정정 검증 | 원자적 로컬 JSON, concurrency/revision, 실제 제출 동작 금지, 합성 E2E | PARTIAL; 2026-10-18 신규 11개 합성 테스트·기존 fixture 보강, 관련 53 PASS. HTTP 재조회·원자 저장 실패/재시도·프로세스 경합·백업/복원 보호 확인. 독립 검수 orchestrator 인계, 실제 인수·정정 UX 미완료. [증거](../reviews/P08_SYNTHETIC_HISTORY_RECOVERY_2026-10-18.md) |
-| P09 | P01~P08 | Windows localhost 실제 Chrome UI·브라우저 파일/입력·안전한 배포 게이트 | 실제 버튼·오류 상태/로그 없이 정보 노출 여부, 사용자 데이터 SHA 보존, Codex 독립 GO, CI | PARTIAL; 최종 사용자 UI 인수는 USER_APPROVAL |
+| P09 | P01~P08 | Windows localhost 실제 Chrome UI·브라우저 파일/입력·안전한 배포 게이트 | 실제 버튼·오류 상태/로그 없이 정보 노출 여부, 사용자 데이터 SHA 보존, Codex 독립 GO, CI | PARTIAL; 2026-10-18 합성 API/복구 48 PASS, Chrome runner/Windows CI 추가. Chrome 페이지 생성 환경 BLOCKED, 독립 검수/CI·실 운영 적용·사용자 인수 미완료. [게이트·증거](../reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md) |
 | P10 | P09 | 최종 main 병합, 외부 배포, 사용자·회사 승인 | 사용자 명시 승인, 라이선스·인증/보안/백업, 서비스 운영 책임자 | USER_APPROVAL; 자동 진행 금지 |
 | P11 | 별도 | 과거 7일 배치 API 단일 장애 재조사 | **D-10에 따라 현재 수행 대상 제외.** 재발 및 사용자 재요청 시에만 착수 | DEFERRED |
 
 ## B. 이번 요청에서 수행할 수 있는 경계
+
+> **2026-10-18 P09 격리 후속:** 위 P09 최초 48 PASS 이후 독립 검수 NO_GO/P1의 운영 batch root 참조를 임시 manager·차단 어댑터로 수정했다. IDLE·RUNNING GET/worker lock 회귀 포함 API 11 PASS, Chrome 재실행 BLOCKED, 독립 재검수 orchestrator 인계. 합성 검증과 운영 자료/사용자 인수는 별개이며 D-10/P11 및 Git/배포 금지 유지. [후속 증거](../reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
 
 > **2026-10-18 P07 구형 검증 후속:** NO_GO/P2의 공백 근거 구형 플래그 우회를 조언·API 요약·UI 계산/체크박스에서 보완했다. 기존 기록·최종 결정·이력 보존, 관련 합성 Python 88 PASS/Node 11 PASS. 독립 재검수는 orchestrator 인계이며 P07 전체 완료 아님. [수정·검증](../reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md). add/commit/push·main·배포 금지 및 D-10/P11 보류 유지.
 
