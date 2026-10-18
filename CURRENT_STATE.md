@@ -1,5 +1,9 @@
 # 현재 개발 상태
 
+## 2026-10-18 BID-02 구현 완료 및 BID-03 차례
+
+- BID-02 커밋 `9f3ab29` 전체 418 PASS, Codex GO, GitHub Sprint 1/Windows CI 모두 SUCCESS. 현재 자동 입찰은 없고 회사 자격·보완 후 수익성은 UNVERIFIED. **다음 BID-03: 화면에서 분야 일치·보완/수익 검토·사전등록 대상 구분.**
+
 ## 2026-10-18 BID-02 읽기 전용 실데이터 교차검사
 
 - 신규 GET `/api/dashboard/bid-now-shortlist`: 공고·부서 선택·운영자료를 동일 락으로 읽고 공개 공고 ID·상태 코드·증빙 부족 고정 코드만 반환. 법적 자격/부서 MM/예상이익 UNVERIFIED. 관련 합성 21 PASS, 전체 Python 418 PASS, Codex 독립 GO. 실제 Windows 로컬 보호 데이터 5,691개 비식별 집계에서 일치 검토 178, 역량 보완/수익 검토 2,158, 사전등록 검토 393; 중복되지 않는 상태별 분류이며 수익성 적합 판정은 아님. [단계 추적](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md).

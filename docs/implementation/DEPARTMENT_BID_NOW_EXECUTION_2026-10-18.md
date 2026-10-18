@@ -23,7 +23,7 @@
 | ID | 우선순위 | 작업과 검증 가능한 종료조건 | 선행 의존성 | 상태 |
 | --- | --- | --- | --- | --- |
 | BID-01 | P0 | 현행 공고의 취소·구차수·마감·등록기한, 부서 분야, 문서 추출 위험을 재사용하여 **읽기 전용 '지금 검토' 안전 분류 함수** 구현; 역량/분야 부족도 `CAPABILITY_GAP_MARGIN_REVIEW`로 보존, 추정 이익·자격은 `UNVERIFIED`; 합성 경계 테스트+Codex GO+GitHub CI | 기존 `procurement_filter`, `rfp_coverage`, `bid_readiness` | DONE |
-| BID-02 | P0 | `GET /api/dashboard/bid-now-shortlist` 읽기 전용 로컬 API 노출; 현재 부서 설정과 운영자료를 한 snapshot에서 조회; GET 데이터 비공개 원문/원가 미노출·원본 SHA 불변·Host/CSP 테스트 | BID-01 | IN_PROGRESS |
+| BID-02 | P0 | `GET /api/dashboard/bid-now-shortlist` 읽기 전용 로컬 API 노출; 현재 부서 설정과 운영자료를 한 snapshot에서 조회; GET 데이터 비공개 원문/원가 미노출·원본 SHA 불변·Host/CSP 테스트 | BID-01 | DONE |
 | BID-03 | P0 | `/decision-preview`에 `지금 검토 가능한 후보` 별도 탭/필터 및 제외/검토 필요 근거 표시; '법적 적격 미검증' 기본 표시; 기존 목록/상세/결정 화면 보존. Chrome 390px + 일반폭 E2E | BID-02 | PENDING |
 | BID-04 | P0 | **실제** 공고를 로컬 읽기 전용으로 돌려 활성 건수/위험·기한별 건수/일관성 집계; 특정 공고 ID·원문·부서정보는 로컬 로그에서만 처리. 현재 부서 설정이 비어 있거나 운영 스킬·MM/원가 근거 없으면 `BLOCKED_EVIDENCE` | BID-02, BID-03 | PENDING |
 | BID-05 | P1 | 공식 첨부 확보 대기/부분 추출/잘림/경고 후보를 소요 대비 우선순위로 자동 작업 큐에 연결; 공개 공식 URL·정정/취소·원본 SHA 결속, 기존 배치의 무단 재시도/다운로드 금지; 공식 자료 확보 후에만 재평가 | BID-04 및 공식 원본 접근 가능 | PENDING |
@@ -53,6 +53,8 @@
 | 2026-10-18 | BID-09 | 사람의 화면 인수·`main`/공개 릴리스 미승인 | 이 단계는 자동화가 승인 대체 불가 | 사용자 별도 명시적 승인 | OPEN |
 
 ## 5. EXECUTION_LOG (append semantic checkpoints)
+
+- 2026-10-18 / BID-02 **DONE**: [구현 커밋 9f3ab29](https://github.com/son1004007/public-bid-agent/commit/9f3ab295413725f810fefcc13f7212b340bbd0dc). 전체 Python **418 PASS**, 관련 **21 PASS**, Codex 독립 재검수 **VERDICT: GO**, 추가 28 in-memory PASS. [Sprint 1 CI 39130071318](https://github.com/son1004007/public-bid-agent/actions/runs/39130071318) SUCCESS, [Windows synthetic 39130071253](https://github.com/son1004007/public-bid-agent/actions/runs/39130071253) SUCCESS. 로컬 저장된 실공고 5,691건 읽기 전용 상태 집계: 분야 일치 검토 178, 역량 보완/수익 검토 2,158, 등록 사전 검토 393. 이는 실제 적격/이익 확인이 아닌 **작업 큐**이며 원본 부서/원가·본문은 미반환. **다음 BID-03: 로컬 화면에 세 큐와 미확인 위험/이익 라벨을 표시, 모바일·데스크톱 E2E.**
 
 - 2026-10-18 / BID-02 수정본 **전체 Python 418 PASS**, Codex 독립 재검수 **VERDICT: GO**, 메모리 기반 추가 28 검증 PASS, 문서 동기화 및 `git diff --check` PASS. 비정상 공고 ID/날짜의 보류 처리 확인, 실제 보호 스냅샷 5,691건 읽기 전용 분류. **GitHub CI 성공 전에는 DONE으로 올리지 않음.**
 

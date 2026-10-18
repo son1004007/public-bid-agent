@@ -4,7 +4,8 @@
 
 - **[BID-NOW 지속 실행 백로그](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md)**를 매회 첫 번째로 읽고 BID-01부터 순차 처리. 선행조건/실패 기록은 해당 파일의 BLOCKERS, 검증 실행 결과는 EXECUTION_LOG에 남긴다. 과거 P09·패키지 작업보다 실제 부서 적합성/기한/공식 원본 확인이 우선.
 - [x] BID-01 **DONE**: 코드·전체 Python 412 PASS·Codex GO(+독립 경계 54 PASS), GitHub Sprint 1 CI 39128145994 및 Windows 인수 CI 39128145903 모두 SUCCESS. 다음 BID-02 로컬 GET API/스냅샷 연동: 현재 공고의 부서 관심분야·공식 마감/등록·취소·STALE·원본문서 위험을 사용하는 보수적 읽기 전용 분류. **분야/현재 보유 역량 미일치만으로 보완 가능한 고이익 기회 폐기 금지**, 예상 수익은 비용·증빙 확인 전 UNVERIFIED. 법적 적격/인력/원가 충족 자동 확정 금지.
-- [ ] BID-02 진행: 같은 잠금에서 공식 공고·부서 선택·운영정보 조회, 비공개 정보 미출력. 로컬 합성 테스트 PASS, Codex/CI 후 DONE. 실제 5,691개 중 역량 보완 검토 2,158건은 추정 수익 미검증 상태.
+- [x] BID-02 DONE: `/api/dashboard/bid-now-shortlist` 같은 잠금 공고·부서·운영정보 로컬 검토 API. 전체 Python 418 PASS, Codex GO, GitHub CI 2개 SUCCESS. 역량 보완 검토 2,158건은 실제 추정 이익 미검증.
+- [ ] BID-03 NEXT: `/decision-preview`에 현재 분야 일치/역량 보완·수익성 검토/사전등록 검토 목록을 위험·미확인 라벨과 함께 표시하고 Chrome 모바일·데스크톱 회귀 검증.
 - [ ] 후속 BID-03~BID-09는 백로그의 의존관계에 따라 한 번에 하나씩, Codex 검수·CI 근거 후 DONE. 모니터링과 **작업 실행 자동화**는 별도.
 
 
