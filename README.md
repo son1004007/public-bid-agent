@@ -1,5 +1,7 @@
 # Public Bid Agent | 공공 입찰 참여 의사결정 지원
 
+> **2026-10-18 D-20 최우선 실행 목표:** 현재 부서와의 기술 역량 일치 외에도 **부족 역량 보완 비용을 포함한 이익 기회**를 검토합니다. 미확인 수익·법정 자격은 UNVERIFIED로 보수 처리하며 취소·마감·정정 증거는 별도. [BID-01~BID-09 작업/선행 차단/일지](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md), [사용자 결정](DECISIONS.md). BID-01은 합성 분류 기능이며 실제 입찰 적격/공고별 이익을 확정하지 않습니다.
+
 > **2026-10-18 P09 NO_GO/P1 격리 수정:** 합성 fixture의 `RFP_BATCH`를 임시 root의 새 manager로 교체하고 네 외부 어댑터를 차단했습니다. 기존 manager/root 접근을 거부하는 GET 회귀와 합성 RUNNING worker lock 검증을 추가하여 API 인수 **11 PASS**. Chrome 재실행은 동일한 sandbox 종료로 **BLOCKED**이며 독립 재검수는 orchestrator 인계입니다. 아래 48 PASS는 수정 전 기록으로 배치 격리를 증명하지 않습니다. [수정·재현·재검증](docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
 
 > **2026-10-18 P09 합성 인수 게이트:** Windows API 보안·파서·이력·복구 **48 PASS**(신규 API 8개 포함). 새 Chrome 파일 선택/수기 이력 E2E와 Windows CI 경로를 추가했으나 이 환경에서는 Chrome 페이지 생성 중 종료되어 **CHROME_E2E BLOCKED**입니다. 운영 자료 접근·배포 없이 독립 검수/CI는 orchestrator 인계. 라이선스·패키지 버전·복구·사용자 UI 승인 게이트는 별도로 유지합니다. [재현 명령·배포 게이트·한계](docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).

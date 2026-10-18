@@ -1,5 +1,7 @@
 # Public Bid Agent — 로컬 실행 사용법
 
+> **2026-10-18 D-20:** 현재 부서의 보유 역량뿐 아니라 합법적으로 인력·기술을 보완했을 때의 잠재 이익을 함께 검토합니다. `bid_now_triage.py`는 정정/취소·입찰 기한·문서 위험을 보수적으로 분류하지만 실질 참가자격/마진을 승인하지 않습니다. [단계별 백로그·차단 조건](../docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md).
+
 > **2026-10-18 P09 NO_GO/P1 격리 수정:** 합성 fixture의 `RFP_BATCH`를 임시 root의 새 manager로 교체하고 네 외부 어댑터를 차단했습니다. 기존 manager/root 접근을 거부하는 GET 회귀와 합성 RUNNING worker lock 검증을 추가하여 API 인수 **11 PASS**. Chrome 재실행은 동일한 sandbox 종료로 **BLOCKED**이며 독립 재검수는 orchestrator 인계입니다. 아래 48 PASS는 수정 전 기록으로 배치 격리를 증명하지 않습니다. [수정·재현·재검증](../docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
 
 > **2026-10-18 P09 합성 인수 게이트:** Windows API 보안·파서·이력·복구 **48 PASS**(신규 API 8개 포함). `node scripts/test_chrome_synthetic.cjs`는 저장소 루트에서 임시 합성 서버/새 Chrome 프로필을 만들어 파일 선택과 수기 이력 저장·재조회를 검사합니다. 현재 환경은 Chrome 페이지 생성 중 종료되어 **CHROME_E2E BLOCKED**입니다. 실제 자료·운영 서버·배포에 접근하지 않으며, 독립 검수/CI 및 라이선스·사용자 인수는 별도입니다. [명령·게이트·한계](../docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).

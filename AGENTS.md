@@ -1,5 +1,7 @@
 # AI 개발 작업 규칙 (AGENTS.md)
 
+> **최신 사용자 D-20:** [부서 현행 수익성 입찰 순차 실행 백로그](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md)를 먼저 확인하십시오. 기존 부서 기술 역량이 부족해도 보완 비용 차감 후 고수익이 가능한 공고는 검토 대상이며, 필수 법적 자격은 우회할 수 없습니다. 한 번에 한 단계, 실패/선행의존성은 같은 문서 BLOCKERS에 기록. 이 작업의 정기 실행과 이전 비활성화된 상태 모니터링은 서로 다릅니다.
+
 > **새 AI/Codex 시작 순서 (2026-10-14 확정):**
 > 1. 전역 `son1004007/ai-agent-workflow-playbook/CONTROL.md`와 이 `AGENTS.md`
 > 2. **[`DECISIONS.md`](DECISIONS.md): 사용자 확정 결정·이번 작업 범위·제외 사항·다음 단계 승인 경계**

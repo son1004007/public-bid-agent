@@ -1,5 +1,12 @@
 # 현재 개발 상태
 
+## 2026-10-18 D-20 부서 현행 입찰 선별 우선 개발
+
+- 최신 사용자 목표: **현재 부서 자체 역량이 부족해도 실제 보완 가능하고 비용 차감 후 이익이 큰 공고까지 검토**. 필수 법적 자격·공식 기한은 보수적으로 확인. 금액·원가 근거가 없으면 마진 미확인으로 유지. 기존 전체 공고 수집·보존, 취소·정정·구차수 이력 유지.
+- 최신 승인 실행 계획 [BID-01~BID-09 및 BLOCKERS](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md)를 최우선으로 실행. BID-01은 보수적 검토 작업 큐부터 시작하고, 회사 증빙 없는 자동 `READY_TO_BID_VERIFIED` 판정 금지.
+- 사용자 지시에 따른 새 작업 실행 일정은 별도로 관리하며 이전 '매시간 상태 모니터링'은 중지 유지. 사용자의 실제 Bid/No-Bid, main, 공개 배포는 자동 실행하지 않음.
+
+
 ## 2026-10-18 20:46 이후 감사 전용 누락 패키지 설치 확인
 
 - Windows P09 운영 Python과 분리된 `AgentRunner/audit-venv` 생성. 개발 검증 도구 `jsonschema 4.26.0`, `packageurl-python 0.17.6`, `pip-audit 2.10.1`, `license-expression 30.4.4`, `cyclonedx-python-lib 11.12.0` 설치. 양쪽 환경 `pip check` 확인, 운영 P09 서비스에는 별도 설치하지 않음.
