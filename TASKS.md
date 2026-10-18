@@ -4,6 +4,14 @@
 
 > **현재 작업 선택 기준:** [DECISIONS.md](DECISIONS.md)의 사용자 결정 D-10(7일 API 오류 선제 진단 제외), D-11(RFP 구조화 1단계), D-12(다음 단계 사용자 재결정)을 우선합니다. 아래 2026-10-13 이전의 '우선 작업'은 역사적 백로그이며, 실제 완료·보류 상태는 최신 하단 이력 및 [AI_CONTEXT.md](AI_CONTEXT.md)를 확인하십시오.
 
+## 2026-10-18 P05 합성 출처 안전성 검증
+
+- [x] 식별자 길이 초과 절단/충돌 실패 4개 subtest 재현 후 전체 문자열 검증으로 보완.
+- [x] 신규 14개 합성 테스트로 source identity·숫자/별칭 차수·취소/구차수/STALE 차단·원문/사람 판단 보존 확인. 관련 회귀 **76 PASS**. [증거](docs/reviews/P05_SYNTHETIC_SOURCE_SAFETY_2026-10-18.md).
+- [x] 독립 NO_GO/P1의 같은 배치 취소 손실 재현(신규 4개 테스트/29개 subtest FAIL) 및 페이지·조회기간 중복 제거/저장 병합 보완. 동일·별칭 차수 순열, 원문·사람 판단·입력 불변과 추천 제외 포함 관련 **91 PASS**.
+- [ ] 수정분 orchestrator의 독립 Codex 재검수 및 검수 후 Git 기록/문서 동기화 CI. 기존 NO_GO를 GO로 바꾸지 않음. 이번 작업에서는 add/commit/push·main·배포 금지.
+- [ ] 승인된 실제 공식 원본의 최신성·완전성 확인과 STALE 안전 재검증은 계속 별도. 합성 PASS만으로 P05 전체 완료나 자동 STALE 해제를 허용하지 않음. D-10/P11 조사 보류.
+
 ## 2026-10-16 P04 신규 파서 provenance 추적
 
 - [x] 2026-10-18 NO_GO 2건 보완: PDF Pillow 버전 fingerprint 반영, 저장·현재 provenance strict schema 검증. 패키지별 버전 변경 및 현재 boolean/float schema 회귀 포함 비교·배치 20 PASS.

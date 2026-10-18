@@ -4,9 +4,13 @@
              서버가 판정한 미확인 상태/담당자 의사결정/프로필 버전 이력을 보존한다.
 입력/출력: 공개 공식 목록(JSON) -> 보수적 공고 모델; 사용자 결정 -> 변경 이벤트.
 신뢰 경계: 외부 필드와 사용자 입력 모두 비신뢰. 고정 HTTPS 호스트/경로, 시간·크기·페이지 제한.
+식별자 검증: 공고번호·차수는 양끝 공백만 제거한 전체 문자열을 검사한다.
+             길이 초과/잘못된 문자를 잘라 정상 ID로 병합하지 않고 ProviderError로 거부한다.
 상태/부작용: dashboard.json만 원자 갱신. cases.json/operations.json/AI·인증정보 무변경.
 실패: 인증/통신/응답 오류는 실패; 저장된 공고를 0건 또는 취소로 오인하지 않음.
 불변: 공식 자격/실적/수익/AI 판단을 추측하지 않음.
+취소 보존: 같은 차수의 배치·페이지·조회기간 중복 병합에서 관측한 취소 공고종류를
+             일반 응답으로 덮지 않는다. 다른 메타데이터는 기존 최신 응답 정책을 유지한다.
 첨부 병합: 기존 RFP 증거와 서로 다른 공식 별첨 레코드를 우선 보존하고 공고당 40개 상한 적용. 사람이 내린 결정과 추천 분리.
 관련 자료: docs/research/2026-10-11-dashboard-backend.md, 테스트 test_dashboard_backend.py.
 """
@@ -20,7 +24,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from decision_profiles import clean_policy, clean_weights
-from notice_lifecycle import reconcile, mark_if_metadata_changed
+from notice_lifecycle import reconcile, mark_if_metadata_changed, is_cancel_kind
 from procurement_filter import apply as apply_department_filter
 
 API_URL = "https://apis.data.go.kr/1230000/ad/BidPublicInfoService/getBidPblancListInfoServcPPSSrch"
@@ -101,8 +105,10 @@ def _official_url(candidate) -> str | None:
 def normalize(item: dict) -> dict | None:
     if not isinstance(item, dict):
         raise ProviderError("공식 목록 항목 형식 오류")
-    no = _str(item.get("bidNtceNo"), 32)
-    order = _str(item.get("bidNtceOrd"), 5)
+    no = item.get("bidNtceNo")
+    order = item.get("bidNtceOrd")
+    no = no.strip() if isinstance(no, str) else ""
+    order = order.strip() if isinstance(order, str) else ""
     title = _str(item.get("bidNtceNm"), 250)
     if not no or not re.fullmatch(r"[0-9A-Za-z-]{4,32}", no) or not re.fullmatch(r"[0-9]{1,5}", order):
         raise ProviderError("필수 공고번호·차수 누락")
@@ -182,6 +188,14 @@ def _fetch_json(query: dict, transport=None, endpoint=API_URL) -> dict:
     return parsed
 
 
+def preserve_cancellation(saved: dict | None, fresh: dict) -> dict:
+    """동일 공식 ID/숫자 차수로 매칭된 응답의 취소 신호만 보존. 입력은 변경하지 않는다."""
+    if saved and is_cancel_kind(saved.get("notice_kind")) and not is_cancel_kind(fresh.get("notice_kind")):
+        return {**fresh, "notice_kind": saved["notice_kind"],
+                "notice_lifecycle": "CANCELLED", "window_status": "CANCELLED"}
+    return fresh
+
+
 def collect(key: str, clock=None, transport=None) -> tuple[list[dict], int]:
     key = _validated_key(key)
     end = clock or datetime.now(KST)
@@ -214,7 +228,8 @@ def collect(key: str, clock=None, transport=None) -> tuple[list[dict], int]:
             normalized = normalize(raw)
             scanned += 1
             if normalized:
-                all_notices[normalized["id"]] = normalized
+                all_notices[normalized["id"]] = preserve_cancellation(
+                    all_notices.get(normalized["id"]), normalized)
         count = body.get("totalCount")
         if type(count) is int:
             total = count
@@ -307,6 +322,7 @@ def update_collection(state: dict, notices: list, scanned: int, timestamp: str) 
                         "bid_order": same_revision[0]["bid_order"]}
         if item["id"] in existing:
             old = existing[item["id"]]
+            item = preserve_cancellation(old, item)
             # 공식 정정은 RFP 원문을 덮지 않고 재검증 필요 여부만 기록한다.
             changed += int(mark_if_metadata_changed(old, item, timestamp))
             # 변경된 공식 메타데이터만 덮어쓰며 사람 결정 및 판단 이력은 보존한다.

@@ -19,6 +19,12 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-18 P05 합성 출처·차수·STALE 회귀 및 NO_GO 보완
+
+- 길이 초과 공고번호/차수를 잘라 정상 ID로 수용하던 정규화 경로를 전체 문자열 검증으로 보완. 신규 14개 합성 시험과 관련 회귀 **76 PASS**; 취소·구차수·STALE 차단, 원문·사람 판단 보존 확인. [재현·검증 기록](docs/reviews/P05_SYNTHETIC_SOURCE_SAFETY_2026-10-18.md).
+- 이후 독립 검수 **NO_GO/P1**: 위 76 PASS는 같은 배치의 취소→일반 응답 손실을 놓쳤다. 신규 4개 테스트에서 수정 전 29개 subtest FAIL 재현 후 페이지·조회기간 중복 제거/저장 병합의 취소 보존을 보완. 관련 8개 모듈 **91 PASS**, 독립 Codex 재검수 대기.
+- 전체 회귀/CI/실원본 검증/운영 반영은 NOT RUN. 실제 사용자 JSON/RFP/회사 증빙을 읽거나 전송하지 않았고 STALE 자동 해제 없음. D-10 제외, main·배포·add/commit/push 금지인 이번 작업 지시를 우선. 재검수/Git 기록은 orchestrator 인계.
+
 ### 2026-10-16 P04 미래 추출 parser provenance fingerprint
 
 - 신규 추출 근거에만 `parser_provenance` schema 1(코드/Python/패키지/환경 설정 및 method fingerprint, OCR 바이너리/언어팩 NOT_CAPTURED)을 남기고 재추출 일치 여부를 보수적으로 검사. 구형 근거는 `NOT_VERIFIED`; 기존 캐시를 수정하거나 실제 원본 전체 누락률을 확정하지 않음.

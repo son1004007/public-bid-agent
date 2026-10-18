@@ -1,5 +1,7 @@
 # Public Bid Agent — 로컬 실행 사용법
 
+> **2026-10-18 P05 NO_GO 보완:** 식별자 전체 문자열 검증에 더해, `preserve_cancellation`을 페이지 수집·수동/예약 조회기간 중복 제거·저장 병합에 적용했습니다. 같은 배치의 동일/별칭 차수에서 관측한 취소 공고종류를 일반 응답으로 덮지 않고 다른 메타데이터는 최신 응답 정책을 유지합니다. 원문·사람 판단 보존과 추천 제외 등 합성 회귀 **91개 PASS**. STALE 자동 해제·운영 반영 없음, 독립 Codex 재검수 대기입니다. [실행 명령·검증 기록](../docs/reviews/P05_SYNTHETIC_SOURCE_SAFETY_2026-10-18.md).
+
 > **AI/Codex에게:** 사용자 확정 결정은 [DECISIONS.md](../DECISIONS.md), 현재 실제 사용/보안 경계는 [AI_CONTEXT.md](../AI_CONTEXT.md), 검수·배포 범위는 [AGENTS.md](../AGENTS.md), 최근 실행 결과는 [CURRENT_STATE.md](../CURRENT_STATE.md)와 [TASKS.md](../TASKS.md)를 먼저 확인하십시오. 2026-10-13 이전 자료의 공고 건수는 과거 스냅샷입니다.
 
 > **2026-10-15 로컬 실증:** 기존 127.0.0.1:8765 서버/Chrome RFP 구조화 근거 버튼·모바일 PASS, 개인 JSON/캐시 164/164 SHA 일치, 전체 Python 274 PASS. [실제 인수 검증](../docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 사용자 UI 최종 승인/외부 공개와 구분합니다.

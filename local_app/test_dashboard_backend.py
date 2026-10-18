@@ -2,6 +2,7 @@
 
 실제 serviceKey/사용자 운영 JSON을 읽거나 외부 제공자에 요청하지 않는다.
 """
+import copy
 import io
 import json
 import os
@@ -18,6 +19,7 @@ from urllib.request import Request, urlopen
 import server
 import dashboard_backend as db
 from decision_profiles import default_state as default_profiles
+from recommendations import shortlist
 
 RAW = {
     "bidNtceNo": "202610110001", "bidNtceOrd": "00",
@@ -283,6 +285,41 @@ class DashboardHTTPTests(unittest.TestCase):
         self.assertEqual((self.root / "cases.json").read_bytes(), self.original)
         for invalid in (0, 2, 30, True, "7"):
             self.assertEqual(self.post("/api/dashboard/collect", {"days": invalid})[0], 400)
+
+    def test_seven_day_collection_preserves_cancellation_before_normal_response(self):
+        normal = db.normalize({**RAW, "ntceKindNm": "일반공고",
+                               "bidClseDt": "2099-12-31 18:00:00",
+                               "pubPrcrmntClsfcNm": "소프트웨어개발"})
+        saved = {**normal, "rfp_text": "합성 보존 원문", "document_status": "EXTRACTED",
+                 "document_evidence": [{"id": "synthetic-proof"}],
+                 "final": "bid", "finalReason": "합성 사람 판단"}
+        initial = db.update_collection(db.blank(), [saved], 1, "initial")
+        initial["history"] = [{"id": "synthetic-human-history"}]
+        self.assertEqual(len(shortlist([normal], {"categories": ["SW"], "revision": 0})["results"]), 1)
+        for cancel_day in range(7):
+            with self.subTest(cancel_day=cancel_day):
+                server.persist(initial, self.root / "dashboard.json")
+                daily = [([{**normal, "notice_kind": "취소공고" if day == cancel_day
+                            else "일반공고"}], 1) for day in range(7)]
+                before = copy.deepcopy(daily)
+                with patch.dict(os.environ, {db.KEY_ENV: "SYNTHETIC-KEY-FOR-TEST-123456"}):
+                    with patch.object(server, "fetch_official_notices", side_effect=daily):
+                        code, payload = self.post("/api/dashboard/collect", {"days": 7})
+                self.assertEqual(code, 200)
+                self.assertEqual(daily, before)
+                state = payload["dashboard"]
+                self.assertEqual(state["collection"]["last_scanned"], 7)
+                self.assertEqual(state["collection"]["last_count"], 1)
+                self.assertEqual(len(state["notices"]), 1)
+                row = state["notices"][0]
+                self.assertEqual(row["notice_lifecycle"], "CANCELLED")
+                self.assertEqual(row["rfp_review_status"], "STALE")
+                self.assertEqual(shortlist([row], {"categories": ["SW"], "revision": 0})["results"], [])
+                for field in ("id", "rfp_text", "document_status", "document_evidence", "final", "finalReason"):
+                    self.assertEqual(row[field], saved[field])
+                self.assertEqual(state["history"], initial["history"])
+                self.assertEqual(db.read(self.root / "dashboard.json"), state)
+                self.assertEqual((self.root / "cases.json").read_bytes(), self.original)
 
     def test_seven_day_partial_failure_preserves_previous_records(self):
         prior = db.update_collection(db.blank(), [db.normalize(RAW)], 1, "initial")

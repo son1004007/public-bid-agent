@@ -4,6 +4,7 @@
 부작용: CLI 실행 동의 후에만 외부 AI 전달, 업로드 원본 파일은 미보관.
 보안: OS 비밀 권한, 원자적 JSON 저장, 문서 명령을 도구 실행 지시로 취급하지 않음.
 불변: AI가 법적 자격·낙찰률/사용자 최종결정을 확정하거나 덮어쓰지 않는다.
+수집 병합: 조회기간의 동차수 중복 제거에서도 관측한 공식 취소를 보존한다.
 """
 import base64
 import copy
@@ -30,6 +31,7 @@ from decision_profiles import ProfileConflict, load_state as load_decision_profi
 from dashboard_backend import (
     ProviderError, DashboardConflict, read as read_dashboard, collect as fetch_official_notices,
     update_collection, merge_attachments, failed_collection, record_action, key_available, verify_key, KST,
+    preserve_cancellation,
 )
 from operations import default_profile, clean_profile, clean_plan, calculate, REFERENCE_SECTIONS
 from workforce import load as load_workforce, summary as summarize_workforce
@@ -660,7 +662,8 @@ class Handler(BaseHTTPRequestHandler):
       for lag in range(days-1,-1,-1):
        partial,count=fetch_official_notices(key,clock=end_at-timedelta(days=lag))
        scanned+=count
-       for notice in partial:incoming_by_id[notice["id"]]=notice
+       for notice in partial:
+        incoming_by_id[notice["id"]]=preserve_cancellation(incoming_by_id.get(notice["id"]),notice)
       incoming=list(incoming_by_id.values())
     except ProviderError:
      with LOCK, dashboard_transaction(ROOT):

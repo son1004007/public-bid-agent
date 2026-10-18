@@ -5,6 +5,7 @@
 실패: API 한 구간이라도 실패하면 공고/사람 판단 원본 불변, 실패 메타데이터만 표시.
 동시성: 서버와 공통 .dashboard-rfp.lock 직렬화; 조회 중 잠금을 잡지 않음.
 경계: localhost 개인 PC, 명시 --apply만 쓰기. RFP 원문 자동 전송/AI 호출 없음.
+불변: 조회기간 중복 제거 중 관측한 동차수 취소를 후속 일반 응답으로 해제하지 않는다.
 """
 import argparse
 import json
@@ -17,7 +18,7 @@ from pathlib import Path
 
 from dashboard_backend import (
     KST, ProviderError, collect as collect_day, read as read_dashboard,
-    update_collection, failed_collection
+    update_collection, failed_collection, preserve_cancellation
 )
 from json_transaction import transaction
 from procurement_credentials import CredentialError, active_key
@@ -87,7 +88,7 @@ def fetch_window(key, *, days=7, at=None, collector=collect_day):
         for item in items:
             if not isinstance(item, dict) or not isinstance(item.get("id"), str):
                 raise CollectionFailed("공식 공고 ID 오류")
-            results[item["id"]] = item
+            results[item["id"]] = preserve_cancellation(results.get(item["id"]), item)
     # 이전 일자 오류/빈 페이지를 정상적인 전수 수집으로 저장하지 않는다.
     if scanned < len(results):
         raise CollectionFailed("공고 수집 응답 수와 고유 공고 수 불일치")

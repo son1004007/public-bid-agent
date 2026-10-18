@@ -1,5 +1,7 @@
 # Public Bid Agent | 공공 입찰 참여 의사결정 지원
 
+> **2026-10-18 P05 NO_GO 보완:** 식별자 전체 문자열 검증에 더해, 같은 배치·페이지·조회기간에서 취소 뒤 일반 응답이 와도 취소 신호를 보존합니다. 동일/별칭 차수 순열, 추천 제외, 원문·사람 판단 보존을 포함한 관련 **91개 테스트 PASS**. STALE 자동 해제·운영 반영 없음. 독립 Codex 재검수 대기입니다. [검증 기록](docs/reviews/P05_SYNTHETIC_SOURCE_SAFETY_2026-10-18.md).
+
 > **다른 AI/Codex를 위한 현재 작업 기준:** [DECISIONS.md](DECISIONS.md)에는 사용자의 확정 요구사항·제외한 작업·사용자 최종 승인 경계를, [AI_CONTEXT.md](AI_CONTEXT.md)에는 2026-10-15 기준 실행 환경과 검증 근거를 정리했습니다. 개발 시작 시 [AGENTS.md](AGENTS.md) → **[DECISIONS.md](DECISIONS.md)** → [AI_CONTEXT.md](AI_CONTEXT.md) → [CURRENT_STATE.md](CURRENT_STATE.md) → [TASKS.md](TASKS.md)를 차례로 확인하십시오.
 >
 > **2026-10-15 최신:** 로컬 저장 공고 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE RFP 10), 예약 수집 등록 상태 유지. Stage 1 RFP 구조화는 실제 8765 서버/Chrome 목록→상세→근거 버튼 검증 PASS, 개인 JSON 40개·RFP 캐시 124개 SHA **164/164 동일**, Windows 전체 Python 274 PASS, Codex GO 및 GitHub CI 성공. **사용자 UI 최종 승인·main 병합·인터넷 공개는 별도**입니다. [실제 검증 보고](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). 아래 2,223건/3,049건 등의 수치는 당시 기록입니다.

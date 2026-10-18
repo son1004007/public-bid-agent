@@ -2,6 +2,13 @@
 
 > **이 문서는 날짜별 실증 로그입니다.** 사용자 확정 결정은 [DECISIONS.md](DECISIONS.md)가 원본이며, [AI_CONTEXT.md](AI_CONTEXT.md)가 최신 상태를 짧게 요약합니다. 과거의 '최신 기준' 표기는 해당 시점의 기록입니다. 2026-10-15 로컬 운영 공고는 3,777건(CURRENT 3,263/CANCELLED 201/SUPERSEDED 313, STALE 10), RFP 구조화 Stage 1 실제 8765 서버·Chrome 기능 검증 및 원본 SHA 164/164 일치, 전체 274 PASS·Codex GO를 확인했습니다. **사용자의 최종 UI 승인, main 병합, 공개 릴리스는 별도**입니다.
 
+## 2026-10-18 P05 공식 출처·차수·STALE 합성 검증 (NO_GO 보완, 독립 재검수 대기)
+
+- 공고번호/차수를 자른 뒤 검증하여 서로 다른 입력이 같은 ID로 수용되는 실패 4개 subtest를 재현했다. `normalize`에서 전체 식별자를 검증하도록 수정하고 기존 허용 형식·오류 계약을 유지했다.
+- 신규 합성 회귀 14개: 숫자/별칭 차수 도착 순서, 취소·구차수·STALE 유지, 출처/공고 버전 결속, 캐시/파서 진입 차단, 원문·사람 판단·이력 보존. 관련 7개 모듈 Windows CPython 3.12.0 **76 PASS**. [실행 명령·검증 범위](docs/reviews/P05_SYNTHETIC_SOURCE_SAFETY_2026-10-18.md).
+- 독립 검수 **NO_GO/P1**에서 같은 배치의 취소→일반 응답 손실이 확인됐다. 신규 4개 테스트의 수정 전 29개 subtest FAIL을 재현한 뒤, 페이지·수동/예약 조회기간 중복 제거와 저장 병합에서 관측한 취소 공고종류를 보존하도록 수정했다. 동일/별칭 차수 48개 배치 순열·페이지 경계·조회기간 각 위치·추천 제외·원문/사람 판단/이력/입력 불변·반복 이벤트 보존을 포함하여 관련 8개 모듈 **91 PASS**.
+- **IMPLEMENTED / TESTED**, 수정분 독립 Codex 재검수 대기. 전체 회귀/CI/실원본 검증/운영 반영은 NOT RUN. 실제 사용자 JSON/RFP/회사 증빙 미접근·미전송. STALE 자동 해제 없음, D-10 조사 제외, main·add/commit/push·배포 없음. orchestrator에 재검수/Git 기록 인계.
+
 ## 2026-10-18 P04 NO_GO 지적 2건 수정 (독립 재검수 대기)
 
 - PDF fingerprint에 기존 OCR 이미지 의존성 Pillow의 버전을 포함. 저장·현재 provenance에 같은 strict schema 검사를 적용하여 현재 schema `True`/`1.0`의 거짓 일치 판정을 차단. OCR 실행 파일·언어팩 버전은 `NOT_CAPTURED`, 구형 증거는 `NOT_VERIFIED` 유지. 캐시 마이그레이션 없음.
