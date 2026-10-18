@@ -464,6 +464,12 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 실행: `python -m unittest discover -s local_app -p 'test_*.py'` 및 독립 Codex 읽기 전용 재검수. 실제 사용 데이터의 손상·이력 보존은 테스트 폴더와 별도 원본 해시 점검으로 확인합니다.
 
 
+## 2026-10-18 P09 Windows CI 문자 인코딩 호환성 보완
+
+- GitHub Windows CI의 기본 `cp1252` 로캘에서 한글 합성 RFP 처리 중 문서 파서 자식 프로세스가 JSON을 출력하지 못하던 문제를 해결하기 위해 `local_app/extractors.py`의 CLI JSON 출력에 `ensure_ascii=True`를 적용합니다. 서버는 UTF-8로 동일 JSON을 역직렬화하며 추출 텍스트·보관 정책은 유지합니다.
+- UTF-8 JSON을 읽는 `local_app/test_bid_outcomes.py`의 테스트 파일 I/O에는 `encoding="utf-8"`을 명시합니다. `test_local_acceptance.py`에 강제 `cp1252` 환경 자식 프로세스 회귀를 추가했습니다.
+- 기존 운영 데이터는 수정하지 않으며, 합성 테스트·독립 Codex GO·양쪽 GitHub CI 성공은 별도로 검증합니다. 원문 PDF OCR/법적 적격/사용자 UI 승인은 이 결과만으로 검증되지 않습니다.
+
 ## 2026-10-13 Windows 로컬 공식 공고 예약 갱신 (개발 기능)
 
 - `local_app/scheduled_collection.py`: 사용자 DPAPI 조달청 인증키를 이용하여 공식 전체 용역 공고를 **7개 연속 24시간 구간**으로 조회. 오래된 순서에서 최신 순서로 동일 공고 식별자를 병합하고, 기존 담당자 판단·판단이력·저장 RFP 추출 본문은 변경하지 않음. 제목 키워드로 원천 공고를 제외하지 않음.

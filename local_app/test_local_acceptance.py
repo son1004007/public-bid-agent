@@ -12,6 +12,8 @@
 """
 import base64
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import threading
@@ -287,6 +289,20 @@ class LocalAcceptanceTests(unittest.TestCase):
         self.assertEqual(data["comparison"]["status"], "ORIGINAL_SHA_MISMATCH")
         self.assertFalse(data["original_file_retained"])
         self.assertNotIn(b"synthetic incorrect original", body)
+        self.assert_unchanged()
+
+    def test_parser_stdout_survives_non_utf8_windows_locale(self):
+        # Windows CI can default to cp1252 even when the source is UTF-8.
+        # The child process must emit ASCII-safe JSON without dropping Korean text.
+        environment = dict(os.environ, PYTHONIOENCODING="cp1252")
+        completed = subprocess.run(
+            [sys.executable, str(server.EXTRACTOR), "p09-synthetic.txt"],
+            input=RAW.encode("utf-8"), capture_output=True, timeout=12,
+            env=environment, check=False)
+        self.assertEqual(completed.returncode, 0, "Extractor must not depend on console encoding")
+        result = json.loads(completed.stdout.decode("utf-8"))
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["text"], RAW)
         self.assert_unchanged()
 
     def test_matching_file_uses_real_limited_parser_without_retaining_original(self):

@@ -84,7 +84,7 @@ class BidOutcomeTests(unittest.TestCase):
                         except HTTPError as e:return e.code,json.load(e)
                     denied,_=post({k:v for k,v in headers.items() if k!="X-Local-CSRF"})
                     self.assertEqual(denied,403)
-                    self.assertEqual(json.loads(source.read_text())["revision"],state["revision"])
+                    self.assertEqual(json.loads(source.read_text(encoding="utf-8"))["revision"],state["revision"])
                     success,response=post(headers)
                     self.assertEqual(success,200)
                     self.assertEqual(response["source"],"HUMAN_DECLARED_UNVERIFIED")
@@ -92,7 +92,7 @@ class BidOutcomeTests(unittest.TestCase):
                     self.assertEqual(response["dashboard"]["history"],state["history"])
                     conflict,_=post(headers)
                     self.assertEqual(conflict,409)
-                    self.assertEqual(len(json.loads(source.read_text())["notices"][0]["submission_events"]),1)
+                    self.assertEqual(len(json.loads(source.read_text(encoding="utf-8"))["notices"][0]["submission_events"]),1)
                 finally:
                     http.shutdown();http.server_close();thread.join(4)
 

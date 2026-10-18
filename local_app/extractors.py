@@ -269,11 +269,11 @@ def main() -> None:
         name = sys.argv[1]
         raw = sys.stdin.buffer.read(MAX_RAW+1)
         result = extract_document(name,raw)
-        print(json.dumps({"ok":True,**result},ensure_ascii=False))
+        print(json.dumps({"ok":True,**result},ensure_ascii=True))
     except (ExtractionError, IndexError) as e:
-        print(json.dumps({"ok":False,"error":str(e)},ensure_ascii=False))
+        print(json.dumps({"ok":False,"error":str(e)},ensure_ascii=True))
     except Exception:
-        print(json.dumps({"ok":False,"error":"문서 파서 내부 오류"},ensure_ascii=False))
+        print(json.dumps({"ok":False,"error":"문서 파서 내부 오류"},ensure_ascii=True))
 
 
 if __name__=="__main__":
