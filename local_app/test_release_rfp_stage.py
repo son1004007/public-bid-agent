@@ -2,6 +2,9 @@
 
 공식 사이트·회사 원본·모델 호출 없이 2223개 합성 공고, 127개 가짜 문서,
 124개 청크 파일을 생성해서 이관/백업/복원 계약을 검증한다.
+P08: 수기 제출·평가·선정/미선정 사건도 합성 fixture에 포함해 백업/복구 시 보존하고,
+백업 후 새 수기 기록 또는 백업 손상 시 복원이 안전하게 거부되는지 검증한다.
+모든 apply/rollback/recover 호출의 대상은 테스트가 생성한 임시 경로뿐이다.
 """
 import copy
 import hashlib
@@ -14,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from promote_verified_rfp_stage import apply, plan, rollback, digest, write_atomic
 from rfp_fulltext import store as store_fulltext, load as load_fulltext
+from bid_outcomes import record as record_outcome
 
 
 class ReleaseStageTests(unittest.TestCase):
@@ -41,6 +45,23 @@ class ReleaseStageTests(unittest.TestCase):
         base = {"schema_version":1,"revision":45,"notices":notices,
                 "history":[{"id":"synthetic-human-history"}],
                 "collection":{"status":"SUCCESS"}}
+        # Include each manual phase, including a notice outside the promotion scope.
+        self.manual_events = {}
+        for index, stages in ((0, ("SUBMITTED",)), (1, ("SUBMITTED", "EVALUATED")),
+                              (2, ("SUBMITTED", "EVALUATED", "AWARDED")),
+                              (3, ("SUBMITTED", "EVALUATED", "NOT_AWARDED")),
+                              (70, ("SUBMITTED", "WITHDRAWN"))):
+            notice = notices[index]
+            notice["final"] = "bid"
+            notice["finalReason"] = "합성 참여 결정"
+            notice["rec"] = "hold"
+            events = [{"stage": stage, "observed_on": "2026-10-16",
+                       "evidence_reference": "합성 담당자 자료 확인",
+                       "evaluation_score": 82.5 if stage in ("EVALUATED", "AWARDED", "NOT_AWARDED") else None,
+                       "recorded_at": "2026-10-16T00:00:00+00:00",
+                       "source": "HUMAN_DECLARED_UNVERIFIED"} for stage in stages]
+            notice["submission_events"] = events
+            self.manual_events[notice["id"]] = copy.deepcopy(events)
         write_atomic(self.live/"dashboard.json",base)
         candidate = copy.deepcopy(base)
         count = 0
@@ -101,6 +122,111 @@ class ReleaseStageTests(unittest.TestCase):
         self.assertEqual(digest(self.live/"dashboard.json"),a)
         self.assertEqual(ledger["status"],"PAUSED")
         self.assertEqual(len(refs),124)
+
+    def assert_manual_events(self, root):
+        board = json.loads((root / "dashboard.json").read_text(encoding="utf-8"))
+        notices = {notice["id"]: notice for notice in board["notices"]}
+        for ident, events in self.manual_events.items():
+            self.assertEqual(notices[ident]["submission_events"], events)
+            self.assertEqual(notices[ident]["final"], "bid")
+            self.assertEqual(notices[ident]["finalReason"], "합성 참여 결정")
+            self.assertEqual(notices[ident]["rec"], "hold")
+        self.assertEqual(board["history"], [{"id": "synthetic-human-history"}])
+
+    def test_manual_outcomes_backup_restore_ignores_stage_human_fields(self):
+        candidate = json.loads((self.stage / "dashboard.json").read_text(encoding="utf-8"))
+        candidate["notices"][0]["submission_events"] = []
+        candidate["notices"][0]["final"] = "no_bid"
+        write_atomic(self.stage / "dashboard.json", candidate)
+        before = {name: (self.live / name).read_bytes() for name in ("dashboard.json", "rfp_batch.json")}
+        apply(self.live, self.stage, self.backup)
+        self.assert_manual_events(self.live)
+        self.assert_manual_events(self.backup)
+        for name, content in before.items():
+            self.assertEqual((self.backup / name).read_bytes(), content)
+        self.assertEqual(rollback(self.live, self.backup)["result"], "ROLLED_BACK")
+        self.assert_manual_events(self.live)
+        for name, content in before.items():
+            self.assertEqual((self.live / name).read_bytes(), content)
+            self.assertEqual((self.backup / name).read_bytes(), content)
+
+    def test_new_manual_evaluation_blocks_rollback_and_preserves_backup(self):
+        apply(self.live, self.stage, self.backup)
+        backup_bytes = (self.backup / "dashboard.json").read_bytes()
+        board = json.loads((self.live / "dashboard.json").read_text(encoding="utf-8"))
+        updated = record_outcome(board, {"id": self.targets[0], "expected_revision": board["revision"],
+            "stage": "EVALUATED", "observed_on": "2026-10-18",
+            "evaluation_score": 87.5, "evidence_reference": "합성 신규 평가 자료"},
+            "2026-10-18T00:00:00+00:00")
+        write_atomic(self.live / "dashboard.json", updated)
+        before = {name: (self.live / name).read_bytes() for name in ("dashboard.json", "rfp_batch.json")}
+        with self.assertRaisesRegex(ValueError, "다른 수정"):
+            rollback(self.live, self.backup)
+        for name, content in before.items():
+            self.assertEqual((self.live / name).read_bytes(), content)
+        self.assertEqual((self.backup / "dashboard.json").read_bytes(), backup_bytes)
+        self.assertEqual(updated["notices"][0]["submission_events"][-1]["stage"], "EVALUATED")
+
+    def test_same_revision_outcome_edit_cannot_be_lost_to_rollback(self):
+        apply(self.live, self.stage, self.backup)
+        board = json.loads((self.live / "dashboard.json").read_text(encoding="utf-8"))
+        board["notices"][2]["submission_events"][-1]["evidence_reference"] = "합성 수동 정정 자료"
+        write_atomic(self.live / "dashboard.json", board)
+        before = (self.live / "dashboard.json").read_bytes()
+        backup = (self.backup / "dashboard.json").read_bytes()
+        with self.assertRaisesRegex(ValueError, "실제 내용 변경"):
+            rollback(self.live, self.backup)
+        self.assertEqual((self.live / "dashboard.json").read_bytes(), before)
+        self.assertEqual((self.backup / "dashboard.json").read_bytes(), backup)
+
+    def test_modified_outcome_backup_blocks_rollback_and_pending_recovery(self):
+        import promote_verified_rfp_stage as mod
+        from release_lease import save_intent, read_intent
+        apply(self.live, self.stage, self.backup)
+        backup = json.loads((self.backup / "dashboard.json").read_text(encoding="utf-8"))
+        backup["notices"][3]["submission_events"][-1]["stage"] = "AWARDED"
+        write_atomic(self.backup / "dashboard.json", backup)
+        before = {name: (self.live / name).read_bytes() for name in ("dashboard.json", "rfp_batch.json")}
+        damaged_backup = (self.backup / "dashboard.json").read_bytes()
+        with self.assertRaises(ValueError):
+            rollback(self.live, self.backup)
+        intent = json.loads((self.live / mod.JOURNAL).read_text(encoding="utf-8"))
+        intent["status"] = "PREPARED"
+        save_intent(self.live, "PREPARED", intent)
+        with self.assertRaisesRegex(ValueError, "백업 무결성"):
+            mod.recover(self.live, self.backup)
+        self.assertEqual(read_intent(self.live)["status"], "PREPARED")
+        for name, content in before.items():
+            self.assertEqual((self.live / name).read_bytes(), content)
+        self.assertEqual((self.backup / "dashboard.json").read_bytes(), damaged_backup)
+
+    def test_partial_backup_refuses_resume_after_new_manual_evaluation(self):
+        import promote_verified_rfp_stage as mod
+        from unittest.mock import patch
+        actual_copy = mod.shutil.copy2
+
+        def fail_second_backup(source, destination, *args, **kwargs):
+            if Path(destination) == self.backup / "rfp_batch.json":
+                raise OSError("synthetic interrupted backup")
+            return actual_copy(source, destination, *args, **kwargs)
+
+        before = (self.live / "dashboard.json").read_bytes()
+        with patch.object(mod.shutil, "copy2", side_effect=fail_second_backup):
+            with self.assertRaises(OSError):
+                apply(self.live, self.stage, self.backup)
+        self.assertEqual((self.live / "dashboard.json").read_bytes(), before)
+        self.assertEqual((self.backup / "dashboard.json").read_bytes(), before)
+        board = json.loads(before)
+        updated = record_outcome(board, {"id": self.targets[0], "expected_revision": board["revision"],
+            "stage": "EVALUATED", "observed_on": "2026-10-18", "evaluation_score": 87.5,
+            "evidence_reference": "합성 백업 중단 후 평가"}, "2026-10-18T00:00:00+00:00")
+        write_atomic(self.live / "dashboard.json", updated)
+        edited = (self.live / "dashboard.json").read_bytes()
+        with self.assertRaises(ValueError):
+            apply(self.live, self.stage, self.backup)
+        self.assertEqual((self.live / "dashboard.json").read_bytes(), edited)
+        self.assertEqual((self.backup / "dashboard.json").read_bytes(), before)
+        self.assertFalse((self.backup / "restore_metadata.json").exists())
 
     def test_apply_rollback_preserves_human_decisions(self):
         before={name:digest(self.live/name) for name in ("dashboard.json","rfp_batch.json")}
@@ -166,6 +292,8 @@ class ReleaseStageTests(unittest.TestCase):
         report=recover(self.live,self.backup)
         self.assertEqual(report["result"],"RECOVERED_ROLLBACK")
         self.assertTrue(all(digest(self.live/n)==sha for n,sha in previous.items()))
+        self.assert_manual_events(self.live)
+        self.assert_manual_events(self.backup)
         guard_no_incomplete_journal(self.live)
 
     def test_interrupted_commit_finalizes_when_both_new_files_valid(self):
@@ -179,6 +307,8 @@ class ReleaseStageTests(unittest.TestCase):
         report=recover(self.live,self.backup)
         self.assertEqual(report["result"],"RECOVERED_COMMIT")
         self.assertTrue(all(digest(self.live/n)==sha for n,sha in before.items()))
+        self.assert_manual_events(self.live)
+        self.assert_manual_events(self.backup)
 
 
     def test_same_revision_human_edit_cannot_be_rolled_back(self):
@@ -217,6 +347,7 @@ class ReleaseStageTests(unittest.TestCase):
                          digest(self.backup/"dashboard.json"))
         self.assertEqual(digest(self.live/"rfp_batch.json"),
                          digest(self.backup/"rfp_batch.json"))
+        self.assert_manual_events(self.live)
 
     def test_stage_file_swap_while_validating_is_rejected(self):
         from unittest.mock import patch

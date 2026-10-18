@@ -1,5 +1,7 @@
 # Public Bid Agent — 로컬 실행 사용법
 
+> **2026-10-18 P08 합성 이력 복구 회귀:** `test_bid_outcome_recovery.py`와 `test_release_rfp_stage.py`에서 수기 제출·평가·선정/미선정 이력의 HTTP 재조회·중복·revision 충돌, 원자 저장 실패 후 재시도, 기존 백업·복구의 이력 보존과 최신 편집/변조 거부를 검증합니다. 실행 코드·저장 형식 변경이나 이력 전용 자동 백업 추가는 없습니다. 모든 파일·복구 대상은 테스트 소유 임시 합성 데이터이며 실제 운영 적용·배포 없음, 독립 검수는 orchestrator 인계입니다. [명령·결과·한계](../docs/reviews/P08_SYNTHETIC_HISTORY_RECOVERY_2026-10-18.md).
+
 > **2026-10-18 P07 구형 검증 NO_GO/P2 보완:** `effective_verified`를 조언·요약·저장 검증에 공통 적용하고 UI 계산/체크박스도 같은 조건을 사용합니다. 엄격한 `true`, 유효 Gate 상태 또는 1~5 정수 점수, 비공백 문자열 근거가 함께 있어야 확인 완료로 계산합니다. 기존 저장 플래그는 조회 중 재작성하지 않으며 최종 결정·이력을 보존합니다. 합성 Python **88 PASS**, Node **11 PASS**, JS/공백 검사 PASS. 독립 재검수는 orchestrator 인계이며 운영 반영·배포 없음. [실행 명령·계약](../docs/reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md).
 
 > **2026-10-18 P07 NO_GO/P2 보완:** 자료 헤더 포함 90,000자 상한의 실제 범위·잘림·누락을 `model_input()`에서 공통 계산하여 프롬프트와 `input_coverage`를 만들고, 성공한 초안의 `ai_input_coverage` 및 입력 버전에 기록합니다. UI는 현재 자료의 전달 범위를 표시합니다. 미전달 인용은 거부하며 입력 잘림·누락 시 AI 조건·점수를 제외하고 `RULE_BASED_FALLBACK`/`HOLD_INPUT_INCOMPLETE`로 보류합니다(사용자 확인 미충족은 우선 유지). 사용자 최종 결정·이력 및 GET 비저장 유지. 관련 합성 Python **82 PASS**, Node **8 PASS**, JS 문법·diff 공백 검사 PASS. 독립 재검수 대기이며 아래 75/6은 수정 전 이력입니다. 실제 LLM·비공개 자료·운영 반영 없음. [계약·검증·인계](../docs/reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md).

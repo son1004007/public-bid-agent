@@ -16,7 +16,7 @@
 | P05 | P00 | 정정·취소·STALE와 구형 RFP version 증거 재검증·복원 경로 | 이전 결정·근거·기록 보존; 사용자가 승인한 원본이 없으면 STALE 자동 해제 금지 | PARTIAL; 2026-10-18 NO_GO/P1 같은 배치 취소 손실·수집 중복 제거 보완, 관련 합성 회귀 91 PASS, 독립 재검수 대기([증거](../reviews/P05_SYNTHETIC_SOURCE_SAFETY_2026-10-18.md)); 실제 최신본 비교는 BLOCKED |
 | P06 | P02 | RFP 품질 위험 검토 큐 + 등록·실적·면허·가용공수/원가 근거별 비교 | 메타데이터 기반 큐 구현/테스트, 부서 준비도는 기존 API 재사용. 실제 회사 증빙 없으면 모두 UNVERIFIED | PARTIAL/TESTED; 회사 증빙/권한 BLOCKED |
 | P07 | P03/P06 | AI 분석 초안·근거 확인/불확실성 안내·안전한 fallback | AI 추천과 사람 최종 선택 분리, 출처 연결, 부정확 사례 검수; 외부 LLM은 사용자 매번 명시 동의 후 | PARTIAL; 2026-10-18 NO_GO/P2 입력 절단 보완: 전달 범위·누락 표시/보수적 fallback, 합성 Python 82 PASS, Node 8 PASS. 독립 재검수 대기, 실 AI/비공개 전송 BLOCKED. [인계](../reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md) |
-| P08 | P00 | 제출·평가·수주 이력의 예외/복구/중복·정정 검증 | 원자적 로컬 JSON, concurrency/revision, 실제 제출 동작 금지, 합성 E2E | PARTIAL |
+| P08 | P00 | 제출·평가·수주 이력의 예외/복구/중복·정정 검증 | 원자적 로컬 JSON, concurrency/revision, 실제 제출 동작 금지, 합성 E2E | PARTIAL; 2026-10-18 신규 11개 합성 테스트·기존 fixture 보강, 관련 53 PASS. HTTP 재조회·원자 저장 실패/재시도·프로세스 경합·백업/복원 보호 확인. 독립 검수 orchestrator 인계, 실제 인수·정정 UX 미완료. [증거](../reviews/P08_SYNTHETIC_HISTORY_RECOVERY_2026-10-18.md) |
 | P09 | P01~P08 | Windows localhost 실제 Chrome UI·브라우저 파일/입력·안전한 배포 게이트 | 실제 버튼·오류 상태/로그 없이 정보 노출 여부, 사용자 데이터 SHA 보존, Codex 독립 GO, CI | PARTIAL; 최종 사용자 UI 인수는 USER_APPROVAL |
 | P10 | P09 | 최종 main 병합, 외부 배포, 사용자·회사 승인 | 사용자 명시 승인, 라이선스·인증/보안/백업, 서비스 운영 책임자 | USER_APPROVAL; 자동 진행 금지 |
 | P11 | 별도 | 과거 7일 배치 API 단일 장애 재조사 | **D-10에 따라 현재 수행 대상 제외.** 재발 및 사용자 재요청 시에만 착수 | DEFERRED |

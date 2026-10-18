@@ -19,6 +19,11 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-18 P08 수기 이력 복구 합성 회귀
+
+- 실행 코드/API/저장 형식은 유지하고 신규 11개 테스트 및 기존 백업 fixture를 보강했다. 수기 이력 재조회·중복·원자 저장 실패 후 재시도·실제 두 프로세스 revision 충돌과 백업/복구의 기존 이력·최신 편집 보호를 확인했다. 관련 Python **53 PASS**, 공백 검사 PASS, README 2종 동기화.
+- 공개 소스·임시 합성 데이터만 사용. 독립 Codex 검수/CI/실 운영 복구·Chrome 인수 NOT RUN, orchestrator 인계. 실제 자료·외부 AI·자동 입찰·main·배포·add/commit/push 없음. D-10/P11 보류. [상세 증거·미검증 범위](docs/reviews/P08_SYNTHETIC_HISTORY_RECOVERY_2026-10-18.md).
+
 ### 2026-10-18 P07 구형 검증 NO_GO/P2 보완
 
 - 공백 근거 구형 `verified=true`를 조언·요약·UI 지표/체크박스에서 일관되게 미검증 처리. 원본 기록·최종 결정·이력 보존. 합성 Python **88 PASS**, Node **11 PASS**, JS/공백 검사 PASS. 독립 재검수는 orchestrator 인계이며 GO 아님. [기록](docs/reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md).

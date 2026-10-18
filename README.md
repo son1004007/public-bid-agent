@@ -1,5 +1,7 @@
 # Public Bid Agent | 공공 입찰 참여 의사결정 지원
 
+> **2026-10-18 P08 합성 이력 복구 회귀:** 수기 제출·평가·선정/미선정 이력의 HTTP 재조회·중복·revision 충돌, 원자 저장 실패 후 재시도, 기존 백업·복구의 이력 보존과 최신 편집/변조 거부를 테스트로 보강합니다. 실행 코드·저장 형식 변경이나 이력 전용 자동 백업 추가는 없습니다. 실제 자료 접근·운영 반영·배포 없이 독립 검수는 orchestrator에 인계합니다. [검증 범위·실행 결과](docs/reviews/P08_SYNTHETIC_HISTORY_RECOVERY_2026-10-18.md).
+
 > **2026-10-18 P07 구형 검증 NO_GO/P2 보완:** 저장된 `verified=true`만으로 확인 완료로 계산하지 않습니다. 조언·API 요약·UI 지표/체크박스는 유효 상태/점수와 비공백 문자열 근거를 함께 확인합니다. 구형 공백 근거는 미검증으로 집계하고 가중지표를 보류하며 원본 기록·최종 결정·이력은 보존합니다. 합성 Python **88 PASS**, Node **11 PASS**, JS/공백 검사 PASS. 독립 재검수는 orchestrator 인계이며 운영 반영·배포 없음. [수정·검증 기록](docs/reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md).
 
 > **2026-10-18 P07 NO_GO/P2 보완:** 90,000자 자료 상한의 실제 전달 문자 범위·일부 잘림·전체 누락 문서를 기록하고 표시합니다. 범위 밖 인용은 거부하며 입력 잘림·누락 시 AI 조건·점수를 제외하고 `RULE_BASED_FALLBACK`/`HOLD_INPUT_INCOMPLETE`로 보류합니다(사용자 확인 미충족은 우선 유지). 사용자 최종 결정·이력 및 GET 비저장 유지. 관련 합성 Python **82 PASS**, Node **8 PASS**, JS 문법·diff 공백 검사 PASS. 독립 재검수 대기이며 아래 75/6은 수정 전 이력입니다. 실제 LLM·비공개 자료·운영 반영 없음. [계약·검증·인계](docs/reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md).
