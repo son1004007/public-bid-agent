@@ -1,5 +1,11 @@
 # 애자일 작업 백로그
 
+## 2026-10-18 공급망 후속 검증 완료 기록
+
+- [x] 공급망 보완 `d63adbb` 커밋·푸시, Codex read-only GO, [Sprint 1 CI SUCCESS](https://github.com/son1004007/public-bid-agent/actions/runs/39113379131), [Windows 합성 인수 CI SUCCESS](https://github.com/son1004007/public-bid-agent/actions/runs/39113379117).
+- [x] Windows 운영 P09 소스 유지/HTTP 200, P07 이전 버전 예약 작업 비활성 확인. 이번 CI/문서 업데이트는 기존 실제 데이터·서버 소스 재배포 없음.
+- [ ] 실제 라이선스·NOTICE와 회사/RFP 독립 검증·사용자 UI 인수, P10 사용자 별도 main/공개 승인. 과거 D-10/P11은 보류.
+
 ## 2026-10-18 의존성/라이선스 후속
 
 - [x] 현재 Windows Python 설치 51개/직접 요구사항 10개 버전 적합성·전이 관계·`pip check` 확인. 로컬만에 저장하는 의존성 감사 도구와 7개 합성 회귀.

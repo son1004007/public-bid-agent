@@ -1,5 +1,12 @@
 # 2026-10-18 Python/npm 의존성·취약점 검사
 
+## GitHub 독립 실행 검증
+
+- 구현·문서 커밋 `d63adbbf4c6f8bcbbf7d7a2141f51c7a2fc95d0d` (개발 브랜치). Codex 최종 독립 재검수 **GO**, 첫 NO_GO 2건 보완.
+- [GitHub Sprint 1 CI 39113379131](https://github.com/son1004007/public-bid-agent/actions/runs/39113379131): **SUCCESS**. Python 감사 7개 합성 회귀, 프런트엔드 정확한 잠금 설치, npm High 이상 차단, 타입 검사/빌드 포함.
+- [GitHub Windows 합성 인수 39113379117](https://github.com/son1004007/public-bid-agent/actions/runs/39113379117): **SUCCESS**. localhost API 보안·복구/Chrome 합성 E2E.
+- 본 공급망 작업으로 실제 `127.0.0.1:8765` 서비스 원본을 교체하지 않음. 최종 소스 P09 `f06a3fa`, 이전 P07 자동 재배포 작업 비활성화, 서비스 HTTP 200 재확인. 사용자 자료 변경 없음.
+
 ## 범위와 상태
 
 - 독립 Codex 최신 읽기 전용 재검수 **VERDICT: GO**. 첫 NO_GO 2건(플랫폼 직접 marker/선택 extras 누락) 보완 후 실제 경계·순환 extras·잠금 파일 일치 재검증. Codex 자체의 패키지 설치/OSV/npm 재스캔은 NOT RUN이며, 아래 명시한 Windows 직접 실행 근거와 구분.

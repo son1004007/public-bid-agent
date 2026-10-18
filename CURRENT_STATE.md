@@ -1,5 +1,12 @@
 # 현재 개발 상태
 
+## 2026-10-18 공급망 보완의 최종 구현·CI 결과
+
+- `feat/sprint1-search-demo`의 `d63adbbf4c6f8bcbbf7d7a2141f51c7a2fc95d0d` 공급망 점검/Vite High 수정/React 잠금 파일/CI 보안 게이트·RFP 인수 절차 문서 반영.
+- Codex 독립 검수 최초 NO_GO 2건(의존성 marker/extras 순회) 수정 후 **GO**, 감사 회귀 7건 PASS. [Ubuntu Sprint 1 CI](https://github.com/son1004007/public-bid-agent/actions/runs/39113379131) **SUCCESS**, [Windows 합성 E2E CI](https://github.com/son1004007/public-bid-agent/actions/runs/39113379117) **SUCCESS**.
+- 실제 Python 로컬 서버 배포 소스는 검증된 P09 `f06a3fa` 유지, 서비스 HTTP 200, 이전 P07 자동 적용 스케줄 비활성. 운영 데이터 변경/공개 배포/사용자 UI 승인 없음.
+- 정확한 LICENSE/NOTICE 고지, 실제 RFP 독립 FN 라벨과 회사 승인 증빙, 사용자의 UI 인수는 남은 게이트. [보안 감사](docs/reviews/DEPENDENCY_SECURITY_AUDIT_2026-10-18.md) · [실제 원문 인수](docs/reviews/RFP_REAL_EVIDENCE_GATE_2026-10-18.md).
+
 ## 2026-10-18 잔여 의존성·공급망 점검 진행
 
 - P09 완료와 Windows P07 자동 롤백 방지 상태를 유지한 채 공개 의존성만 조사. Python 직접 10/10 충족, 설치 51개·연결 48개·`pip check` 통과, OSV 공개 패키지 48개 버전 조회 취약점 반환 0.
