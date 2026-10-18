@@ -205,6 +205,8 @@ Codex 1개가 선택된 경우 LangGraph는 independent_analysis에서 1회 호�
 
 ## 2026-10-10 참여 판단 Y1 품질·검증 경계
 
+2026-10-18 P07 보완: 로컬 수동 AI 경로의 `decision_support`는 항상 `DRAFT`이며, 정규화된 `citations`의 source ID·추출 텍스트 SHA·문자 범위·직접 인용을 현재 메모리 자료와 대조한다. 이는 의미/공식 원본/회사 적격 검증이 아니다. 서버가 기록한 `ai_draft_context_sha256`이 없거나 달라지면 과거 AI 주장을 위험 분류에 사용하지 않고, AI·의존성·사유·출처 부족도 `RULE_BASED_FALLBACK`으로 표시한다. GET `/api/state`는 파생 판단을 재계산하되 파일을 쓰지 않으며, 최종 `decision`/이력은 기존 사용자 명시 경로만 갱신한다. 새 의존성·외부 전송 경로·dashboard 자동 AI 기능은 추가하지 않았다. [계약/테스트](reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md).
+
 `cross_review.py`의 모델 원문 의견과 `decision_support.py`의 결정적 보수적 규칙 위험 분류를 분리합니다. `ai_reports[*]`와 `ai_draft`는 미검증 모델 추출, `decision_support`는 Hard Gate 실패/미확인/사용자 충돌 위험, `decision`은 오직 사용자만 갱신합니다. 사용자 보정(`/api/save`) 뒤에도 보수적 검증 분류가 다시 계산됩니다. 위험 분류는 법적 적격, 수주확률, 실제 계약 행위를 뜻하지 않습니다.
 
 ## 2026-10-10 문서 입력 가이드 계약

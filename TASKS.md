@@ -1,5 +1,25 @@
 # 애자일 작업 백로그
 
+## 2026-10-18 P07 구형 검증 NO_GO/P2 보완
+
+- [x] 공백 근거 구형 플래그의 요약/UI 우회 재현 후 공통 유효 검증 조건 적용. 원본 기록·최종 결정·이력 보존.
+- [x] 관련 합성 Python **88 PASS**, Node **11 PASS**, JS/공백 검사 PASS. 신규 회귀 파일 `local_app/test_legacy_verification.py`, `scripts/test_legacy_verification.cjs`. [검증·인계](docs/reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md).
+- [ ] orchestrator 독립 Codex 재검수 및 이후 Git 기록/CI. 기존 NO_GO를 GO로 변경하지 않음. D-10/P11 보류, add/commit/push·main·배포 금지 유지.
+
+## 2026-10-18 P07 입력 절단 NO_GO/P2 보완
+
+- [x] 전달 범위/누락 문서 기록·UI 표시, 미전달 인용 거부, 입력 잘림 시 AI 조건·점수 제외/보류 및 사용자 판단·이력 보존.
+- [x] 신규 Python 7개/Node 2개 경계 회귀 추가. 관련 Python **82 PASS**, Node **8 PASS**, JS/공백 검사 PASS. [증거](docs/reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md).
+- [ ] orchestrator 독립 Codex 재검수 및 이후 Git 기록/CI. 기존 NO_GO는 GO로 변경하지 않음. D-10/P11 보류, add/commit/push·main·배포 금지 유지. 아래 75/6은 수정 전 검증 이력.
+
+## 2026-10-18 P07 합성 추천 초안·불확실성
+
+- [x] 수동 AI 추천/항목별 DRAFT, 현재 텍스트 인용 대조 및 입력 버전 결속, 불완전 추출·의미 미검증 표시.
+- [x] AI/출처/의존성 누락·입력 변경 시 결정적 규칙 fallback; 사용자 unknown/공백 확인값 차단 및 최종 결정·이력 보존.
+- [x] 관련 Python **75 PASS**, Node **6 PASS**, JS 문법 PASS, 기존 결함 2개 재현·수정 확인. [증거/인계](docs/reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md).
+- [ ] orchestrator 독립 Codex 검수 및 이후 Git 기록/CI. 이번 작업은 add/commit/push·main·배포 금지.
+- [ ] 실제 LangGraph 의존성 환경 검증(`langchain_core` 미설치), 브라우저 인수, 승인된 실제 원문·회사 증빙/AI 품질 평가. 합성 인용 일치를 적격·P07 전체 완료로 표시하지 않음. D-10/P11 보류 유지.
+
 ## 2026-10-18 P01/P06 합성 위험 검토·준비도
 
 - [x] PDF 페이지·HWPX 섹션 단위 표/각주/병합/OCR 위험 검토 위치 및 수동 대조 안내 연결.

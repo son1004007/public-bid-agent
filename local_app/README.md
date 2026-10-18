@@ -1,5 +1,11 @@
 # Public Bid Agent — 로컬 실행 사용법
 
+> **2026-10-18 P07 구형 검증 NO_GO/P2 보완:** `effective_verified`를 조언·요약·저장 검증에 공통 적용하고 UI 계산/체크박스도 같은 조건을 사용합니다. 엄격한 `true`, 유효 Gate 상태 또는 1~5 정수 점수, 비공백 문자열 근거가 함께 있어야 확인 완료로 계산합니다. 기존 저장 플래그는 조회 중 재작성하지 않으며 최종 결정·이력을 보존합니다. 합성 Python **88 PASS**, Node **11 PASS**, JS/공백 검사 PASS. 독립 재검수는 orchestrator 인계이며 운영 반영·배포 없음. [실행 명령·계약](../docs/reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md).
+
+> **2026-10-18 P07 NO_GO/P2 보완:** 자료 헤더 포함 90,000자 상한의 실제 범위·잘림·누락을 `model_input()`에서 공통 계산하여 프롬프트와 `input_coverage`를 만들고, 성공한 초안의 `ai_input_coverage` 및 입력 버전에 기록합니다. UI는 현재 자료의 전달 범위를 표시합니다. 미전달 인용은 거부하며 입력 잘림·누락 시 AI 조건·점수를 제외하고 `RULE_BASED_FALLBACK`/`HOLD_INPUT_INCOMPLETE`로 보류합니다(사용자 확인 미충족은 우선 유지). 사용자 최종 결정·이력 및 GET 비저장 유지. 관련 합성 Python **82 PASS**, Node **8 PASS**, JS 문법·diff 공백 검사 PASS. 독립 재검수 대기이며 아래 75/6은 수정 전 이력입니다. 실제 LLM·비공개 자료·운영 반영 없음. [계약·검증·인계](../docs/reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md).
+
+> **2026-10-18 P07 합성 검증:** 수동 AI 검토 화면(`/`)의 `decision_support`는 항상 `draft_state=DRAFT`이며 `source_checks`에서 인용 없음/불일치/추출 문자 일치만 구분합니다. `ai_draft_context_sha256`은 서버가 분석 입력에 결속하며 구형 초안·입력 변경은 fallback 대상입니다. 모델/의존성 누락·시간 초과에도 사용자 확인 기록의 규칙 판단을 제공하고 최종 결정·이력을 변경하지 않습니다. GET은 현재 근거를 재대조하되 저장하지 않습니다. Python **75 PASS**, Node **6 PASS**, JS 문법 PASS; 실제 LangGraph 의존성·LLM/비공개 자료/운영 반영·독립 검수는 별도입니다. [계약·실행 명령·인계](../docs/reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md).
+
 > **2026-10-18 P01/P06 합성 검증:** 원본 대조 후 `페이지·표·각주·OCR 검토 위치`를 펼치면 PDF 페이지별 위험과 HWPX 섹션별 표식을 볼 수 있습니다. 섹션 번호는 원본 페이지가 아니며 이미지 메타데이터 실패는 `null`(미확인)입니다. 준비도 API의 각 `checks` 항목에는 `evidence_gaps`, `data_gaps`, `required_review`, `requirement_comparison=NOT_PERFORMED`, `evidence_verification=UNVERIFIED`를 추가했습니다. 불완전한 reviewed 기록은 `EVIDENCE_RECORD_INCOMPLETE`이며 가용 MM·단가 값/직무명·증빙 본문은 반환하지 않습니다. 관련 Python **82 PASS**, 기존 Node 요약 **3 PASS**, JS 문법 PASS. 실제 회사 증빙·적격·수익성·독립 검수·브라우저 인수·운영 반영은 미검증입니다. [검증 및 인계](../docs/reviews/P01_P06_SYNTHETIC_READINESS_2026-10-18.md).
 
 > **2026-10-18 P05 NO_GO 보완:** 식별자 전체 문자열 검증에 더해, `preserve_cancellation`을 페이지 수집·수동/예약 조회기간 중복 제거·저장 병합에 적용했습니다. 같은 배치의 동일/별칭 차수에서 관측한 취소 공고종류를 일반 응답으로 덮지 않고 다른 메타데이터는 최신 응답 정책을 유지합니다. 원문·사람 판단 보존과 추천 제외 등 합성 회귀 **91개 PASS**. STALE 자동 해제·운영 반영 없음, 독립 Codex 재검수 대기입니다. [실행 명령·검증 기록](../docs/reviews/P05_SYNTHETIC_SOURCE_SAFETY_2026-10-18.md).

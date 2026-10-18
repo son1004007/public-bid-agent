@@ -3,11 +3,21 @@
  * 권한: 서버 localhost CSRF 검증, OAuth/로그인·실제 조달 입찰 기능 없음.
  * 보존: 입력 후 명시적 POST 시 사용자 홈 JSON 저장; 파일 원본은 업로드 후 메모리 제거.
  * 불변조건: 제안 점수를 실제 검증/수주확률로 자동 승격하지 않음.
+ * 사용자 확인: 서버와 동일한 유효 검증 조건으로 계산/체크 표시하되 구형 기록·최종 결정·이력은 변경하지 않음.
+ * 출처: 서버가 대조한 인용을 textContent와 로컬 앵커로만 표시. DRAFT/문자 일치/의미 미검증 구분.
+ * 입력 상한: 현재 자료의 전달 범위·잘림·누락을 표시하며 실제 실행 전후 상태와 구분한다.
  */
 let token="",cases=[],gates=[],factors=[],active=null,operations=null,operationSections=[];
 const el=id=>document.getElementById(id);
 const make=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e};
 const message=text=>el("message").textContent=text;
+function effectiveVerified(item,category){
+ // decision_support.effective_verified와 동일한 조건·공백 집합(BOM 포함), 원본 변경 없음.
+ if(item?.verified!==true || typeof item.evidence!=="string" || !/[^\s\u001c-\u001f\u0085]/.test(item.evidence))return false;
+ if(category==="gates")return ["pass","fail","na"].includes(item.status);
+ if(category==="factors")return Number.isInteger(item.score)&&item.score>=1&&item.score<=5;
+ return false;
+}
 async function api(path,obj){
  const res=await fetch("/api/"+path,{method:"POST",credentials:"same-origin",
   headers:{"Content-Type":"application/json","X-Local-CSRF":token},
@@ -30,9 +40,9 @@ function render(){
  el("caseTitle").textContent=active.title;el("prompt").value=active.prompt;
  renderCostPlan();
  const docs=el("docs");docs.replaceChildren();
- active.documents.forEach(d=>{
+ active.documents.forEach((d,index)=>{
    const info=d.name+" · 추출 "+d.text.length+"자"+(d.method?" · "+d.method:"");
-   const li=make("li",info);docs.append(li);
+   const li=make("li",info);li.id="draft-source-document-"+index;docs.append(li);
    (d.warnings||[]).forEach(w=>{const warning=make("small","주의: "+w);warning.style.display="block";warning.style.color="#9c691f";li.append(warning)});
   });
  const opinions=el("opinions");opinions.replaceChildren();
@@ -41,7 +51,7 @@ function render(){
   const report=active.ai_reports[id];
   if(!report)article.append(make("p","실행 전"));
   else if(report.status==="success"){
-   article.append(make("p","참여 의견: "+report.result.recommendation));
+   article.append(make("p","DRAFT · 미검증 AI 참여 의견: "+report.result.recommendation));
    article.append(make("p",report.result.reason||"별도 이유가 없습니다"));
    article.append(make("p","항목별 근거는 아래 입력칸의 AI 초안으로 옮겨 확인하세요."));
   }else article.append(make("p",report.status+": "+(report.error||"결과 없음")));
@@ -51,9 +61,19 @@ function render(){
  const adviser=active.decision_support||{};
  el("decisionSupport").replaceChildren();
  if(adviser.status){
-   const h=make("strong",(adviser.title||"판단 보조") + " (법적 적격·수주확률 판단 아님)");
+   const h=make("strong","DRAFT · "+(adviser.title||"판단 보조") + " (법적 적격·수주확률 판단 아님)");
    const details=make("p",adviser.basis||"");
    el("decisionSupport").append(h,details);
+   el("decisionSupport").append(make("p",adviser.analysis_mode==="RULE_BASED_FALLBACK"?
+     "규칙 기반 fallback: AI 결과가 없거나 사유·출처가 불완전하여 사용자 확인 기록을 우선합니다.":
+     "규칙 기반 참고판단: AI 인용 문자만 대조했으며 내용의 의미는 미검증입니다."));
+   (adviser.uncertainty||[]).forEach(text=>el("decisionSupport").append(make("p",text)));
+   renderInputCoverage(el("decisionSupport"),adviser.input_coverage);
+   el("decisionSupport").append(make("p","사용자 최종 결정(별도): "+active.decision));
+   if(adviser.draft_context_status!=="CURRENT")el("decisionSupport").append(make("p",
+     adviser.draft_context_status==="CHANGED"?"분석 입력 변경: 이전 AI 초안은 현재 판단 근거에서 제외했습니다.":
+     "AI 분석 입력 버전 미확인: 현재 자료로 재검토가 필요합니다."));
+   renderDraftSources(el("decisionSupport"),adviser.source_checks?.recommendation);
    (adviser.flags||[]).slice(0,12).forEach(v=>{
      const x=make("p",v.name+": "+(v.evidence||"추가 근거가 필요합니다"));
      el("decisionSupport").append(x);
@@ -75,9 +95,9 @@ function render(){
  }else el("crossReview").textContent="교차검토 실행 전입니다.";
  renderInputs();
  el("decision").value=active.decision;el("reason").value=active.reason;
- const gateFail=gates.filter(([key])=>active.gates[key].verified&&active.gates[key].status==="fail").map(x=>x[1]);
- const gateUnknown=gates.filter(([key])=>!active.gates[key].verified||active.gates[key].status==="unknown").length;
- const factorUnknown=factors.filter(([key])=>!active.factors[key].verified||active.factors[key].score===null).length;
+ const gateFail=gates.filter(([key])=>effectiveVerified(active.gates[key],"gates")&&active.gates[key].status==="fail").map(x=>x[1]);
+ const gateUnknown=gates.filter(([key])=>!effectiveVerified(active.gates[key],"gates")).length;
+ const factorUnknown=factors.filter(([key])=>!effectiveVerified(active.factors[key],"factors")).length;
  const index=gateFail.length||gateUnknown||factorUnknown?null:factors.reduce((sum,[key,_,w])=>sum+active.factors[key].score*w/5,0);
  el("review").textContent="필수 미충족: "+(gateFail.join(", ")||"확정 없음")
   +" / 미검증 Gate "+gateUnknown+"개 / 미검증 요인 "+factorUnknown+"개"
@@ -91,7 +111,7 @@ function renderAiFactors(){
   container.append(make("p","AI 분석 결과가 없습니다. AI 영향인자 추출을 실행하면 20개 값을 이곳에서 볼 수 있습니다."));
   return;
  }
- const legend=make("p","현재 표시: AI의 제안 원본 · 원문 검증 전 · 수기 입력값과 별도 · '미확인'은 0점이 아님");
+ const legend=make("p","DRAFT · AI 제안 원본 · 원문 의미 미검증 · 수기 입력값과 별도 · '미확인'은 0점이 아님");
  legend.className="muted";container.append(legend);
  const gateStatus={pass:"충족 제안",fail:"미충족 제안",na:"해당 없음 제안",unknown:"미확인"};
  function group(title,items,category){
@@ -106,14 +126,44 @@ function renderAiFactors(){
    const evidence=make("p","AI가 제시한 근거: "+(data.evidence||"근거가 없습니다."));
    evidence.style.whiteSpace="pre-wrap";evidence.style.overflowWrap="anywhere";
    evidence.style.margin="8px 0 0";card.append(evidence);
-   const note=make("small","출처 검증 상태: 확인 전 (AI 추출값)");
-   note.style.color="#8b5c1e";card.append(note);
+   renderDraftSources(card,active.decision_support?.source_checks?.[category]?.[key]);
    list.append(card);
   });
   container.append(list);
  }
  group("필수 참가조건 8개",gates,"gates");
  group("비교 평가요인 12개",factors,"factors");
+}
+function renderDraftSources(container,check){
+ const labels={EXTRACTED_TEXT_MATCH_ONLY:"추출 텍스트 인용 일치 · 원문 의미 미검증",
+   MISMATCH:"출처 불일치 · 현재 자료로 재검토 필요",MISSING:"출처 없음 · 확인 불가"};
+ container.append(make("p","출처: "+(labels[check?.status]||labels.MISSING)));
+ (check?.links||[]).forEach(link=>{
+  // 외부 URL·HTML·모델이 만든 페이지 번호를 사용하지 않는다.
+  const target=link.source_id==="prompt"?"prompt":
+    /^document:[0-5]$/.test(link.source_id)?"draft-source-document-"+link.source_id.split(":")[1]:null;
+  if(!target)return;
+  const details=make("details");
+  details.append(make("summary","출처 인용 및 검증 정보 펼치기"));
+  const anchor=make("a",link.name||"로컬 자료");anchor.href="#"+target;
+  details.append(anchor,make("blockquote",link.quote),
+    make("p","추출 문자 위치: "+link.offset_start+"–"+link.offset_end+" · 원본 페이지 미확인"),
+    make("p","추출 텍스트 SHA-256: "+link.text_sha256));
+  if(link.input_truncated)details.append(make("p","모델 입력 잘림: 이 자료의 일부만 전달 범위에 포함됩니다. 원본 대조가 필요합니다."));
+  else if(link.partial)details.append(make("p","불완전 추출 가능성: 잘림 또는 파서 경고가 있습니다. 원본 대조가 필요합니다."));
+  container.append(details);
+ });
+}
+function renderInputCoverage(container,coverage){
+ if(!coverage?.incomplete)return;
+ container.append(make("p","모델 입력 잘림·누락 (현재 자료 기준): AI 조건·점수 제외, 규칙 기반 fallback"));
+ const list=make("ul");
+ (coverage.sources||[]).forEach(source=>{
+   const label=source.status==="OMITTED"?"전체 누락":source.status==="TRUNCATED"?"일부 잘림":"전체 포함";
+   list.append(make("li",(source.name||source.source_id)+": "+label+" · 전달 범위 "
+     +source.transmitted_start+"–"+source.transmitted_end+" / 전체 "+source.total_chars+"자 (끝 제외)"));
+ });
+ container.append(list);
 }
 function renderDocumentGuide(data){
  const cards=el("guideCards"), map=el("guideVariables");
@@ -308,7 +358,7 @@ function renderInputs(){
   [["unknown","미확인"],["pass","충족(수기)"],["fail","미충족(수기)"],["na","해당없음(원문)"]].forEach(([v,name])=>{const o=make("option",name);o.value=v;select.append(o)});
   select.value=current.status;st.append(select);
   const ev=make("label","출처·근거(원문 조항/증빙)");const input=make("input");input.maxLength=400;input.dataset.gateEvidence=key;input.value=current.evidence;ev.append(input);
-  const verify=make("label","내가 확인함");verify.className="verify";const cb=make("input");cb.type="checkbox";cb.dataset.gateVerify=key;cb.checked=current.verified;verify.prepend(cb);
+  const verify=make("label","내가 확인함");verify.className="verify";const cb=make("input");cb.type="checkbox";cb.dataset.gateVerify=key;cb.checked=effectiveVerified(current,"gates");verify.prepend(cb);
   [select,input].forEach(e=>e.addEventListener("input",()=>{cb.checked=false}));
   layout.append(st,ev,verify);item.append(layout);gg.append(item);
  });
@@ -319,7 +369,7 @@ function renderInputs(){
   [["","미확인"],["1","1 매우 낮음"],["2","2 낮음"],["3","3 보통"],["4","4 높음"],["5","5 매우 높음"]].forEach(([v,name])=>{const o=make("option",name);o.value=v;select.append(o)});
   select.value=current.score===null?"":String(current.score);st.append(select);
   const ev=make("label","출처·판단 근거");const input=make("input");input.maxLength=400;input.dataset.factorEvidence=key;input.value=current.evidence;ev.append(input);
-  const verify=make("label","내가 확인함");verify.className="verify";const cb=make("input");cb.type="checkbox";cb.dataset.factorVerify=key;cb.checked=current.verified;verify.prepend(cb);
+  const verify=make("label","내가 확인함");verify.className="verify";const cb=make("input");cb.type="checkbox";cb.dataset.factorVerify=key;cb.checked=effectiveVerified(current,"factors");verify.prepend(cb);
   [select,input].forEach(e=>e.addEventListener("input",()=>{cb.checked=false}));
   layout.append(st,ev,verify);item.append(layout);ff.append(item);
  });

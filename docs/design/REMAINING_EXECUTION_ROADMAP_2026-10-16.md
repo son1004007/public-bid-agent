@@ -15,13 +15,15 @@
 | P04 | P00 | 새 추출 증거의 파서 코드·Python·라이브러리/설정 식별정보를 고정 fingerprint로 기록, 재추출 일치 시 비교 | 구형 증거는 NOT_VERIFIED, OCR 바이너리/언어팩 버전은 NOT_CAPTURED, 44,000자 이후 원본 누락/Recall 별도 | IMPLEMENTED/TESTED for future extractions; 실제 원본 재검증 BLOCKED |
 | P05 | P00 | 정정·취소·STALE와 구형 RFP version 증거 재검증·복원 경로 | 이전 결정·근거·기록 보존; 사용자가 승인한 원본이 없으면 STALE 자동 해제 금지 | PARTIAL; 2026-10-18 NO_GO/P1 같은 배치 취소 손실·수집 중복 제거 보완, 관련 합성 회귀 91 PASS, 독립 재검수 대기([증거](../reviews/P05_SYNTHETIC_SOURCE_SAFETY_2026-10-18.md)); 실제 최신본 비교는 BLOCKED |
 | P06 | P02 | RFP 품질 위험 검토 큐 + 등록·실적·면허·가용공수/원가 근거별 비교 | 메타데이터 기반 큐 구현/테스트, 부서 준비도는 기존 API 재사용. 실제 회사 증빙 없으면 모두 UNVERIFIED | PARTIAL/TESTED; 회사 증빙/권한 BLOCKED |
-| P07 | P03/P06 | AI 분석 초안·근거 확인/불확실성 안내·안전한 fallback | AI 추천과 사람 최종 선택 분리, 출처 연결, 부정확 사례 검수; 외부 LLM은 사용자 매번 명시 동의 후 | PARTIAL; 비공개 전송은 BLOCKED |
+| P07 | P03/P06 | AI 분석 초안·근거 확인/불확실성 안내·안전한 fallback | AI 추천과 사람 최종 선택 분리, 출처 연결, 부정확 사례 검수; 외부 LLM은 사용자 매번 명시 동의 후 | PARTIAL; 2026-10-18 NO_GO/P2 입력 절단 보완: 전달 범위·누락 표시/보수적 fallback, 합성 Python 82 PASS, Node 8 PASS. 독립 재검수 대기, 실 AI/비공개 전송 BLOCKED. [인계](../reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md) |
 | P08 | P00 | 제출·평가·수주 이력의 예외/복구/중복·정정 검증 | 원자적 로컬 JSON, concurrency/revision, 실제 제출 동작 금지, 합성 E2E | PARTIAL |
 | P09 | P01~P08 | Windows localhost 실제 Chrome UI·브라우저 파일/입력·안전한 배포 게이트 | 실제 버튼·오류 상태/로그 없이 정보 노출 여부, 사용자 데이터 SHA 보존, Codex 독립 GO, CI | PARTIAL; 최종 사용자 UI 인수는 USER_APPROVAL |
 | P10 | P09 | 최종 main 병합, 외부 배포, 사용자·회사 승인 | 사용자 명시 승인, 라이선스·인증/보안/백업, 서비스 운영 책임자 | USER_APPROVAL; 자동 진행 금지 |
 | P11 | 별도 | 과거 7일 배치 API 단일 장애 재조사 | **D-10에 따라 현재 수행 대상 제외.** 재발 및 사용자 재요청 시에만 착수 | DEFERRED |
 
 ## B. 이번 요청에서 수행할 수 있는 경계
+
+> **2026-10-18 P07 구형 검증 후속:** NO_GO/P2의 공백 근거 구형 플래그 우회를 조언·API 요약·UI 계산/체크박스에서 보완했다. 기존 기록·최종 결정·이력 보존, 관련 합성 Python 88 PASS/Node 11 PASS. 독립 재검수는 orchestrator 인계이며 P07 전체 완료 아님. [수정·검증](../reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md). add/commit/push·main·배포 금지 및 D-10/P11 보류 유지.
 
 > **2026-10-18 P01/P06 작업 갱신:** 페이지/섹션별 표·각주·병합/OCR 검토 신호와 부서 증빙·가용 MM·원가 자료의 부족 사유를 합성 데이터로 보완했다. 관련 Python 82 PASS, 기존 Node 요약 3 PASS, JS 문법 PASS. 독립 검수/실문서·회사 검증/브라우저 인수/운영 적용은 NOT RUN이며 P01/P06 전체 완료가 아니다. [검증·계약](../reviews/P01_P06_SYNTHETIC_READINESS_2026-10-18.md). 이번 사용자 지시로 아래 일반 Git 기록 지시보다 **add/commit/push·main·배포 금지, orchestrator 인계**를 우선한다. D-10/P11 보류 유지.
 

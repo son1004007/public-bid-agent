@@ -1,5 +1,23 @@
 # 현재 개발 상태
 
+## 2026-10-18 P07 구형 검증 NO_GO/P2 보완 (독립 재검수 대기)
+
+- 조언·API 요약·UI 계산/체크박스에 동일한 유효 검증 조건 적용. 구형 공백 근거 8 Gate/12 factor는 미검증·지표 미산출, 원본 플래그·최종 결정·이력 보존.
+- 신규 Python 6개/Node 3개 회귀에서 수정 전 결함 재현 후 관련 Python **88 PASS**, Node **11 PASS**, JS/공백 검사 PASS. 합성 GET 파일 바이트 불변과 부분 저장 응답 검증. [인계](docs/reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md).
+- 이번 작업은 GitHub 연결로 CONTROL 및 지정 handbook 원본 확인. 이전 네트워크 BLOCKED 기록은 당시 이력이다. 실자료·외부 LLM·운영 적용·전체 회귀·독립 재검수 NOT RUN. add/commit/push·main·배포 없음, D-10/P11 보류 유지.
+
+## 2026-10-18 P07 입력 절단 NO_GO/P2 보완 (독립 재검수 대기)
+
+- 90,000자 자료 상한의 실제 전달 범위·누락 문서 기록/표시, 범위 밖 인용 거부 및 입력 절단 시 AI 조건·점수 제외/판단 보류를 추가했다. 사용자 결정·이력 보존, 확인된 사용자 미충족 우선 유지.
+- 수정 전 신규 회귀 3개에서 2 FAIL/1 ERROR로 재현. 신규 7개 포함 관련 Python **82 PASS**, Node **8 PASS**, JS 문법·diff 공백 검사 PASS. 합성 HTTP에서 저장 범위와 전달 문자열 일치 및 조회 파일 불변 확인.
+- 독립 재검수는 orchestrator 인계. 외부 CONTROL/handbook 원본 접근 BLOCKED(네트워크); 저장소 규칙/결정/로드맵 기준. 전체 회귀·실자료·외부 LLM·운영 적용 NOT RUN. 아래 75/6은 수정 전 이력이다. [근거](docs/reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md).
+
+## 2026-10-18 P07 추천 DRAFT·출처·fallback (독립 검수 대기)
+
+- 수동 AI 화면(`/`)에서 인용의 출처 ID·추출 텍스트 SHA·문자 위치·문구를 대조하고 의미/최신성/회사 적격 미검증을 표시한다. 서버의 분석 입력 버전 결속, 구형/변경 입력 및 모델·의존성 누락 fallback, 사용자 unknown/공백 확인값 방어를 추가했다.
+- 합성 Python 관련 7개 모듈 **75 PASS**, Node **6 PASS**, JS 문법 PASS. HEAD 기존 결함 2개 재현·수정 확인. 외부 모델 호출 없이 임시 JSON HTTP로 조회 불변·사용자 결정/이력 보존·늦은 결과 409 확인.
+- 실제 LangGraph 실행은 `langchain_core` 미설치로 BLOCKED(그래프 경계는 mock). 독립 검수·전체 회귀·CI·실자료 검증·브라우저 인수·운영 반영은 NOT RUN. orchestrator 검수/Git 기록 인계이며 P07 전체 완료가 아니다. D-10 보류, main·배포·git add/commit/push 없음. [실행/제약](docs/reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md).
+
 ## 2026-10-18 P01/P06 문서 위험·부서 준비도 합성 보완 (독립 검수 대기)
 
 - PDF 페이지별 OCR 육안 대조 신호/이미지 조사 실패 미확인, HWPX 섹션별 표·각주·병합 표식/원본 페이지 미확인 및 수동 검토 안내를 API/화면에 연결했다. 셀 간격/1×1 span은 병합 위험으로 세지 않는다.

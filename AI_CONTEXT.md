@@ -19,6 +19,21 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-18 P07 구형 검증 NO_GO/P2 보완
+
+- 공백 근거 구형 `verified=true`를 조언·요약·UI 지표/체크박스에서 일관되게 미검증 처리. 원본 기록·최종 결정·이력 보존. 합성 Python **88 PASS**, Node **11 PASS**, JS/공백 검사 PASS. 독립 재검수는 orchestrator 인계이며 GO 아님. [기록](docs/reviews/P07_LEGACY_VERIFICATION_FIX_2026-10-18.md).
+- 이번에는 GitHub 연결로 CONTROL 및 지정 handbook 원본을 확인했다. 실제 문서·외부 LLM·운영 적용·Git 기록 없음. D-10/P11 보류 유지.
+
+### 2026-10-18 P07 입력 절단 NO_GO/P2 보완
+
+- 자료 헤더 포함 90,000자 상한의 실제 범위·누락을 공통 계산/저장하고 UI에 표시. 미전달 인용 거부, 불완전 입력은 AI 조건·점수 제외 및 보수적 보류. 사용자 결정·이력 보존. 관련 Python **82 PASS**, Node **8 PASS**, JS/공백 검사 PASS; 독립 Codex 재검수는 orchestrator 인계이며 아직 GO 아님.
+- 공개 소스·합성 fixture만 사용. 외부 정책 원본 네트워크 접근 BLOCKED; 실제 문서·LLM·운영 반영 없음. D-10/P11 및 Git/배포 금지 유지. 아래 75/6은 수정 전 검증 이력. [인계](docs/reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md).
+
+### 2026-10-18 P07 수동 AI 초안·출처·규칙 fallback
+
+- 로컬 수동 AI 화면(`/`)의 추천/항목별 DRAFT와 출처 ID·추출 텍스트 SHA·문자 범위·인용 대조를 연결했다. 서버 입력 버전이 없는 구형 초안/입력 변경, AI 누락·의존성 장애는 fallback. 사용자 `unknown`/공백 근거는 확인 완료로 인정하지 않는다. 최종 결정과 이력 보존.
+- 합성 Python 7개 모듈 **75 PASS**, Node **6 PASS**, JS 문법 PASS, 기존 결함 2개를 HEAD 코드로 재현 후 수정 확인. 실제 LangGraph는 `langchain_core` 미설치로 BLOCKED; 그래프 경계는 합성 mock, 외부 LLM·실자료·운영 반영·독립 검수/CI/브라우저 인수는 NOT RUN. [인계](docs/reviews/P07_SYNTHETIC_RECOMMENDATION_DRAFT_2026-10-18.md). add/commit/push·main·배포 없음, D-10 보류.
+
 ### 2026-10-18 P01/P06 합성 위험 검토·부서 준비도 보완
 
 - PDF 페이지별 OCR 대조 신호와 HWPX 섹션별 표·각주·병합 표식을 표시. 준비도는 증빙 요약/출처/확인일 누락·미래 확인일 및 가용 MM/원가 자료 부족 사유를 제공한다. 공고별 비교 NOT_PERFORMED, 실제 적격·수익성 UNVERIFIED 유지.

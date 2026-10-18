@@ -1,29 +1,36 @@
 """입찰 실무용 보수적 참고판단 회귀검사."""
 import sys
+import hashlib
 import unittest
 from pathlib import Path
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from decision_support import advise
+from decision_support import advise, context_digest
 import server
 
 
 class DecisionSupportTests(unittest.TestCase):
     def prepare(self,fail=None):
         case=server.create_case("가상 공개 입찰")
+        case["prompt"]="입찰 공고 3절과 가상 회사 조건의 명시적 불일치"
+        citation={"source_id":"prompt", "text_sha256":hashlib.sha256(case["prompt"].encode()).hexdigest(),
+                  "offset_start":0, "offset_end":len(case["prompt"]), "quote":case["prompt"]}
         result=server.normalize({
             "gates":{k:{"status":"fail" if k==fail else "unknown",
-                        "evidence":"입찰 공고 3절과 가상 회사 조건의 명시적 불일치" if k==fail else ""}
+                        "evidence":case["prompt"] if k==fail else "",
+                        "citations":[citation] if k==fail else []}
                      for k,_ in server.GATES},
             "factors":{"technical":{"score":4,"evidence":"가상 기술팀 경험"}},
             "recommendation":"bid" if fail else "hold","reason":""
         })
         case["ai_draft"]=result
+        case["ai_draft_context_sha256"]=context_digest(case)
         return case
 
     def test_unanalyzed_does_not_claim_eligibility(self):
         advice=advise(server.create_case("합성"))
-        self.assertEqual(advice["status"],"NOT_ANALYZED")
+        self.assertEqual(advice["status"],"HOLD_UNVERIFIED")
+        self.assertEqual(advice["analysis_mode"],"RULE_BASED_FALLBACK")
         self.assertTrue(advice["not_legal_eligibility"])
 
     def test_hard_gate_failure_is_visible_even_if_model_said_bid(self):
