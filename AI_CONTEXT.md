@@ -19,6 +19,11 @@
 
 ## 2. 날짜·검증 단위를 명확히 구분한 현황
 
+### 2026-10-18 P01/P06 합성 위험 검토·부서 준비도 보완
+
+- PDF 페이지별 OCR 대조 신호와 HWPX 섹션별 표·각주·병합 표식을 표시. 준비도는 증빙 요약/출처/확인일 누락·미래 확인일 및 가용 MM/원가 자료 부족 사유를 제공한다. 공고별 비교 NOT_PERFORMED, 실제 적격·수익성 UNVERIFIED 유지.
+- 관련 Python **82 PASS**, 기존 Node 요약 **3 PASS**, JS 문법 PASS. 합성 fixture/임시 JSON만 사용. 독립 검수·CI·브라우저 인수·실문서 평가·운영 반영 NOT RUN. orchestrator 검수/Git 기록 인계, D-10 제외 및 add/commit/push·main·배포 금지. [근거](docs/reviews/P01_P06_SYNTHETIC_READINESS_2026-10-18.md).
+
 ### 2026-10-18 P05 합성 출처·차수·STALE 회귀 및 NO_GO 보완
 
 - 길이 초과 공고번호/차수를 잘라 정상 ID로 수용하던 정규화 경로를 전체 문자열 검증으로 보완. 신규 14개 합성 시험과 관련 회귀 **76 PASS**; 취소·구차수·STALE 차단, 원문·사람 판단 보존 확인. [재현·검증 기록](docs/reviews/P05_SYNTHETIC_SOURCE_SAFETY_2026-10-18.md).

@@ -4,6 +4,8 @@
  * 보안: 127.0.0.1 /decision-preview에만 활성화; 공식 데이터의 검증 전 요건·점수는 표시 금지.
  * 상태: 공고·담당자 최종결정과 이력은 dashboard.json으로 원자 저장, 외부 AI 호출 없음.
  * 실패: 공식 API 오류를 합성 자료/0건으로 위장하지 않고 기존 자료를 유지한다.
+ * 검토: 구조 위험은 실제 페이지/섹션 단위로 표시하고 부서 자료 누락·대조 미수행을 구분한다.
+ *       모든 결과는 텍스트 노드로 렌더하며 자료 기록을 실제 적격·수익 확정으로 승격하지 않는다.
  */
 (function () {
   'use strict';
@@ -479,6 +481,8 @@
       const originalPanel=detailBlock('공식 RFP 원본·저장 근거 대조 (로컬, 원본 미보관)');
       const originalInfo=el('p','muted','PC에 별도로 확보한 공식 첨부 파일을 선택하면 원본 SHA, 저장 근거·캐시와 현재 추출기의 일치 여부만 확인합니다. 원본 파일은 저장하지 않으며 실제 필수 요건의 완전성은 별도 검증이 필요합니다.');
       originalInfo.setAttribute('role','status');
+      const originalQualityRows=el('details','');
+      originalQualityRows.append(el('summary','','페이지·표·각주·OCR 검토 위치'));
       const originalSelect=el('select','');
       const options=(Array.isArray(n.document_evidence)?n.document_evidence:[]).filter(p=>p&&p.status==='EXTRACTED'&&/^[a-f0-9]{64}$/.test(p.identity||'')&&/^[a-f0-9]{64}$/.test(p.fulltext_ref||''));
       options.forEach((proof,i)=>{
@@ -497,6 +501,7 @@
         if(!file||!originalSelect.value){originalInfo.textContent='원본 파일과 추출된 저장 증거를 각각 선택하세요.';return;}
         if(file.size>8*1024*1024||file.size===0){originalInfo.textContent='원본 파일은 1바이트 이상 8MiB 이하만 지원합니다.';return;}
         originalCheck.disabled=true;
+        originalQualityRows.replaceChildren(el('summary','','페이지·표·각주·OCR 검토 위치'));
         try{
           const bytes=new Uint8Array(await file.arrayBuffer());
           let binary='';
@@ -511,6 +516,18 @@
             throw Error(response.error||'원본 대조 요청 실패');
           const report=response.comparison;
           const quality=report.quality;
+          if(quality?.mode==='STRUCTURAL_RISK_HINTS_ONLY'){
+            (quality.pages||[]).forEach(page=>originalQualityRows.append(el('p','muted',
+              'PDF '+page.page+'페이지 · 추출 '+page.extracted_chars+'자 · 직접 이미지 객체 '+
+              (page.image_object_count??'미확인')+'개 · '+
+              ((page.flags||[]).join(', ')||'탐지 신호 없음 (안전·완전성 판정 아님)'))));
+            (quality.section_details||[]).forEach(part=>originalQualityRows.append(el('p','muted',
+              'HWPX 섹션 '+part.section+' (원본 페이지 미확인) · 표 '+part.table_elements+
+              ' · 각주 표식 '+part.footnote_markers+' · 병합 표식 '+part.merged_cell_markers+
+              ' · '+((part.flags||[]).join(', ')||'탐지 신호 없음 (완전성 미확인)'))));
+            originalQualityRows.append(el('p','muted',
+              '표의 행·열·병합 셀 읽기 순서, 각주·예외조항, OCR 숫자·날짜·자격 표현을 원본과 대조하세요.'));
+          }
           const qualityHint=quality&&quality.mode==='STRUCTURAL_RISK_HINTS_ONLY'?
             ' / 원본 구조 위험 신호: '+(quality.flags||[]).join(', ')+
             ' / PDF 페이지별 문자 수: '+(quality.pages||[]).map(p=>p.page+':'+p.extracted_chars).join(', ').slice(0,500):
@@ -525,7 +542,7 @@
         finally{originalCheck.disabled=false;}
       });
       originalCheck.disabled=!options.length;
-      originalPanel.append(originalInfo,originalSelect,originalFile,originalCheck);
+      originalPanel.append(originalInfo,originalSelect,originalFile,originalCheck,originalQualityRows);
       section.append(originalPanel);
 
       // 사용자 요청 시에만 기존 RFP 본문에서 명시적 인력 요건 후보를 추출한다.
@@ -610,8 +627,28 @@
           const report=payload.readiness;
           readinessInfo.textContent='현재 상태: '+report.status+
             ' / 입찰 자격·기술·투입 가능성·수익성: 모두 UNVERIFIED';
-          report.checks.forEach(row=>readinessRows.append(el('div','requirementRow',
-            row.label+' · '+row.status)));
+          const gapLabels={
+            SUMMARY_MISSING_OR_INVALID:'근거 요약 누락/형식 오류',
+            SOURCE_MISSING_OR_INVALID:'자료 출처 누락/형식 오류',
+            REVIEW_DATE_MISSING_OR_INVALID:'확인일 누락/형식 오류',
+            REVIEW_DATE_IN_FUTURE:'확인일이 미래임',
+            OPERATIONS_PROFILE_INVALID:'운영자료 형식 재확인 필요',
+            ROLE_CAPACITY_NOT_RECORDED:'직무별 가용공수 미등록',
+            ROLE_COST_NOT_RECORDED:'직무별 원가 미등록',
+            AVAILABLE_MM_UNKNOWN:'가용 MM 미확인 직무 있음',
+            NO_RECORDED_AVAILABLE_MM:'기록된 가용 MM이 모두 0',
+            ZERO_ROLE_COST_REQUIRES_REVIEW:'0원 단가 근거 확인 필요',
+            FULL_COST_BASIS_NOT_RECORDED:'회사 총원가 기준 미확인'
+          };
+          report.checks.forEach(check=>{
+            const row=el('div','requirementRow');
+            row.append(el('strong','',check.label+' · '+check.status));
+            [...(check.evidence_gaps||[]),...(check.data_gaps||[])].forEach(gap=>
+              row.append(el('span','muted',gapLabels[gap]||'추가 근거 확인 필요')));
+            (check.required_review||[]).forEach(step=>row.append(el('span','muted',step)));
+            row.append(el('span','muted','공고별 요건 대조 미수행 · 자료의 실제 유효성 미검증'));
+            readinessRows.append(row);
+          });
         }catch(error){readinessInfo.textContent='조회 실패: '+error.message;}
         finally{readinessButton.disabled=false;}
       });
@@ -881,6 +918,7 @@
         row.append(el('strong','',item.id+' · 위험 순위 가중치 '+item.priority),
           el('span','muted',item.document_state+' / '+item.flags.join(', ')),
           el('span','muted','원본 확인·정정 차수·표/각주/OCR 및 필수요건 모두 확인 필요'));
+        (item.required_review||[]).forEach(step=>row.append(el('span','muted',step)));
         row.append(btn('공고·원문 근거 확인',()=>{selected=item.id;openFullDetail(item.id);}));
         reviewRows.append(row);
       });

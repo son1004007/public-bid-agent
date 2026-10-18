@@ -51,6 +51,11 @@ class RfpReviewQueueTests(unittest.TestCase):
                         self.assertEqual(resp.status,200);reply=json.load(resp)
                     self.assertEqual(reply["queue"]["total"],1)
                     self.assertEqual(reply["storage"],"LOCAL_READ_ONLY")
+                    row=reply["queue"]["results"][0]
+                    self.assertEqual(row["structural_diagnostic"],"NOT_PERFORMED_BY_QUEUE")
+                    self.assertEqual(len(row["required_review"]),4)
+                    for word in ("페이지","표","각주","OCR"):
+                        self.assertIn(word," ".join(row["required_review"]))
                     self.assertNotIn("sensitive",json.dumps(reply))
                     self.assertEqual(before,(file.read_bytes(),profile.read_bytes()))
                 finally:

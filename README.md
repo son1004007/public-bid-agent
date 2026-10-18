@@ -1,5 +1,7 @@
 # Public Bid Agent | 공공 입찰 참여 의사결정 지원
 
+> **2026-10-18 P01/P06 합성 검증:** 원본 대조 결과에 PDF 페이지별 OCR 육안 대조 신호와 HWPX 섹션별 표·각주·병합 셀 표식을 표시합니다. 부서 증빙 준비도는 출처/요약/확인일 누락·미래 확인일 및 가용 MM/원가 자료의 부족 사유를 구분합니다. 공고별 실제 요건 대조·자격·수익성은 미검증입니다. Python 관련 회귀 **82 PASS**, Node 기존 요약 계약 **3 PASS**, JS 문법 PASS. README 2종 동기화, 독립 검수/실문서·브라우저 인수/운영 적용은 NOT RUN. [검증 및 인계](docs/reviews/P01_P06_SYNTHETIC_READINESS_2026-10-18.md).
+
 > **2026-10-18 P05 NO_GO 보완:** 식별자 전체 문자열 검증에 더해, 같은 배치·페이지·조회기간에서 취소 뒤 일반 응답이 와도 취소 신호를 보존합니다. 동일/별칭 차수 순열, 추천 제외, 원문·사람 판단 보존을 포함한 관련 **91개 테스트 PASS**. STALE 자동 해제·운영 반영 없음. 독립 Codex 재검수 대기입니다. [검증 기록](docs/reviews/P05_SYNTHETIC_SOURCE_SAFETY_2026-10-18.md).
 
 > **다른 AI/Codex를 위한 현재 작업 기준:** [DECISIONS.md](DECISIONS.md)에는 사용자의 확정 요구사항·제외한 작업·사용자 최종 승인 경계를, [AI_CONTEXT.md](AI_CONTEXT.md)에는 2026-10-15 기준 실행 환경과 검증 근거를 정리했습니다. 개발 시작 시 [AGENTS.md](AGENTS.md) → **[DECISIONS.md](DECISIONS.md)** → [AI_CONTEXT.md](AI_CONTEXT.md) → [CURRENT_STATE.md](CURRENT_STATE.md) → [TASKS.md](TASKS.md)를 차례로 확인하십시오.

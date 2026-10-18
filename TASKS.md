@@ -1,5 +1,13 @@
 # 애자일 작업 백로그
 
+## 2026-10-18 P01/P06 합성 위험 검토·준비도
+
+- [x] PDF 페이지·HWPX 섹션 단위 표/각주/병합/OCR 위험 검토 위치 및 수동 대조 안내 연결.
+- [x] 부서 증빙 출처·확인일/요약 누락과 인력·원가 준비도 사유 표시; 공고별 실제 비교/자격/수익은 미검증 유지.
+- [x] 관련 Python 82 PASS, 기존 Node 요약 3 PASS, JS 문법 PASS; 합성 HTTP 비노출/임시 JSON 불변. [실행·인계 기록](docs/reviews/P01_P06_SYNTHETIC_READINESS_2026-10-18.md).
+- [ ] orchestrator의 독립 Codex 검수 및 이후 Git 기록·CI. 이번 작업에서는 git add/commit/push, main, 배포 금지.
+- [ ] 실제 원본 전체 표/각주/OCR 누락·부서 증빙·기간별 MM/원가의 공고별 대조 및 브라우저 인수는 별도 승인/근거 필요. P01/P06 전체 완료 아님. D-10/P11은 보류.
+
 > **2026-10-15 최신 실제 완료 상태:** Windows PC 온라인 재연결 후 8765 로컬 서버 기동, 실제 Chrome 목록→상세→RFP 구조화 버튼과 근거 출력 PASS. 저장 공고 3,777건, 현행 RFP fulltext 후보 65건. 비공개 JSON 40개 + RFP 캐시 124개 **164/164 SHA 불변**, Windows 전체 Python **274 PASS**, JS·문서 검사 PASS, Codex 최종 GO·GitHub CI 성공. [실제 검증](docs/reviews/RFP_STAGE1_LOCAL_ACCEPTANCE_2026-10-15.md). **사용자 UI 최종 승인 및 다음 단계 결정만 대기**합니다. 7일 API 오류 원인 진단은 계속 보류합니다.
 
 > **현재 작업 선택 기준:** [DECISIONS.md](DECISIONS.md)의 사용자 결정 D-10(7일 API 오류 선제 진단 제외), D-11(RFP 구조화 1단계), D-12(다음 단계 사용자 재결정)을 우선합니다. 아래 2026-10-13 이전의 '우선 작업'은 역사적 백로그이며, 실제 완료·보류 상태는 최신 하단 이력 및 [AI_CONTEXT.md](AI_CONTEXT.md)를 확인하십시오.
