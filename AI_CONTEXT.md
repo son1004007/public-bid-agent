@@ -1,5 +1,7 @@
 # AI 개발 작업 안내 - Public Bid Agent
 
+> **BID-02 진행:** `GET /api/dashboard/bid-now-shortlist`가 실제 공고·관심분야·운영 준비도를 같은 잠금에서 평가하는 비식별 로컬 큐. 역량/분야 부족으로 자동 탈락시키지 않고 보완/수익성을 별도 UNVERIFIED로 분리합니다. 실데이터 5,691건을 읽기 전용 확인해 matching 178, augmentation review 2,158, preregistration review 393. 문서/실제 비용·면허/기한의 확인이 없으면 입찰 가능 판정 금지. [계획·BLOCKERS](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md).
+
 > **최신 D-20(2026-10-18):** 사용자는 *지금 현재 부서가 보완 가능한 역량 부족까지 고려하여 수익성 있는 공고를 검토* 먼저 보길 원함. 법적 적격/인력·원가 근거 없는 분야 후보를 실제 입찰 가능한 것으로 표시하지 말 것. [단일 실행 백로그/BLOCKERS](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md)의 BID-01부터 순차 개발. 매회 작은 구현/테스트/Codex GO/개발 브랜치 Git 푸시/CI. 비공개 실제 RFP·회사 인력·원가 외부 전송, main, 공개/실제 제출 금지. 과거 상태 모니터링은 비활성 유지.
 
 > **2026-10-18 감사 환경 분리:** P09 운영 Python과 별도인 `AgentRunner/audit-venv`에 `jsonschema/packageurl-python/pip-audit/license-expression/cyclonedx-python-lib` 도구 설치 완료. 공급망 감사 결과와 라이선스 원본 검증 한계는 [LOCAL_AUDIT_TOOLS_2026-10-18.md](docs/reviews/LOCAL_AUDIT_TOOLS_2026-10-18.md). 실제 RFP 독립 정확도/인력·원가 증빙/사용자 승인 미확정; `main` 및 외부 공개 미진행.

@@ -23,6 +23,13 @@ MARGIN_UNKNOWN="UNVERIFIED"
 CAPABILITY_UNKNOWN="UNVERIFIED"
 
 
+def _safe_timestamp(value):
+    try:
+        return timestamp(value)
+    except (OverflowError,TypeError,ValueError):
+        return None
+
+
 def classify(notice, profile, *, at=None):
     if not isinstance(notice,dict) or not isinstance(profile,dict):
         raise ValueError("공지/부서 설정 객체 필요")
@@ -36,8 +43,11 @@ def classify(notice, profile, *, at=None):
     kind=notice.get("notice_kind","")
     flags=_quality_flags(notice)
     document=_status(notice)
-    window=bid_window(notice.get("end"), kind,
-                      notice.get("qualification_deadline",""),at=when)
+    try:
+        window=bid_window(notice.get("end"), kind,
+                          notice.get("qualification_deadline",""),at=when)
+    except (OverflowError,TypeError,ValueError):
+        window="UNKNOWN"
     matching=(notice.get("department_status")=="CANDIDATE"
               and isinstance(notice.get("department_categories"),list)
               and bool(set(x for x in notice["department_categories"]
@@ -58,7 +68,7 @@ def classify(notice, profile, *, at=None):
     elif ("qualification_deadline" in notice
           and (not isinstance(notice["qualification_deadline"],str)
                or not notice["qualification_deadline"].strip()
-               or timestamp(notice["qualification_deadline"]) is None)):
+               or _safe_timestamp(notice["qualification_deadline"]) is None)):
         # Present-but-unparseable preregistration deadline is not proof of no restriction.
         status="REVIEW_REGISTRATION"
         reason.append("QUALIFICATION_DEADLINE_INVALID_OR_UNVERIFIED")

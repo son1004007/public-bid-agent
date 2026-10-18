@@ -90,6 +90,14 @@ class BidNowTriageTests(unittest.TestCase):
         self.assertEqual(r["legal_eligibility"],"UNVERIFIED")
         self.assertEqual(r["estimated_profit"],"UNVERIFIED")
 
+    def test_extreme_out_of_range_datetime_fails_closed(self):
+        extreme="0001-01-01T00:00:00+23:59"
+        result=classify(notice(end=extreme),PROFILE,at=NOW)
+        self.assertEqual(result["status"],"REVIEW_UNKNOWN_DEADLINE")
+        result=classify(notice(qualification_deadline=extreme),PROFILE,at=NOW)
+        self.assertEqual(result["status"],"REVIEW_UNKNOWN_DEADLINE")
+        self.assertEqual(result["legal_eligibility"],"UNVERIFIED")
+
     def test_fail_on_invalid_configuration_or_clock(self):
         for p in ({"categories":["EVIL"]},{"categories":"SW"},None):
             with self.assertRaises(ValueError):

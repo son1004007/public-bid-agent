@@ -23,7 +23,7 @@
 | ID | 우선순위 | 작업과 검증 가능한 종료조건 | 선행 의존성 | 상태 |
 | --- | --- | --- | --- | --- |
 | BID-01 | P0 | 현행 공고의 취소·구차수·마감·등록기한, 부서 분야, 문서 추출 위험을 재사용하여 **읽기 전용 '지금 검토' 안전 분류 함수** 구현; 역량/분야 부족도 `CAPABILITY_GAP_MARGIN_REVIEW`로 보존, 추정 이익·자격은 `UNVERIFIED`; 합성 경계 테스트+Codex GO+GitHub CI | 기존 `procurement_filter`, `rfp_coverage`, `bid_readiness` | DONE |
-| BID-02 | P0 | `GET /api/dashboard/bid-now-shortlist` 읽기 전용 로컬 API 노출; 현재 부서 설정과 운영자료를 한 snapshot에서 조회; GET 데이터 비공개 원문/원가 미노출·원본 SHA 불변·Host/CSP 테스트 | BID-01 | PENDING |
+| BID-02 | P0 | `GET /api/dashboard/bid-now-shortlist` 읽기 전용 로컬 API 노출; 현재 부서 설정과 운영자료를 한 snapshot에서 조회; GET 데이터 비공개 원문/원가 미노출·원본 SHA 불변·Host/CSP 테스트 | BID-01 | IN_PROGRESS |
 | BID-03 | P0 | `/decision-preview`에 `지금 검토 가능한 후보` 별도 탭/필터 및 제외/검토 필요 근거 표시; '법적 적격 미검증' 기본 표시; 기존 목록/상세/결정 화면 보존. Chrome 390px + 일반폭 E2E | BID-02 | PENDING |
 | BID-04 | P0 | **실제** 공고를 로컬 읽기 전용으로 돌려 활성 건수/위험·기한별 건수/일관성 집계; 특정 공고 ID·원문·부서정보는 로컬 로그에서만 처리. 현재 부서 설정이 비어 있거나 운영 스킬·MM/원가 근거 없으면 `BLOCKED_EVIDENCE` | BID-02, BID-03 | PENDING |
 | BID-05 | P1 | 공식 첨부 확보 대기/부분 추출/잘림/경고 후보를 소요 대비 우선순위로 자동 작업 큐에 연결; 공개 공식 URL·정정/취소·원본 SHA 결속, 기존 배치의 무단 재시도/다운로드 금지; 공식 자료 확보 후에만 재평가 | BID-04 및 공식 원본 접근 가능 | PENDING |
@@ -34,7 +34,7 @@
 
 ## 3. 매회 자동 실행 계약
 
-- 별도 신규 자동 작업: **매일 오전 8시경(Asia/Seoul), 유동 실행**. 매번 이 문서를 읽고 가능한 단계 한 건만 처리한다. GitHub/Windows/Codex 권한이 없는 실행에서는 BLOCKED 근거를 보고하며 수행했다고 주장하지 않는다. 예전 매시간 상태 모니터링은 비활성화 상태 그대로다.
+- 별도 신규 자동 작업: **매시간 1회(Asia/Seoul), 정기 실행**. 사용자의 변경 요청에 따라 기존 매일 8시 실행에서 변경됨. 매번 이 문서를 읽고 가능한 단계 한 건만 처리한다. 새 작업 실행과 비활성화된 기존 단순 상태 모니터링은 구별한다. GitHub/Windows/Codex 권한이 없는 실행에서는 BLOCKED 근거를 보고하며 수행했다고 주장하지 않는다. 예전 매시간 상태 모니터링은 비활성화 상태 그대로다.
 
 1. 시작 시 `AGENTS.md` → `DECISIONS.md` → 이 문서 → `CURRENT_STATE.md`/`TASKS.md` → 최근 GitHub CI·실제 Windows 상태를 다시 읽는다. 같은 실행을 다른 프로세스가 진행하면 충돌을 피한다. 지정된 개발 브랜치와 깨끗한 worktree가 아니면 코드 변경하지 않는다.
 2. 위 테이블의 선행조건이 충족된 **가장 이른 PENDING/IN_PROGRESS 단계 하나**만 선택한다. 작은 기능 구현 → 관련 Python/JS 합성 테스트 → 전체 관련 회귀 → 문서 검증 → **별도 Codex read-only `VERDICT: GO`** → 작업 상태 수정 → 개발 브랜치 commit/push → 해당 SHA 두 GitHub Actions 성공 확인. 완료 증거 없는 `DONE` 금지.
@@ -53,6 +53,11 @@
 | 2026-10-18 | BID-09 | 사람의 화면 인수·`main`/공개 릴리스 미승인 | 이 단계는 자동화가 승인 대체 불가 | 사용자 별도 명시적 승인 | OPEN |
 
 ## 5. EXECUTION_LOG (append semantic checkpoints)
+
+- 2026-10-18 / BID-02 수정본 **전체 Python 418 PASS**, Codex 독립 재검수 **VERDICT: GO**, 메모리 기반 추가 28 검증 PASS, 문서 동기화 및 `git diff --check` PASS. 비정상 공고 ID/날짜의 보류 처리 확인, 실제 보호 스냅샷 5,691건 읽기 전용 분류. **GitHub CI 성공 전에는 DONE으로 올리지 않음.**
+
+- 2026-10-18 / BID-02 첫 독립 Codex **NO_GO**: 검수 실행과 소스 수정이 겹친 구간에서 ID regex 캡처 그룹 누락을 검출. 캡처/공식 공고번호·차수 일치 검사로 수정하고, 비정상·위조 ID와 극단적 날짜에 대한 추가 회귀를 반영. 수정본 관련 **21 PASS**, 전체 재검수·CI는 이어서 수행. 부정확하거나 신뢰할 수 없는 원본은 삭제하지 않고 표시 대상에서 보류.
+- 2026-10-18 / BID-02 로컬 구현+합성 대상 **19 PASS**. 새 `/api/dashboard/bid-now-shortlist`를 공고·부서 설정·운영정보 단일 잠금 조회로 구성하고, 직원·원가·원문 미노출 및 Host/CSP/원본 JSON 불변 확인. 실제 Windows 보호 원본 **5,691개** 읽기 전용 교차검사: 부서 일치 현재 검토 178, 외부역량 보완/이익 검토 2,158, 등록 사전 검토 393, 나머지 마감/취소/구차수/미확인 사유로 분리. **2,158건을 수익성이 입증된 공고로 주장하지 않음.** 아직 예상 이익/공고별 필수 자격은 미검증. 독립 Codex/전체 회귀/CI 후 DONE 판단.
 
 - 2026-10-18 / 사용자 추가 결정: 자체 기술·인력 부족이어도 보완 후 이익이 크면 검토·참여 대상. 법정 입찰 자격은 수익으로 우회 불가. 이에 따라 BID-01과 BID-07에 보완 가능성과 이익 근거 분리 반영.
 - 2026-10-18 / BID-01 **DONE** ([구현 커밋 c759c53](https://github.com/son1004007/public-bid-agent/commit/c759c53a16cb8d187433a03d703fe7ee25ce420e)): 전체 412 PASS, Codex GO 및 추가 54 PASS. [Sprint 1 CI 39128145994](https://github.com/son1004007/public-bid-agent/actions/runs/39128145994) SUCCESS, [Windows 합성 인수 39128145903](https://github.com/son1004007/public-bid-agent/actions/runs/39128145903) SUCCESS. **다음 BID-02: 로컬 조회 API와 부서/운영자료를 동일 스냅샷에서 결합**, 실질 법정 적격과 마진은 계속 UNVERIFIED.

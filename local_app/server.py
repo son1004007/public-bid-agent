@@ -58,6 +58,7 @@ from rfp_coverage import summarize as summarize_rfp_coverage
 from rfp_original_workflow import verify as verify_rfp_original
 from bid_outcomes import record as record_bid_outcome, OutcomeConflict
 from bid_readiness import assess as assess_bid_readiness
+from bid_now_shortlist import build as build_bid_now_shortlist
 from process_limits import run_limited as run_quality_limited
 from rfp_review_queue import build as build_rfp_review_queue
 from rfp_audit_labels import (initial as initial_rfp_audit, validate as validate_rfp_audit,
@@ -475,6 +476,20 @@ class Handler(BaseHTTPRequestHandler):
                          "storage":"LOCAL_READ_ONLY"})
    except (ValueError,TypeError,KeyError,OSError,json.JSONDecodeError):
     return self.respond({"error":"입찰 근거 준비도 조회 오류; 원본 보존"},503)
+  if self.path=="/api/dashboard/bid-now-shortlist":
+   # 한 잠금 구간에서 공식 공고, 부서 선택, 운영자료를 읽고 비공개 필드는 응답에 포함하지 않는다.
+   try:
+    with LOCK:
+     board=read_dashboard(ROOT/"dashboard.json")
+     profile=load_department_profile(ROOT/"department_profile.json")
+     operations=load_operations()
+     shortlist=build_bid_now_shortlist(board["notices"],profile,operations)
+    return self.respond({"shortlist":shortlist,
+                         "dashboard_revision":board["revision"],
+                         "profile_revision":profile["revision"],
+                         "storage":"LOCAL_READ_ONLY"})
+   except (ValueError,TypeError,KeyError,AttributeError,OSError,json.JSONDecodeError):
+    return self.respond({"error":"현재 입찰 검토 자료가 부족하거나 손상되었습니다. 기존 원본 보존"},503)
   if self.path=="/api/dashboard/rfp-review-queue":
    try:
     with LOCK:

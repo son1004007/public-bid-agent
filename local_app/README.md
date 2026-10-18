@@ -1,5 +1,7 @@
 # Public Bid Agent — 로컬 실행 사용법
 
+> **2026-10-18 BID-02:** GET `/api/dashboard/bid-now-shortlist`는 현재 부서 관심분야, 저장된 공고, 회사 운영자료의 **읽기 전용 동일 잠금 스냅샷**으로 건수·고정 사유·보완 가능성 검토 목록을 제공합니다. 개별 직원·원가·RFP 본문은 비공개이며 법정 적격/수익 판단은 모두 미검증입니다. 관련 합성 21 PASS·전체 Python 418 PASS·Codex GO; HTTP/Host/CSP/원본 불변 테스트는 `test_bid_now_shortlist.py`에 있습니다.
+
 > **2026-10-18 D-20:** 현재 부서의 보유 역량뿐 아니라 합법적으로 인력·기술을 보완했을 때의 잠재 이익을 함께 검토합니다. `bid_now_triage.py`는 정정/취소·입찰 기한·문서 위험을 보수적으로 분류하지만 실질 참가자격/마진을 승인하지 않습니다. [단계별 백로그·차단 조건](../docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md).
 
 > **2026-10-18 P09 NO_GO/P1 격리 수정:** 합성 fixture의 `RFP_BATCH`를 임시 root의 새 manager로 교체하고 네 외부 어댑터를 차단했습니다. 기존 manager/root 접근을 거부하는 GET 회귀와 합성 RUNNING worker lock 검증을 추가하여 API 인수 **11 PASS**. Chrome 재실행은 동일한 sandbox 종료로 **BLOCKED**이며 독립 재검수는 orchestrator 인계입니다. 아래 48 PASS는 수정 전 기록으로 배치 격리를 증명하지 않습니다. [수정·재현·재검증](../docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md).
