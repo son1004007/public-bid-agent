@@ -464,6 +464,11 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 실행: `python -m unittest discover -s local_app -p 'test_*.py'` 및 독립 Codex 읽기 전용 재검수. 실제 사용 데이터의 손상·이력 보존은 테스트 폴더와 별도 원본 해시 점검으로 확인합니다.
 
 
+## 2026-10-18 감사용 누락 패키지 별도 설치
+
+- P09의 서비스 Python은 유지하고 Windows `AgentRunner/audit-venv`에 SBOM/의존성 감사 도구를 설치했습니다. 설치 조건은 [scripts/requirements-audit-tools.txt](scripts/requirements-audit-tools.txt)에 분리 명시했습니다.
+- 실제 CycloneDX 1.5 Python 48개에 대해 스키마/PURL/그래프 검증 0 오류. `pip-audit` 47개 + 별도 OSV 패키지 1개 점검 모두 알려진 취약점 반환 0. 재배포 LICENSE/NOTICE 승인은 별도입니다. [감사 기록](docs/reviews/LOCAL_AUDIT_TOOLS_2026-10-18.md).
+
 ## 2026-10-18 Python SBOM / 로컬 백업 비파괴 검사
 
 - 설치 Python 메타데이터를 CycloneDX 1.5 JSON 및 관찰 버전 pin 파일로 변환하는 `scripts/export_python_sbom.py` 추가. 로컬 컴포넌트 48개·dependency 관계 49개 생성, 공식 JSON Schema 검증 오류 0, 감사·SBOM 합성 회귀 14 PASS.

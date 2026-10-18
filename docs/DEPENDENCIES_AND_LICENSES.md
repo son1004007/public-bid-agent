@@ -1,5 +1,11 @@
 # 제3자 라이브러리·바이너리 라이선스 검토
 
+## 2026-10-18 추가 설치 및 공개 소스 LICENSE 검증
+
+- 운영 Python과 별도 감사 전용 가상환경에서 jsonschema, packageurl-python, pip-audit, license-expression, cyclonedx-python-lib 설치. `pip check` PASS; 실제 48개 SBOM 스키마·PURL·dependency 참조 오류 0; pip-audit 응답 47개 0 advisories + 누락 `packaging 26.3` OSV 0.
+- 배포 wheel에서 LICENSE 파일을 발견하지 못한 3개 패키지 중 `et-xmlfile 2.0.0`, `openpyxl 3.1.5`은 SHA-256이 PyPI 게시 digest와 같은 공식 sdist에서 `LICENCE` 원문 발견. `langsmith 0.14.6`은 sdist에 후보가 없어 공식 저장소 MIT LICENSE 별도 확보. 정확한 버전의 고지 텍스트와 외부 바이너리 NOTICE 법적 충족은 별도 확인. [근거](reviews/LOCAL_AUDIT_TOOLS_2026-10-18.md).
+
+
 ## 2026-10-18 Python SBOM 추가 증거
 
 - 현재 Windows Python 연결 패키지 48개 설치 메타데이터에서 CycloneDX 1.5/49개 의존 관계/48개 버전 관찰 pin 생성, 공식 스키마 오류 0. npm/외부 OCR·언어팩/PDFium/OS는 **별도**. SHA hash pin과 재현 가능한 wheel 집합·각 라이선스 원문 고지는 미완료. [검증 보고](reviews/PYTHON_SBOM_AND_BACKUP_CHECK_2026-10-18.md).

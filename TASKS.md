@@ -1,5 +1,14 @@
 # 애자일 작업 백로그
 
+## 2026-10-18 감사 패키지 설치·실제 패키지 보안 재검사
+
+- [x] 공유 런타임 Python 수정 없이 Windows 분리 감사 가상환경에 누락된 `jsonschema`, `packageurl-python`, `pip-audit`, `license-expression`, `cyclonedx-python-lib` 설치 및 `pip check` PASS.
+- [x] 실제 Python 48개 CycloneDX 1.5 스키마/PURL/연결 그래프 오류 0, `pip-audit`가 반환한 47개 취약점 0건, 제외 `packaging 26.3` OSV 별도 조회 0건.
+- [x] LICENSE 파일이 설치본 wheel에서 확인되지 않은 3개 패키지에 대해 공개 PyPI wheel 및 sdist SHA 확인, et-xmlfile/openpyxl 원본 LICENCE 파일과 langsmith 공식 upstream MIT LICENSE 증거 로컬 보관.
+- [ ] 패키지별 정확한 NOTICE·저작권 고지와 PDFium/Tesseract/언어팩/OS/npm 포함 전체 재배포 계약·해시 잠금 설치 검증(출시 승인 아님).
+- [검증 보고](docs/reviews/LOCAL_AUDIT_TOOLS_2026-10-18.md)
+
+
 ## 2026-10-18 Python SBOM / 백업 후속
 
 - [x] 설치 Python 연결 48개 CycloneDX 1.5 SBOM, 49개 dependency 관계 및 버전 관찰 pin 48개 생성. 공식 스키마 0 errors·전체 합성 테스트 14 PASS.

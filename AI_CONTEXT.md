@@ -1,5 +1,7 @@
 # AI 개발 작업 안내 - Public Bid Agent
 
+> **2026-10-18 감사 환경 분리:** P09 운영 Python과 별도인 `AgentRunner/audit-venv`에 `jsonschema/packageurl-python/pip-audit/license-expression/cyclonedx-python-lib` 도구 설치 완료. 공급망 감사 결과와 라이선스 원본 검증 한계는 [LOCAL_AUDIT_TOOLS_2026-10-18.md](docs/reviews/LOCAL_AUDIT_TOOLS_2026-10-18.md). 실제 RFP 독립 정확도/인력·원가 증빙/사용자 승인 미확정; `main` 및 외부 공개 미진행.
+
 > **2026-10-18 SBOM/복구 진행:** Python 가상환경 연결 패키지 48개 CycloneDX 1.5 / 49 dependency / 관찰 pins 48개 공식 스키마 0 errors. P09 보호 백업 318개가 현행과 모두 일치하며 격리된 318개 복원 파일로 별도 localhost 서버 구동/읽기 전용 API smoke 성공을 확인. 실제 데이터 24건 준비도 GET 정상·Chrome 실제 UI E2E PASS. [1~6단계 검증](docs/reviews/FOLLOWUP_SIX_STAGE_2026-10-18.md). 실제 복원·전체 라이선스/배포 승인·회사 원본 인수는 별도. [실측 보고](docs/reviews/PYTHON_SBOM_AND_BACKUP_CHECK_2026-10-18.md).
 
 > **다른 AI/Codex가 이 저장소를 처음 읽을 때**

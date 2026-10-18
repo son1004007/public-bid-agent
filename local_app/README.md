@@ -377,6 +377,10 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 실행: `python -m unittest discover -s local_app -p 'test_*.py'` 및 독립 Codex 읽기 전용 재검수. 실제 사용 데이터의 손상·이력 보존은 테스트 폴더와 별도 원본 해시 점검으로 확인합니다.
 
 
+## 2026-10-18 별도 감사 전용 패키지
+
+- 메인 `local_app` 서버 가상환경과 분리된 감사 도구 가상환경을 Windows에 설치했습니다. [감사 환경 재현 명세](../scripts/requirements-audit-tools.txt) 및 [검증 기록](../docs/reviews/LOCAL_AUDIT_TOOLS_2026-10-18.md) 참조. 기존 P09 운영 Python/실사용 데이터는 변경하지 않았습니다.
+
 ## 2026-10-18 Python CycloneDX 메타데이터 출력
 
 - `scripts/export_python_sbom.py`는 공개 Python 의존성 인벤토리를 CycloneDX 1.5 및 관찰 버전 pin 형식으로 출력합니다. Windows 개발 환경 48 컴포넌트·49 dependency, 공식 스키마 0 오류, 합성 감사 테스트 총 14 PASS.

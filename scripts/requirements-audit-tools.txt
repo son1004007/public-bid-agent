@@ -1,0 +1,6 @@
+# Isolated audit virtual environment ONLY; do not install into the running P09 service Python.
+jsonschema>=4.23,<5
+packageurl-python>=0.16,<1
+pip-audit>=2.10,<3
+license-expression>=30,<31
+cyclonedx-python-lib>=11,<12

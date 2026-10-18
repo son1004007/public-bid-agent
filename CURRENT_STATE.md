@@ -1,5 +1,12 @@
 # 현재 개발 상태
 
+## 2026-10-18 20:46 이후 감사 전용 누락 패키지 설치 확인
+
+- Windows P09 운영 Python과 분리된 `AgentRunner/audit-venv` 생성. 개발 검증 도구 `jsonschema 4.26.0`, `packageurl-python 0.17.6`, `pip-audit 2.10.1`, `license-expression 30.4.4`, `cyclonedx-python-lib 11.12.0` 설치. 양쪽 환경 `pip check` 확인, 운영 P09 서비스에는 별도 설치하지 않음.
+- 실제 Python CycloneDX 1.5 SBOM 48개: 공식 스키마 0 오류, PURL 0 오류, dependency ref 0 오류. `pip-audit`가 보고한 47개 0건 및 누락된 `packaging 26.3`의 OSV 단독 질의 0건을 구분하여 기록함.
+- LICENSE 후보가 배포 wheel에 없던 패키지 3개 가운데 `et-xmlfile 2.0.0`, `openpyxl 3.1.5`는 PyPI의 SHA 검증된 sdist에서 LICENCE 파일 발견. `langsmith 0.14.6`은 sdist에 발견되지 않아 공식 LangSmith 저장소 MIT LICENSE 확보. 패키지 버전별 정확한 NOTICE 원문 및 전체 외부 바이너리 법적 승인은 계속 별도. [근거](docs/reviews/LOCAL_AUDIT_TOOLS_2026-10-18.md).
+
+
 ## 2026-10-18 Python SBOM / 운영 백업 읽기 전용 후속
 
 - P09 검증된 source 및 원본 보호 정책 유지. 실제 요청 1~6단계의 비식별 로컬 실측·남은 승인 경계는 [종합 검증](docs/reviews/FOLLOWUP_SIX_STAGE_2026-10-18.md)에 기록. 별도 읽기 전용 백업 검사에서 릴리스 백업 318개와 현행 318개 내용 해시 일치, 누락·오류 0. 복원 실험/운영 파일 수정은 수행하지 않음.
