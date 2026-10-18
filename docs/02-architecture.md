@@ -1,5 +1,7 @@
 # Public Bid Agent 아키텍처 및 구현 경계
 
+> **2026-10-18 개발 의존성 구분:** localhost Python HTTP 서버는 React/Vite를 실행하거나 전면 종속하지 않습니다. `frontend/`는 별도 React/Vite 시안으로, `frontend/package-lock.json`과 고정 Vite 7.3.7을 사용합니다. `scripts/audit_python_environment.py`는 비공개 파일 접근·네트워크 전송 없이 Python 설치 패키지 메타데이터만 조회하는 개발용 감사 도구입니다. OSV 공개 패키지 버전 검사와 npm audit 결과/라이선스 잔여 게이트는 [보안 감사](reviews/DEPENDENCY_SECURITY_AUDIT_2026-10-18.md)를 참조하며, 앱 운영 코드의 저장 경로나 사용자 인증 경계를 변경하지 않았습니다.
+
 > **2026-10-13 구분:** Windows 로컬 `/decision-preview`는 `frontend/public/bid-decision-dashboard-preview.html`+`dashboard-live.js`와 `local_app/server.py`의 Python HTTP API에 연결된 실제 구현입니다. 로컬 `/` 수동 AI 분석 화면, `bid-management-preview.html` 초기 정적 시안, React/FastAPI 합성 앱, 장기 공개 웹 아키텍처를 구별합니다. 실제 현황·검증 상태는 [CURRENT_STATE.md](../CURRENT_STATE.md)를 따릅니다.
 
 ## 1. 실제 구현: 개인 컴퓨터 로컬 우선 구조

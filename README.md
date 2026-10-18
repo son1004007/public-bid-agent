@@ -464,6 +464,13 @@ Codex NO_GO 지적의 4개 범위에 대해 서버 수명 독점 잠금, SQLite 
 실행: `python -m unittest discover -s local_app -p 'test_*.py'` 및 독립 Codex 읽기 전용 재검수. 실제 사용 데이터의 손상·이력 보존은 테스트 폴더와 별도 원본 해시 점검으로 확인합니다.
 
 
+## 2026-10-18 의존성 현황과 Vite 보안 조치
+
+- Windows Python 가상환경에서 직접 의존성 10/10 선언 버전 충족, `pip check` PASS. `scripts/audit_python_environment.py`로 51개 설치 패키지/전이 관계·라이선스 메타데이터를 읽기 전용 점검하고 7개 합성 회귀를 추가했습니다. 감사 스크립트 실행에는 `packaging` 라이브러리가 필요하며 이 프로젝트 가상환경에 설치돼 있습니다.
+- 기존 React 시안의 `Vite 7.1.12` npm High 보안 권고 대응: `7.3.7`로 갱신, 정확한 `frontend/package-lock.json` 생성. npm 감사 0건, lock 기반 `npm ci` 및 `npm run build` PASS.
+- Python OSV 48개 공개 패키지 버전 조회 취약점 반환 0, npm CycloneDX 1.5 컴포넌트 21개 인벤토리 생성. 설치된 의존성의 정확한 재배포 LICENSE/NOTICE 및 회사·RFP 검증은 아직 별도입니다. [검증 기록](docs/reviews/DEPENDENCY_SECURITY_AUDIT_2026-10-18.md).
+- `npm --prefix frontend ci --ignore-scripts --no-audit --no-fund` 뒤 `npm --prefix frontend run build`로 시안 빌드. 현재 localhost Python 웹과 React 시안은 별도입니다.
+
 ## 2026-10-18 P09 Windows CI 문자 인코딩 호환성 보완
 
 - GitHub Windows CI의 기본 `cp1252` 로캘에서 한글 합성 RFP 처리 중 문서 파서 자식 프로세스가 JSON을 출력하지 못하던 문제를 해결하기 위해 `local_app/extractors.py`의 CLI JSON 출력에 `ensure_ascii=True`를 적용합니다. 서버는 UTF-8로 동일 JSON을 역직렬화하며 추출 텍스트·보관 정책은 유지합니다.

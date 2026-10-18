@@ -9,6 +9,11 @@
 >
 > 과거 파일의 오래된 수치보다 최신 실행 증거가 우선이다. **결정사항은 DECISIONS.md를 단일 원본으로 관리하며, 시점별 수치와 검수 결과를 사용자 결정으로 오해하지 않는다.**
 
+## 2026-10-18 P09 이후 공급망 보완
+
+- `Vite` npm High 권고를 `7.1.12 -> 7.3.7`으로 해결, React 시안 `package-lock.json` 추가. Python 가상환경 10개 직접 의존성 충족, 전체 51개 목록, OSV 48개 조회 결과 0건, npm audit 0건 및 시안 빌드 PASS.
+- 운영 서버 비식별 수집 품질 집계: 활성 220, 추출 87, 원문 확보 대기 130. [독립 원본·회사 증빙 인수 절차](docs/reviews/RFP_REAL_EVIDENCE_GATE_2026-10-18.md). 원본 RFP/회사 자료는 외부 검수에 전송하지 않았음. 라이선스 고지·전체 Python 릴리스 lock/SBOM, 실제 원본 필수요건 정확도·회사 증빙·사용자 UI 인수는 미완료. [세부 감사](docs/reviews/DEPENDENCY_SECURITY_AUDIT_2026-10-18.md).
+
 ## 최신 검증 기준: 2026-10-18 P09 완료
 
 - `feat/sprint1-search-demo`의 P04~P09 구현/합성 검증 완료. P09 최종 실행 소스 커밋은 `f06a3faebbcf3995f6d1ac2fd3fe5c1f9b978c86`이며 Windows 로컬 서버 `127.0.0.1:8765`에 동일 SHA로 적용됨.

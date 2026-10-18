@@ -1,5 +1,13 @@
 # 현재 개발 상태
 
+## 2026-10-18 잔여 의존성·공급망 점검 진행
+
+- P09 완료와 Windows P07 자동 롤백 방지 상태를 유지한 채 공개 의존성만 조사. Python 직접 10/10 충족, 설치 51개·연결 48개·`pip check` 통과, OSV 공개 패키지 48개 버전 조회 취약점 반환 0.
+- 독립 Codex 최초 NO_GO 2건을 플랫폼 marker 및 중첩 extras 순회 보완으로 해결, 최신 검수 **GO**. Python 감사 7개 합성 회귀 PASS.
+- React 시안 `Vite 7.1.12` npm High 발견 후 `7.3.7`로 보완하고 `frontend/package-lock.json`을 생성. `npm audit` 0건, npm lock 설치/TypeScript/빌드 PASS, CycloneDX npm 21개 구성요소 생성.
+- Python 메타데이터 SPDX 표기 26, 구형 라이선스 표기 25로 자동 법적 판단 미완료. 로컬 비식별 집계 API 기준 활성 RFP 검토 후보 220, 텍스트 확보 87, 공식 첨부 확보 대기 130(기타 3), 절단 신호 12·경고 21로 독립 원문 정답 검토가 필요. [실제 인수 게이트](docs/reviews/RFP_REAL_EVIDENCE_GATE_2026-10-18.md). 실제 RFP 필수요건 정답 라벨·회사 증빙·사용자 화면 인수는 계속 미검증. `main`·외부 공개 미진행. [감사 근거](docs/reviews/DEPENDENCY_SECURITY_AUDIT_2026-10-18.md).
+
+
 ## 최신 상태: 2026-10-18 P09 전체 합성 개발·CI·Windows 로컬 적용 검증 완료
 
 - 개발 브랜치 `feat/sprint1-search-demo`. P04~P08 완료 후 P09 초기 커밋 `bf3dca4`의 Windows CI에서 기본 로캘 `cp1252`와 한국어 UTF-8 출력/읽기의 불일치로 1 FAIL/1 ERROR가 발생했다. 두 오류를 재현한 후 `f06a3faebbcf3995f6d1ac2fd3fe5c1f9b978c86`에서 수정했다.

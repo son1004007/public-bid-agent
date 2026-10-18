@@ -1,3 +1,4 @@
 -r requirements.txt
 httpx>=0.28,<0.29
 pytest>=9,<10
+packaging>=26,<27  # scripts/audit_python_environment.py and its unit tests

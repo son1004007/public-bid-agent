@@ -1,5 +1,14 @@
 # 제3자 라이브러리·바이너리 라이선스 검토
 
+## 2026-10-18 현재 Windows 가상환경 검사 (기존 10월 9일 스냅샷과 구분)
+
+- 직접 선언 `local_app/requirements.txt` 10개 모두 버전 범위 충족, 설치 51개/전이 경로 48개 및 `pip check` PASS. 이전 10월 18일 P09 테스트 환경에서 기록한 `Pillow 10.3.0`·`python-docx 1.1.2` 미달은 **현재 이 별도 개발 가상환경에서 재현되지 않음**.
+- 51개 패키지 중 SPDX `License-Expression` 메타데이터 26개, 구형 자유형 표기 25개. 후자는 자동 `LICENSE/NOTICE` 적합 판정이 아니라 공식 배포 조건 검토 대기.
+- 공개 패키지명·버전만 OSV에 질의한 Python 48개 반환 취약점 0. React 시안 `Vite 7.1.12` npm High 조치로 `7.3.7` 고정, npm 감사 0, `frontend/package-lock.json` 및 21개 컴포넌트 CycloneDX 1.5 작성·검증.
+- Tesseract 5.5.3.20260724 + kor/eng 설치 확인, 배포 대상 OCR 모델/Leptonica/PDFium의 LICENSE·NOTICE는 실제 배포 전 원문 조사 필요. [실행 증거/범위](reviews/DEPENDENCY_SECURITY_AUDIT_2026-10-18.md).
+
+
+
 - 점검 기준일: 2026-10-09
 - 본 프로젝트 코드 라이선스: Apache-2.0
 - 판정 범위: 직접 의존성의 공개된 업스트림 라이선스, 저장소에 포함된 의존성 명세; **배포 바이너리의 모든 전이 의존성 자동 법무 확인을 뜻하지 않음**.
