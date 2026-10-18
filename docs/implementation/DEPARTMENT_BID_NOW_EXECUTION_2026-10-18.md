@@ -22,7 +22,7 @@
 
 | ID | 우선순위 | 작업과 검증 가능한 종료조건 | 선행 의존성 | 상태 |
 | --- | --- | --- | --- | --- |
-| BID-01 | P0 | 현행 공고의 취소·구차수·마감·등록기한, 부서 분야, 문서 추출 위험을 재사용하여 **읽기 전용 '지금 검토' 안전 분류 함수** 구현; 역량/분야 부족도 `CAPABILITY_GAP_MARGIN_REVIEW`로 보존, 추정 이익·자격은 `UNVERIFIED`; 합성 경계 테스트+Codex GO+GitHub CI | 기존 `procurement_filter`, `rfp_coverage`, `bid_readiness` | REVIEWED_CI_PENDING |
+| BID-01 | P0 | 현행 공고의 취소·구차수·마감·등록기한, 부서 분야, 문서 추출 위험을 재사용하여 **읽기 전용 '지금 검토' 안전 분류 함수** 구현; 역량/분야 부족도 `CAPABILITY_GAP_MARGIN_REVIEW`로 보존, 추정 이익·자격은 `UNVERIFIED`; 합성 경계 테스트+Codex GO+GitHub CI | 기존 `procurement_filter`, `rfp_coverage`, `bid_readiness` | DONE |
 | BID-02 | P0 | `GET /api/dashboard/bid-now-shortlist` 읽기 전용 로컬 API 노출; 현재 부서 설정과 운영자료를 한 snapshot에서 조회; GET 데이터 비공개 원문/원가 미노출·원본 SHA 불변·Host/CSP 테스트 | BID-01 | PENDING |
 | BID-03 | P0 | `/decision-preview`에 `지금 검토 가능한 후보` 별도 탭/필터 및 제외/검토 필요 근거 표시; '법적 적격 미검증' 기본 표시; 기존 목록/상세/결정 화면 보존. Chrome 390px + 일반폭 E2E | BID-02 | PENDING |
 | BID-04 | P0 | **실제** 공고를 로컬 읽기 전용으로 돌려 활성 건수/위험·기한별 건수/일관성 집계; 특정 공고 ID·원문·부서정보는 로컬 로그에서만 처리. 현재 부서 설정이 비어 있거나 운영 스킬·MM/원가 근거 없으면 `BLOCKED_EVIDENCE` | BID-02, BID-03 | PENDING |
@@ -55,5 +55,6 @@
 ## 5. EXECUTION_LOG (append semantic checkpoints)
 
 - 2026-10-18 / 사용자 추가 결정: 자체 기술·인력 부족이어도 보완 후 이익이 크면 검토·참여 대상. 법정 입찰 자격은 수익으로 우회 불가. 이에 따라 BID-01과 BID-07에 보완 가능성과 이익 근거 분리 반영.
+- 2026-10-18 / BID-01 **DONE** ([구현 커밋 c759c53](https://github.com/son1004007/public-bid-agent/commit/c759c53a16cb8d187433a03d703fe7ee25ce420e)): 전체 412 PASS, Codex GO 및 추가 54 PASS. [Sprint 1 CI 39128145994](https://github.com/son1004007/public-bid-agent/actions/runs/39128145994) SUCCESS, [Windows 합성 인수 39128145903](https://github.com/son1004007/public-bid-agent/actions/runs/39128145903) SUCCESS. **다음 BID-02: 로컬 조회 API와 부서/운영자료를 동일 스냅샷에서 결합**, 실질 법정 적격과 마진은 계속 UNVERIFIED.
 - 2026-10-18 / BID-01 IMPLEMENTED + REVIEWED: `local_app/bid_now_triage.py`와 9개 합성 테스트, Windows CI 연결. 최초 Codex NO_GO 2건(라이프사이클 누락·유효하지 않은 사전 등록기한이 검토단계를 통과) 수정. 관련 모듈 **23 PASS**, 전체 Python **412 PASS**, Codex 재검수 **VERDICT: GO** 및 추가 불변/경계 **54 PASS**, `git diff --check` PASS. GitHub CI는 커밋 후 확인해야 하므로 `DONE` 승격 대기.
 - 2026-10-18 / 계획 수립: 실제 현재 부서에 적합한 입찰만 다루도록 목표 재정의. BID-01 최초 구현 선정. 소스·테스트·Codex·GitHub 결과는 이후 기록.
