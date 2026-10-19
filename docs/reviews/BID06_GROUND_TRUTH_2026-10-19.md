@@ -50,3 +50,13 @@ MAJOR 수용: 재사용 배포 smoke가 이전 소스 listener를 정상 성공�
 ## 최종 독립 검수 GO / Git·운영 게이트 대기
 
 같은 fresh-context read-only Codex의 지적 범위 재확인 **GO**, 기존 MAJOR RESOLVED, 미해결 BLOCKER/MAJOR 없음. AST모형7 PASS 및 독립 추가 경계4 PASS. 앱11파일·Chrome ops 불변, 수정 ops SHA42e1e72e4844c6b7c1fa662196ac25962aa75333a791d0797094ca7db525338f 일치. 이 GO는 구현 검수이며 실자료 VALIDATION_DONE이나 실제 배포 성공이 아니다. 사용자 승인 범위에서 개발2CI→main 조상/충돌 확인·CI→검증 백업/복구→기존localhost 운영 API/두폭 화면·전체파일 무결성 인수를 수행한다.
+
+## 최종 Git/CI/운영 인수 — 2026-10-19 17:28 KST
+
+- **IMPLEMENTATION_DONE**, 실자료 **VALIDATION BLOCKED_EVIDENCE/NOT_EVALUATED**, BID06 전체 DONE 아님. 실행구현 `a4b7cd402c634807092d72a3fd1f25188819112c`의 독립GO 후 개발 push, [개발 Sprint 1 CI](https://github.com/son1004007/public-bid-agent/actions/runs/39222149967)·[Windows acceptance](https://github.com/son1004007/public-bid-agent/actions/runs/39222149888)·[main CI](https://github.com/son1004007/public-bid-agent/actions/runs/39222548603) 모두 SUCCESS. Ubuntu479+14+11 PASS, Windows128 및 전체 Chrome/BID06 두폭 PASS의 원시 CI 로그 확인. 기존 main b20f515 조상/원격 고유 변경 없음 확인 후 fast-forward, 강제 push/checkout/기존 Lab 작업 파일 수정 없음.
+- 검수된 Ops SHA42e1e72…25338f·Chrome ops0272b877…720f96b 확인→동일 SHA 개발2/main CI·정확 기존 소스de8c294/PID·배치 유휴/이전 백업·복귀 확보→고정 Git archive→첨부·설정·기존 사용자 이력 포함393파일 전체 검증 백업→알려진 기존 서버만 교체→동일 데이터/venv/포트 유지→신규 source/launch·직계 자식 listener의 생성 시각·계보 인수→API/GET 전용 운영Chrome390/1440→393파일 전후 전체 SHA 동일.
+- `LOCAL_APPLIED`, 2026-10-19T08:28:26 UTC/17:28:26 KST, stageBID06, HTTP200, bid06_api_verified=true, bid06_390_1440_readonly_ui_verified=true, runtime_source_instance_verified=true. Windows redirector launch와 listener PID가 다름을 정상 계보로 확인했고 과거 소스 fallback 성공은 거부한다. 기존 추천/상세/RFP/P06 호환 흐름도 PASS.
+- 운영 GET 추가 확인: 검수 목록113건(최대100 표시/13 생략), 선택된 실제 기록 승인정답0/지표 전부 null/NOT_EVALUATED. 전체 실자료5718·보관문서 공고70·차수미검증127문서·승인정답0의 읽기 전용 검증 근거 유지, 새 실자료 rfp_ground_truth.json 생성 없음. 비공개 baseline과 현재 전체393파일 동일, 기존 사용자 메모 바이트 불변/미추적.
+- 이전 immutable de8c294/검증 백업과 source-only rollback 절차 보존. 실제 배포 성공하여 운영 rollback/데이터 덮어쓰기 복원은 실행하지 않았다. 기존 운영 데이터/첨부/설정/검토 이력/다른 Codex 프로세스·사용자 Chrome 보존. 외부 공개·방화벽·서버 이전·초기화·무단 다운로드/배치/AI·실제 입찰/자동 투찰/외부 참여 확정 없음.
+- 최종 문서 마감 commit은 Markdown만 바꾸며 실행/테스트/CI 소스는 배포 구현 SHA와 동일하다. 개발/main 최종 문서 HEAD와 runtime SHA를 구분하고 문서 때문에 서비스를 재시작하지 않는다. 최종 문서 HEAD 개발2/main CI는 추가 확인 후 최종 보고한다.
+- 남은 증거 차단: 승인된 최신 공식 원본·차수/SHA, 독립 사람 정답/원본 전체 페이지·표/각주/이미지/OCR 범위, 실제 표본 실측/결과 독립검증. 승인0에 실자료 정확도/누락률을 만들지 않았다. 회사 자격·원가·인력/MM·수익은 기존 미검증. BID07은 해당 선행조건/별도 승인 전 시작하지 않는다.

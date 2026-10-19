@@ -27,7 +27,7 @@
 | BID-03 | P0 | `/decision-preview`에 `지금 검토 가능한 후보` 별도 탭/필터 및 제외/검토 필요 근거 표시; '법적 적격 미검증' 기본 표시; 기존 목록/상세/결정 화면 보존. Chrome 390px + 일반폭 E2E | BID-02 | DONE / f642796·Codex GO·local_app 419 PASS·390px/1440px E2E PASS·동일 SHA 두 CI SUCCESS |
 | BID-04 | P0 | **실제** 공고를 로컬 읽기 전용으로 돌려 활성 건수/위험·기한별 건수/일관성 집계; ID·원문·회사/인력·원가는 로컬 로그/프롬프트/Git/공개 보고에도 미출력. 현재 부서 설정이 비어 있거나 운영 스킬·MM/원가 근거 없으면 `BLOCKED_EVIDENCE` | BID-02, BID-03 | **DONE** (2026-10-19 15:10 KST, 코드/화면/운영 검증 완료; 증빙 보류 유지) |
 | BID-05 | P1 | 공식 첨부 확보 대기/부분 추출/잘림/경고 후보를 소요 대비 우선순위로 자동 작업 큐에 연결; 공개 공식 URL·정정/취소·원본 SHA 결속, 기존 배치의 무단 재시도/다운로드 금지; 공식 자료 확보 후에만 재평가 | BID-04 및 공식 원본 접근 가능 | **DONE** (2026-10-19 16:10 KST, 개발/main CI·localhost 운영 인수 PASS; 개별 원본 증빙 보류 유지) |
-| BID-06 | P1 | 실제 RFP에서 참가자격·평가기준·과업범위의 독립 정답 구절(전체 페이지/표/각주/OCR)을 로컬에서 대조, TP/FP/FN·누락률 추정 가능 여부 기록; 사람이 승인한 표본 없이 정확도 점수 발명 금지 | BID-05 + 승인된 최신 공식 원본·정답 검수 | IN_PROGRESS / 실자료 NOT_EVALUATED |
+| BID-06 | P1 | 실제 RFP에서 참가자격·평가기준·과업범위의 독립 정답 구절(전체 페이지/표/각주/OCR)을 로컬에서 대조, TP/FP/FN·누락률 추정 가능 여부 기록; 사람이 승인한 표본 없이 정확도 점수 발명 금지 | BID-05 + 승인된 최신 공식 원본·정답 검수 | IMPLEMENTATION_DONE / VALIDATION BLOCKED_EVIDENCE |
 | BID-07 | P1 | 공고별 실제 부서 역량 비교: 업종·면허/실적/기술 스택/참여 기간별 MM·겸임·예상 사업이익/외주·협력·채용 비용/필수 제안 서류의 **증빙 출처와 검증일** 기반 차단 게이트. 내부 역량 부족은 무조건 제외하지 말고 보완 비용·기술/일정·합법적 외주/공동수급 가능성을 확인해 이익 기회를 유지. 미확인 값은 무조건 `UNVERIFIED`; 민감 원본 로컬만 | BID-06 + 승인된 회사 증빙 및 책임자 검증 | PENDING |
 | BID-08 | P2 | 실제 준비 완료를 객관적 검증한 공고만 `READY_TO_BID_VERIFIED`로 표시하고 미충족 사유/기한 정렬, 사람이 최종 Bid/No-Bid 저장하는 UI E2E; 실제 제출 금지 | BID-07 + 사용자 적격 판단 정책 | PENDING |
 | BID-09 | P2 | 실제 Windows 로컬 최종 인수, 복원 및 배포·라이선스 NOTICE 게이트. `main`/인터넷 배포/실제 입찰은 **별도 사용자 승인** | BID-08 + 독립 검수/원문/승인 | PENDING |
@@ -115,3 +115,9 @@
 최신 사용자 명시 승인으로 구현/검증 후 GO·개발2/main CI·기존 localhost 백업/복귀/배포/무결성까지 진행. 과거 main 금지는 이번 승인 범위에서 대체되며 외부 공개/입찰 금지는 유지. 표적Python21·관련63/Node6 PASS, 실자료5718·승인정답0·393파일 불변. 전체 회귀/Chrome/독립/CI/운영 게이트 대기. 실자료 최신 원본·독립 정답 부재로 정확도 NOT_EVALUATED, 전체 DONE 금지. [설계](../design/BID06_GROUND_TRUTH_2026-10-19.md), [검증](../reviews/BID06_GROUND_TRUTH_2026-10-19.md). BID07 미착수.
 
 - BID06 최종 로컬Python504/Node42/Chrome390·1440/build PASS, 독립Codex NO_GO MAJOR1(배포 소스/프로세스 오판) 수정 후 GO·모형7+독립경계4 PASS. 아직 개발/main CI·운영 인수 전. 실제정답0/NOT_EVALUATED, BID06 전체 DONE 아님.
+
+## 2026-10-19 17:28 KST BID-06 도구 구현·운영 인수 완료
+
+**IMPLEMENTATION_DONE**, **VALIDATION BLOCKED_EVIDENCE/NOT_EVALUATED**, 전체 DONE 아님. 실행`a4b7cd402c634807092d72a3fd1f25188819112c` 독립 Codex MAJOR1 수정 후 GO·Python504/Node42/Chrome390·1440/build PASS→[개발 Sprint 1 CI](https://github.com/son1004007/public-bid-agent/actions/runs/39222149967)·[Windows acceptance](https://github.com/son1004007/public-bid-agent/actions/runs/39222149888)·[main CI](https://github.com/son1004007/public-bid-agent/actions/runs/39222548603) 모두 SUCCESS→기존 main b20f515 조상 확인 fast-forward→기존localhost 검증 배포·운영API/Chrome 두폭 PASS. 원본 첨부/설정/검수 이력 포함393파일 전체 백업/SHA 검증 및 전후 동일, 정확 신규 소스·launch/직계 child listener 인수 PASS. 이전 de8c294 소스/백업/복귀 경로 유지, 실제 rollback 불필요.
+
+실자료5718 / 보관문서 공고70 / 차수 결속미검증127문서 / 독립승인 정답0. 정확도/TP/FP/FN null·NOT_EVALUATED, 전체 문서 대표성 미확인. 운영 검수목록113건은 실패/미확보 증거 메타데이터도 포함하므로 유효원본 수가 아니다. 실자료 검수파일 생성/원본·회사 자료 외부전송 없음. BLOCKER 재개: 승인된 최신 공식 원본·공고/차수/SHA 및 페이지/표/각주/이미지/OCR 독립 사람 정답을 로컬에서 확보·승인하고 실제 범위 평가/독립검증. 회사 자격·수익·인력/MM 미검증 유지. BID07 미착수·별도 착수 승인/증빙 선행. 문서 마감은 같은 실행 코드로 추가 서비스 재시작하지 않으며 최종 문서 HEAD CI도 확인한다.

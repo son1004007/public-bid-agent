@@ -1,9 +1,13 @@
 # 현재 개발 상태
 
-## 2026-10-19 BID-06 로컬 VERIFIED·독립 GO / CI·운영 대기
+## 2026-10-19 17:28 KST BID-06 IMPLEMENTATION_DONE / 실자료 NOT_EVALUATED
 
-독립 정답 검수·표본 지표·원본 SHA/차수·승인/수정/보류·이력·안전 저장/API/UI 구현. 최종Python504(local_app479+감사14+backend11)·Node42·Chrome390/1440/build PASS, 별도읽기전용Codex MAJOR1 수정 후 GO. 실제5718/보관문서 공고70·차수 미검증127문서, 승인정답0/NOT_EVALUATED, 보호393개 불변. 앱11파일고정. 개발2/main CI 및 운영 배포/화면/무결성 전 IMPLEMENTATION_DONE 아님. [검증](docs/reviews/BID06_GROUND_TRUTH_2026-10-19.md).
-
+- 독립 정답 구절·원본 페이지/표/각주 위치·분류·추출 비교, 명시 승인/수정/보류/누락 등록·이력·SHA/차수 변경 재검수, 범위 한정 TP/FP/FN/Precision/Recall/F1/누락률 도구를 기존 목록/상세/API에 연결했다. 후보는 독립 정답으로 승격하지 않는다. 공식 원본 SHA 티켓과 사람의 최신성/전체 선택 페이지·표/각주/이미지/OCR 확인 전 승인 불가. 기존 원본/설정/이력 불변, 새 검수 파일은 사람 명시 저장만 생성한다.
+- Python504(local_app479+감사14+backend11)·Node42·Chrome155 390/1440 전체 E2E/build/정적 PASS. 독립Codex 최초 NO_GO MAJOR1(배포 성공 소스/프로세스 오판) 수정 후 최종 GO, 순수모형7+독립경계4 PASS. [설계](docs/design/BID06_GROUND_TRUTH_2026-10-19.md), [전체 검증](docs/reviews/BID06_GROUND_TRUTH_2026-10-19.md).
+- 실행 구현 `a4b7cd402c634807092d72a3fd1f25188819112c`: [개발 Sprint 1 CI](https://github.com/son1004007/public-bid-agent/actions/runs/39222149967)·[Windows acceptance](https://github.com/son1004007/public-bid-agent/actions/runs/39222149888)·[main CI](https://github.com/son1004007/public-bid-agent/actions/runs/39222548603) 모두 SUCCESS. 기존 main b20f515 조상 확인 후 fast-forward. Ubuntu479+14+11 및 Windows128/전체 Chrome PASS.
+- 17:28:26 KST 기존127.0.0.1:8765 배포·API200·GET 전용 운영Chrome390/1440 인수 PASS. Windows venv launch/직계 child listener의 정확 소스/생성 시각/계보 검증, 첨부·설정·이력 포함393파일 전체 백업·SHA 대조/배포 전후 동일. 이전 검증 소스de8c294/백업·복구 경로 보존, 성공하여 실제 rollback 불필요.
+- 실제5718, 보관 문서 공고70·차수 미검증127문서, 승인 정답0·실자료 정확도 NOT_EVALUATED/BLOCKED_EVIDENCE. 운영 검수 목록113건(저장 증거 메타데이터 포함, 유효 문서 수와 다름), 새 실자료 검수 파일 생성 없음. 전체 정확도/대표성·회사 적격/수익/인력/MM 미확인. **VALIDATION_DONE 및 BID06 전체 DONE 아님.** 최신 공식 원본·독립 사람 정답·실측 결과 독립검증 필요. BID07 미착수.
+- 문서 마감 commit은 실행/테스트/CI 코드가 위 배포 SHA와 동일하다. 최종 개발/main 문서 HEAD CI는 별도 최종 확인·보고하며 문서 때문에 서비스를 재시작하지 않는다. 사용자 승인 메모 미추적 보존, 외부 공개/실제 입찰·자동 투찰/외부 참여 확정 없음.
 
 ## 2026-10-19 16:10 KST BID-05 DONE / main·기존 localhost 운영 인수 PASS
 

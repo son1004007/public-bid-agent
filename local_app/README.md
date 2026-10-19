@@ -1,6 +1,8 @@
 # Public Bid Agent — 로컬 실행 사용법
 
-> **BID-06 로컬 VERIFIED / 독립 GO / 배포 인수 대기:** 수집 화면의 **RFP 정답 검수 대상 조회** 또는 상세 참가요건의 **검수 자료 다시 조회**에서 로컬 원본 SHA 대조, 독립 정답 구절/페이지/표·각주 위치 입력, 명시 승인·수정·보류, 표본 TP/FP/FN·Precision/Recall/F1/누락률을 제공합니다. 원본 선택·최신 차수/취소 확인·독립 정답/범위 검수 전 승인 불가. 기존 후보 라벨은 독립 정답으로 승격하지 않습니다. 승인 정답0이면 NOT_EVALUATED, 전체 문서 정확도/대표성은 미확인입니다. 검수 이력은 별도 로컬 rfp_ground_truth.json에만 저장하며 기존 원본/사용자 이력은 유지합니다. [설계](../docs/design/BID06_GROUND_TRUTH_2026-10-19.md).
+> **BID-06 IMPLEMENTATION_DONE / 실자료 NOT_EVALUATED:** 수집 화면의 **RFP 정답 검수 대상 조회** 또는 상세 참가요건의 **검수 자료 다시 조회**에서 로컬 원본 SHA 대조, 독립 정답 구절/페이지/표·각주 위치 입력, 명시 승인·수정·보류, 표본 TP/FP/FN·Precision/Recall/F1/누락률을 제공합니다. 원본 선택·최신 차수/취소 확인·독립 정답/범위 검수 전 승인 불가. 기존 후보 라벨은 독립 정답으로 승격하지 않습니다. 승인 정답0이면 NOT_EVALUATED, 전체 문서 정확도/대표성은 미확인입니다. 검수 이력은 별도 로컬 rfp_ground_truth.json에만 저장하며 기존 원본/사용자 이력은 유지합니다. [설계](../docs/design/BID06_GROUND_TRUTH_2026-10-19.md).
+
+> 도구 검증: Python504·Node42·Chrome390/1440/build PASS, 독립Codex GO. 실행a4b7cd4의 개발2/main CI 및 기존localhost 운영 API/두폭 화면·393파일 백업/불변 인수 PASS. 실자료 승인 정답0으로 VALIDATION_DONE/전체 DONE 아님. BID07 미착수.
 
 > **2026-10-19 BID-05 DONE:** 실행 `de8c294`의 개발2/main CI SUCCESS 후 기존 localhost만 배포. 운영 API/Chrome390·1440·작업/보류/legacy 경고 PASS, 첨부/설정 포함393파일 검증 백업·전후 동일. 문서 마감은 실행 코드 동일하여 재시작하지 않는다. 실제 적격/수익·공식 최신성은 미검증이며 실제 입찰/자동 투찰·외부 참여 확정 없음. [검증 기록](../docs/reviews/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md).
 
