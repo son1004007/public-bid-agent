@@ -24,7 +24,7 @@
 | --- | --- | --- | --- | --- |
 | BID-01 | P0 | 현행 공고의 취소·구차수·마감·등록기한, 부서 분야, 문서 추출 위험을 재사용하여 **읽기 전용 '지금 검토' 안전 분류 함수** 구현; 역량/분야 부족도 `CAPABILITY_GAP_MARGIN_REVIEW`로 보존, 추정 이익·자격은 `UNVERIFIED`; 합성 경계 테스트+Codex GO+GitHub CI | 기존 `procurement_filter`, `rfp_coverage`, `bid_readiness` | DONE |
 | BID-02 | P0 | `GET /api/dashboard/bid-now-shortlist` 읽기 전용 로컬 API 노출; 현재 부서 설정과 운영자료를 한 snapshot에서 조회; GET 데이터 비공개 원문/원가 미노출·원본 SHA 불변·Host/CSP 테스트 | BID-01 | DONE |
-| BID-03 | P0 | `/decision-preview`에 `지금 검토 가능한 후보` 별도 탭/필터 및 제외/검토 필요 근거 표시; '법적 적격 미검증' 기본 표시; 기존 목록/상세/결정 화면 보존. Chrome 390px + 일반폭 E2E | BID-02 | REVIEWED / Codex GO·전체 local_app 419 PASS·390px/1440px Chrome E2E PASS; 신규 SHA 두 CI 대기 |
+| BID-03 | P0 | `/decision-preview`에 `지금 검토 가능한 후보` 별도 탭/필터 및 제외/검토 필요 근거 표시; '법적 적격 미검증' 기본 표시; 기존 목록/상세/결정 화면 보존. Chrome 390px + 일반폭 E2E | BID-02 | DONE / f642796·Codex GO·local_app 419 PASS·390px/1440px E2E PASS·동일 SHA 두 CI SUCCESS |
 | BID-04 | P0 | **실제** 공고를 로컬 읽기 전용으로 돌려 활성 건수/위험·기한별 건수/일관성 집계; 특정 공고 ID·원문·부서정보는 로컬 로그에서만 처리. 현재 부서 설정이 비어 있거나 운영 스킬·MM/원가 근거 없으면 `BLOCKED_EVIDENCE` | BID-02, BID-03 | PENDING |
 | BID-05 | P1 | 공식 첨부 확보 대기/부분 추출/잘림/경고 후보를 소요 대비 우선순위로 자동 작업 큐에 연결; 공개 공식 URL·정정/취소·원본 SHA 결속, 기존 배치의 무단 재시도/다운로드 금지; 공식 자료 확보 후에만 재평가 | BID-04 및 공식 원본 접근 가능 | PENDING |
 | BID-06 | P1 | 실제 RFP에서 참가자격·평가기준·과업범위의 독립 정답 구절(전체 페이지/표/각주/OCR)을 로컬에서 대조, TP/FP/FN·누락률 추정 가능 여부 기록; 사람이 승인한 표본 없이 정확도 점수 발명 금지 | BID-05 + 승인된 최신 공식 원본·정답 검수 | PENDING |
@@ -48,7 +48,7 @@
 
 | 확인일 | 단계 | 현상/근거 | 영향/필요한 선행 작업 | 재시도 조건 | 상태 |
 | --- | --- | --- | --- | --- | --- |
-| 2026-10-19 13:14 KST | BID-03 재개 검증 | 분리 CPython 3.12.0 venv·pip check PASS, local_app 419 PASS(213.041초, 건너뜀 0), 감사 14·backend 11·Node 22 PASS. 동일 Chrome 155·기본 sandbox로 390px/1440px 전체 합성 E2E PASS. GitHub API/fetch 정상 | 아래 이전 세 차단은 현재 실행에서 해소됨. 독립 Codex 재검수 GO와 새 commit의 두 CI 성공은 계속 필수 | GO 후 개발 브랜치 commit/push → 동일 SHA 두 CI SUCCESS 확인 | Codex GO / CI PENDING |
+| 2026-10-19 13:14 KST | BID-03 재개 검증 | 분리 CPython 3.12.0 venv·pip check PASS, local_app 419 PASS(213.041초, 건너뜀 0), 감사 14·backend 11·Node 22 PASS. 동일 Chrome 155·기본 sandbox로 390px/1440px 전체 합성 E2E PASS. GitHub API/fetch 정상 | 아래 이전 세 차단은 현재 실행에서 해소됨. 독립 Codex 재검수 GO 및 구현 f642796의 두 CI SUCCESS 확인 완료 | GO 후 개발 브랜치 commit/push → 동일 SHA 두 CI SUCCESS 확인 | RESOLVED (f642796 두 CI SUCCESS) |
 | 2026-10-19 08:07 KST | BID-03 화면 인수 | 이전 Chrome sandbox 종료·합성 origin 거부 이력 | 13:14 재개에서 동일 Chrome/runner 기본 sandbox 390px/1440px E2E PASS. 이전 제한의 근본 원인 UNKNOWN | 정상 실행 증거 확보, 보안 완화/기존 origin 우회 없음 | RESOLVED |
 | 2026-10-19 08:07 KST | BID-03 Git/CI 네트워크 | 이전 api.github.com:443 OS 소켓 거부 이력 | 13:14 현재 GitHub API/fetch 정상. 새 SHA CI 성공 여부와 네트워크 복구를 구분 | GO 후 push·새 CI 성공 확인은 상단 게이트 유지 | RESOLVED |
 | 2026-10-19 | BID-03 전체 회귀 | 이전 의존성 누락 2 ERROR·HWP/XLS 2 SKIPPED·중단 이력 | 13:14 분리 venv의 전체 local_app 419 PASS, 건너뜀 0, 213.041초. 기존 NO_GO를 자동 GO로 바꾸지 않고 별도 재검수 | 전체 회귀 증거 확보, 독립 재검수는 상단 게이트 유지 | RESOLVED |
@@ -58,6 +58,8 @@
 | 2026-10-18 | BID-09 | 사람의 화면 인수·`main`/공개 릴리스 미승인 | 이 단계는 자동화가 승인 대체 불가 | 사용자 별도 명시적 승인 | OPEN |
 
 ## 5. EXECUTION_LOG (append semantic checkpoints)
+
+- 2026-10-19 13:22 KST / BID-03 **DONE**: 독립 최종 Codex **GO** 이후 [구현 f642796bbe2634fe3b6ef405f3332e848027f756](https://github.com/son1004007/public-bid-agent/commit/f642796bbe2634fe3b6ef405f3332e848027f756) 개발 브랜치 commit/push. 동일 SHA [Sprint 1 CI 39198868801](https://github.com/son1004007/public-bid-agent/actions/runs/39198868801) 및 [Windows synthetic acceptance 39198868837](https://github.com/son1004007/public-bid-agent/actions/runs/39198868837) **SUCCESS**. Ubuntu 전체 419+감사14+backend11 PASS, Windows 68 PASS 및 Chrome 155 실제 1440px/390px 전체 E2E PASS 로그 확인. 로컬 Python 444 PASS·Node22 PASS·build PASS, 기존 작업과 사용자 데이터 보존. 요청한 상태 문서·README2종·검증 보고 갱신. 운영 배포/main/실제 제출 없음, BID-04 미착수.
 
 - 2026-10-19 / BID-03 **독립 최종 VERDICT: GO / CI PENDING**: 별도 fresh-context 읽기 전용 Codex `/root/bid03_final_readonly`가 고정 변경본·정책·회귀 로그·스크린샷·실패/경쟁 경로·CI를 검토, Node 22개 독립 PASS 및 소스 SHA 시작/종료 일치 확인. 미해결 BLOCKER/MAJOR 없음. GO 후 개발 브랜치 커밋/푸시 진행, 동일 신규 SHA 두 CI SUCCESS 전 DONE 금지. [검수 provenance](../reviews/BID03_SHORTLIST_UI_2026-10-19.md).
 

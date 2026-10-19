@@ -1,6 +1,6 @@
 # Public Bid Agent — 로컬 실행 사용법
 
-> **2026-10-19 BID-03 로컬 검증 완료:** `/decision-preview`의 `지금 검토 가능한 후보`는 분야 일치·역량 보완/수익·사전등록 세 큐와 기한/문서 위험·보류 근거를 읽기 전용으로 표시합니다. 법적 적격·마진·보완 가능성은 UNVERIFIED이며 최종 판단은 사람만 수행합니다. 전체 local_app 419 PASS(건너뜀 0), 감사 14·backend 11·Node 22 PASS, build PASS. 기본 sandbox Chrome 155 실제 390px/1440px 후보·기존 상세/파일 선택/수기 이력 E2E PASS. 독립 Codex 최종 GO, 신규 SHA 두 CI 대기. DONE/운영 배포 아님. [검증 기록](../docs/reviews/BID03_SHORTLIST_UI_2026-10-19.md).
+> **2026-10-19 BID-03 DONE:** `/decision-preview`의 `지금 검토 가능한 후보`는 분야 일치·역량 보완/수익·사전등록 세 큐와 기한/문서 위험·보류 근거를 읽기 전용으로 표시합니다. 법적 적격·마진·보완 가능성은 UNVERIFIED이며 최종 판단은 사람만 수행합니다. 전체 local_app 419 PASS(건너뜀 0), 감사 14·backend 11·Node 22 PASS, build PASS. 기본 sandbox Chrome 155 실제 390px/1440px 후보·기존 상세/파일 선택/수기 이력 E2E PASS. 독립 Codex 최종 GO 후 구현 `f642796`을 개발 브랜치에 푸시했고 동일 SHA의 Sprint 1 CI(39198868801)와 Windows synthetic acceptance(39198868837)가 모두 SUCCESS입니다. 운영 배포·main 병합·실제 제출은 수행하지 않았습니다. [검증 기록](../docs/reviews/BID03_SHORTLIST_UI_2026-10-19.md).
 
 > **2026-10-18 BID-02:** GET `/api/dashboard/bid-now-shortlist`는 현재 부서 관심분야, 저장된 공고, 회사 운영자료의 **읽기 전용 동일 잠금 스냅샷**으로 건수·고정 사유·보완 가능성 검토 목록을 제공합니다. 개별 직원·원가·RFP 본문은 비공개이며 법정 적격/수익 판단은 모두 미검증입니다. 관련 합성 21 PASS·전체 Python 418 PASS·Codex GO; HTTP/Host/CSP/원본 불변 테스트는 `test_bid_now_shortlist.py`에 있습니다.
 

@@ -1,11 +1,11 @@
 # 현재 개발 상태
 
-## 2026-10-19 BID-03 독립 최종 GO / GitHub CI 대기
+## 2026-10-19 BID-03 DONE / 독립 GO·두 GitHub CI 성공
 
 - 기존 미커밋 15개 파일을 보존하고 전역 정책 9개를 GitHub 원본에서 재확인. 후보 세 큐·보류/문서 위험·UNVERIFIED·기존 상세 연결 유지.
 - CPython 3.12.0 별도 테스트 venv에 선언 의존성 설치, `pip check` PASS. `langchain-core 1.6.12`, `pytesseract 0.3.13`. 전체 local_app **419 PASS / 213.041초 / SKIPPED 0**, 감사 도구 14 PASS, backend 11 PASS(합계 444). Node 22 PASS, TypeScript/Vite build·npm audit(0건)·정적/문법/공백 PASS.
 - Chrome 155.0.8059.40 동일 runner·기본 sandbox로 **1440px/390px 실제 합성 E2E PASS**: 세 큐/보류/미검증/기존 상세/파일 선택/수기 이력 저장·재조회/가로 넘침·외부 페이지 요청 없음. 스크린샷 육안 확인. 이전 시작 실패·회귀 정체는 이번 환경에서 재현되지 않았고 과거 원인의 확정과 구분한다.
-- GitHub API·fetch 정상, 원격과 시작 HEAD 일치. 독립 Codex 재검수 **GO**, 신규 SHA 두 CI는 대기이며 **BID-03 DONE 아님**. 운영 데이터/서버·main·배포·실제 제출 변경 없음. [검증 기록](docs/reviews/BID03_SHORTLIST_UI_2026-10-19.md).
+- 독립 Codex 재검수 **GO** 후 구현 커밋 `f642796bbe2634fe3b6ef405f3332e848027f756`을 개발 브랜치에 푸시. 동일 SHA [Sprint 1 CI 39198868801](https://github.com/son1004007/public-bid-agent/actions/runs/39198868801) 및 [Windows synthetic acceptance 39198868837](https://github.com/son1004007/public-bid-agent/actions/runs/39198868837) **모두 SUCCESS**, BID-03 **DONE**. Ubuntu 419+14+11 PASS, Windows 68 PASS 및 390px/1440px Chrome E2E PASS 로그 확인. 운영 데이터/서버·main·배포·실제 제출 변경 없음. 다음 BID-04는 이번 요청에서 미착수. [검증 기록](docs/reviews/BID03_SHORTLIST_UI_2026-10-19.md).
 
 ## 2026-10-18 BID-02 구현 완료 및 BID-03 차례
 

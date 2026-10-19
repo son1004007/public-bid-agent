@@ -1,12 +1,19 @@
 # BID-03 후보 화면 검증 기록
 
-- 현재 상태: REVIEWED / 독립 재검수 **VERDICT: GO**, 신규 SHA 두 CI 대기. 최초 NO_GO는 아래 이력이며 아직 BID-03 DONE 아님.
+- 현재 상태: **BID-03 DONE** / 독립 재검수 **VERDICT: GO**, 구현 `f642796`의 두 CI **SUCCESS**. 최초 NO_GO와 재개 중 대기 표기는 아래 시점별 이력이다.
 - 기준: 2026-10-19 Asia/Seoul, `feat/sprint1-search-demo`, 시작 HEAD `0df2f58b7157403c5808979830501d878a7af31f`.
 - 정책: 사용자가 제공한 GitHub main 검증 사본 CONTROL 1개/handbook 8개를 모두 읽었다. 기존 정책 접근 문제는 해결됨. 중앙 정책 본문은 저장소 변경에 포함하지 않는다.
 - 범위: [설계 계약](../design/BID03_SHORTLIST_UI_2026-10-19.md). 기존 shortlist GET을 소비하는 별도 후보 화면, 세 큐/총수/표시 상한·미표시 건수, 취소·구차수·상태/마감/문서 위험 보류 집계, 법적 적격·보완 후 마진·보완 가능성 UNVERIFIED, 사람 최종 판단 안내. 기존 상세/판단 경로 재사용.
 - 비공개 운영 데이터/원본·회사 자료 접근, 외부 AI 전송, 운영 서버 교체, main/배포 없음. 테스트는 생성된 합성 자료와 임시 디렉터리·루프백 서버만 사용한다.
 
-## 13:14 KST 재개 검증 (현재)
+## 13:22 KST GitHub 최종 검증
+
+- 독립 최종 GO 이후에만 `feat/sprint1-search-demo`에 [구현 f642796bbe2634fe3b6ef405f3332e848027f756](https://github.com/son1004007/public-bid-agent/commit/f642796bbe2634fe3b6ef405f3332e848027f756)을 커밋·푸시했다. 시작 시 존재한 15개 파일의 작업을 포함했으며 무관한 파일/비공개 데이터는 추가하지 않았다.
+- 동일 SHA [Sprint 1 CI 39198868801](https://github.com/son1004007/public-bid-agent/actions/runs/39198868801) **SUCCESS**: Ubuntu local_app 419 tests/58.955초, 감사 14/0.109초, backend 11/0.25초 PASS. 프런트엔드 빌드·BID-03 11개 계약·README 동기화·정적 검사도 SUCCESS.
+- 동일 SHA [Windows synthetic acceptance 39198868837](https://github.com/son1004007/public-bid-agent/actions/runs/39198868837) **SUCCESS**: API/보안/복구 **68 tests/84.252초 PASS**, Chrome **155.0.8059.40**, Node **22.23.3**, **1440px/390px**의 `PASS BID03` 및 `PASS CHROME_SYNTHETIC_E2E` 로그 확인. 로컬 실행 기록과 별도로 GitHub 로그에 원시 실행 근거가 보존된다.
+- 이 성공 확인 후에만 CURRENT_STATE/TASKS/실행 백로그를 **DONE**으로 변경했다. 후속 문서 커밋은 소스·테스트·CI를 변경하지 않는다. main 병합·운영 적용/배포·실제 입찰/외부 비공개 자료 전송 없음. BID-04는 미착수.
+
+## 13:14 KST 재개 검증 (로컬)
 
 - 사용자의 남은 BID-03 완료 요청에 따라 기존 15개 미커밋 파일을 저장소 외부 임시 백업으로 보존했다. 원격 개발 브랜치와 시작 HEAD 일치. 전역 정책 9개 GitHub 원본 재확인. 사용자 데이터·운영 서버·main 수정 없음.
 - 공유 CPython 3.12.0에는 `langchain_core`/`pytesseract`가 이미 있었으나 `langgraph`/`pytest` 등이 없고 기존 FastAPI/anyio 및 notebook/jupyterlab 충돌이 관찰됐다. 공유/운영 패키지를 바꾸지 않고 새 테스트 venv에 `backend/requirements-dev.txt` 및 `local_app/test-requirements.txt`를 설치했다. 요구사항 파일·의존성 범위 변경 없음. `pip check`: PASS. 설치 버전 `langchain-core 1.6.12`, `pytesseract 0.3.13`, `langgraph 1.2.16`, `fastapi 0.143.5`, `pytest 9.1.1`.
