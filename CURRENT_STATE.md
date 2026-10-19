@@ -1,5 +1,13 @@
 # 현재 개발 상태
 
+## 2026-10-19 15:10 KST BID-04 DONE / main·기존 localhost 운영 인수 PASS
+
+- 구현: 실제 로컬 공고의 전체/활성/보류·기한·취소/정정/STALE·일관성·분야 비교/역량/MM/원가 증빙 부족을 CLI와 기존 후보 화면/API로 읽기 전용 표시. 증빙 없음은 BLOCKED_EVIDENCE, 적격/수익/보완 허용은 UNVERIFIED, 역량 부족 자동 배제 없음. 실제 입찰/자동 투찰·인터넷 공개 없음.
+- 검증: Python468(local_app443+감사14+backend11), Node27, build PASS. 기본 sandbox Chrome155 합성390/1440px PASS. 별도 읽기 전용 Codex 최초 MAJOR1 수정/재확인 후 GO, 인계 CI 격리·첨부 포함 백업·명시 refspec 보완도 GO 유지. 실제 자료5,718/활성2,369·부서 비교불명2,369; 회사 증빙은 미검증.
+- 개발 및 main 실행 소스 `4f1743d78f2c909bc60b63ad341e8a643b6a32ce`. [개발 Sprint 1 CI](https://github.com/son1004007/public-bid-agent/actions/runs/39207655216), [Windows synthetic acceptance](https://github.com/son1004007/public-bid-agent/actions/runs/39207655224), [main CI](https://github.com/son1004007/public-bid-agent/actions/runs/39208016065) 모두 SUCCESS. 기존 main `10b4dcb`가 조상임을 확인한 fast-forward이며 main의 기존 작업·Lab 작업 트리/설정은 보존했다.
+- 기존 소유자 전용 `127.0.0.1:8765`에 검증된 고정 소스를 적용했다. 첨부 포함393파일 백업·SHA 확인 및 배포 후393파일 전부 동일, API200·390/1440px GET 전용 Chrome/legacy 무결성 경고·기존 화면 인수 PASS. 이전 고정 소스와 백업의 존재·실패 시 소스 복귀 절차 확인, 실제 복귀는 불필요했다. 데이터 복원/덮어쓰기 없음.
+- 문서 마감 커밋은 실행 코드가 위 배포 SHA와 같으며 재배포/재시작을 유발하지 않는다. BID-05 미착수. 비공개 로컬 승인 메모는 미추적 상태로 보존했다. [전체 검증/제약](docs/reviews/BID04_UI_DEPLOY_2026-10-19.md). 아래 대기/NO_GO는 이전 실행 이력이다.
+
 ## 2026-10-19 BID-04 화면·API VERIFIED / 독립 GO / CI·배포 대기
 
 - 기존 작성자 종료(task_complete)와 미커밋 18개 파일 외부 백업 후 인계. CLI 원본 3개는 바이트 동일하게 보존하고 GET `/api/dashboard/bid-now-audit`와 후보 화면의 전체 공고 위험·증빙 집계를 연결했다. 고정 오류/권한·10초 제한·최신 요청 우선·legacy 무결성 미검증 경고를 표시한다.

@@ -1,6 +1,6 @@
 # Public Bid Agent | 공공 입찰 참여 의사결정 지원
 
-> **2026-10-19 BID-04 화면·API 검증 / 독립 GO:** 후보 화면에서 “전체 공고 위험·증빙 집계”를 누르면 저장 공고의 전체/활성/보류·기한·취소/정정/STALE·일관성·설정/기술/MM/원가 증빙 부족을 읽기 전용 확인합니다. `GET /api/dashboard/bid-now-audit` 및 기존 CLI는 비식별 집계만 반환하며 실제 적격·수익은 `UNVERIFIED`, 증빙 부족은 `BLOCKED_EVIDENCE`입니다. 원문/ID·회사·인력/원가·해시를 응답하지 않습니다. Python468·Node27·Chrome390/1440px PASS, 독립 GO. Git/CI·기존 localhost 운영 인수 결과는 [최신 검증](docs/reviews/BID04_UI_DEPLOY_2026-10-19.md)을 따릅니다.
+> **2026-10-19 BID-04 DONE / 기존 localhost 운영 적용:** 후보 화면에서 “전체 공고 위험·증빙 집계”를 누르면 저장 공고의 전체/활성/보류·기한·취소/정정/STALE·일관성·설정/기술/MM/원가 증빙 부족을 읽기 전용 확인합니다. `GET /api/dashboard/bid-now-audit` 및 기존 CLI는 비식별 집계만 반환하며 실제 적격·수익은 `UNVERIFIED`, 증빙 부족은 `BLOCKED_EVIDENCE`입니다. 원문/ID·회사·인력/원가·해시를 응답하지 않습니다. Python468·Node27·Chrome390/1440px PASS, 독립 GO. 실행 소스 `4f1743d`의 개발 두 CI·main CI와 기존 localhost의 API/Chrome390·1440px·393파일 보존 인수 PASS. 상세 결과는 [최신 검증](docs/reviews/BID04_UI_DEPLOY_2026-10-19.md)을 따릅니다.
 
 > **2026-10-19 BID-04 로컬 집계 구현 / 완료 게이트 대기:** `python -B local_app/bid_now_audit_cli.py --data-dir "<로컬 데이터 폴더>"`는 저장 공고의 활성·기한·취소·구차수·STALE·등록 위험과 일관성을 읽기 전용으로 집계합니다. ID·원문·부서/인력·원가·해시는 출력하지 않습니다. 부서 설정/기술·MM·원가 증빙 부족은 `BLOCKED_EVIDENCE`, 비교 불명은 별도 건수로 보존하며 실제 자격·수익을 추정하지 않습니다. 기존 화면·API·수집·원본은 변경하지 않습니다. [사용 계약](local_app/README.md#bid-04-읽기-전용-로컬-집계), [검증/차단 기록](docs/reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md). 독립 최종 GO·개발 브랜치 Git/두 CI 전 DONE 아님.
 

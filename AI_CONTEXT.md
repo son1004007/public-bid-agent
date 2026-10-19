@@ -1,5 +1,7 @@
 # AI 개발 작업 안내 - Public Bid Agent
 
+> **최신 BID-04 DONE:** 실행 `4f1743d`, Python468·Node27·Chrome390/1440 PASS, 독립 Codex GO, 개발 두 CI·main CI SUCCESS. 사용자 직접 승인 범위로 main fast-forward·기존 localhost 배포 완료, API/운영 두 폭·393파일 백업/전후 보존 PASS. 회사 증빙 BLOCKED_EVIDENCE/적격·수익 UNVERIFIED 유지. BID-05 미착수, 인터넷 공개·실제 입찰 없음. 아래 대기/NO_GO는 이전 이력이다. [최종 기록](docs/reviews/BID04_UI_DEPLOY_2026-10-19.md).
+
 > **최신 BID-04 인계:** 기존 작성자 종료 후 원본 보존/외부 백업 완료. CLI+화면/API, Python468·Node27·Chrome390/1440 PASS, Codex 최종 GO. 사용자 이번 직접 대화에서 main 및 기존 localhost 운영 배포를 승인했으며 DECISIONS 최신 절을 우선한다. CI/운영 인수 전 DONE 아님. 아래 이전 NO_GO/금지는 해당 시점 이력. [현재 기록](docs/reviews/BID04_UI_DEPLOY_2026-10-19.md).
 
 > **2026-10-19 BID-04 최종 Codex NO_GO / 완료 게이트 BLOCKED:** 개발 브랜치 `648ca0a` 이후 실제 로컬 집계 CLI/합성 회귀 구현. 실제 5,718건·활성 검토 2,369·부서 비교 불명 2,369, 결과 BLOCKED_EVIDENCE. 원문/ID·회사/인력/원가·개별 SHA 미노출, 보호 파일393개 전후 동일. 최종 local_app440 PASS/0 skip/309.928초, 감사14/backend11·Node22·build PASS. 별도 Codex는 독립10 PASS/소스 중대 결함 없음이나 Chrome 시작 실패·GitHub OS 소켓 차단으로 **NO_GO**. 문서 포함 commit/push/DONE/main/배포/실제 입찰 없음. [검증 기록](docs/reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md) 및 실행 백로그 최신 BLOCKERS 우선. 아래 미착수는 이전 이력.

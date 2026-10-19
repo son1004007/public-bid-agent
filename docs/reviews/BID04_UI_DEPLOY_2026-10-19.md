@@ -15,3 +15,13 @@
 - 14:59 KST 실제 읽기 전용 재검증의 전체/활성/보류/무효=5,718/2,369/3,349/0, 비교불명2,369, legacy UNVERIFIED 동일. 기존 helper의 확장자 한정318파일 전후 불변을 확인했으며 기존393개 검사와 범위를 구분한다. 배포 실행안은 모든 파일(.lock 제외) snapshot/backup/SHA 검사로 확대했다. 합성 JSON/PDF 포함·잠금 제외·변경 감지 PASS. 수정된 로컬 Python 실행안 SHA `75a2f33396e3939c857aa701312353b1a3103004eda393edcd881dc72612c6e3`; 기존 snapshot 함수의 다른 배포/복구 호출은 유지한다.
 
 - 통합본의 CI 격리2줄과 원문첨부 포함 백업 snapshot 확장에 대해서만 같은 읽기 전용 검수자가 추가 확인하여 **GO 유지**. 제품/UI/테스트는 이전 GO본과 바이트 동일, 통합/운영 실행안 manifest 해시 일치.
+
+## 최종 Git/CI/운영 결과 (2026-10-19 15:10 KST)
+
+- **BID-04 DONE**. 개발 및 최초 main 실행 소스 `4f1743d78f2c909bc60b63ad341e8a643b6a32ce`. 기존 main `10b4dcbe29c5d53bb52cf10870290703a756f7a3`를 조상 검사한 뒤 fast-forward, 강제 push/충돌/기존 작업 초기화 없음. [개발 Sprint 1 CI](https://github.com/son1004007/public-bid-agent/actions/runs/39207655216), [Windows synthetic acceptance](https://github.com/son1004007/public-bid-agent/actions/runs/39207655224), [main CI](https://github.com/son1004007/public-bid-agent/actions/runs/39208016065) 모두 SUCCESS. Ubuntu443+14+11 PASS, Windows92 PASS 및 새 집계390/1440px와 전체 Chrome 합성 E2E PASS 로그 확인.
+- 오류/재개 기록: 기본 single-branch fetch 설정 때문에 최초 `origin/main` 참조가 없어 조상 검사에서 중단(exit128), 원격/작업 파일 변경 없음. 강제 옵션·설정 수정 없이 명시 refspec으로 원격 두 브랜치를 받아 해결했다. 같은 설정의 로컬 배포 실행안도 명시 refspec으로 맞추고 같은 Codex가 해당 블록만 확인해 GO 유지. 최종 배포 Python SHA `76884c141796fe29ca5400df7b8961e9159e8e046f71d823533e9becaee0ff58`, Node SHA `32b58e79eabf6999ecb284629aecd82958db4481321c8749b70806bfefcc37a4`.
+- 기존 AgentRunner의 이전 검증 소스/백업과 정확 localhost 서비스 소스를 확인했다. 새 소스 stage 존재 시 차단, 배치 유휴 확인, 정확 SHA 두 원격 브랜치·개발2/main CI 검사 → 백업·SHA 검증 → 알려진 PID/소스만 종료·동일 데이터 경로 재시작 → API/GET 전용 Chrome 인수 → 전후 SHA 비교를 적용했다. 백업은 공개 저장소 밖의 기존 private-backups이며 경로/파일명/개별 SHA·개인 정보는 기록하지 않는다.
+- 배포 결과 `LOCAL_APPLIED`, 06:10:01 UTC /15:10:01 KST, HTTP200, 보호 파일 **393개 전체 백업 검증·393개 전후 동일**, 신규 BID-04 API 및 운영 **390/1440px 읽기 전용 Chrome PASS**. API가 legacy 상태일 때 두 폭의 현재 세대 무결성 미검증 경고도 assertion했다. 기존 추천/상세/RFP 화면 흐름과 P06 API 계약 PASS. 새 Chrome 프로필·고정 localhost GET만 허용했고 실제 입찰/수집/모델/설정 쓰기 요청 없음.
+- 복구 조건: 신규 API/화면 인수 실패 또는 보호 파일 차이면 기존 helper가 알려진 새 서버만 종료하고 이전 고정 소스/동일 데이터를 기동한다. 시작 자체 실패도 보완한 복귀 경로가 있다. 이전 소스/백업 존재 및 절차는 확인했으며 이번 배포 성공으로 복귀 실행/데이터 복원은 하지 않았다. 기존 사용자 설정·작업 및 운영 원문은 보존했다.
+- 문서 마감 커밋은 실행 코드와 workflow를 바꾸지 않는다. main 최종 문서 SHA와 배포 실행 소스 SHA는 구분하며 실행 소스가 동일하므로 불필요한 재배포는 하지 않는다. 문서 마감 SHA의 개발2/main CI 결과는 최종 보고에서 확인한다.
+- 남은 사업상 문제: 승인된 부서 설정/기술·법적 자격/MM·원가·운영 근거/공고별 원문 대조 부족. 모든 자격·수익·보완 허용은 UNVERIFIED, 집계 결과 BLOCKED_EVIDENCE, 현재 legacy 완료 저널 무결성은 미검증. 책임자가 로컬 증빙을 확인한 후 재평가하며 기본값이나 추정 이익으로 대체하지 않는다. 이는 구현 작업 DONE과 구분한다. 비공개 승인 메모는 원위치 미추적 파일과 외부 인계 백업으로 보존, GitHub에 올리지 않았다.

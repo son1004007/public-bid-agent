@@ -1,5 +1,7 @@
 # Public Bid Agent — 로컬 실행 사용법
 
+> **2026-10-19 BID-04 DONE / 운영 인수 PASS:** 실행 소스 `4f1743d`의 개발 두 CI 및 main CI SUCCESS 후 기존 소유자 전용 localhost에 배포했다. API200, GET 전용 Chrome390/1440px·legacy 경고, 첨부 포함393파일 백업/전후 동일을 확인했다. 문서 마감 변경은 실행 코드 동일하여 추가 재시작하지 않는다. 실제 적격·수익은 미검증이며 입찰·자동 투찰은 수행하지 않는다. [최종 근거](../docs/reviews/BID04_UI_DEPLOY_2026-10-19.md).
+
 ## BID-04 후보 화면과 읽기 전용 API
 
 `/decision-preview` → 후보 → **전체 공고 위험·증빙 집계**. `GET /api/dashboard/bid-now-audit`는 CLI와 같은 고정 로컬 입력/전후 안정성 검사를 재사용해 `{storage: LOCAL_READ_ONLY, audit: ...}`를 반환합니다. 입력/스냅샷 실패는 비식별 고정 503, Host 거절403. 전체/활성/보류/무효 및 위험·증빙 상태를 구별하고 실제 적격·수익·보완 허용은 UNVERIFIED입니다. 10초 제한/이전 요청 취소/최신 응답 우선, legacy 완료 저널의 현재 세대 무결성 미검증을 경고합니다. 기존 CLI를 그대로 제공하며 저장/수집/외부 호출은 하지 않습니다. [최신 검증 및 운영 결과](../docs/reviews/BID04_UI_DEPLOY_2026-10-19.md).
@@ -14,7 +16,7 @@
 
 department_profile.json/operations.json/workforce.json의 증빙이 없거나 출처·확인일·MM·총원가가 미확인이고 현재 workforce v1의 기술이 ASSUMED/UNKNOWN이면 `BLOCKED_EVIDENCE`입니다. 값이 기록되어도 공고별 실제 대조·법적 적격·보완 허용·수익은 UNVERIFIED입니다. 종료 코드 0은 **집계 수행 성공**(증빙 보류 포함)이고 실제 입찰 가능/완료가 아닙니다. 종료 2는 `BLOCKED_INPUT` 또는 `BLOCKED_SNAPSHOT`이며 집계는 출력하지 않습니다.
 
-고정 입력 파일의 존재·identity·메타데이터·바이트를 전후 확인하고 변경 관측/중단 복구 상태/SQLite sidecar는 보류합니다. 읽기용 잠금·SQLite 파일을 만들지 않습니다. 기존 JSON-only 완료 저널은 정상 수집 이후 과거 해시가 남을 수 있어 `LEGACY_COMPLETED_UNVERIFIED`로 표시하며 현재 세대 무결성을 증명하지 않습니다. 전후 안정성은 다중 파일 트랜잭션/공식 최신성의 보증이 아닙니다. 동시 갱신 중 차단되면 갱신 종료 후 다시 실행합니다. [설계](../docs/design/BID04_LOCAL_AGGREGATE_2026-10-19.md), [검증 및 BLOCKERS](../docs/reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md). 현재 개발 완료 게이트 대기, 운영 적용·main·입찰 제출 없음.
+고정 입력 파일의 존재·identity·메타데이터·바이트를 전후 확인하고 변경 관측/중단 복구 상태/SQLite sidecar는 보류합니다. 읽기용 잠금·SQLite 파일을 만들지 않습니다. 기존 JSON-only 완료 저널은 정상 수집 이후 과거 해시가 남을 수 있어 `LEGACY_COMPLETED_UNVERIFIED`로 표시하며 현재 세대 무결성을 증명하지 않습니다. 전후 안정성은 다중 파일 트랜잭션/공식 최신성의 보증이 아닙니다. 동시 갱신 중 차단되면 갱신 종료 후 다시 실행합니다. [설계](../docs/design/BID04_LOCAL_AGGREGATE_2026-10-19.md), [검증 및 BLOCKERS](../docs/reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md). 이 CLI 최초 세션의 대기 상태는 이력이며 최신 main/기존 localhost 운영 인수는 위 완료 기록을 따른다. 실제 입찰 제출은 없다.
 
 > **2026-10-19 BID-03 DONE:** `/decision-preview`의 `지금 검토 가능한 후보`는 분야 일치·역량 보완/수익·사전등록 세 큐와 기한/문서 위험·보류 근거를 읽기 전용으로 표시합니다. 법적 적격·마진·보완 가능성은 UNVERIFIED이며 최종 판단은 사람만 수행합니다. 전체 local_app 419 PASS(건너뜀 0), 감사 14·backend 11·Node 22 PASS, build PASS. 기본 sandbox Chrome 155 실제 390px/1440px 후보·기존 상세/파일 선택/수기 이력 E2E PASS. 독립 Codex 최종 GO 후 구현 `f642796`을 개발 브랜치에 푸시했고 동일 SHA의 Sprint 1 CI(39198868801)와 Windows synthetic acceptance(39198868837)가 모두 SUCCESS입니다. 운영 배포·main 병합·실제 제출은 수행하지 않았습니다. [검증 기록](../docs/reviews/BID03_SHORTLIST_UI_2026-10-19.md).
 

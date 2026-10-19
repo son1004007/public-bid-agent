@@ -25,7 +25,7 @@
 | BID-01 | P0 | 현행 공고의 취소·구차수·마감·등록기한, 부서 분야, 문서 추출 위험을 재사용하여 **읽기 전용 '지금 검토' 안전 분류 함수** 구현; 역량/분야 부족도 `CAPABILITY_GAP_MARGIN_REVIEW`로 보존, 추정 이익·자격은 `UNVERIFIED`; 합성 경계 테스트+Codex GO+GitHub CI | 기존 `procurement_filter`, `rfp_coverage`, `bid_readiness` | DONE |
 | BID-02 | P0 | `GET /api/dashboard/bid-now-shortlist` 읽기 전용 로컬 API 노출; 현재 부서 설정과 운영자료를 한 snapshot에서 조회; GET 데이터 비공개 원문/원가 미노출·원본 SHA 불변·Host/CSP 테스트 | BID-01 | DONE |
 | BID-03 | P0 | `/decision-preview`에 `지금 검토 가능한 후보` 별도 탭/필터 및 제외/검토 필요 근거 표시; '법적 적격 미검증' 기본 표시; 기존 목록/상세/결정 화면 보존. Chrome 390px + 일반폭 E2E | BID-02 | DONE / f642796·Codex GO·local_app 419 PASS·390px/1440px E2E PASS·동일 SHA 두 CI SUCCESS |
-| BID-04 | P0 | **실제** 공고를 로컬 읽기 전용으로 돌려 활성 건수/위험·기한별 건수/일관성 집계; ID·원문·회사/인력·원가는 로컬 로그/프롬프트/Git/공개 보고에도 미출력. 현재 부서 설정이 비어 있거나 운영 스킬·MM/원가 근거 없으면 `BLOCKED_EVIDENCE` | BID-02, BID-03 | REVIEWED / 화면·API 포함 GO, CI·main·운영 인수 대기 |
+| BID-04 | P0 | **실제** 공고를 로컬 읽기 전용으로 돌려 활성 건수/위험·기한별 건수/일관성 집계; ID·원문·회사/인력·원가는 로컬 로그/프롬프트/Git/공개 보고에도 미출력. 현재 부서 설정이 비어 있거나 운영 스킬·MM/원가 근거 없으면 `BLOCKED_EVIDENCE` | BID-02, BID-03 | **DONE** (2026-10-19 15:10 KST, 코드/화면/운영 검증 완료; 증빙 보류 유지) |
 | BID-05 | P1 | 공식 첨부 확보 대기/부분 추출/잘림/경고 후보를 소요 대비 우선순위로 자동 작업 큐에 연결; 공개 공식 URL·정정/취소·원본 SHA 결속, 기존 배치의 무단 재시도/다운로드 금지; 공식 자료 확보 후에만 재평가 | BID-04 및 공식 원본 접근 가능 | PENDING |
 | BID-06 | P1 | 실제 RFP에서 참가자격·평가기준·과업범위의 독립 정답 구절(전체 페이지/표/각주/OCR)을 로컬에서 대조, TP/FP/FN·누락률 추정 가능 여부 기록; 사람이 승인한 표본 없이 정확도 점수 발명 금지 | BID-05 + 승인된 최신 공식 원본·정답 검수 | PENDING |
 | BID-07 | P1 | 공고별 실제 부서 역량 비교: 업종·면허/실적/기술 스택/참여 기간별 MM·겸임·예상 사업이익/외주·협력·채용 비용/필수 제안 서류의 **증빙 출처와 검증일** 기반 차단 게이트. 내부 역량 부족은 무조건 제외하지 말고 보완 비용·기술/일정·합법적 외주/공동수급 가능성을 확인해 이익 기회를 유지. 미확인 값은 무조건 `UNVERIFIED`; 민감 원본 로컬만 | BID-06 + 승인된 회사 증빙 및 책임자 검증 | PENDING |
@@ -46,7 +46,11 @@
 
 ## 2026-10-19 최신 재개 결과
 
-기존 세션 종료·18파일 외부 백업 후 검수본 통합. 화면/API 읽기 전용 연동, Python468·Node27·Chrome390/1440px PASS, 독립 Codex 경고 계약 MAJOR 수정 후 최종 GO. 실제 14:59 KST 5,718/활성2,369 재확인, 적격·수익 UNVERIFIED와 증빙 보류 유지. 사용자 직접 승인한 main/기존 localhost 배포는 CI·백업/복구·운영 인수 게이트를 순서대로 충족한다. 현재 DONE 아님. [최신 상세](../reviews/BID04_UI_DEPLOY_2026-10-19.md).
+기존 세션 종료·18파일 외부 백업 후 검수본 통합. 화면/API 읽기 전용 연동, Python468·Node27·Chrome390/1440px PASS, 독립 Codex 경고 계약 MAJOR 수정 후 최종 GO. 실제 14:59 KST 5,718/활성2,369 재확인, 적격·수익 UNVERIFIED와 증빙 보류 유지. 사용자 직접 승인한 main/기존 localhost 배포는 CI·백업/복구·운영 인수 게이트를 순서대로 충족한다. 15:10 KST 개발 두 CI·main CI SUCCESS 및 기존 localhost 운영/API/두 폭 화면/393파일 보존 PASS로 **DONE**. 증빙 보류는 그대로 유지한다. [최신 상세](../reviews/BID04_UI_DEPLOY_2026-10-19.md).
+
+## 2026-10-19 15:10 KST BID-04 최종 완료
+
+독립 GO 후 실행 `4f1743d78f2c909bc60b63ad341e8a643b6a32ce` commit/push, [개발 Sprint 1 CI](https://github.com/son1004007/public-bid-agent/actions/runs/39207655216), [Windows synthetic acceptance](https://github.com/son1004007/public-bid-agent/actions/runs/39207655224), [main CI](https://github.com/son1004007/public-bid-agent/actions/runs/39208016065) 모두 SUCCESS. 기존 main 조상 검증 후 fast-forward, 기존 localhost만 배포. 첨부 포함393파일 검증 백업·배포 전후 SHA 동일, API200/GET 전용 Chrome390·1440px·legacy 경고/기존 흐름 PASS. 실제 적격·수익은 UNVERIFIED/BLOCKED_EVIDENCE이며 입찰/자동 투찰·외부 참여 확정 없음. BID-04 DONE은 구현·검증·운영 단계 완료이며 실제 사업 참여 자격 확정이 아니다. BID-05 및 비활성 모니터링은 시작하지 않았다.
 
 ## 4. BLOCKERS (최신 선행문제)
 
