@@ -1,5 +1,7 @@
 # Public Bid Agent | 공공 입찰 참여 의사결정 지원
 
+> **2026-10-19 BID-03 로컬 검증 완료:** `/decision-preview`의 `지금 검토 가능한 후보`는 분야 일치·역량 보완/수익·사전등록 세 큐와 기한/문서 위험·보류 근거를 읽기 전용으로 표시합니다. 법적 적격·마진·보완 가능성은 UNVERIFIED이며 최종 판단은 사람만 수행합니다. 전체 local_app 419 PASS(건너뜀 0), 감사 14·backend 11·Node 22 PASS, build PASS. 기본 sandbox Chrome 155 실제 390px/1440px 후보·기존 상세/파일 선택/수기 이력 E2E PASS. 독립 Codex 최종 GO, 신규 SHA 두 CI 대기. DONE/운영 배포 아님. [검증 기록](docs/reviews/BID03_SHORTLIST_UI_2026-10-19.md).
+
 > **2026-10-18 BID-02 개발(전체 Python 418 PASS, Codex GO):** 로컬 조회 API `/api/dashboard/bid-now-shortlist`는 공식 공고+부서 선택+운영자료를 같은 잠금에서 읽어 현재 검토 후보, 역량 보완으로 이익이 날 가능성의 검토 후보, 등록 기한 검토 후보를 **분리된 큐**로 반환합니다. 고정 사유 코드·증빙 누락만 출력하고 직원명/원가/원문·회사 자료는 반환하지 않습니다. 모든 실질 법적 적격·예상 이익은 UNVERIFIED. [단계별 계획](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md).
 
 > **2026-10-18 D-20 최우선 실행 목표:** 현재 부서와의 기술 역량 일치 외에도 **부족 역량 보완 비용을 포함한 이익 기회**를 검토합니다. 미확인 수익·법정 자격은 UNVERIFIED로 보수 처리하며 취소·마감·정정 증거는 별도. [BID-01~BID-09 작업/선행 차단/일지](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md), [사용자 결정](DECISIONS.md). BID-01은 합성 분류 기능이며 실제 입찰 적격/공고별 이익을 확정하지 않습니다.

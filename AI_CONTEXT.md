@@ -1,5 +1,7 @@
 # AI 개발 작업 안내 - Public Bid Agent
 
+> **2026-10-19 BID-03 REVIEWED / 독립 최종 GO·CI 대기:** 기존 미커밋 작업 보존. 분리 venv의 전체 local_app 419 PASS(건너뜀 0), 감사 14·backend 11 PASS, Node 22 PASS·build PASS. 기본 sandbox Chrome 155 실제 390px/1440px 세 큐·보류·UNVERIFIED·기존 상세/수기 이력 E2E PASS. 이전 NO_GO의 환경 차단은 이번 실행에서 재현되지 않음. 독립 GO 후 개발 브랜치 커밋/푸시·동일 SHA 두 CI 성공 전까지 DONE 아님. [검증 기록](docs/reviews/BID03_SHORTLIST_UI_2026-10-19.md)과 실행 백로그 우선. 운영·main 변경 없음.
+
 > **BID-02 DONE / 2026-10-18:** 커밋 `9f3ab29`, 전체 Python 418 PASS, Codex GO, GitHub Sprint 1/Windows synthetic CI SUCCESS. 다음 BID-03 화면; 실제 수익·법정 자격은 계속 UNVERIFIED.
 
 > **BID-02 진행:** `GET /api/dashboard/bid-now-shortlist`가 실제 공고·관심분야·운영 준비도를 같은 잠금에서 평가하는 비식별 로컬 큐. 역량/분야 부족으로 자동 탈락시키지 않고 보완/수익성을 별도 UNVERIFIED로 분리합니다. 실데이터 5,691건을 읽기 전용 확인해 matching 178, augmentation review 2,158, preregistration review 393. 문서/실제 비용·면허/기한의 확인이 없으면 입찰 가능 판정 금지. [계획·BLOCKERS](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md).

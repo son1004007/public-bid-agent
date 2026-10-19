@@ -122,5 +122,19 @@ class BidNowShortlistTests(unittest.TestCase):
                     http.shutdown();http.server_close();th.join(timeout=3)
             self.assertEqual(before,{p.name:p.read_bytes() for p in root.iterdir() if p.is_file()})
 
+    def test_bid03_browser_fixture_real_api_three_queues_and_held_sources_preserved(self):
+        from test_local_acceptance import synthetic_server
+        with synthetic_server(bid_now=True) as fixture:
+            root=fixture["root"]
+            before={p:p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            with urlopen(fixture["base"]+"/api/dashboard/bid-now-shortlist",timeout=7) as response:
+                report=json.load(response)["shortlist"]
+            self.assertEqual(report["matching_total"],1)
+            self.assertEqual(report["augmentation_review_total"],1)
+            self.assertEqual(report["registration_review_total"],1)
+            self.assertEqual(report["status_counts"]["HOLD_OFFICIAL_STATUS"],2)
+            self.assertEqual(report["status_counts"]["HOLD_DEADLINE"],1)
+            self.assertEqual(before,{p:p.read_bytes() for p in root.rglob("*") if p.is_file()})
+
 if __name__=="__main__":
     unittest.main()

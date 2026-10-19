@@ -8,7 +8,8 @@
 불변조건: 보안 헤더/Host/Origin/CSRF와 복구 가드를 대체하지 않는다.
 배치 격리: RFP_BATCH도 임시 root의 새 manager로 교체하고 외부 어댑터를 차단한다.
 회귀 경계: 기존 manager/root는 메모리 차단자로 보호하며 RUNNING 조회의 잠금도 임시 경로만 사용한다.
-관련: D-03/D-06/D-10/P09, scripts/test_chrome_synthetic.cjs, P09 검증 보고.
+관련: D-03/D-06/D-10/P09/BID-03, scripts/test_chrome_synthetic.cjs.
+후보 검증: 선택적인 bid_now fixture는 세 큐 및 취소·마감·구차수 합성 자료만 추가한다.
 """
 import base64
 import json
@@ -36,7 +37,7 @@ TITLE = 'P09 합성 SW 사업 <img src=x onerror="window.p09Injected=true">'
 
 
 @contextmanager
-def synthetic_server():
+def synthetic_server(*, bid_now=False):
     """사용자 데이터 경로를 인수로 받지 않는 일회성 테스트 경계."""
     with tempfile.TemporaryDirectory(prefix="p09-synthetic-") as folder, ExitStack() as stack:
         root = Path(folder)
@@ -70,6 +71,27 @@ def synthetic_server():
         proof.update(notice_id=notice["id"], notice_bid_no=notice["bid_no"],
                      notice_bid_order=notice["bid_order"])
         board = db.update_collection(db.blank(), [notice], 1, "2026-10-18T00:00:00+00:00")
+        if bid_now:
+            # 모든 데이터는 여기서 생성한다. 실제 부서/인력·원가/공고를 읽지 않는다.
+            board["notices"][0].update(department_status="CANDIDATE", department_categories=["SW"],
+                                       qualification_deadline="2099-12-30T10:00:00+09:00")
+            for suffix, changes in (
+                ("GAP", {"department_status":"OUT_OF_SCOPE", "department_categories":[]}),
+                ("REG", {"qualification_deadline":"2000-01-01T00:00:00+09:00"}),
+                ("CANCEL", {"notice_lifecycle":"CANCELLED", "notice_kind":"취소공고"}),
+                ("OLD", {"notice_lifecycle":"SUPERSEDED"}),
+                ("CLOSED", {"end":"2000-01-01T00:00:00+09:00"}),
+            ):
+                extra=db.normalize({"bidNtceNo":"BID03SYNTH"+suffix,"bidNtceOrd":"001",
+                    "bidNtceNm":"BID03 합성 "+suffix,"ntceInsttNm":"합성 시험기관",
+                    "bidClseDt":"2099-12-31 10:00:00"})
+                extra.update(notice_lifecycle="CURRENT",department_status="CANDIDATE",
+                             department_categories=["SW"],
+                             qualification_deadline="2099-12-30T10:00:00+09:00")
+                extra.update(changes)
+                board["notices"].append(extra)
+            server.persist({"schema_version":1,"revision":0,"categories":["SW"],
+                            "include_review":False},root / "department_profile.json")
         server.persist(board, root / "dashboard.json")
         upload = root / "p09-synthetic.txt"
         upload.write_bytes(raw)
@@ -319,7 +341,7 @@ class LocalAcceptanceTests(unittest.TestCase):
 
 
 def serve_chrome():
-    with synthetic_server() as fixture:
+    with synthetic_server(bid_now=True) as fixture:
         print(json.dumps({k: str(fixture[k]) for k in ("base", "upload", "mismatch")}), flush=True)
         # stdin is owned by the Node runner; EOF is also a clean shutdown request.
         stop = threading.Event()

@@ -1,6 +1,6 @@
 /**
  * P09 Chrome 합성 E2E 설계 계약.
- * 목적: 실제 localhost UI의 파일 선택·오류·수기 이력 저장/새로고침을 검증한다.
+ * 목적: 실제 localhost UI의 BID-03 세 큐·390/1440px 및 기존 파일 선택·수기 이력을 검증한다.
  * 입력/출력: Python fixture와 새 Chrome 프로필만 사용하고 PASS/실패 단계를 출력한다.
  * 신뢰 경계: 기존 브라우저/운영 서버/자료 경로를 받지 않는다. 외부 페이지 요청은 차단한다.
  * 부작용: 자신이 만든 자식 프로세스·임시 Chrome 프로필만 종료/정리한다.
@@ -150,6 +150,39 @@ async function main() {
     const initialLoad = loads;
     await send('Page.navigate', {url: fixtureInfo.base + '/decision-preview'});
     await waitFor(() => loads > initialLoad, 'initial page load');
+    stage = 'BID-03 desktop/mobile shortlist';
+    await waitFor(() => evaluate(`document.body.dataset.bidSource==='official'`), 'official synthetic dashboard');
+    for (const width of [1440,390]) {
+      await send('Emulation.setDeviceMetricsOverride', {width,height:900,deviceScaleFactor:1,mobile:width===390});
+      await click(`document.querySelector('[data-view="bid-now"]')`);
+      await waitFor(() => evaluate(`document.querySelectorAll('#bidNowRows .bidNowRow').length===1`), 'matching queue');
+      assert(await textIncludes('법적 적격 미검증 (UNVERIFIED)'));
+      assert(await textIncludes('보완 후 마진 미검증 (UNVERIFIED)'));
+      assert(await textIncludes('취소·구차수·공식 상태 확인 보류 2건'));
+      assert(await textIncludes('마감·접수 종료 보류 1건'));
+      assert(await textIncludes('텍스트 잘림 보고') || await textIncludes('본문 참조 무결성 미검증'));
+      for (const [queue,expected] of [['augmentation_review_results','역량 보완·비용 차감 후 수익 검토'],
+        ['registration_review_results','등록기한 경과']]) {
+        await evaluate(`(() => { const q=document.querySelector('#bidNowQueue');q.value=${JSON.stringify(queue)};
+          q.dispatchEvent(new Event('change',{bubbles:true})); })()`);
+        await waitFor(() => textIncludes(expected), queue);
+        assert.equal(await evaluate(`document.querySelectorAll('#bidNowRows .bidNowRow').length`),1);
+      }
+      assert(await evaluate('document.documentElement.scrollWidth <= innerWidth'), `${width}px shortlist overflow`);
+      if(process.env.BID03_SCREENSHOTS) {
+        fs.mkdirSync(process.env.BID03_SCREENSHOTS,{recursive:true});
+        const capture=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+        fs.writeFileSync(path.join(process.env.BID03_SCREENSHOTS,`bid03-${width}.png`),Buffer.from(capture.data,'base64'));
+      }
+      // Re-enter resets neither selected queue nor old lists; choose matching before detail.
+      await evaluate(`(() => { const q=document.querySelector('#bidNowQueue');q.value='matching_results';
+        q.dispatchEvent(new Event('change')); })()`);
+      await click(button('기존 상세·기한·사람 판단 확인'));
+      await waitFor(() => evaluate(`document.querySelector('#view-full-detail').classList.contains('active')`), 'existing detail from shortlist');
+      await click(`document.querySelector('[data-view="notices"]')`);
+      console.log(`PASS BID03 ${width}px: three queues/holds/UNVERIFIED/detail/no overflow`);
+    }
+    await send('Emulation.setDeviceMetricsOverride', {width:1440,height:900,deviceScaleFactor:1,mobile:false});
     await openDetail();
     assert.equal(await evaluate('window.p09Injected === true'), false);
     assert.equal(await evaluate(`document.querySelectorAll('#fullDetailTitle img').length`), 0);

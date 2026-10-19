@@ -58,6 +58,8 @@ jobs:
           node --check frontend/public/rfp-evidence-summary.js
       - name: RFP UI omitted-count contract
         run: node --test scripts/test_rfp_evidence_summary.cjs
+      - name: BID-03 read-only shortlist UI contract (synthetic only)
+        run: node --test scripts/test_bid_now_ui.cjs
       - name: Static publishing preview syntax and boundaries
         run: python scripts/check_ui_preview.py
       - name: Verify standalone preview included in build
