@@ -14,6 +14,8 @@
  * BID-05: 문서 후속 작업/보류 큐는 GET만 사용하며 해시·차수/공식 최신성의 한계를 표시한다.
  *       비용은 확인 작업 등급, 재평가는 저장 텍스트 검토만 의미한다. 자동 다운로드/재시도 없음.
  *       상세 전 기존 목록 GET을 다시 읽고 큐 revision/ID를 대조한다. 변경/실패/경합은 재조회한다.
+ * BID-06: 별도 로컬 독립 정답 검수 panel을 기존 목록/요건 상세에 연결한다.
+ *       정답 승인은 사용자의 원본 대조·명시 저장만 가능하며 자동 호출하지 않는다.
  */
 (function () {
   'use strict';
@@ -880,10 +882,12 @@
       });
       requirementsPanel.append(requirementsInfo,requirementsButton,requirementsRows);
       section.append(requirementsPanel);
+      if(window.rfpGroundTruth)window.rfpGroundTruth.mount(section,n.id);
 
       // 공식 원본 파일을 사용자가 로컬에서 선택해야만 서버 메모리로 전송해 대조.
       // 저장 당시 파서 버전/페이지/표/OCR 완전성은 언제나 별도 미확인 상태.
       const originalPanel=detailBlock('공식 RFP 원본·저장 근거 대조 (로컬, 원본 미보관)');
+      originalPanel.classList.add('rfpOriginalPanel');
       const originalInfo=el('p','muted','PC에 별도로 확보한 공식 첨부 파일을 선택하면 원본 SHA, 저장 근거·캐시와 현재 추출기의 일치 여부만 확인합니다. 원본 파일은 저장하지 않으며 실제 필수 요건의 완전성은 별도 검증이 필요합니다.');
       originalInfo.setAttribute('role','status');
       const originalQualityRows=el('details','');
@@ -1308,6 +1312,7 @@
   const reviewRefresh=btn('RFP 검증 대상 갱신',()=>void refreshRfpReviewQueue());
   reviewPanel.append(reviewHeading,reviewInfo,reviewRefresh,reviewRows);
   byId('view-collection').append(reviewPanel);
+  if(window.rfpGroundTruth)window.rfpGroundTruth.mount(byId('view-collection'));
   async function refreshRfpReviewQueue(){
     try{
       const r=await fetch('/api/dashboard/rfp-review-queue',{cache:'no-store'});

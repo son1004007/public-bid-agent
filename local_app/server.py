@@ -13,6 +13,8 @@ BID-04: 로컬 전체 공고 집계 GET은 제한된 고정 파일만 읽고 전
 개별 공고/회사 자료를 반환하지 않으며 스냅샷·입력 오류는 고정 코드로 503 처리한다.
 BID-05: 문서 후속 작업 GET은 제한 캐시/원문 해시·차수를 검증하고 작업/보류만 반환한다.
 다운로드·배치 재시도·사람 판단 변경은 수행하지 않으며 오류는 고정 503이다.
+BID-06: 독립 정답은 사람 명시 작업만 별도 로컬 저장, 공통 쓰기 잠금/원자성/멱등키.
+원본 SHA/현재 버전·서명 티켓/사람 확인 전 승인 불가. 표본 범위만 평가, 원본 불변.
 """
 import base64
 import copy
@@ -65,6 +67,7 @@ from bid_readiness import assess as assess_bid_readiness
 from bid_now_shortlist import build as build_bid_now_shortlist
 from bid_now_audit_cli import audit_local as audit_bid_now_local, AuditBlocked
 from bid_document_queue import read_queue as read_bid_document_queue
+import rfp_ground_truth as ground_truth
 from process_limits import run_limited as run_quality_limited
 from rfp_review_queue import build as build_rfp_review_queue
 from rfp_audit_labels import (initial as initial_rfp_audit, validate as validate_rfp_audit,
@@ -391,6 +394,10 @@ class Handler(BaseHTTPRequestHandler):
    b=RFP_SUMMARY_JS.read_bytes()
    self.send_local_headers(200,"text/javascript; charset=utf-8",len(b))
    return self.wfile.write(b)
+  if self.path=="/rfp-ground-truth.js":
+   b=DASHBOARD_LIVE_JS.with_name("rfp-ground-truth.js").read_bytes()
+   self.send_local_headers(200,"text/javascript; charset=utf-8",len(b))
+   return self.wfile.write(b)
   if self.path=="/document-guide.json":
    b=DOCUMENT_GUIDE.read_bytes()
    self.send_local_headers(200,"application/json; charset=utf-8",len(b))
@@ -405,6 +412,30 @@ class Handler(BaseHTTPRequestHandler):
    return self.respond({"profile":profile,"csrf":TOKEN,"categories":{
     "AI":"AI 서비스·LLM","SW":"SW·업무시스템 개발",
     "DATA":"데이터 수집·분석·플랫폼","SECURITY":"보안·인증·감사 지원 SW"}})
+  if urlsplit(self.path).path=="/api/dashboard/rfp-ground-truth":
+   params=parse_qs(urlsplit(self.path).query,keep_blank_values=True)
+   if params and (set(params)!={"id"} or len(params["id"])!=1 or
+       re.fullmatch(r"G2B-[A-Za-z0-9-]{4,100}",params["id"][0]) is None):
+    return self.respond({"error":"검수 대상 식별자 오류"},400)
+   try:
+    with LOCK:
+     board_before=(ROOT/"dashboard.json").read_bytes()
+     board=read_dashboard(ROOT/"dashboard.json")
+     annotations=ground_truth.load(ROOT)
+     if not params:
+      selected=[n for n in board["notices"] if n.get("document_evidence") or n.get("document_status")=="EXTRACTED"]
+      if (ROOT/"dashboard.json").read_bytes()!=board_before:raise ValueError("SNAPSHOT_CHANGED")
+      return self.respond({"review_list":[{"id":n["id"],"title":str(n.get("title","RFP 검수"))[:200],
+        "document_status":n.get("document_status"),"lifecycle":n.get("notice_lifecycle"),
+        "review_status":n.get("rfp_review_status")} for n in selected[:100]],
+        "total":len(selected),"omitted":max(0,len(selected)-100),"csrf":TOKEN,"storage":"LOCAL_PRIVATE_REVIEW"})
+     notice=next((n for n in board["notices"] if n["id"]==params["id"][0]),None)
+     if notice is None:return self.respond({"error":"공고 없음"},404)
+     result=ground_truth.view(annotations,ground_truth.context(notice,ROOT))
+     if (ROOT/"dashboard.json").read_bytes()!=board_before:raise ValueError("SNAPSHOT_CHANGED")
+    return self.respond({"review":result,"csrf":TOKEN})
+   except (AuditBlocked,EvidenceError,ValueError,TypeError,KeyError,OSError,UnicodeError,RecursionError):
+    return self.respond({"error":"검수 원본/이력 확인 실패. 기존 자료를 보존합니다"},503)
   if self.path.startswith("/api/dashboard/rfp-requirements?"):
    # 읽기 전용 근거 후보: source SHA 및 비공개 44,000자 청크를 대조하고
    # 화면으로는 일부 발췌/추출 문자 위치만 제한하여 반환한다.
@@ -618,6 +649,31 @@ class Handler(BaseHTTPRequestHandler):
     raise ValueError("본문 JSON 최대 4MB")
    payload=json.loads(self.rfile.read(size))
    if not isinstance(payload,dict): raise ValueError("JSON 객체만 지원")
+   if self.path in ("/api/dashboard/rfp-ground-truth/source-check","/api/dashboard/rfp-ground-truth/save"):
+    try:
+     with LOCK, dashboard_transaction(ROOT):
+      board=read_dashboard(ROOT/"dashboard.json")
+      notice=next((n for n in board["notices"] if n["id"]==payload.get("id")),None)
+      if notice is None:return self.respond({"error":"공고 없음"},404)
+      ctx=ground_truth.context(notice,ROOT)
+      if self.path.endswith("/source-check"):
+       if set(payload)!={"id","identity","version_key","base64"} or payload["version_key"]!=ctx["version_key"]:
+        raise ground_truth.ReviewConflict("원본 버전 변경")
+       if not isinstance(payload["base64"],str) or not 1<=len(payload["base64"])<=11_200_000:
+        raise ValueError("원본 크기 오류")
+       raw=base64.b64decode(payload["base64"],validate=True)
+       ticket=ground_truth.source_ticket(ctx,payload["identity"],raw,TOKEN)
+       return self.respond({"ok":True,"source_ticket":ticket,"source_sha_checked":True,
+                            "official_freshness":"HUMAN_CONFIRMATION_REQUIRED","original_file_retained":False})
+      current=ground_truth.load(ROOT)
+      updated=ground_truth.append(current,ctx,payload,now(),TOKEN)
+      if updated is not current: persist(updated,ROOT/ground_truth.FILE_NAME)
+      result=ground_truth.view(updated,ctx)
+     return self.respond({"ok":True,"review":result,"csrf":TOKEN})
+    except ground_truth.ReviewConflict:
+     return self.respond({"error":"검수 버전·이력 충돌 또는 원본 재확인 필요. 다시 조회하세요"},409)
+    except (AuditBlocked,EvidenceError,ValueError,TypeError,KeyError,OSError,UnicodeError,RecursionError):
+     return self.respond({"error":"검수 범위/원본/승인 확인 실패. 기존 자료를 보존합니다"},503)
    if self.path=="/api/dashboard/rfp-audit/save":
     # 사람의 텍스트 표현 라벨만 분리된 로컬 파일로 append; 근거/공고 원본은 불변.
     with LOCK, dashboard_transaction(ROOT):

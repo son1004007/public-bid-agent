@@ -8,6 +8,7 @@
  * 불변조건: sandbox/TLS/CSP를 완화하지 않으며 사용자 UI 승인/배포를 주장하지 않는다.
  * 관련: local_app/test_local_acceptance.py, docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md.
  * BID-05: 문서 후속 작업 GET·작업/보류·미검증 및 기존 상세 연결을 두 폭에서 확인한다.
+ * BID-06: 합성 독립 정답의 원본 선택·명시 승인·누락 FN·수정/보류·재조회만 실행한다.
  */
 const assert = require('node:assert/strict');
 const {spawn} = require('node:child_process');
@@ -76,6 +77,7 @@ async function main() {
   let fixture, chrome, cdp, fixtureInfo, fixtureClosed, chromeClosed, fixtureExit;
   let stage = 'startup';
   const lines = [];
+  let syntheticDiagnostics='';
   let fatal;
   const watchdog = setTimeout(() => {
     fatal = Error('E2E exceeded 90 seconds');
@@ -91,6 +93,8 @@ async function main() {
     reader.on('line', line => { lines.push(line); if (!fixtureInfo && line.startsWith('{')) fixtureInfo = JSON.parse(line); });
     // This process only handles generated fixtures; keep diagnostics bounded.
     fixture.stderr.on('data', data => {
+      syntheticDiagnostics=(syntheticDiagnostics+String(data)).slice(-65536);
+      if(process.env.P09_SYNTHETIC_DIAGNOSTICS)fs.writeFileSync(process.env.P09_SYNTHETIC_DIAGNOSTICS,syntheticDiagnostics);
       for(const marker of ['ConnectionResetError','BrokenPipeError','JSONDecodeError','ResourceWarning']){
         if(String(data).includes(marker))console.error('Synthetic fixture diagnostic: '+marker);
       }
@@ -116,20 +120,31 @@ async function main() {
     const {targetId} = await cdp.send('Target.createTarget', {url: 'about:blank'});
     const {sessionId} = await cdp.send('Target.attachToTarget', {targetId, flatten: true});
     const send = (method, params) => cdp.send(method, params, sessionId);
-    const external = []; const errors = []; let loads = 0;
+    const external = []; const errors = []; const cancelledRequests=new Set(),inflight=new Set(); let loads = 0;
     cdp.listeners.push(message => {
       if (message.sessionId !== sessionId) return;
       if (message.method === 'Page.loadEventFired') loads += 1;
       if (message.method === 'Runtime.exceptionThrown') errors.push('Uncaught page exception');
+      if(message.method==='Network.requestWillBeSent')inflight.add(message.params.requestId);
+      if(['Network.loadingFinished','Network.loadingFailed'].includes(message.method))inflight.delete(message.params.requestId);
+      if(message.method==='Network.loadingFailed'&&message.params.canceled===true)cancelledRequests.add(message.params.requestId);
       if (message.method === 'Fetch.requestPaused') {
-        const {requestId, request} = message.params;
+        const {requestId, request, networkId} = message.params;
         const local = new URL(request.url).origin === fixtureInfo.base;
         if (!local) external.push('External page request blocked');
         send(local ? 'Fetch.continueRequest' : 'Fetch.failRequest',
-          local ? {requestId} : {requestId, errorReason: 'BlockedByClient'}).catch(e => { fatal = e; });
+          local ? {requestId} : {requestId, errorReason: 'BlockedByClient'}).catch(async e => {
+            // Navigation can cancel a paused same-origin request before continue reaches Chrome.
+            // Require the matching Network cancellation event; all other protocol errors fail.
+            if(local&&networkId&&e.message==='CDP Fetch.continueRequest: Invalid InterceptionId.'){
+              for(let i=0;i<10&&!cancelledRequests.has(networkId);i++)await delay(25);
+              if(cancelledRequests.has(networkId))return;
+            }
+            fatal=e;
+          });
       }
     });
-    await send('Runtime.enable'); await send('Page.enable');
+    await send('Runtime.enable'); await send('Page.enable'); await send('Network.enable');
     await send('Fetch.enable', {patterns: [{urlPattern: '*'}]});
     const evaluate = async expression => {
       if (fatal) throw fatal;
@@ -229,7 +244,7 @@ async function main() {
     await waitFor(() => textIncludes('원본 파일과 추출된 저장 증거를 각각 선택하세요.'), 'missing file message');
     const upload = async file => {
       const {root} = await send('DOM.getDocument');
-      const {nodeId} = await send('DOM.querySelector', {nodeId: root.nodeId, selector: '#fullDetailPane input[type=file]'});
+      const {nodeId} = await send('DOM.querySelector', {nodeId: root.nodeId, selector: '#fullDetailPane .rfpOriginalPanel input[type=file]'});
       assert(nodeId, 'Missing original file input');
       await send('DOM.setFileInputFiles', {nodeId, files: [file]});
       await click(button('로컬 원본 대조 실행'));
@@ -240,6 +255,55 @@ async function main() {
     await waitFor(() => textIncludes('대조 상태: REPRODUCED_TEXT'), 'original reproduced');
     console.log('PASS file input: missing/mismatch/reproduced synthetic TXT');
 
+    stage = 'BID-06 human ground truth';
+    const goldPanel = '#fullDetailPane .bid06Review';
+    const goldButton = label => `[...document.querySelectorAll('${goldPanel} button')].find(e=>e.textContent.trim()===${JSON.stringify(label)})`;
+    for(const width of [1440,390]){
+      await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width===390});
+      await click(goldButton('검수 자료 다시 조회'));
+      await waitFor(()=>evaluate(`Boolean(document.querySelector('${goldPanel} .bid06OriginalFile'))`),'BID06 source form');
+      assert(await evaluate(`document.querySelector('${goldPanel}').innerText.includes('NOT_EVALUATED')`));
+      if(await evaluate(`Boolean(${goldButton('이 표본 수정·재검수')})`))await click(goldButton('이 표본 수정·재검수'));
+      const {root}=await send('DOM.getDocument');
+      const {nodeId}=await send('DOM.querySelector',{nodeId:root.nodeId,selector:goldPanel+' .bid06OriginalFile'});
+      await send('DOM.setFileInputFiles',{nodeId,files:[fixtureInfo.upload]});
+      await click(goldButton('선택 원본 SHA 대조'));
+      await waitFor(()=>textIncludes('로컬 원본 SHA 일치.'),'BID06 original SHA');
+      if(await evaluate(`document.querySelectorAll('${goldPanel} .bid06Gold').length===0`)){
+        for(let i=0;i<3;i++)await click(goldButton('누락·정답 구절 수동 추가'));
+      }
+      await evaluate(`(()=>{
+        const p=document.querySelector('${goldPanel}');
+        p.querySelector('.bid06Location').value='합성 원본 1페이지 본문·누락 과업';
+        const rows=[...p.querySelectorAll('.bid06Gold')];
+        ['participation','evaluation','scope'].forEach((category,i)=>{
+          rows[i].querySelector('.bid06GoldCategory').value=category;
+          rows[i].querySelector('.bid06GoldText').value=i<2?'합성 문서: 입찰참가자격은 소프트웨어사업자 등록. 평가 배점 80점.':'합성 원본에서 독립 확인한 누락 과업';
+          rows[i].querySelector('.bid06GoldPage').value='1';rows[i].querySelector('.bid06GoldLocation').value='본문/누락 표';
+        });
+        for(const key of ['pages','tables','footnotes','images','ocr'])p.querySelector('.bid06Check-'+key).value='REVIEWED';
+        p.querySelector('.bid06Latest').checked=true;p.querySelector('.bid06Independent').checked=true;
+      })()`);
+      await click(goldButton('독립 정답 승인·평가 저장'));
+      await waitFor(()=>textIncludes('EVALUATED_APPROVED_SAMPLE_ONLY'),'BID06 approved metric');
+      assert(await textIncludes('승인 정답 3개'));assert(await textIncludes('tp: 2 · fp: 0 · fn: 1'));
+      assert(await textIncludes('전체 문서 정확도·대표성 미확인'));
+      assert(await evaluate('document.documentElement.scrollWidth <= innerWidth'),`${width}px BID06 overflow`);
+      if(process.env.BID06_SCREENSHOTS){
+        fs.mkdirSync(process.env.BID06_SCREENSHOTS,{recursive:true});
+        await evaluate(`document.querySelector('${goldPanel}').scrollIntoView({block:'start'})`);
+        const capture=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+        fs.writeFileSync(path.join(process.env.BID06_SCREENSHOTS,`bid06-${width}.png`),Buffer.from(capture.data,'base64'));
+      }
+      await click(goldButton('이 표본 수정·재검수'));await click(goldButton('검수 보류 저장'));
+      await waitFor(()=>evaluate(`document.querySelector('${goldPanel}').innerText.includes('승인 정답 0개')`),'BID06 hold invalidates sample');
+      await click(goldButton('검수 자료 다시 조회'));
+      await waitFor(()=>evaluate(`Boolean(${goldButton('이 표본 수정·재검수')})`),'BID06 persisted history');
+      console.log(`PASS BID06 ${width}px: explicit original SHA/human approval/TP2 FP0 FN1/edit-HOLD/history/scope/no overflow`);
+    }
+
+    // Preserve the original desktop save/reload contract; BID06's last pass used mobile.
+    await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
     stage = 'manual history required fields';
     await click(`document.querySelector('[data-detail-tab="decision"]')`);
     await click(button('제출·평가 이력 수동 기록'));
@@ -252,9 +316,12 @@ async function main() {
     stage = 'manual save and reload';
     await click(button('제출·평가 이력 수동 기록'));
     await waitFor(() => textIncludes('SUBMITTED / 2026-10-18 / P09 합성 제출 확인'), 'saved history');
+    await waitFor(()=>inflight.size===0,'completed requests before reload');
     const previousLoad = loads;
     await send('Page.reload', {ignoreCache: true});
     await waitFor(() => loads > previousLoad, 'new document after reload');
+    await waitFor(()=>evaluate(`document.body.dataset.bidSource==='official'`),'official dashboard after reload');
+    await waitFor(()=>inflight.size===0,'initial reads after reload');
     await openDetail();
     await click(`document.querySelector('[data-detail-tab="decision"]')`);
     await waitFor(() => textIncludes('SUBMITTED / 2026-10-18 / P09 합성 제출 확인'), 'persisted history');

@@ -102,7 +102,8 @@ def synthetic_server(*, bid_now=False):
 
         class SyntheticHandler(server.Handler):
             def do_POST(self):
-                if self.path not in ("/api/dashboard/outcome", "/api/dashboard/rfp-original-compare"):
+                if self.path not in ("/api/dashboard/outcome", "/api/dashboard/rfp-original-compare",
+                                     "/api/dashboard/rfp-ground-truth/source-check", "/api/dashboard/rfp-ground-truth/save"):
                     self.close_connection = True
                     return self.respond({"error": "Synthetic harness route disabled"}, 403)
                 return super().do_POST()
