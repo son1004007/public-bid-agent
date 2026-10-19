@@ -1,5 +1,9 @@
 # Public Bid Agent 아키텍처 및 구현 경계
 
+## BID-05 문서 후속 작업 경계 (2026-10-19)
+
+기존 후보 화면 → 고정 GET `/api/dashboard/bid-document-queue` → `bid_document_queue.read_queue()` → BID-04 고정 JSON/release 캡처 + 제한 cache reader → 순수 작업/보류 정렬. `rfp_fulltext.validate_record()`로 기존 청크/내용 해시 검증 계약을 재사용한다. 기존 rfp-review-queue와 분류/분야 필터는 보존한다. 원본 바이너리/공식 최신성을 검증한 것으로 승격하지 않고, 성공 결과/사람 이력·원문 캐시는 변경하지 않는다. `rfp_batch.analyze`의 새 실패 기록에 DOWNLOAD/EXTRACTION만 추가하며 실행 조건/재시도/성공 재사용은 유지한다. stdlib만 사용한다.
+
 ## 2026-10-19 BID-04 읽기 전용 평가 경계
 
 독립 실행 `local_app/bid_now_audit_cli.py` → 제한된 로컬 JSON/메모리 release metadata 검사 → 순수 `bid_now_audit.evaluate()` → 고정 코드·집계만 출력합니다. 기존 후보 화면 → Host 검증된 GET `/api/dashboard/bid-now-audit` → 같은 CLI 평가기로 연결합니다. 수집·저장 경로는 변경하지 않습니다. 원문 캐시·인증키를 열지 않으며 프로필 기본값으로 증빙 누락을 숨기지 않습니다. 파일 쓰기·잠금 생성·실제 SQLite DB 연결·외부 I/O 없음. 관측 안정성과 공식 최신성·적격·수익을 구분합니다. stdlib만 사용하며 [입력/상한/실패/불변조건](design/BID04_LOCAL_AGGREGATE_2026-10-19.md)을 따릅니다.

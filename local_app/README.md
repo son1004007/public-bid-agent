@@ -1,5 +1,13 @@
 # Public Bid Agent — 로컬 실행 사용법
 
+## BID-05 공식 문서 후속 확인
+
+`/decision-preview` → 후보 → **문서 보완 작업 큐 조회**. 고정 GET `/api/dashboard/bid-document-queue`는 `{storage: LOCAL_READ_ONLY, queue: ...}`를 반환합니다. 전체/작업/보류·생략 건수, 마감 우선순위/확인 비용 등급, 문서 확보·추출 상태/위험·다음 확인·재평가 제한을 표시합니다. 두 목록 각30건이며 기존 상세에서 공식 공고/첨부 출처를 확인합니다. 비용 등급은 실제 MM/원가/수익 예측이 아닙니다.
+
+작업 조회는 읽기만 하고 어떤 다운로드/배치 재실행/재시도도 요청하지 않습니다. 새로 승인한 기존 배치의 실패 메타데이터만 DOWNLOAD/EXTRACTION으로 구별하며 과거 FAILED는 추측하지 않습니다. 취소/구차수·마감·STALE·등록기한 경과/역전·SHA/차수 불일치는 보류합니다. 회사 역량/분야 미일치만으로 기회를 폐기하지 않습니다.
+
+BID-04 고정 입력/release 캡처와 전후 관측 안정성, 512KiB/파일·128캐시·32MiB 총 상한·경로/링크 거부·해시를 적용합니다. 입력/변경 실패503, Host403, UI10초 취소/최신 요청 우선입니다. 캐시 한도 초과는 미검증으로 표시합니다. 모든 원본 binary/공식 최신성·법적 적격·수익·인력/MM은 UNVERIFIED, 증빙 부족 BLOCKED_EVIDENCE. 결속된 자료의 STORED_TEXT_ONLY는 저장 텍스트의 기존 규칙 검토만 가능하다는 뜻이며 실제 원본 전체 분석 완료가 아닙니다. [설계](../docs/design/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md), [검증](../docs/reviews/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md).
+
 > **2026-10-19 BID-04 DONE / 운영 인수 PASS:** 실행 소스 `4f1743d`의 개발 두 CI 및 main CI SUCCESS 후 기존 소유자 전용 localhost에 배포했다. API200, GET 전용 Chrome390/1440px·legacy 경고, 첨부 포함393파일 백업/전후 동일을 확인했다. 문서 마감 변경은 실행 코드 동일하여 추가 재시작하지 않는다. 실제 적격·수익은 미검증이며 입찰·자동 투찰은 수행하지 않는다. [최종 근거](../docs/reviews/BID04_UI_DEPLOY_2026-10-19.md).
 
 ## BID-04 후보 화면과 읽기 전용 API

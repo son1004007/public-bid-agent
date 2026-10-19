@@ -1,5 +1,7 @@
 # AI 개발 작업 안내 - Public Bid Agent
 
+> **최신 BID-05 REVIEWED / 독립 최종 GO:** 문서 후속 작업/보류 큐·기존 후보 화면/API, 출처/차수/SHA·캐시 검증, 자동 다운로드/재시도 없음. Python482·Node36·Chrome390/1440 PASS. 최종 검수의 상세 메모리 혼용 MAJOR1 및 문서MINOR1 해결. 수정본 전체457 PASS·독립Node28 PASS/GO. 개발2/main CI·기존 localhost 운영 인수 전 DONE 아님. 사용자 직접 승인 범위는 DECISIONS 최신 BID-05절을 따른다. 아래 BID-04/BID-05 미착수 문구는 이전 이력. [최신 검증](docs/reviews/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md).
+
 > **최신 BID-04 DONE:** 실행 `4f1743d`, Python468·Node27·Chrome390/1440 PASS, 독립 Codex GO, 개발 두 CI·main CI SUCCESS. 사용자 직접 승인 범위로 main fast-forward·기존 localhost 배포 완료, API/운영 두 폭·393파일 백업/전후 보존 PASS. 회사 증빙 BLOCKED_EVIDENCE/적격·수익 UNVERIFIED 유지. BID-05 미착수, 인터넷 공개·실제 입찰 없음. 아래 대기/NO_GO는 이전 이력이다. [최종 기록](docs/reviews/BID04_UI_DEPLOY_2026-10-19.md).
 
 > **최신 BID-04 인계:** 기존 작성자 종료 후 원본 보존/외부 백업 완료. CLI+화면/API, Python468·Node27·Chrome390/1440 PASS, Codex 최종 GO. 사용자 이번 직접 대화에서 main 및 기존 localhost 운영 배포를 승인했으며 DECISIONS 최신 절을 우선한다. CI/운영 인수 전 DONE 아님. 아래 이전 NO_GO/금지는 해당 시점 이력. [현재 기록](docs/reviews/BID04_UI_DEPLOY_2026-10-19.md).

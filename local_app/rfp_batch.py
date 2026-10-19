@@ -6,6 +6,8 @@
 실패: 제한된 다운로드·추출, 사용자 중단, 실패만 명시적 재시도.
 불변조건: 이미 성공한 공고/사람 결정 불변; 서버 재시작 후 재개 가능.
 검증: test_rfp_batch.py / docs/design/RFP_RESUMABLE_BATCH_2026-10-11.md.
+BID-05: 승인된 기존 실행에서 실패 단계 DOWNLOAD/EXTRACTION만 추가 기록한다.
+이 메타데이터는 큐 조회에 의한 새 실행이나 자동 재시도를 허용하지 않는다.
 """
 import copy
 import hashlib
@@ -89,8 +91,10 @@ def analyze(notice, extractor, fetcher=fetch_attachment, related=None, key=None,
               "notice_id":notice.get("id"),
               "notice_bid_no":notice.get("bid_no"),
               "notice_bid_order":notice.get("bid_order")}
+        phase="DOWNLOAD"
         try:
             raw=fetcher(f["url"])
+            phase="EXTRACTION"
             doc=extractor(f["name"],raw)
             content=doc.get("text","") if isinstance(doc,dict) else ""
             if not isinstance(content,str) or not content.strip():
@@ -114,7 +118,8 @@ def analyze(notice, extractor, fetcher=fetch_attachment, related=None, key=None,
                     and provenance["ocr_binary_and_langpack_version"]=="NOT_CAPTURED"):
                 item["parser_provenance"]=dict(provenance)
         except (DocumentFetchError,ValueError,OSError,TimeoutError):
-            item.update({"status":"FAILED","error":"공식 첨부 다운로드 또는 추출 실패"})
+            item.update({"status":"FAILED","failure_stage":phase,
+                         "error":"공식 첨부 다운로드 또는 추출 실패"})
         evidence.append(item)
     successes=[e for e in evidence if e["status"]=="EXTRACTED"]
     result={"document_evidence":evidence,"related_attachments":attachments}

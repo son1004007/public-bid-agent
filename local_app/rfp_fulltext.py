@@ -7,6 +7,7 @@
 부작용/실패: 로컬 content-addressed JSON 원자 저장; 기존 파일 손상 시 안전 실패.
 불변조건: 청크 연결 시 저장된 정규화 텍스트와 SHA가 일치, offset은 실제 PDF 페이지가 아님.
 관련: docs/design/RFP_FULLTEXT_CHUNKS_2026-10-12.md / test_rfp_fulltext.py.
+BID-05: validate_record는 제한 읽기로 캡처한 캐시를 I/O 없이 같은 해시 계약으로 검증한다.
 """
 import hashlib
 import json
@@ -95,6 +96,14 @@ def load(root, reference):
         raise ValueError("RFP 청크 참조값 오류")
     directory = Path(root) / "rfp_fulltext"
     record = json.loads((directory / (reference + ".json")).read_text(encoding="utf-8"))
+    return validate_record(reference, record)
+
+
+def validate_record(reference, record):
+    """호출자가 제한 읽기한 캐시의 순수 검증. 원문을 반환 응답/로그에 넣지 않는다."""
+    if (not isinstance(reference, str) or not _HEX64.fullmatch(reference)
+            or not isinstance(record, dict)):
+        raise ValueError("RFP 청크 참조값 오류")
     chunks = record.get("chunks", [])
     if not isinstance(chunks, list) or len(chunks) > 11:
         raise ValueError("RFP 청크 수 오류")

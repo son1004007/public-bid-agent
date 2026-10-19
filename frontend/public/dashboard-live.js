@@ -11,6 +11,9 @@
  *       원본 날짜·실시간 공식 취소 확인·법적 자격·마진을 추정하지 않는다.
  * BID-04: 전체 공고 위험·증빙 집계는 별도 GET으로 요청한다. 고정 집계/코드만 표시하고
  *       실패를 0건으로 바꾸지 않는다. 10초 취소·최신 요청 우선, 사람 판단과 원본은 불변.
+ * BID-05: 문서 후속 작업/보류 큐는 GET만 사용하며 해시·차수/공식 최신성의 한계를 표시한다.
+ *       비용은 확인 작업 등급, 재평가는 저장 텍스트 검토만 의미한다. 자동 다운로드/재시도 없음.
+ *       상세 전 기존 목록 GET을 다시 읽고 큐 revision/ID를 대조한다. 변경/실패/경합은 재조회한다.
  */
 (function () {
   'use strict';
@@ -528,6 +531,154 @@
   }
   mountBidNowAudit(byId('view-bid-now'));
   // BID04_END
+
+  // BID05_START: 공식 문서 후속 작업의 읽기 전용 화면 계약.
+  function mountBidDocuments() {
+    const labels={
+      OFFICIAL_ATTACHMENT_MISSING:'공식 첨부문서 미확보', DOWNLOAD_PENDING:'문서 다운로드 대기',
+      DOWNLOAD_FAILED:'공식 문서 다운로드 실패', EXTRACTION_FAILED:'문서 분석·추출 실패',
+      FAILED_STAGE_UNKNOWN:'과거 실패 단계 불명 · 다운로드/추출 구분 확인 필요',
+      NO_EXTRACTED_TEXT:'추출 본문 미확보', PARTIAL_EXTRACTION:'일부 문서만 추출·결속 확인됨',
+      TEXT_OR_TABLE_TRUNCATED:'본문·표 잘림 가능 · 파서 잘림 보고', EXTRACTION_WARNING:'추출 경고 보고',
+      CORRECTION_RECHECK:'공식 정정 여부·현재 차수 재확인', STALE_SOURCE:'정정 후 이전 분석 최신성 보류',
+      SOURCE_VERSION_MISMATCH:'공고 차수와 이전 문서 버전 불일치', SOURCE_VERSION_UNVERIFIED:'공고 차수 결속 미검증',
+      SOURCE_PROVENANCE_UNVERIFIED:'공식 첨부와 추출 출처 결속 미검증',
+      SOURCE_HASH_MISMATCH:'원본 SHA와 저장 텍스트 출처 SHA 불일치', SOURCE_HASH_CONFLICT:'같은 첨부의 원본 SHA 충돌',
+      CACHE_UNAVAILABLE:'저장 본문 캐시 미확보', CACHE_INVALID:'저장 본문 무결성 오류', CACHE_SCAN_LIMIT:'캐시 검증 상한 · 나머지 미검증',
+      UNSUPPORTED_FORMAT:'지원 형식 확인 필요', METADATA_REVIEW:'문서 메타데이터 확인 필요',
+      METADATA_SCAN_LIMIT:'문서 목록 탐색 상한 · 나머지 미검증', INVALID_IDENTITY:'공식 공고 식별 미확인',
+      DUPLICATE_IDENTITY:'공고 식별 중복', CANCELLED:'공식 취소 신호 · 재시도 금지', SUPERSEDED:'과거 차수 · 최신 공고 확인',
+      LIFECYCLE_UNVERIFIED:'공식 현재 상태 미확인', DEADLINE_PASSED:'마감 경과 · 재시도 보류', DEADLINE_UNKNOWN:'마감 미확인',
+      REGISTRATION_PASSED:'등록기한 경과 · 등록 증빙 확인', REGISTRATION_UNKNOWN:'등록기한 미확인',
+      REGISTRATION_AFTER_CLOSE:'등록기한·제출마감 역전', OFFICIAL_NOTICE_URL_UNVERIFIED:'공식 공고 주소 미확인',
+      OFFICIAL_ORIGINAL_RECHECK:'현재 공식 원본 재확인 필요',
+      VERIFY_HELD_STATUS_NO_RETRY:'보류 원인부터 확인 · 다운로드/재시도 실행 안 함',
+      CONFIRM_CURRENT_OFFICIAL_VERSION:'공식 정정·현재 문서 버전 확인',
+      LOCATE_OFFICIAL_ATTACHMENT:'기존 공식 공고에서 첨부 출처 확인',
+      OBTAIN_ORIGINAL_AFTER_APPROVAL:'승인 후 공식 원본 확보', EXTRACT_ONCE_AFTER_SOURCE_CHECK:'출처 확인 후 제한된 추출',
+      CHECK_DOWNLOAD_FAILURE_NO_AUTO_RETRY:'공식 다운로드 장애 확인 · 자동 재시도 없음',
+      CHECK_PARSER_ON_CONFIRMED_ORIGINAL:'확보한 공식 원본으로 파서 오류 확인',
+      COMPARE_PAGES_TABLES_FOOTNOTES_OCR:'전체 페이지·표·각주·OCR를 원본과 대조',
+      LOW_METADATA_CHECK:'낮음: 상태·메타데이터 확인', MEDIUM_DOWNLOAD_APPROVAL:'중간: 승인된 문서 확보',
+      HIGH_ORIGINAL_COMPARISON:'높음: 원본 전체 대조', UNKNOWN:'소요 미확인',
+      OFFICIAL_DEADLINE_ORDER:'공식 저장 마감 순서', INTEGRITY_RISK_REVIEW:'무결성 위험 긴급 검토',
+      DOCUMENT_GAP_REVIEW:'문서 보완 필요', EFFORT_TIE_BREAK_ONLY:'같은 긴급도·기한에서 확인 비용 순서',
+      BLOCKED_SOURCE:'원본·출처 보완 전 재평가 차단', BLOCKED_EXTRACTION_QUALITY:'추출 품질 보완 전 재평가 차단',
+      STORED_TEXT_ONLY:'저장 텍스트 규칙 검토만 가능 · 공식 최신성/전체 분석 완료 아님',
+      STORED_HASHES_MATCH:'저장 출처·청크 해시 일치 · 원본 binary 재검증 아님', UNVERIFIED:'미검증',
+      EXTRACTED_TEXT:'추출 텍스트 보관 · 완전성 미검증', FAILED_ATTEMPT:'과거 문서 처리 실패',
+      READY_TO_FETCH:'공식 첨부 다운로드 대기', MISSING_OFFICIAL_LINK:'공식 첨부 링크 없음',
+      INVALID_ATTACHMENTS:'첨부 목록 형식 미확인',
+      WITHIN_24H:'24시간 이내', WITHIN_72H:'24~72시간', WITHIN_7D:'72시간~7일',
+      LATER:'7일 이후', CLOSED:'마감 경과',
+    };
+    const panel=el('section','card');panel.id='bidDocumentQueue';
+    const status=el('p','desc','문서 보완 작업을 조회하세요. 자동 다운로드·배치 재실행·재시도는 하지 않습니다.');
+    status.id='bidDocumentQueueStatus';status.setAttribute('role','status');
+    const rows=el('div','');rows.id='bidDocumentQueueRows';
+    const choose=el('select','');choose.id='bidDocumentQueueKind';choose.setAttribute('aria-label','문서 작업 또는 보류 목록');
+    [['results','확인 작업'],['held_results','취소·정정·마감 등 보류']].forEach(([value,title])=>{
+      const option=el('option','',title);option.value=value;choose.append(option);
+    });choose.value='results';
+    const refresh=btn('문서 보완 작업 큐 조회',()=>void load());refresh.id='bidDocumentQueueRefresh';
+    panel.append(el('h2','','공식 문서 보완 작업 큐'),
+      el('p','desc','우선순위는 마감·문서 위험·확인 작업 비용 등급입니다. 예상 수익·입찰 가능 점수가 아닙니다. '+
+        '법적 적격·수익·인력·MM UNVERIFIED / BLOCKED_EVIDENCE. 역량·분야 불일치만으로 기회를 버리지 않습니다.'),
+      refresh,choose,status,rows);byId('view-bid-now').append(panel);
+    let request=0,controller=null,current=null,detailRequest=0,opening=false;
+    const integer=v=>Number.isSafeInteger(v)&&v>=0;
+    const known=xs=>Array.isArray(xs)&&xs.length<=50&&xs.every(k=>typeof k==='string'&&Object.hasOwn(labels,k));
+    function valid(q){
+      const lists=['results','held_results'];
+      return q&&q.schema_version===1&&q.mode==='READ_ONLY_DOCUMENT_FOLLOWUP'&&q.status==='BLOCKED_EVIDENCE'&&
+        q.private_text_included===false&&q.source_files_written===false&&q.analysis_complete===false&&
+        q.automatic_download===false&&q.automatic_retry===false&&q.automatic_bid_submittal===false&&
+        q.cannot_auto_discard_on_capability_gap===true&&q.legal_eligibility==='UNVERIFIED'&&
+        q.estimated_profit==='UNVERIFIED'&&q.staffing_and_mm==='UNVERIFIED'&&
+        ['dashboard_revision','total_notices','needs_attention_count','action_required_count','held_count','omitted_count','held_omitted_count'].every(k=>integer(q[k]))&&
+        q.total_notices===q.needs_attention_count&&q.total_notices===q.action_required_count+q.held_count&&q.total_notices<=10000&&
+        q.reason_counts&&typeof q.reason_counts==='object'&&!Array.isArray(q.reason_counts)&&
+        Object.entries(q.reason_counts).every(([k,v])=>Object.hasOwn(labels,k)&&integer(v)&&v<=q.total_notices)&&
+        lists.every(key=>Array.isArray(q[key])&&q[key].length<=30&&q[key].every(row=>row&&
+          (row.id===null||typeof row.id==='string'&&/^G2B-[A-Za-z0-9-]{4,32}-[0-9]{1,5}$/.test(row.id))&&
+          row.queue_state===(key==='results'?'ACTION_REQUIRED':'HELD')&&
+          (key==='results'?['P1','P2','P3'].includes(row.priority):row.priority==='HOLD')&&
+          known(row.reason_codes)&&known(row.next_steps)&&known(row.priority_reasons)&&
+          ['LOW_METADATA_CHECK','MEDIUM_DOWNLOAD_APPROVAL','HIGH_ORIGINAL_COMPARISON','UNKNOWN'].includes(row.effort_band)&&
+          ['STORED_HASHES_MATCH','UNVERIFIED'].includes(row.source_binding)&&
+          ['EXTRACTED_TEXT','FAILED_ATTEMPT','READY_TO_FETCH','MISSING_OFFICIAL_LINK','UNSUPPORTED_FORMAT','INVALID_ATTACHMENTS'].includes(row.document_state)&&
+          ['WITHIN_24H','WITHIN_72H','WITHIN_7D','LATER','CLOSED','UNKNOWN'].includes(row.deadline_bucket)&&
+          ['BLOCKED_SOURCE','BLOCKED_EXTRACTION_QUALITY','STORED_TEXT_ONLY'].includes(row.reevaluation_status)&&
+          row.can_reevaluate_stored_text===(row.reevaluation_status==='STORED_TEXT_ONLY')&&
+          integer(row.official_attachment_count)&&integer(row.bound_extracted_count)&&row.bound_extracted_count<=row.official_attachment_count&&
+          row.analysis_complete===false&&row.original_binary_sha_rechecked===false&&row.official_freshness==='UNVERIFIED'&&
+          row.legal_eligibility==='UNVERIFIED'&&row.estimated_profit==='UNVERIFIED'&&row.staffing_and_mm==='UNVERIFIED'&&
+          row.evidence_status==='BLOCKED_EVIDENCE'))&&
+        q.results.length+q.omitted_count===q.action_required_count&&q.held_results.length+q.held_omitted_count===q.held_count;
+    }
+    function render(){
+      rows.replaceChildren();if(!current)return;
+      const selectedRows=current[choose.value==='held_results'?'held_results':'results'];
+      selectedRows.forEach(row=>{
+        const card=el('section','card bidDocumentRow');
+        card.append(el('strong','',row.priority+' · '+(row.id||'공고 식별 확인 필요')),
+          el('p','','마감 구간: '+labels[row.deadline_bucket]+' / 문서 상태: '+labels[row.document_state]),
+          el('p','','지원 공식 첨부 '+row.official_attachment_count+'개 / 해시·차수 결속 추출 '+row.bound_extracted_count+'개'),
+          el('p','','선정 근거: '+row.priority_reasons.map(k=>labels[k]).join(' / ')),
+          el('p','','확인 소요: '+labels[row.effort_band]+' (실제 인력·MM·원가 추정 아님)'));
+        row.reason_codes.forEach(k=>card.append(el('p','desc',labels[k])));
+        card.append(el('p','','출처 결속: '+labels[row.source_binding]),
+          el('p','','재평가: '+labels[row.reevaluation_status]),
+          el('p','','다음 확인: '+row.next_steps.map(k=>labels[k]).join(' → ')));
+        if(row.id)card.append(btn('기존 상세·공식 출처 확인',()=>void openCurrentDetail(row.id)));
+        rows.append(card);
+      });
+      if(!selectedRows.length)rows.append(el('p','desc','선택한 목록은 0건입니다. 전체 확인·보류 건수와 생략을 함께 확인하세요.'));
+    }
+    choose.addEventListener('change',render);
+    async function openCurrentDetail(id){
+      const ticket=++detailRequest,snapshot=current,queueToken=request;
+      if(opening){await load();return;}
+      opening=true;
+      try{
+        await reload();
+        if(ticket!==detailRequest||queueToken!==request||snapshot!==current||page!=='bid-now')return;
+        if(!snapshot||snapshot.dashboard_revision!==revision||!notices.some(n=>n.id===id)){
+          await load();notify('공고 자료가 변경되었습니다. 갱신된 문서 작업·보류를 다시 확인하세요.');return;
+        }
+        openFullDetail(id);
+      }catch{
+        if(ticket!==detailRequest||queueToken!==request)return;
+        await load();notify('상세 자료를 다시 읽지 못했습니다. 이전 상세를 열지 않았습니다. 문서 작업을 다시 확인하세요.');
+      }finally{opening=false;}
+    }
+    async function load(){
+      const token=++request;controller?.abort();controller=new AbortController();
+      const active=controller;let expired=false;current=null;rows.replaceChildren();panel.setAttribute('aria-busy','true');
+      status.textContent='문서 보완 작업 확인 중…';
+      const timer=setTimeout(()=>{expired=true;active.abort();},10000);
+      try{
+        const response=await fetch('/api/dashboard/bid-document-queue',{cache:'no-store',signal:active.signal});
+        if(!response.ok)throw Error(response.status===403?'ACCESS':'HTTP');
+        const data=await response.json();if(token!==request)return;
+        if(data.storage!=='LOCAL_READ_ONLY'||!valid(data.queue))throw Error('FORMAT');
+        current=data.queue;
+        status.textContent='확인 필요 '+current.needs_attention_count+'건 / 확인 작업 '+current.action_required_count+
+          '건 / 보류 '+current.held_count+'건 / 표시 생략 '+current.omitted_count+'·'+current.held_omitted_count+
+          '건. 공식 최신성·원본 전체 분석 미검증. 자동 다운로드·재시도 없음.'+
+          (current.release_metadata_state==='LEGACY_COMPLETED_UNVERIFIED'?' 과거 완료 저널의 현재 세대 무결성 미검증.':'');
+        render();
+      }catch(error){
+        if(token!==request)return;current=null;rows.replaceChildren();
+        status.textContent=expired?'문서 작업 조회 시간 초과. 다시 조회할 수 있습니다.':
+          error.message==='ACCESS'?'문서 작업 조회 접근 거절. 로컬 접속 상태를 확인하세요.':
+          error.message==='FORMAT'?'문서 작업 응답 확인 실패. 기존 원본 보존; 0건으로 판단하지 않습니다.':
+          '문서 작업 조회 실패. 기존 원본 보존; 0건으로 판단하지 않습니다.';
+      }finally{clearTimeout(timer);if(token===request)panel.setAttribute('aria-busy','false');}
+    }
+  }
+  mountBidDocuments();
+  // BID05_END
 
   const priorRenderDetail = window.renderDetail;
   window.renderDetail = function () {

@@ -1,5 +1,11 @@
 # 현재 개발 상태
 
+## 2026-10-19 BID-05 REVIEWED / 최종 Codex GO / CI·운영 인수 대기
+
+- bd1c072부터 기존 승인 메모·작업·운영 원본/설정을 보존하고 공식 문서 후속 큐를 구현했다. GET `/api/dashboard/bid-document-queue`, 후보 화면의 문서 보완 조회·작업/보류 선택, 선정 근거/마감/확인 소요·다음 작업·재평가 제한을 연결했다.
+- 다운로드/추출 실패를 신규 승인된 배치의 고정 failure_stage로 구분한다. 과거 FAILED는 단계 불명 유지. 자동 다운로드·재실행·재시도·실제 입찰 없음. 차수/공식 첨부 identity·저장 원문 SHA/청크 해시 대조와 캐시 상한·전후 불변, 취소/정정/마감 보류를 적용했다. 역량 불일치로 제외하지 않으며 적격/수익·인력/MM은 UNVERIFIED/BLOCKED_EVIDENCE.
+- 16:01 KST 실제 읽기 전용5,718건: 확인 작업2,870·보류2,848, 보호 파일393개 전후 동일. 최초15:37의2,872/2,846과 차이는 기준시각 경과이며 원본 bytes는 동일하다. 수정본 전체457 PASS/실패·오류·건너뜀0(306.891초), 감사14/backend11 포함 Python482 PASS·Node36 PASS·Chrome390/1440 전체 E2E/build PASS. 별도 읽기 전용 Codex 최종 GO(MAJOR1·MINOR1 해결, 독립Node28 PASS). 캡처 revision/상세 전 최신 GET·ID/요청·화면 대조로 과거 상세 혼용 차단. 새 CI/main/운영 인수 전 DONE 아님. [기록](docs/reviews/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md). BID-06 미착수.
+
 ## 2026-10-19 15:10 KST BID-04 DONE / main·기존 localhost 운영 인수 PASS
 
 - 구현: 실제 로컬 공고의 전체/활성/보류·기한·취소/정정/STALE·일관성·분야 비교/역량/MM/원가 증빙 부족을 CLI와 기존 후보 화면/API로 읽기 전용 표시. 증빙 없음은 BLOCKED_EVIDENCE, 적격/수익/보완 허용은 UNVERIFIED, 역량 부족 자동 배제 없음. 실제 입찰/자동 투찰·인터넷 공개 없음.

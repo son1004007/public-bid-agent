@@ -7,6 +7,7 @@
  * 실패/시간 제한: CDP 10초, 조건 대기 15초, 전체 90초. 재시도로 실패를 숨기지 않는다.
  * 불변조건: sandbox/TLS/CSP를 완화하지 않으며 사용자 UI 승인/배포를 주장하지 않는다.
  * 관련: local_app/test_local_acceptance.py, docs/reviews/P09_SYNTHETIC_ACCEPTANCE_2026-10-18.md.
+ * BID-05: 문서 후속 작업 GET·작업/보류·미검증 및 기존 상세 연결을 두 폭에서 확인한다.
  */
 const assert = require('node:assert/strict');
 const {spawn} = require('node:child_process');
@@ -89,7 +90,12 @@ async function main() {
     const reader = createInterface({input: fixture.stdout});
     reader.on('line', line => { lines.push(line); if (!fixtureInfo && line.startsWith('{')) fixtureInfo = JSON.parse(line); });
     // This process only handles generated fixtures; keep diagnostics bounded.
-    fixture.stderr.on('data', () => { fatal ||= Error('Synthetic Python fixture emitted an error'); });
+    fixture.stderr.on('data', data => {
+      for(const marker of ['ConnectionResetError','BrokenPipeError','JSONDecodeError','ResourceWarning']){
+        if(String(data).includes(marker))console.error('Synthetic fixture diagnostic: '+marker);
+      }
+      fatal ||= Error('Synthetic Python fixture emitted an error');
+    });
     await waitFor(() => { if (fatal) throw fatal; return fixtureInfo; }, 'synthetic server startup');
     assert.match(fixtureInfo.base, /^http:\/\/127\.0\.0\.1:\d+$/);
     chrome = spawn(chromePath, ['--headless', '--remote-debugging-pipe', `--user-data-dir=${profile}`,
@@ -134,10 +140,12 @@ async function main() {
     const click = async expression => {
       const point = await evaluate(`(() => { const e=(${expression}); if(!e||e.disabled)return null;
         e.scrollIntoView({block:'center'}); const r=e.getBoundingClientRect();
-        return {x:r.x+r.width/2,y:r.y+r.height/2}; })()`);
+        const x=r.x+r.width/2,y=r.y+r.height/2,top=document.elementFromPoint(x,y);
+        return {x,y,hittable:e===top||e.contains(top)}; })()`);
       assert(point, `Missing/enabled control at ${stage}`);
-      await send('Input.dispatchMouseEvent', {type: 'mousePressed', button: 'left', clickCount: 1, ...point});
-      await send('Input.dispatchMouseEvent', {type: 'mouseReleased', button: 'left', clickCount: 1, ...point});
+      assert(point.hittable, `Control occluded at ${stage}`);
+      await send('Input.dispatchMouseEvent', {type: 'mousePressed', button: 'left', clickCount: 1, x:point.x,y:point.y});
+      await send('Input.dispatchMouseEvent', {type: 'mouseReleased', button: 'left', clickCount: 1, x:point.x,y:point.y});
     };
     const button = label => `[...document.querySelectorAll('button')].find(e=>e.textContent.trim()===${JSON.stringify(label)})`;
     const textIncludes = text => evaluate(`document.body.innerText.includes(${JSON.stringify(text)})`);
@@ -163,6 +171,27 @@ async function main() {
       assert(await textIncludes('활성 검토 3건'));
       assert(await textIncludes('법적 적격·수익성·보완 허용 UNVERIFIED'));
       console.log(`PASS BID04 ${width}px: aggregate/evidence/UNVERIFIED`);
+      await click(`document.querySelector('#bidDocumentQueueRefresh')`);
+      await waitFor(()=>textIncludes('확인 필요 6건 / 확인 작업 2건 / 보류 4건'), 'BID05 document queue');
+      assert(await evaluate(`document.querySelectorAll('#bidDocumentQueueRows .bidDocumentRow').length===2`));
+      assert(await textIncludes('자동 다운로드·재시도 없음'));
+      assert(await textIncludes('원본 전체 분석 미검증'));
+      await evaluate(`(()=>{const e=document.querySelector('#bidDocumentQueueKind');e.value='held_results';e.dispatchEvent(new Event('change'));})()`);
+      assert(await textIncludes('공식 취소 신호 · 재시도 금지'));
+      assert(await evaluate(`document.querySelectorAll('#bidDocumentQueueRows .bidDocumentRow').length===4`));
+      await evaluate(`(()=>{const e=document.querySelector('#bidDocumentQueueKind');e.value='results';e.dispatchEvent(new Event('change'));})()`);
+      assert(await evaluate('document.documentElement.scrollWidth <= innerWidth'), `${width}px BID05 overflow`);
+      if(process.env.BID05_SCREENSHOTS){
+        fs.mkdirSync(process.env.BID05_SCREENSHOTS,{recursive:true});
+        await evaluate(`document.querySelector('#bidDocumentQueue').scrollIntoView({block:'start'})`);
+        const image=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+        fs.writeFileSync(path.join(process.env.BID05_SCREENSHOTS,`bid05-${width}.png`),Buffer.from(image.data,'base64'));
+      }
+      await click(`document.querySelector('#bidDocumentQueueRows button')`);
+      await waitFor(()=>evaluate(`document.querySelector('#view-full-detail').classList.contains('active')`),'BID05 existing detail');
+      await click(`document.querySelector('[data-view="bid-now"]')`);
+      await waitFor(()=>evaluate(`document.querySelectorAll('#bidNowRows .bidNowRow').length===1`),'BID03 list reloaded after BID05 detail');
+      console.log(`PASS BID05 ${width}px: queue/held/evidence/no retry/no overflow`);
       assert(await textIncludes('보완 후 마진 미검증 (UNVERIFIED)'));
       assert(await textIncludes('취소·구차수·공식 상태 확인 보류 2건'));
       assert(await textIncludes('마감·접수 종료 보류 1건'));

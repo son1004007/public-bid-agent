@@ -64,6 +64,8 @@ jobs:
         run: node --test scripts/test_bid_now_ui.cjs
       - name: BID-04 aggregate UI contract (synthetic only)
         run: node --test scripts/test_bid_now_audit_ui.cjs
+      - name: BID-05 document followup UI contract (synthetic only)
+        run: node --test scripts/test_bid_document_queue_ui.cjs
       - name: Static publishing preview syntax and boundaries
         run: python scripts/check_ui_preview.py
       - name: Verify standalone preview included in build
