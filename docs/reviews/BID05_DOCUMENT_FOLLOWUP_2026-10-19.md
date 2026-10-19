@@ -46,3 +46,15 @@
 - 수정본 전체 **457 PASS / 실패·오류·건너뜀0 /306.891초**, Temp/bid05-postreview-regression-20261019.log(세션5341 exit0). 감사14/backend11 포함 Python482 PASS. Node36 PASS 및 Chrome390/1440 전체재PASS를 직접 로그 확인했다. 최종 source bundle `96d4f7bb29a128258f694a7b68547c939f3dc5485a84ed1b3e6ddebebc4fdbb9`, 시작/종료 동일. 로컬 배포 Python SHA `3fee7ffa2f94089733592c2ddfefed98f73df8b75679cb75816f729516cdcc18`, Node SHA `4b7eccef000f3b364d359c64c1bb6c0ae888aff60daf51e0aa54c57d80df5450` 동일.
 - 16:01:45 KST 재확인: 전체5,718 / 확인작업2,870 / 보류2,848 / 보호393파일 전후동일. 시간이 경과해 작업2건이 보류로 바뀌었으며 파일 내용/추가/삭제는 없다. 회사·개별 공고/본문/원본SHA·경로는 출력하지 않았다. source_files_written false, status BLOCKED_EVIDENCE. 실제 자료의 공식 최신성·자격·수익·인력/MM은 그대로 미검증.
 - 사용자 메모 원본 불변 및 remote dev/main bd1c072를 확인했다. GO 후 개발 반영·두 CI·main 조상 검사/CI·운영 인수를 진행하며 아직 DONE 아님.
+
+## 최종 Git/CI/운영 인수 (2026-10-19 16:10 KST)
+
+- **BID-05 DONE**. 개발/최초 main 실행 구현 `de8c294d8afc5ddbc3f2ff5ba70eb9d52885c708`. 독립 GO 이후 commit/push, [개발 Sprint 1 CI](https://github.com/son1004007/public-bid-agent/actions/runs/39213540830)·[Windows acceptance](https://github.com/son1004007/public-bid-agent/actions/runs/39213540829)·[main CI](https://github.com/son1004007/public-bid-agent/actions/runs/39213881253) 모두 SUCCESS. 공개 synthetic CI 로그에서 Ubuntu457+14+11 PASS, Windows106 PASS 및 새 문서 큐/기존 전체 Chrome390/1440 PASS 확인. 기본 main bd1c072에서 고유 변경이 없고 조상임을 검사한 뒤 fast-forward, 강제 push/초기화/기존 Lab 작업 트리·설정 변경 없음.
+- CI 상태 조회 1회의 PowerShell jq 인용 오류는 구조화 JSON 파싱으로 바로 해결했다. CI/코드 실패가 아니며 같은 명령 반복 없음. 앞선 최초 실패/Chrome 오류/독립 NO_GO는 위 이력을 보존하고 최종 성공과 구분한다.
+- 배포: 검수한 ops 두 파일의 SHA 재확인 → 개발/main 정확 SHA/CI/이전 검증 소스4f1743d·private backup/정확 서비스 PID·배치 유휴 preflight PASS → 새 Git archive → 원본 첨부/설정 포함 **393개 전체 파일 백업·SHA 검증** → 알려진 기존 프로세스만 교체·같은 데이터 경로/127.0.0.1:8765 기동 → 새 API/GET 전용 운영 Chrome → **393파일 전후 동일**. 백업은 기존 private-backups에 보존하며 실제 경로·첨부명·개별 SHA·공고 본문은 기록하지 않는다.
+- 결과 `LOCAL_APPLIED`, 07:10:32 UTC /16:10:32 KST, stageBID05, HTTP200, bid05_api_verified=true, bid05_390_1440_readonly_ui_verified=true, protected_file_count=393/protected_files_unchanged=true. 새 큐의 작업/보류·선정/다음 작업·명시적 UNVERIFIED/자동 다운로드·재시도 없음·legacy 경고 및 기존 추천/상세/RFP/P06 API 흐름 PASS. 고정 localhost GET만 허용한 새 Chrome 프로필을 사용, 기존 사용자 Chrome/계정·외부 서비스 공개/방화벽/이전/초기화 없음.
+- 16:11 KST 재확인: 전체5,718/확인작업2,870/보류2,848, dashboard revision55, BLOCKED_EVIDENCE·analysis_complete=false. UI와 실제 데이터는 원본 확보 전 분석 완료·입찰 가능으로 표시하지 않는다. 15:37과의2건 차이는 시간 경과이며 파일 bytes/추가/삭제는 그대로다.
+- 복귀: 신규 API/화면 또는 파일 무결성 실패 시 검증된 이전 고정 소스/같은 데이터로 복귀하는 기존 절차와 시작 실패 보완 경로를 사용한다. 이전 소스/백업의 존재·게이트를 확인했고 실제 배포 성공으로 rollback 실행/데이터 덮어쓰기 복원은 불필요했다. 백업과 모든 기존 성공/검토 이력·설정·원본을 보존했다. 로컬 사용자 승인 메모는 원위치 미추적 보존하며 공개 Git에 포함하지 않았다.
+- 문서 마감 커밋은 Markdown만 변경하며 실행/테스트/CI 코드는 위 배포 SHA와 동일하다. 개발/main 최종 문서 HEAD와 배포 실행 SHA를 구분하며, 문서 때문에 서비스를 다시 시작하지 않는다. 최종 문서 HEAD의 개발2/main CI까지 확인하여 최종 보고한다.
+- 남은 BLOCKERS: 현재 공식 원본/차수·binary 재확인, 과거 버전 결속 미검증108·실패 단계 불명19, 회사의 적격·인력/MM/원가·이익 증빙 및 legacy 저널 현재 세대 무결성 미검증. 해당 공고의 보류/UNVERIFIED를 유지하며 승인된 최신 공식 원본/로컬 근거로만 재평가한다. 구현 작업 DONE과 실제 참여 가능 확정은 다르다.
+- BID-06 선행조건: 승인된 최신 공식 원본·차수/SHA 출처 결속, 전체 페이지/표/각주/OCR에 대한 사람 승인 정답 구절/표본과 독립 대조. 정확도·TP/FP/FN·누락률을 발명하지 않는다. **BID-06 미착수**.

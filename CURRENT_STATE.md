@@ -1,10 +1,12 @@
 # 현재 개발 상태
 
-## 2026-10-19 BID-05 REVIEWED / 최종 Codex GO / CI·운영 인수 대기
+## 2026-10-19 16:10 KST BID-05 DONE / main·기존 localhost 운영 인수 PASS
 
-- bd1c072부터 기존 승인 메모·작업·운영 원본/설정을 보존하고 공식 문서 후속 큐를 구현했다. GET `/api/dashboard/bid-document-queue`, 후보 화면의 문서 보완 조회·작업/보류 선택, 선정 근거/마감/확인 소요·다음 작업·재평가 제한을 연결했다.
-- 다운로드/추출 실패를 신규 승인된 배치의 고정 failure_stage로 구분한다. 과거 FAILED는 단계 불명 유지. 자동 다운로드·재실행·재시도·실제 입찰 없음. 차수/공식 첨부 identity·저장 원문 SHA/청크 해시 대조와 캐시 상한·전후 불변, 취소/정정/마감 보류를 적용했다. 역량 불일치로 제외하지 않으며 적격/수익·인력/MM은 UNVERIFIED/BLOCKED_EVIDENCE.
-- 16:01 KST 실제 읽기 전용5,718건: 확인 작업2,870·보류2,848, 보호 파일393개 전후 동일. 최초15:37의2,872/2,846과 차이는 기준시각 경과이며 원본 bytes는 동일하다. 수정본 전체457 PASS/실패·오류·건너뜀0(306.891초), 감사14/backend11 포함 Python482 PASS·Node36 PASS·Chrome390/1440 전체 E2E/build PASS. 별도 읽기 전용 Codex 최종 GO(MAJOR1·MINOR1 해결, 독립Node28 PASS). 캡처 revision/상세 전 최신 GET·ID/요청·화면 대조로 과거 상세 혼용 차단. 새 CI/main/운영 인수 전 DONE 아님. [기록](docs/reviews/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md). BID-06 미착수.
+- 공식 문서 보완 작업/보류 큐와 기존 후보 화면/API를 구현했다. 미확보/다운로드 대기·실패/추출 실패·부분 추출·잘림·경고/정정·취소·마감·SHA·버전 결속을 구분하고 마감/확인 소요별 우선순위, 근거·다음 작업·재평가 제한을 제공한다. 기존 성공/사용자 검토 이력 보존, 역량/분야 불일치 자동 제외 없음. 실제 적격·수익·인력/MM은 UNVERIFIED/BLOCKED_EVIDENCE, 원본 전체 분석 완료 아님.
+- 최종 Python482(local_app457+감사14+backend11)·Node36·Chrome155 390/1440 전체 E2E·build PASS. 독립 read-only Codex 최종 GO, MAJOR1·MINOR1 해결(캡처 revision/상세 전 GET·차수/ID·요청/화면 경합 방어), 독립Node28 PASS. [전체 검증/이력](docs/reviews/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md).
+- 실행 구현 `de8c294d8afc5ddbc3f2ff5ba70eb9d52885c708` 개발 push 후 [개발 Sprint 1 CI](https://github.com/son1004007/public-bid-agent/actions/runs/39213540830)·[Windows acceptance](https://github.com/son1004007/public-bid-agent/actions/runs/39213540829)·[main CI](https://github.com/son1004007/public-bid-agent/actions/runs/39213881253) 모두 SUCCESS. Ubuntu457+14+11 PASS, Windows106 PASS 및 새 큐/기존 전체 Chrome PASS. 기존 main bd1c072가 조상·원격 변경 없음 확인 후 fast-forward했다.
+- 기존 소유자 전용 `127.0.0.1:8765`에 16:10:32 KST 고정 소스를 적용했다. 이전 검증 소스4f1743d/백업·정확 PID 확인, 첨부·설정 포함393파일 백업 및 SHA 검증, 배포 후393파일 전체 동일. API200·운영390/1440px 읽기 전용 큐/작업·보류·legacy 경고 및 기존 흐름 PASS. 복귀 조건/이전 소스 확인, 배포 성공으로 실제 복귀는 불필요했다. 인터넷 공개/방화벽/이전·초기화·실제 입찰/자동 투찰/외부 참여 확정 없음.
+- 16:11 KST 운영 API: 전체5,718 / 확인작업2,870 / 보류2,848. 시간 경과로 최초15:37의2,872/2,846과 달라졌지만393파일 bytes는 그대로다. 공식 최신성·원본 binary 재확인 및 회사 증빙 미검증은 공고별 보류로 유지한다. 문서 마감 커밋은 실행 코드가 위 배포 SHA와 같아 재시작하지 않는다. 로컬 승인 메모 미추적 보존, BID-06 미착수(승인된 최신 원본/사람 정답 표본 선행).
 
 ## 2026-10-19 15:10 KST BID-04 DONE / main·기존 localhost 운영 인수 PASS
 

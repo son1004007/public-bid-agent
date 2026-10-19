@@ -6,9 +6,9 @@
 - [x] BID-01 **DONE**: 코드·전체 Python 412 PASS·Codex GO(+독립 경계 54 PASS), GitHub Sprint 1 CI 39128145994 및 Windows 인수 CI 39128145903 모두 SUCCESS. 다음 BID-02 로컬 GET API/스냅샷 연동: 현재 공고의 부서 관심분야·공식 마감/등록·취소·STALE·원본문서 위험을 사용하는 보수적 읽기 전용 분류. **분야/현재 보유 역량 미일치만으로 보완 가능한 고이익 기회 폐기 금지**, 예상 수익은 비용·증빙 확인 전 UNVERIFIED. 법적 적격/인력/원가 충족 자동 확정 금지.
 - [x] BID-02 DONE: `/api/dashboard/bid-now-shortlist` 같은 잠금 공고·부서·운영정보 로컬 검토 API. 전체 Python 418 PASS, Codex GO, GitHub CI 2개 SUCCESS. 역량 보완 검토 2,158건은 실제 추정 이익 미검증.
 - [x] BID-03 **DONE** (2026-10-19): 기존 작업 보존. 분리 venv의 local_app 419 PASS(건너뜀 0)·감사 14·backend 11·Node 22 PASS, build PASS. 기본 sandbox Chrome 155 실제 390px/1440px 세 큐/보류/UNVERIFIED/기존 상세/파일 선택/수기 이력 E2E PASS. 별도 읽기 전용 Codex 최종 **GO** 후 `f642796` commit/push, 동일 SHA [Sprint 1 CI SUCCESS](https://github.com/son1004007/public-bid-agent/actions/runs/39198868801)·[Windows synthetic SUCCESS](https://github.com/son1004007/public-bid-agent/actions/runs/39198868837). Windows CI 68 PASS·Chrome 두 폭 E2E도 성공. 다음 BID-04 미착수, main/운영 배포/실제 제출 없음. [검증 기록](docs/reviews/BID03_SHORTLIST_UI_2026-10-19.md).
-- [ ] 후속 BID-05~BID-09는 백로그의 의존관계에 따라 한 번에 하나씩, Codex 검수·CI 근거 후 DONE. 모니터링과 **작업 실행 자동화**는 별도.
+- [ ] 후속 BID-06~BID-09는 백로그의 의존관계에 따라 한 번에 하나씩, Codex 검수·CI 근거 후 DONE. 모니터링과 **작업 실행 자동화**는 별도.
 - [x] BID-04 **DONE** (2026-10-19 15:10 KST): 기존 CLI 보존·읽기 전용 실제 집계/화면/API. Python468·Node27·Chrome390/1440 PASS, Codex 최종 GO. 실행 `4f1743d` 개발 두 CI와 main CI SUCCESS, main fast-forward 및 기존 localhost 운영 배포/화면·API PASS. 첨부 포함393파일 백업·SHA 검증/전후 동일. 적격·수익 UNVERIFIED/BLOCKED_EVIDENCE 유지. [최종 근거](docs/reviews/BID04_UI_DEPLOY_2026-10-19.md). BID-05 미착수.
-- [ ] BID-05 **REVIEWED / 최종 Codex GO**: 읽기 전용 문서 작업/보류 큐·후보 화면·실패 단계·공식 첨부/버전/SHA 결속. Python482·Node36·Chrome390/1440·build PASS, 실제5,718건/393파일 불변. 독립 GO 완료, 개발2/main CI·기존 localhost 배포/무결성 전 DONE 금지. [기록](docs/reviews/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md). BID-06 미착수.
+- [x] BID-05 **DONE** (2026-10-19 16:10 KST): 문서 후속 작업/보류·우선순위·공식 첨부/차수/SHA·캐시 검증·후속 작업/재평가 제한·기존 화면/API. Python482·Node36·Chrome390/1440 PASS, 독립Codex GO. 실행de8c294 개발2/main CI SUCCESS, main fast-forward·기존 localhost 운영 API/두폭 화면 PASS, 첨부/설정 포함393파일 백업·전후 불변. 공식 원본·회사 증빙 미검증은 공고 보류로 유지. [최종 기록](docs/reviews/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md). BID-06 미착수.
 
 ## 2026-10-18 감사 패키지 설치·실제 패키지 보안 재검사
 

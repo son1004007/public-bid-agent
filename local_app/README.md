@@ -1,5 +1,7 @@
 # Public Bid Agent — 로컬 실행 사용법
 
+> **2026-10-19 BID-05 DONE:** 실행 `de8c294`의 개발2/main CI SUCCESS 후 기존 localhost만 배포. 운영 API/Chrome390·1440·작업/보류/legacy 경고 PASS, 첨부/설정 포함393파일 검증 백업·전후 동일. 문서 마감은 실행 코드 동일하여 재시작하지 않는다. 실제 적격/수익·공식 최신성은 미검증이며 실제 입찰/자동 투찰·외부 참여 확정 없음. [검증 기록](../docs/reviews/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md).
+
 ## BID-05 공식 문서 후속 확인
 
 `/decision-preview` → 후보 → **문서 보완 작업 큐 조회**. 고정 GET `/api/dashboard/bid-document-queue`는 `{storage: LOCAL_READ_ONLY, queue: ...}`를 반환합니다. 전체/작업/보류·생략 건수, 마감 우선순위/확인 비용 등급, 문서 확보·추출 상태/위험·다음 확인·재평가 제한을 표시합니다. 두 목록 각30건이며 기존 상세에서 공식 공고/첨부 출처를 확인합니다. 비용 등급은 실제 MM/원가/수익 예측이 아닙니다.
