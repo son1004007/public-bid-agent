@@ -25,7 +25,7 @@
 | BID-01 | P0 | 현행 공고의 취소·구차수·마감·등록기한, 부서 분야, 문서 추출 위험을 재사용하여 **읽기 전용 '지금 검토' 안전 분류 함수** 구현; 역량/분야 부족도 `CAPABILITY_GAP_MARGIN_REVIEW`로 보존, 추정 이익·자격은 `UNVERIFIED`; 합성 경계 테스트+Codex GO+GitHub CI | 기존 `procurement_filter`, `rfp_coverage`, `bid_readiness` | DONE |
 | BID-02 | P0 | `GET /api/dashboard/bid-now-shortlist` 읽기 전용 로컬 API 노출; 현재 부서 설정과 운영자료를 한 snapshot에서 조회; GET 데이터 비공개 원문/원가 미노출·원본 SHA 불변·Host/CSP 테스트 | BID-01 | DONE |
 | BID-03 | P0 | `/decision-preview`에 `지금 검토 가능한 후보` 별도 탭/필터 및 제외/검토 필요 근거 표시; '법적 적격 미검증' 기본 표시; 기존 목록/상세/결정 화면 보존. Chrome 390px + 일반폭 E2E | BID-02 | DONE / f642796·Codex GO·local_app 419 PASS·390px/1440px E2E PASS·동일 SHA 두 CI SUCCESS |
-| BID-04 | P0 | **실제** 공고를 로컬 읽기 전용으로 돌려 활성 건수/위험·기한별 건수/일관성 집계; 특정 공고 ID·원문·부서정보는 로컬 로그에서만 처리. 현재 부서 설정이 비어 있거나 운영 스킬·MM/원가 근거 없으면 `BLOCKED_EVIDENCE` | BID-02, BID-03 | PENDING |
+| BID-04 | P0 | **실제** 공고를 로컬 읽기 전용으로 돌려 활성 건수/위험·기한별 건수/일관성 집계; ID·원문·회사/인력·원가는 로컬 로그/프롬프트/Git/공개 보고에도 미출력. 현재 부서 설정이 비어 있거나 운영 스킬·MM/원가 근거 없으면 `BLOCKED_EVIDENCE` | BID-02, BID-03 | REVIEWED / 화면·API 포함 GO, CI·main·운영 인수 대기 |
 | BID-05 | P1 | 공식 첨부 확보 대기/부분 추출/잘림/경고 후보를 소요 대비 우선순위로 자동 작업 큐에 연결; 공개 공식 URL·정정/취소·원본 SHA 결속, 기존 배치의 무단 재시도/다운로드 금지; 공식 자료 확보 후에만 재평가 | BID-04 및 공식 원본 접근 가능 | PENDING |
 | BID-06 | P1 | 실제 RFP에서 참가자격·평가기준·과업범위의 독립 정답 구절(전체 페이지/표/각주/OCR)을 로컬에서 대조, TP/FP/FN·누락률 추정 가능 여부 기록; 사람이 승인한 표본 없이 정확도 점수 발명 금지 | BID-05 + 승인된 최신 공식 원본·정답 검수 | PENDING |
 | BID-07 | P1 | 공고별 실제 부서 역량 비교: 업종·면허/실적/기술 스택/참여 기간별 MM·겸임·예상 사업이익/외주·협력·채용 비용/필수 제안 서류의 **증빙 출처와 검증일** 기반 차단 게이트. 내부 역량 부족은 무조건 제외하지 말고 보완 비용·기술/일정·합법적 외주/공동수급 가능성을 확인해 이익 기회를 유지. 미확인 값은 무조건 `UNVERIFIED`; 민감 원본 로컬만 | BID-06 + 승인된 회사 증빙 및 책임자 검증 | PENDING |
@@ -44,10 +44,18 @@
 6. 실행 후 `EXECUTION_LOG`에 단계, 수행 시각(Asia/Seoul), commit SHA, 로컬 테스트 수와 결과, Codex verdict, GitHub CI run 결과, 현재 미완료 위험과 다음 단계 한 건을 업데이트한다. 같은 실패로 매번 파일/커밋을 쌓지 않고 의미 있는 변화나 새로운 증거가 있을 때만 기록한다.
 7. 완료된 단계는 다시 실행하지 않고 최종 단계나 사용자/외부 원본을 기다릴 때는 안전한 read-only 검증만 하되 사용자가 꺼 둔 **별도 상태 모니터링**을 재활성화하지 않는다. 새로운 작업 실행 일정은 별도이며 작업 결과/차단 사항 보고를 목적으로 한다.
 
+## 2026-10-19 최신 재개 결과
+
+기존 세션 종료·18파일 외부 백업 후 검수본 통합. 화면/API 읽기 전용 연동, Python468·Node27·Chrome390/1440px PASS, 독립 Codex 경고 계약 MAJOR 수정 후 최종 GO. 실제 14:59 KST 5,718/활성2,369 재확인, 적격·수익 UNVERIFIED와 증빙 보류 유지. 사용자 직접 승인한 main/기존 localhost 배포는 CI·백업/복구·운영 인수 게이트를 순서대로 충족한다. 현재 DONE 아님. [최신 상세](../reviews/BID04_UI_DEPLOY_2026-10-19.md).
+
 ## 4. BLOCKERS (최신 선행문제)
 
 | 확인일 | 단계 | 현상/근거 | 영향/필요한 선행 작업 | 재시도 조건 | 상태 |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-19 | BID-04 기존 Chrome 회귀 | Chrome155/Node22.14 기본 sandbox 합성 runner 시작 중 exit2147483651/exit1 | 현재 UI 회귀 인수 BLOCKED, 원인 UNKNOWN. 기존 소스/보안 설정 미변경, BID-03 이전 성공 재사용 금지 | 동일 보안 경계에서 Chrome 실행 정상화 후 기존 390px/1440px 전체 합성 E2E PASS | RESOLVED (정상 환경 새 합성390/1440 PASS; 과거 원인 UNKNOWN) |
+| 2026-10-19 14:36 KST | BID-04 증빙 | 실제 로컬 5,718건 집계, 활성2,369·부서 비교불명2,369. 설정/기술/MM/총원가/운영 근거·공고별 대조 미확인 → BLOCKED_EVIDENCE | 법적 적격·보완 허용/수익 확정 금지, 기회 보존. 책임자의 승인된 로컬 증빙과 대조 필요, 비공개 값 외부 미전송 | 승인된 증빙이 로컬에서 검증되면 같은 CLI 재평가. 증빙 없음을 기본값/고수익 점수로 숨기지 않음 | OPEN |
+| 2026-10-19 | BID-04 Git/원격 정책/CI | GitHub api:443 OS 소켓 접근 거부. 이전 검증 로컬 정책9개는 읽음, 최신 원격 재확인 불가 | commit/push/새 SHA 두 CI 검증 불가. 최종 GO/게이트 충족 전 사용자 지시대로 문서 포함 미커밋 유지 | 정상 권한 연결 복구 후 원격 원본/브랜치/CI 조회·검수 상태 재확인, 우회/설정 완화 없음 | 연결 RESOLVED / 새 SHA CI 대기 |
+| 2026-10-19 | BID-04 최종 검수 | 최종local_app440 PASS/0 skip/309.928초, 감사14/backend11 포함465 PASS·Node22·build PASS. 별도 read-only Codex 독립10 PASS/소스 중대 결함 없음이나 **VERDICT: NO_GO** | Chrome 인수/원격 검증 BLOCKER·증빙 미해소. 이전 중단 회귀/사전 설계 GO를 최종 통과로 대체하지 않음. 문서 포함 commit/push/DONE 금지 | Chrome/원격 게이트 해소 후 같은 소스 결속·정책/회귀 근거로 별도 최종 재검수 GO, 이후 허용 범위 Git/동일 SHA 두 CI | RESOLVED (화면 포함 별도 최종 GO; CI/운영 별도 게이트) |
 | 2026-10-19 13:14 KST | BID-03 재개 검증 | 분리 CPython 3.12.0 venv·pip check PASS, local_app 419 PASS(213.041초, 건너뜀 0), 감사 14·backend 11·Node 22 PASS. 동일 Chrome 155·기본 sandbox로 390px/1440px 전체 합성 E2E PASS. GitHub API/fetch 정상 | 아래 이전 세 차단은 현재 실행에서 해소됨. 독립 Codex 재검수 GO 및 구현 f642796의 두 CI SUCCESS 확인 완료 | GO 후 개발 브랜치 commit/push → 동일 SHA 두 CI SUCCESS 확인 | RESOLVED (f642796 두 CI SUCCESS) |
 | 2026-10-19 08:07 KST | BID-03 화면 인수 | 이전 Chrome sandbox 종료·합성 origin 거부 이력 | 13:14 재개에서 동일 Chrome/runner 기본 sandbox 390px/1440px E2E PASS. 이전 제한의 근본 원인 UNKNOWN | 정상 실행 증거 확보, 보안 완화/기존 origin 우회 없음 | RESOLVED |
 | 2026-10-19 08:07 KST | BID-03 Git/CI 네트워크 | 이전 api.github.com:443 OS 소켓 거부 이력 | 13:14 현재 GitHub API/fetch 정상. 새 SHA CI 성공 여부와 네트워크 복구를 구분 | GO 후 push·새 CI 성공 확인은 상단 게이트 유지 | RESOLVED |
@@ -58,6 +66,10 @@
 | 2026-10-18 | BID-09 | 사람의 화면 인수·`main`/공개 릴리스 미승인 | 이 단계는 자동화가 승인 대체 불가 | 사용자 별도 명시적 승인 | OPEN |
 
 ## 5. EXECUTION_LOG (append semantic checkpoints)
+
+- 2026-10-19 / BID-04 **VERIFIED locally / 최종 Codex NO_GO / 미커밋 인계**: 최종 격리 전체local_app440 PASS/0 skip/309.928초(신규21 포함), 감사14/backend11·Node22·build·정적/문법/공백 PASS. 테스트 기본 ROOT를 임시 폴더로 지정해 기존 회귀의 기본폴더 쓰기 충돌을 격리했고 시험 삭제/보안 완화 없음. 별도 Codex `/root/bid04_final_readonly` 독립10 PASS, 5개 소스 결속 시작/종료 동일, 소스 중대 결함 없음. 그러나 Chrome155 기본 sandbox 시작 exit2147483651 및 GitHub OS 소켓/원격 검증 차단으로 **VERDICT: NO_GO**. 실자료 BLOCKED_EVIDENCE 계속 유지. 지적 수용·BLOCKERS/README2종·상태 문서 갱신, 사용자 지시대로 문서 포함 commit/push/DONE 없음. HEAD648ca0a 유지, main·배포·실제 입찰·D-10·BID-05 미착수. [최종 검증 보고](../reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md).
+
+- 2026-10-19 14:36 KST / BID-04 **IMPLEMENTED / 완료 게이트 BLOCKED**: baseline `648ca0a`, 새 CLI·순수 집계·합성21 PASS 및 Windows CI 연결. 실제5,718·활성검토2,369·부서 비교불명2,369, 적격/수익 UNVERIFIED·BLOCKED_EVIDENCE. 보호 파일393/393 동일, 변경/삭제/추가0(잠금 제외). 원문/ID·회사/인력/원가·개별 SHA 미노출. 사전 설계 Codex GO 및 legacy 저널 오차단 설계 재검토 GO; 최종 회귀/검수 대기. GitHub 소켓 차단·현재 증빙 부족으로 commit/push/DONE 없음. 요청 로컬 task 파일 제거. BID-05·D-10·main·배포·실제 제출 미착수. [세부 증거](../reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md).
 
 - 2026-10-19 13:22 KST / BID-03 **DONE**: 독립 최종 Codex **GO** 이후 [구현 f642796bbe2634fe3b6ef405f3332e848027f756](https://github.com/son1004007/public-bid-agent/commit/f642796bbe2634fe3b6ef405f3332e848027f756) 개발 브랜치 commit/push. 동일 SHA [Sprint 1 CI 39198868801](https://github.com/son1004007/public-bid-agent/actions/runs/39198868801) 및 [Windows synthetic acceptance 39198868837](https://github.com/son1004007/public-bid-agent/actions/runs/39198868837) **SUCCESS**. Ubuntu 전체 419+감사14+backend11 PASS, Windows 68 PASS 및 Chrome 155 실제 1440px/390px 전체 E2E PASS 로그 확인. 로컬 Python 444 PASS·Node22 PASS·build PASS, 기존 작업과 사용자 데이터 보존. 요청한 상태 문서·README2종·검증 보고 갱신. 운영 배포/main/실제 제출 없음, BID-04 미착수.
 

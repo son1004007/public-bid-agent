@@ -1,5 +1,9 @@
 # 제3자 라이브러리·바이너리 라이선스 검토
 
+## 2026-10-19 BID-04
+
+추가 패키지·바이너리·버전 변경 없음. CPython 3.12.x 표준 라이브러리로만 집계하며 SQLite release intent는 제한된 바이트를 메모리 DB에 deserialize하여 읽습니다. 기존 의존성·OCR/라이선스 잔여 게이트를 변경하지 않습니다.
+
 ## 2026-10-18 추가 설치 및 공개 소스 LICENSE 검증
 
 - 운영 Python과 별도 감사 전용 가상환경에서 jsonschema, packageurl-python, pip-audit, license-expression, cyclonedx-python-lib 설치. `pip check` PASS; 실제 48개 SBOM 스키마·PURL·dependency 참조 오류 0; pip-audit 응답 47개 0 advisories + 누락 `packaging 26.3` OSV 0.

@@ -1,5 +1,18 @@
 # 현재 개발 상태
 
+## 2026-10-19 BID-04 화면·API VERIFIED / 독립 GO / CI·배포 대기
+
+- 기존 작성자 종료(task_complete)와 미커밋 18개 파일 외부 백업 후 인계. CLI 원본 3개는 바이트 동일하게 보존하고 GET `/api/dashboard/bid-now-audit`와 후보 화면의 전체 공고 위험·증빙 집계를 연결했다. 고정 오류/권한·10초 제한·최신 요청 우선·legacy 무결성 미검증 경고를 표시한다.
+- 14:59 KST 실제 읽기 전용 재검증: 전체 5,718 / 활성 2,369 / 보류 3,349 / 무효 0, 부서 비교 불명 2,369. BLOCKED_EVIDENCE 및 적격·수익 UNVERIFIED. 원문/ID·회사·인력·원가 미출력, 원본 쓰기 없음. 기존 CLI 검증 보호 파일393개 불변과 이번 legacy 배포 helper 한정318개 불변은 범위가 다르다. 새 운영 백업/보존 검사는 원문 첨부를 포함한 모든 파일(.lock 제외)로 확대한다.
+- local_app443 PASS(건너뜀0) + 감사14 + backend11 = Python468 PASS, Node27 PASS, build PASS. Chrome155 기본 sandbox 합성390/1440px PASS. 독립 Codex 경고 계약 MAJOR1 수정·관련5개 재검증 후 최종 GO. 기존 세션 NO_GO/차단은 아래 이력으로 보존한다.
+- 사용자 최신 승인에 따라 개발/main CI·기존 localhost 백업/배포/운영 화면·API·데이터 보존 인수를 진행한다. 현재 DONE 아님. [최신 검증](docs/reviews/BID04_UI_DEPLOY_2026-10-19.md).
+
+## 2026-10-19 BID-04 로컬 회귀 VERIFIED / 최종 Codex NO_GO / 완료 게이트 BLOCKED
+
+- `648ca0a`의 개발 브랜치에서 별도 읽기 전용 CLI/집계·합성 회귀를 구현했다. 실제 저장 공고 5,718건 중 활성 검토 2,369·보류 3,349, 부서 비교 불명 2,369. 증빙 부족 **BLOCKED_EVIDENCE**, 법적 적격·수익 UNVERIFIED. 스킬 부족/분야 불명만으로 기회 폐기 없음. 실제 ID/원문·회사/인력/원가·개별 SHA 미노출.
+- 고정 입력 전후 안정성 확인, 보호 파일 393/393 내용 동일(잠금 제외, 변경/추가/삭제/읽기 오류 0). 새 의존성·기존 서버/UI/원본 저장 변경 없음. 최종 전체 local_app **440 PASS/0 skip/309.928초**(신규21 포함), 감사14/backend11 포함 Python465 PASS, Node22·build·정적/문법/공백 PASS. 기본 테스트 ROOT를 임시 폴더로 격리한 전수 실행이며 이전 두 중단 실행은 PASS 아님.
+- 별도 fresh-context 읽기 전용 Codex 최종 **NO_GO**: 소스 중대 결함 없음/독립10 PASS이나 Chrome 기본 sandbox 시작 실패(exit2147483651) 및 GitHub OS 소켓 거부로 인수/원격 검증 **BLOCKED**. source bundle5개 종료시 동일. 사용자 지시에 따라 문서 포함 commit/push/DONE 없음, main·운영 배포·실제 입찰·D-10 조사 없음. 최신 상세는 [검증 보고](docs/reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md), [실행 백로그 BLOCKERS](docs/implementation/DEPARTMENT_BID_NOW_EXECUTION_2026-10-18.md). 아래 BID-03/BID-04 미착수 표기는 당시 이력이다.
+
 ## 2026-10-19 BID-03 DONE / 독립 GO·두 GitHub CI 성공
 
 - 기존 미커밋 15개 파일을 보존하고 전역 정책 9개를 GitHub 원본에서 재확인. 후보 세 큐·보류/문서 위험·UNVERIFIED·기존 상세 연결 유지.

@@ -9,6 +9,8 @@
  * BID-03: 별도 후보 화면은 읽기 전용 shortlist GET만 사용한다. 진입/새로고침 시
  *       이전 결과를 비우고 10초 뒤 취소한다. 기한은 서버 스냅샷의 상태로만 표시하며
  *       원본 날짜·실시간 공식 취소 확인·법적 자격·마진을 추정하지 않는다.
+ * BID-04: 전체 공고 위험·증빙 집계는 별도 GET으로 요청한다. 고정 집계/코드만 표시하고
+ *       실패를 0건으로 바꾸지 않는다. 10초 취소·최신 요청 우선, 사람 판단과 원본은 불변.
  */
 (function () {
   'use strict';
@@ -436,6 +438,96 @@
   }
   mountBidNow();
   // BID03_END
+
+  // BID04_START: 전체 공고의 비식별 읽기 전용 집계 화면.
+  function mountBidNowAudit(view) {
+    const labels={
+      DEPARTMENT_PROFILE_EMPTY:'부서 관심분야 설정 없음',
+      DEPARTMENT_PROFILE_MISSING_OR_INVALID:'부서 관심분야 설정 누락·형식 확인 필요',
+      DEPARTMENT_EVIDENCE_INCOMPLETE:'참가자격·부서 운영 증빙 부족',
+      OPERATIONS_MISSING_OR_INVALID:'운영 증빙 누락·형식 확인 필요',
+      WORKFORCE_MISSING_OR_INVALID:'인력 증빙 누락·형식 확인 필요',
+      MM_EVIDENCE_MISSING_OR_INVALID:'가용 인력·투입 공수(MM) 증빙 부족',
+      COST_EVIDENCE_MISSING_OR_INVALID:'총원가 증빙 부족',
+      SKILLS_EVIDENCE_UNVERIFIED:'기술 역량 증빙 미검증',
+      NOTICE_SPECIFIC_COMPARISON_NOT_PERFORMED:'공고별 자격·역량·비용 대조 미수행'
+    };
+    const deadlineKeys=['CLOSED','UNKNOWN','WITHIN_24H','WITHIN_72H','WITHIN_7D','LATER'];
+    const metrics=[
+      ['total_notices','전체 저장 공고'],['active_notice_count','활성 검토'],
+      ['held_notice_count','보류'],['invalid_notice_count','식별자·형식 무효'],
+      ['active_department_category_match_count','활성 관심분야 일치 (적격 미검증)'],
+      ['active_department_match_unknown_count','활성 분야 비교 불명'],
+      ['active_augmentation_review_count','활성 역량 보완·수익성 검토'],
+      ['active_registration_review_count','활성 등록기한 검토 위험']
+    ];
+    const riskMetrics=[['CANCELLED','취소 신호'],['SUPERSEDED','구차수·변경 이력'],
+      ['STALE_DOCUMENT','정정 후 문서 최신성(STALE) 위험'],['DEADLINE_UNKNOWN','마감 미확인'],
+      ['REGISTRATION_UNKNOWN','등록기한 미확인'],['DOCUMENT_REVIEW','원문·추출 검토 필요']];
+    const consistencyMetrics=[['DUPLICATE_ID_ROWS','중복 식별자'],
+      ['AMBIGUOUS_NUMERIC_REVISION_ROWS','차수 모호'],['LIFECYCLE_MISMATCH_ROWS','상태·차수 불일치'],
+      ['STORED_WINDOW_MISMATCH_ROWS','저장 접수상태와 현재 시각 불일치'],
+      ['REGISTRATION_AFTER_CLOSE_ROWS','등록·제출기한 역전']];
+    const section=el('section','card panel'); section.id='bidNowAudit';
+    const button=btn('전체 공고 위험·증빙 집계',()=>void refresh()); button.id='bidNowAuditRefresh';
+    const status=el('p','desc','저장된 전체 공고를 읽기 전용으로 집계합니다.');
+    status.id='bidNowAuditStatus'; status.setAttribute('role','status');
+    const rows=el('div'); rows.id='bidNowAuditRows';
+    section.append(el('h2','','전체 공고 위험·증빙 집계'),button,status,rows);
+    view.append(section);
+    let request=0,controller=null;
+    const count=n=>Number.isSafeInteger(n)&&n>=0;
+    const valid=r=>r?.schema_version===1 && r.mode==='READ_ONLY_LOCAL_AGGREGATE' &&
+      r.status==='BLOCKED_EVIDENCE' && r.snapshot_check==='STABLE_OBSERVED_READS' &&
+      r.source_files_written===false && r.private_data_included===false &&
+      r.legal_eligibility==='UNVERIFIED' && r.profitability==='UNVERIFIED' &&
+      r.augmentation_permitted==='UNVERIFIED' && r.automatic_bid_submittal===false &&
+      r.bid_decision==='HUMAN_ONLY' && r.cannot_auto_discard_on_capability_gap===true &&
+      typeof r.evaluated_at==='string' && Number.isFinite(Date.parse(r.evaluated_at)) &&
+      metrics.every(([k])=>count(r[k])) &&
+      r.active_notice_count+r.held_notice_count+r.invalid_notice_count===r.total_notices &&
+      r.active_department_category_match_count+r.active_department_match_unknown_count+
+        r.active_augmentation_review_count===r.active_notice_count &&
+      deadlineKeys.every(k=>count(r.deadline_counts?.[k])&&count(r.active_deadline_counts?.[k])) &&
+      riskMetrics.every(([k])=>count(r.risk_counts?.[k])) &&
+      consistencyMetrics.every(([k])=>count(r.consistency_counts?.[k])) &&
+      Array.isArray(r.evidence_gap_codes) && r.evidence_gap_codes.every(k=>typeof k==='string');
+    async function refresh() {
+      const token=++request; controller?.abort();controller=new AbortController();
+      const active=controller,timer=setTimeout(()=>active.abort(),10000);
+      rows.replaceChildren(); status.textContent='전체 공고 집계 중…';section.setAttribute('aria-busy','true');
+      try {
+        const response=await fetch('/api/dashboard/bid-now-audit',{
+          cache:'no-store',headers:{Accept:'application/json'},signal:active.signal});
+        if(token!==request)return;
+        if(!response.ok)throw Error([401,403].includes(response.status)?'ACCESS':'HTTP');
+        const body=await response.json();if(token!==request)return;
+        if(body?.storage!=='LOCAL_READ_ONLY'||!valid(body.audit))throw Error('SCHEMA');
+        const r=body.audit;
+        status.textContent='집계 기준 '+r.evaluated_at+' · 증빙 부족 (BLOCKED_EVIDENCE) · 원본 변경 없음';
+        rows.append(el('p','callout','법적 적격·수익성·보완 허용 UNVERIFIED. 관심분야 일치는 실제 역량이나 자격의 증명이 아닙니다. '+
+          '분야 비교 불명은 부적격이 아니며 보완 가능한 기회는 보존합니다. 최종 판단은 사람만 수행합니다.'));
+        metrics.forEach(([k,title])=>rows.append(el('p','',title+' '+r[k]+'건')));
+        const names=['마감 경과','기한 불명','24시간 이내','24~72시간','72시간~7일','7일 이후'];
+        rows.append(el('p','', '활성 마감 구간: '+deadlineKeys.map((k,i)=>names[i]+' '+r.active_deadline_counts[k]+'건').join(' · ')));
+        rows.append(el('p','', '전체 마감 구간: '+deadlineKeys.map((k,i)=>names[i]+' '+r.deadline_counts[k]+'건').join(' · ')));
+        riskMetrics.forEach(([k,title])=>rows.append(el('p','',title+' '+r.risk_counts[k]+'건')));
+        consistencyMetrics.forEach(([k,title])=>rows.append(el('p','',title+' '+r.consistency_counts[k]+'건')));
+        rows.append(el('p','desc','위험 건수는 중첩됩니다. 시간 경과에 따른 접수상태 차이는 데이터 손상 확정이 아닙니다. '+
+          '현재 공식 정정·취소 상태와 전체 원문은 별도 대조가 필요합니다.'));
+        r.evidence_gap_codes.forEach(k=>rows.append(el('p','',labels[k]||'추가 증빙 검토 필요')));
+        if(r.release_metadata_state==='LEGACY_COMPLETED_UNVERIFIED')rows.append(el('p','callout',
+          '과거 완료 저널의 현재 세대 무결성은 미검증입니다. 이 집계는 복구 완료나 최신 공식 상태의 증명이 아닙니다.'));
+      } catch(error) {
+        if(token!==request)return;rows.replaceChildren();
+        status.textContent=error.message==='ACCESS'?'집계 접근 거절. 로컬 접속 상태를 확인하세요.':
+          active.signal.aborted?'집계 시간 초과. 다시 조회하세요.':
+          '입력·스냅샷 또는 응답 확인 실패. 0건으로 판단하지 않습니다. 다시 조회하세요.';
+      } finally {clearTimeout(timer);if(token===request)section.setAttribute('aria-busy','false');}
+    }
+  }
+  mountBidNowAudit(byId('view-bid-now'));
+  // BID04_END
 
   const priorRenderDetail = window.renderDetail;
   window.renderDetail = function () {

@@ -9,6 +9,8 @@ AI 인용: 정규화한 출처 ID·텍스트 SHA·문자 위치·인용만 보�
 검증 요약: 저장 시와 동일한 유효 검증 조건을 구형 기록에도 적용하며 원본 플래그·결정·이력은 보존한다.
 입력 상한: 공통 자료 생성기의 전달 문자 범위·누락 기록에 초안을 결속하며 사용자 이력은 보존한다.
 수집 병합: 조회기간의 동차수 중복 제거에서도 관측한 공식 취소를 보존한다.
+BID-04: 로컬 전체 공고 집계 GET은 제한된 고정 파일만 읽고 전후 안정성을 검사한다.
+개별 공고/회사 자료를 반환하지 않으며 스냅샷·입력 오류는 고정 코드로 503 처리한다.
 """
 import base64
 import copy
@@ -59,6 +61,7 @@ from rfp_original_workflow import verify as verify_rfp_original
 from bid_outcomes import record as record_bid_outcome, OutcomeConflict
 from bid_readiness import assess as assess_bid_readiness
 from bid_now_shortlist import build as build_bid_now_shortlist
+from bid_now_audit_cli import audit_local as audit_bid_now_local, AuditBlocked
 from process_limits import run_limited as run_quality_limited
 from rfp_review_queue import build as build_rfp_review_queue
 from rfp_audit_labels import (initial as initial_rfp_audit, validate as validate_rfp_audit,
@@ -476,6 +479,15 @@ class Handler(BaseHTTPRequestHandler):
                          "storage":"LOCAL_READ_ONLY"})
    except (ValueError,TypeError,KeyError,OSError,json.JSONDecodeError):
     return self.respond({"error":"입찰 근거 준비도 조회 오류; 원본 보존"},503)
+  if self.path=="/api/dashboard/bid-now-audit":
+   try:
+    with LOCK:
+     report=audit_bid_now_local(ROOT)
+    return self.respond({"audit":report,"storage":"LOCAL_READ_ONLY"})
+   except AuditBlocked as exc:
+    code=str(exc) if str(exc) in ("BLOCKED_INPUT","BLOCKED_SNAPSHOT") else "BLOCKED_INPUT"
+    return self.respond({"status":code,"aggregate_available":False,
+                         "source_files_written":False},503)
   if self.path=="/api/dashboard/bid-now-shortlist":
    # 한 잠금 구간에서 공식 공고, 부서 선택, 운영자료를 읽고 비공개 필드는 응답에 포함하지 않는다.
    try:

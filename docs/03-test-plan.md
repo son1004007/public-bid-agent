@@ -1,5 +1,11 @@
 # 03 테스트 및 검증 계획
 
+BID-04 화면 확장: HTTP3개(실제 고정 입력/불변·권한/오류 비반사·누락 증빙), Node5개(실제 release_metadata_state/legacy 경고·오류/0건 구별·경합/timeout), Chrome390/1440px 집계/UNVERIFIED 및 기존 전체 흐름을 검증한다. Windows92개 대상에 신규 집계21+HTTP3을 포함한다. 운영 인수는 GET 전용 Chrome과 API·첨부 포함 보호 파일 전후 동일성으로 검증하고 실패 시 데이터 덮어쓰기 없이 이전 고정 소스로 복귀한다.
+
+## BID-04 (2026-10-19)
+
+`local_app/test_bid_now_audit.py`는 합성 공고의 KST/UTC/음수 offset·정확한 24h/72h/7d/마감 경계, 취소/구차수/중복·동차수/STALE/불명, 등록기한 역전, 잘못된 identity/설정·증빙, 민감 canary 비노출·입력 불변, 실제 CLI 성공/오류·인수 비반사, 크기·JSON 오류, 전후 파일 변경/생성, 중단 세대·sidecar·SQLite COMPLETED/VERIFIED/legacy 저널을 검사합니다. Linux 전체 discover와 Windows 합성 workflow 모두에 연결합니다. 실자료는 부모의 로컬 CLI에서 집계만 실행하고, 원문/개별 ID·회사/인력/원가·해시는 검수 입력에 전달하지 않습니다. 실행 결과/환경/한계는 [BID-04 검증 기록](reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md)에 기록하며 증빙 보류와 코드 테스트 성공을 구분합니다.
+
 ## 현재 상태
 
 애자일 Sprint 1 구현 단계다. 합성 공고 API·저장소 테스트 **11개를 로컬에서 PASS**했고, 프런트엔드 빌드·백엔드 테스트의 GitHub Actions push/PR CI는 PASS(37885616577 / 37885643254)다. 브라우저 E2E/독립 검수는 아직 NOT RUN이다. 계획에 적힌 모든 테스트를 첫 스프린트에서 실행하지 않는다. 활성화할 기능의 위험에 맞춰 테스트를 작성·실행하며 범위 밖은 NOT RUN/NOT APPLICABLE로 표시한다.

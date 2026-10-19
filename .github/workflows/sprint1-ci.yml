@@ -23,6 +23,8 @@ jobs:
       - name: Install local document readers
         run: python -m pip install -r local_app/test-requirements.txt
       - name: Test standalone local JSON server
+        env:
+          PUBLIC_BID_LOCAL_DATA: ${{ runner.temp }}/public-bid-agent-synthetic-default
         run: python -m unittest discover -s local_app -p 'test_*.py' -v
       - name: Audit Python dependency inventory logic (synthetic only)
         run: python -m unittest discover -s scripts -p 'test_audit_*.py' -v
@@ -60,6 +62,8 @@ jobs:
         run: node --test scripts/test_rfp_evidence_summary.cjs
       - name: BID-03 read-only shortlist UI contract (synthetic only)
         run: node --test scripts/test_bid_now_ui.cjs
+      - name: BID-04 aggregate UI contract (synthetic only)
+        run: node --test scripts/test_bid_now_audit_ui.cjs
       - name: Static publishing preview syntax and boundaries
         run: python scripts/check_ui_preview.py
       - name: Verify standalone preview included in build

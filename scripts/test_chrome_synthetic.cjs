@@ -157,6 +157,12 @@ async function main() {
       await click(`document.querySelector('[data-view="bid-now"]')`);
       await waitFor(() => evaluate(`document.querySelectorAll('#bidNowRows .bidNowRow').length===1`), 'matching queue');
       assert(await textIncludes('법적 적격 미검증 (UNVERIFIED)'));
+      await click(`document.querySelector('#bidNowAuditRefresh')`);
+      await waitFor(()=>textIncludes('증빙 부족 (BLOCKED_EVIDENCE)'), 'BID04 aggregate');
+      assert(await textIncludes('전체 저장 공고 6건'));
+      assert(await textIncludes('활성 검토 3건'));
+      assert(await textIncludes('법적 적격·수익성·보완 허용 UNVERIFIED'));
+      console.log(`PASS BID04 ${width}px: aggregate/evidence/UNVERIFIED`);
       assert(await textIncludes('보완 후 마진 미검증 (UNVERIFIED)'));
       assert(await textIncludes('취소·구차수·공식 상태 확인 보류 2건'));
       assert(await textIncludes('마감·접수 종료 보류 1건'));

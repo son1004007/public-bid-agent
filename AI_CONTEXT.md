@@ -1,5 +1,9 @@
 # AI 개발 작업 안내 - Public Bid Agent
 
+> **최신 BID-04 인계:** 기존 작성자 종료 후 원본 보존/외부 백업 완료. CLI+화면/API, Python468·Node27·Chrome390/1440 PASS, Codex 최종 GO. 사용자 이번 직접 대화에서 main 및 기존 localhost 운영 배포를 승인했으며 DECISIONS 최신 절을 우선한다. CI/운영 인수 전 DONE 아님. 아래 이전 NO_GO/금지는 해당 시점 이력. [현재 기록](docs/reviews/BID04_UI_DEPLOY_2026-10-19.md).
+
+> **2026-10-19 BID-04 최종 Codex NO_GO / 완료 게이트 BLOCKED:** 개발 브랜치 `648ca0a` 이후 실제 로컬 집계 CLI/합성 회귀 구현. 실제 5,718건·활성 검토 2,369·부서 비교 불명 2,369, 결과 BLOCKED_EVIDENCE. 원문/ID·회사/인력/원가·개별 SHA 미노출, 보호 파일393개 전후 동일. 최종 local_app440 PASS/0 skip/309.928초, 감사14/backend11·Node22·build PASS. 별도 Codex는 독립10 PASS/소스 중대 결함 없음이나 Chrome 시작 실패·GitHub OS 소켓 차단으로 **NO_GO**. 문서 포함 commit/push/DONE/main/배포/실제 입찰 없음. [검증 기록](docs/reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md) 및 실행 백로그 최신 BLOCKERS 우선. 아래 미착수는 이전 이력.
+
 > **2026-10-19 BID-03 DONE:** 기존 미커밋 작업 보존.전체 local_app 419 PASS(건너뜀 0), 감사 14·backend 11·Node 22 PASS·build PASS. 기본 sandbox Chrome 155 실제 390px/1440px 세 큐·보류·UNVERIFIED·기존 상세/수기 이력 E2E PASS. 별도 읽기 전용 Codex GO 후 구현 `f642796` 개발 브랜치 푸시, 동일 SHA [Sprint 1 CI](https://github.com/son1004007/public-bid-agent/actions/runs/39198868801)·[Windows synthetic](https://github.com/son1004007/public-bid-agent/actions/runs/39198868837) SUCCESS. [검증 기록](docs/reviews/BID03_SHORTLIST_UI_2026-10-19.md)과 실행 백로그 우선. 다음 BID-04는 미착수. 운영·main·실제 제출 변경 없음.
 
 > **BID-02 DONE / 2026-10-18:** 커밋 `9f3ab29`, 전체 Python 418 PASS, Codex GO, GitHub Sprint 1/Windows synthetic CI SUCCESS. 다음 BID-03 화면; 실제 수익·법정 자격은 계속 UNVERIFIED.

@@ -26,7 +26,7 @@ jobs:
         run: >-
           python -m unittest test_local_acceptance test_bid_outcome_recovery
           test_bid_outcomes test_json_transaction test_release_rfp_stage
-          test_process_limits test_bid_now_triage test_bid_now_shortlist -v
+          test_process_limits test_bid_now_triage test_bid_now_shortlist test_bid_now_audit test_bid_now_audit_http -v
       - name: Chrome synthetic file input and manual history
         shell: pwsh
         run: |

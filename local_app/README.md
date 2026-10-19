@@ -1,5 +1,21 @@
 # Public Bid Agent — 로컬 실행 사용법
 
+## BID-04 후보 화면과 읽기 전용 API
+
+`/decision-preview` → 후보 → **전체 공고 위험·증빙 집계**. `GET /api/dashboard/bid-now-audit`는 CLI와 같은 고정 로컬 입력/전후 안정성 검사를 재사용해 `{storage: LOCAL_READ_ONLY, audit: ...}`를 반환합니다. 입력/스냅샷 실패는 비식별 고정 503, Host 거절403. 전체/활성/보류/무효 및 위험·증빙 상태를 구별하고 실제 적격·수익·보완 허용은 UNVERIFIED입니다. 10초 제한/이전 요청 취소/최신 응답 우선, legacy 완료 저널의 현재 세대 무결성 미검증을 경고합니다. 기존 CLI를 그대로 제공하며 저장/수집/외부 호출은 하지 않습니다. [최신 검증 및 운영 결과](../docs/reviews/BID04_UI_DEPLOY_2026-10-19.md).
+
+## BID-04 읽기 전용 로컬 집계
+
+현재 로컬 전체 Python465(신규21 포함)·Node22·build PASS, 별도 최종 Codex **NO_GO**입니다. Chrome 시작 실패와 GitHub 소켓/원격 검증 차단, 실제 증빙 BLOCKED_EVIDENCE를 기록하고 문서 포함 미커밋 유지·push/DONE 보류합니다. [검증/재개 조건](../docs/reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md).
+
+저장소 루트에서 CPython 3.12.x로 `python -B local_app/bid_now_audit_cli.py --data-dir "<로컬 데이터 폴더>"`를 실행합니다. 생략 시 `PUBLIC_BID_LOCAL_DATA`, 없으면 기존 기본 로컬 폴더를 사용합니다. 명시 폴더가 없거나 dashboard.json이 없으면 오류이며 자료나 기본 프로필을 만들지 않습니다. `--apply`/파일 저장/다운로드/모델 호출 옵션은 없습니다. 출력은 고정 집계·코드뿐이며 공고 ID·원문·파일 경로·회사/인력·스킬 분포·원가·개별 해시를 포함하지 않습니다.
+
+활성은 저장 메타데이터상 공식 identity/현재 차수·취소·STALE·마감 게이트를 통과한 **검토 대상**입니다. 등록기한 경과·불명은 별도 검토 위험이고 등록 여부/법적 적격 확정이 아닙니다. 기한 버킷은 평가 KST 시각에서 24시간/72시간/7일 이내·이후이며 모든 객체와 활성 집계를 구분합니다. 부서 설정 누락/빈 분야·비정상 공고 분야는 비교 불명으로 보존합니다. 분야 일치도 실제 기술 충족이 아니며 보완 가능한 기회를 스킬 부족만으로 제외하지 않습니다.
+
+department_profile.json/operations.json/workforce.json의 증빙이 없거나 출처·확인일·MM·총원가가 미확인이고 현재 workforce v1의 기술이 ASSUMED/UNKNOWN이면 `BLOCKED_EVIDENCE`입니다. 값이 기록되어도 공고별 실제 대조·법적 적격·보완 허용·수익은 UNVERIFIED입니다. 종료 코드 0은 **집계 수행 성공**(증빙 보류 포함)이고 실제 입찰 가능/완료가 아닙니다. 종료 2는 `BLOCKED_INPUT` 또는 `BLOCKED_SNAPSHOT`이며 집계는 출력하지 않습니다.
+
+고정 입력 파일의 존재·identity·메타데이터·바이트를 전후 확인하고 변경 관측/중단 복구 상태/SQLite sidecar는 보류합니다. 읽기용 잠금·SQLite 파일을 만들지 않습니다. 기존 JSON-only 완료 저널은 정상 수집 이후 과거 해시가 남을 수 있어 `LEGACY_COMPLETED_UNVERIFIED`로 표시하며 현재 세대 무결성을 증명하지 않습니다. 전후 안정성은 다중 파일 트랜잭션/공식 최신성의 보증이 아닙니다. 동시 갱신 중 차단되면 갱신 종료 후 다시 실행합니다. [설계](../docs/design/BID04_LOCAL_AGGREGATE_2026-10-19.md), [검증 및 BLOCKERS](../docs/reviews/BID04_LOCAL_AGGREGATE_2026-10-19.md). 현재 개발 완료 게이트 대기, 운영 적용·main·입찰 제출 없음.
+
 > **2026-10-19 BID-03 DONE:** `/decision-preview`의 `지금 검토 가능한 후보`는 분야 일치·역량 보완/수익·사전등록 세 큐와 기한/문서 위험·보류 근거를 읽기 전용으로 표시합니다. 법적 적격·마진·보완 가능성은 UNVERIFIED이며 최종 판단은 사람만 수행합니다. 전체 local_app 419 PASS(건너뜀 0), 감사 14·backend 11·Node 22 PASS, build PASS. 기본 sandbox Chrome 155 실제 390px/1440px 후보·기존 상세/파일 선택/수기 이력 E2E PASS. 독립 Codex 최종 GO 후 구현 `f642796`을 개발 브랜치에 푸시했고 동일 SHA의 Sprint 1 CI(39198868801)와 Windows synthetic acceptance(39198868837)가 모두 SUCCESS입니다. 운영 배포·main 병합·실제 제출은 수행하지 않았습니다. [검증 기록](../docs/reviews/BID03_SHORTLIST_UI_2026-10-19.md).
 
 > **2026-10-18 BID-02:** GET `/api/dashboard/bid-now-shortlist`는 현재 부서 관심분야, 저장된 공고, 회사 운영자료의 **읽기 전용 동일 잠금 스냅샷**으로 건수·고정 사유·보완 가능성 검토 목록을 제공합니다. 개별 직원·원가·RFP 본문은 비공개이며 법정 적격/수익 판단은 모두 미검증입니다. 관련 합성 21 PASS·전체 Python 418 PASS·Codex GO; HTTP/Host/CSP/원본 불변 테스트는 `test_bid_now_shortlist.py`에 있습니다.
