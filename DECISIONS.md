@@ -1,5 +1,13 @@
 # 프로젝트 결정사항 - Public Bid Agent
 
+## 2026-10-30 — 제품 검토·단계별 AI 인계 문서 게시 요청
+
+사용자는 설계와 구현을 검토하고, 멈춘 지점 및 어디서부터 무엇을 어떻게 왜 해야 하는지 GitHub에 문서화하도록 요청했다. 이어 다른 AI가 작업을 단계별로 나눠 수행할 수 있도록 필요한 문서와 진입 순서를 저장소에 만들도록 요청했다.
+
+- 이번 범위: 공개 저장소 코드/설계/CI 검토, 가역적인 합성 재현, 검토 보고·작업 카드·AI 진입점의 GitHub 게시와 기존 안내 연결.
+- [AI 시작점](docs/implementation/AI_START_HERE.md), [작업 카드](docs/implementation/AI_EXECUTION_TASKS_2026-10-30.md), [제품 검토](docs/reviews/PRODUCT_REVIEW_AND_RESTART_PLAN_2026-10-30.md)를 제공한다. 카드의 기술 제안·표본 수·지표는 사용자 확정 정책이나 성능 주장이 아니다.
+- 이번 문서 게시만으로 BID-07 이후 구현·회사 자료 접근/외부 전송·운영 배포·새 자동화·입찰을 실행하지 않는다. 기존 PMP 우선 전략과 실제 개발 재개 시 최신 범위 확인 원칙을 유지한다.
+
 ## 2026-10-29 — PMP 이후 서울시 사업 수주 지원 활용 전략 (커리어 결정 연동, 개발 승인 아님)
 
 > 사용자 최신 명시 전략의 정본: [career-playbook/2026-10-29 PMP·서울시 사업·AI Security Architect·야간 석사 계획](https://github.com/son1004007/career-playbook/blob/main/docs/2026-10-29-pmp-seoul-bid-ai-security-architect-graduate-plan.md). 이 절은 **향후 작업 우선순위의 의도 기록**이고, 아래 D-20/BID-06 등의 코드 수정·실제 회사 자료 접근·실행/배포·입찰 제출에 대한 새 승인은 **아니다**.

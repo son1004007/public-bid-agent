@@ -1,5 +1,16 @@
 # 애자일 작업 백로그
 
+## 2026-10-30 재개 작업 진입점
+
+- [AI 필독 순서/인계 규칙](docs/implementation/AI_START_HERE.md)과 [단계별 실행 카드](docs/implementation/AI_EXECUTION_TASKS_2026-10-30.md)를 따른다. 상태/실행 기록의 정본은 해당 카드이며 아래 목록은 진입 요약이다.
+- [ ] A01: 날짜 의존 CI 실패 정비 — 첫 작업.
+- [ ] A02/A03: 최신 원본·독립 사람 정답 확보와 BID-06 범위 평가.
+- [ ] A04/A05: 증빙·기간별 MM·보완 비용 비교(BID-07).
+- [ ] A06: 한 공고의 근거→사람 결정 UX(BID-08).
+- [ ] A07: 아티팩트 누락 보완·깨끗한 설치/Windows 인수(BID-09).
+- [ ] A08: 실사용 baseline과 다음 개선 선정.
+- 위는 제안 단계이며 아직 실행 완료/전체 착수 승인 아님. [제품 검토](docs/reviews/PRODUCT_REVIEW_AND_RESTART_PLAN_2026-10-30.md)의 확인 사실·제약을 읽는다. 아래 과거 미착수/완료 기록은 날짜별 이력이다.
+
 ## 2026-10-19 BID-06 IMPLEMENTATION_DONE / VALIDATION BLOCKED_EVIDENCE
 
 - [x] BID06 **IMPLEMENTATION_DONE**: Python504/Node42/Chrome390·1440/build PASS·Codex GO. 실행a4b7cd4 개발2/main CI SUCCESS, 안전main fast-forward·17:28 localhost API/두폭 화면·393파일 백업/전후 불변 PASS. [검증](docs/reviews/BID06_GROUND_TRUTH_2026-10-19.md).

@@ -1,5 +1,13 @@
 # 현재 개발 상태
 
+## 2026-10-30 설계·구현 검토 및 재개 문서
+
+- [제품 검토/근거/재개 계획](docs/reviews/PRODUCT_REVIEW_AND_RESTART_PLAN_2026-10-30.md), [AI 시작점](docs/implementation/AI_START_HERE.md), [작업 카드 A01~A08](docs/implementation/AI_EXECUTION_TASKS_2026-10-30.md).
+- 확인 main `a4440a2`, 개발 `09068bf`, 마지막 기능 `a4b7cd4`. BID-06 도구 구현 완료/실자료 검증 보류, BID-07 미착수.
+- 최신 [CI 40881574416](https://github.com/son1004007/public-bid-agent/actions/runs/40881574416) backend FAIL/frontend PASS. 고정 10월20일 마감 테스트의 OPEN 기대가 현재 CLOSED와 충돌하며 이번에 동일 실패 재현. 현재 전체 CI green 아님.
+- 이번 부분 검증: Python3.12.14 관련38 PASS, Node24.22.1 검수 UI 계약6 PASS. 전체 회귀/Windows/Chrome/현재 운영/실자료 평가 NOT RUN. 소스 수정·배포 없음. 과거 PASS/운영수치와 구분.
+- 다음: 개발 재개 범위에서 A01 날짜 테스트 정비, 이후 A02/A03 실제 원본·정답 검증. 상세 조건은 카드 참조.
+
 ## 2026-10-19 17:28 KST BID-06 IMPLEMENTATION_DONE / 실자료 NOT_EVALUATED
 
 - 독립 정답 구절·원본 페이지/표/각주 위치·분류·추출 비교, 명시 승인/수정/보류/누락 등록·이력·SHA/차수 변경 재검수, 범위 한정 TP/FP/FN/Precision/Recall/F1/누락률 도구를 기존 목록/상세/API에 연결했다. 후보는 독립 정답으로 승격하지 않는다. 공식 원본 SHA 티켓과 사람의 최신성/전체 선택 페이지·표/각주/이미지/OCR 확인 전 승인 불가. 기존 원본/설정/이력 불변, 새 검수 파일은 사람 명시 저장만 생성한다.

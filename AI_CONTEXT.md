@@ -1,5 +1,7 @@
 # AI 개발 작업 안내 - Public Bid Agent
 
+> **2026-10-30 검토·인계:** [AI 시작점](docs/implementation/AI_START_HERE.md) → [단계별 카드](docs/implementation/AI_EXECUTION_TASKS_2026-10-30.md) → [설계/구현 검토](docs/reviews/PRODUCT_REVIEW_AND_RESTART_PLAN_2026-10-30.md). 최신 확인 main a4440a2의 CI는 날짜 의존 테스트 1건 실패(40881574416). 첫 재개 작업 A01, 이후 BID-06 실제 정답/범위 평가. 아래 10월 19일 운영 수치는 과거 스냅샷이며 현재 PC는 이번에 확인하지 않았습니다. 이번 작업은 문서화이며 구현·운영 변경 없음.
+
 > **2026-10-19 BID-06 최신 실행:** 독립 정답 검수·표본 평가 **IMPLEMENTATION_DONE**: Python504·Node42·Chrome390/1440·Codex GO·실행a4b7cd4 개발2/main CI·기존localhost API/두폭 화면·393파일 백업/불변 인수 PASS. 실자료5718·승인 정답0·차수 결속 미검증으로 실자료 NOT_EVALUATED, 기존393파일 불변. 도구 IMPLEMENTATION_DONE과 실자료 VALIDATION_DONE은 별도이며 전체 DONE 금지. 최신 사용자 승인 범위는 독립GO/CI 후 main·기존localhost 배포까지, BID07/실제 입찰/외부 공개는 금지. [현재 검증](docs/reviews/BID06_GROUND_TRUTH_2026-10-19.md).
 
 > **최신 BID-05 DONE (16:10 KST):** 문서 후속 작업/보류 큐·기존 화면/API·공식 첨부/차수/SHA·캐시 제한 검증. Python482·Node36·Chrome390/1440 PASS, 독립Codex GO(지적 해결). 실행de8c294의 개발2/main CI SUCCESS, main fast-forward·기존 localhost 운영 인수 및 첨부/설정 포함393파일 백업·전후 동일 PASS. 실제5,718/작업2,870·보류2,848(16:11), 회사 증빙/공식 최신성 UNVERIFIED/BLOCKED_EVIDENCE 유지. BID-06·인터넷 공개·실제 입찰/자동 투찰 미수행. 아래 BID05 미착수·대기 문구는 이전 이력. [최종 검증](docs/reviews/BID05_DOCUMENT_FOLLOWUP_2026-10-19.md).
