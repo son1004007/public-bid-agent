@@ -33,7 +33,7 @@ class HarnessTests(unittest.TestCase):
         (self.repo/'fixture').mkdir()
         self.fixture=self.repo/'fixture/test_sample.py'
         self.fixture.write_text('import unittest\nclass Sample(unittest.TestCase):\n def test_ok(self): self.assertTrue(True)\n')
-        self.g('init','-q'); self.g('config','user.email','fixture@example.invalid'); self.g('config','user.name','fixture')
+        self.g('init','-q'); self.g('config','core.autocrlf','false'); self.g('config','user.email','fixture@example.invalid'); self.g('config','user.name','fixture')
         self.g('add','.'); self.g('commit','-qm','fixture')
         self.sha=self.g('rev-parse','HEAD').strip()
 

@@ -339,7 +339,7 @@ def main():
             validate(a.repo,a.trusted_ref,a.candidate_ref or a.trusted_ref,a.task)
             result={'state':'VALIDATED','task_complete':False}
         else: result=run(a.repo,a.trusted_ref,a.candidate_ref or a.trusted_ref,a.task,a.run_dir)
-    except (Invalid,OSError,ValueError,subprocess.SubprocessError) as e:
+    except (Invalid,OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as e:
         result={'state':'INVALID_TASK','reason':str(e)}
     print(json.dumps(result,ensure_ascii=True,sort_keys=True))
     return 0 if result['state'] in ('VALIDATED','LOCAL_VERIFIED') else 1
