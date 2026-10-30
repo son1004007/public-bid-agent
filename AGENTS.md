@@ -2,7 +2,7 @@
 
 # AI 개발 작업 규칙 (AGENTS.md)
 
-> **2026-10-31 하네스 구현 안내:** [하네스 명세](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md) → [Gateway/노트북 Codex 런북](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md) → [H01 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md). 현재는 설계 문서만 존재합니다. 개발 재개 시 H01 최소 실행기로 A01 결과를 기록하고 H02에서 A01 수정/검증을 완료합니다. A01은 여전히 첫 제품 수정이며 전체 하네스 완성을 기다리지 않습니다.
+> **2026-10-31 하네스 구현 안내:** [하네스 명세](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md) → [Gateway/노트북 Codex 런북](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md) → [H01 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md). H01 실행기는 구현되었습니다. 최신 사용법과 검증 기록을 확인하고, H02에서 A01 수정/전체 검증을 진행합니다. A01은 여전히 첫 제품 수정이며 전체 하네스 완성을 기다리지 않습니다.
 
 > **2026-10-30 새 AI 진입점:** 이 파일의 규칙을 읽은 다음 [AI_START_HERE](docs/implementation/AI_START_HERE.md)의 필독 순서·최신 근거 확인을 따르십시오. [단계별 작업 카드 A01~A08](docs/implementation/AI_EXECUTION_TASKS_2026-10-30.md)에서 선행조건을 충족한 첫 미완료 작업 하나씩 진행합니다. 현재 검토상 첫 작업은 날짜 의존 CI 실패 정비(A01)이며 BID-06 실자료 검증은 미완료입니다. 카드 작성은 전체 개발·배포·자동화 승인이나 완료가 아닙니다.
 

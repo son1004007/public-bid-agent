@@ -63,7 +63,16 @@ python -m unittest discover -s scripts -p test_task_harness.py -v
 python scripts/check_documentation_sync.py
 ```
 
-CI `Development harness`는 Ubuntu/Windows에서 위 자체 인수를 수행합니다.
+CI `Development harness`는 Ubuntu/Windows에서 위 unittest 자체 인수만 수행합니다.
+문서 동기화 검사는 기존 Sprint 1 CI frontend의 README synchronization gate에서 실행합니다.
 기존 Sprint 1 CI의 A01 실패와 하네스 인수 결과는 분리합니다.
 노트북 Codex의 로컬 runner pipe 오류/비대화형 GitHub 승인 차단은 이 하네스의 오류가 아닙니다.
 그 경우 Gateway controller의 승인된 실행으로 검사하고, Codex는 읽기 전용 독립 검수에 사용합니다.
+
+## 확인된 기준과 기존 체크아웃
+
+[검증 기록](../reviews/H01_HARNESS_ACCEPTANCE_2026-10-31.md)의 구현 SHA에서 독립 코드 검수와 인수가 완료되었습니다.
+사용 전 PR #2의 최신 상태를 확인합니다. main에 병합되기 전에는 `feat/harness-h01` 브랜치를 사용합니다.
+기존 Windows 체크아웃은 `.gitattributes` 도입 전 CRLF 파일을 유지할 수 있습니다.
+`running harness differs from trusted ref` 발생 시 검사를 우회하지 말고, 미커밋 작업을 보존한 뒤 **새 폴더에 새 clone**을 받아 실행하세요.
+새 checkout에는 LF 규칙이 적용됩니다. 최초 validate/run은 전체 Git snapshot 검증 때문에 노트북에서 수십 초 걸릴 수 있습니다.

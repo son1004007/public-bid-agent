@@ -1,9 +1,12 @@
-## 2026-10-31 H01 실행 코드 추가 — 검증 진행 중
+## 2026-10-31 H01 실행 구현·반복 사용 검증 완료
 
-작업 정의 `harness/tasks/A01.json`, 명령 registry, `scripts/task_harness.py`의 validate/run/verify/status,
-구조화 unittest adapter와 제한 실행기를 구현했습니다. [반복 사용 안내](docs/implementation/HARNESS_USAGE.md)를 따릅니다.
-A01 날짜 테스트는 변경하지 않았고 H02가 다음 단계입니다. 외부 GO/CI/실자료 완료 및 운영 배포로 승격하지 않습니다.
-Linux 합성 인수 15개 실행 결과와 Windows/독립 검수/CI 결과는 별도 검증 기록으로 확정합니다.
+H01의 작업 정의/실행기/검증기/실행 기록이 실제 코드로 추가되었습니다.
+[사용법](docs/implementation/HARNESS_USAGE.md) · [검증 기록](docs/reviews/H01_HARNESS_ACCEPTANCE_2026-10-31.md) · [PR #2](https://github.com/son1004007/public-bid-agent/pull/2).
+구현 기준 `3b7ff8b789bba2c44a48db487dba5d8f40e0bfe7`: Linux/노트북 Windows 자체 테스트 각각 15 PASS,
+GitHub Ubuntu/Windows 하네스 CI PASS, 독립 Codex 코드 검수 GO(H01 한정, 독립 테스트 NOT RUN).
+노트북 A01 run/verify/status 모두 VERIFY_FAILED와 task_complete=false로 기존 날짜 오류를 재현했습니다.
+다음 작업은 H02: A01 날짜 계약 수정·전체 회귀·외부 검수/CI 결속입니다. H03 resume/전체 잠금은 미구현입니다.
+개발 브랜치에 게시했으며 main 병합/운영 배포 및 A01 전체 완료는 별도입니다. 아래 날짜별 기록은 당시 상태입니다.
 
 # 현재 개발 상태
 
