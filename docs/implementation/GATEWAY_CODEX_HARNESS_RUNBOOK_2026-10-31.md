@@ -1,3 +1,5 @@
+> **구현 후 안내:** [HARNESS_USAGE](HARNESS_USAGE.md)가 실제 CLI 기준입니다. 아래는 최초 사전 점검 당시 이력입니다. Codex 0.166.0 모델·GitHub/Gmail read 호출은 이후 성공했으나 로컬 runner pipe 및 비대화형 MCP 쓰기 승인은 차단됐습니다. controller/Gateway 검증 경로를 사용하며 sandbox/승인 정책은 완화하지 않습니다.
+
 # Gateway → 노트북 Codex 하네스 구현 안내
 
 - 2026-10-31 KST / **구현용 런북**, 하네스는 아직 NOT IMPLEMENTED.

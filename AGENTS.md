@@ -1,3 +1,5 @@
+> **최신 H01 실행 진입점:** [반복 사용 하네스 안내](docs/implementation/HARNESS_USAGE.md). 실행 프로그램이 추가되었습니다. 아래 과거 NOT IMPLEMENTED는 설계 당시 이력입니다. 최신 branch/검수/CI를 확인하고 고정 SHA의 validate → run → verify/status를 사용합니다. A01 전체 완료·배포는 별도입니다.
+
 # AI 개발 작업 규칙 (AGENTS.md)
 
 > **2026-10-31 하네스 구현 안내:** [하네스 명세](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md) → [Gateway/노트북 Codex 런북](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md) → [H01 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md). 현재는 설계 문서만 존재합니다. 개발 재개 시 H01 최소 실행기로 A01 결과를 기록하고 H02에서 A01 수정/검증을 완료합니다. A01은 여전히 첫 제품 수정이며 전체 하네스 완성을 기다리지 않습니다.

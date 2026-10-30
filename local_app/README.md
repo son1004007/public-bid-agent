@@ -1,3 +1,5 @@
+> **최신 H01 실행 진입점:** [반복 사용 하네스 안내](../docs/implementation/HARNESS_USAGE.md). 실행 프로그램이 추가되었습니다. 아래 과거 NOT IMPLEMENTED는 설계 당시 이력입니다. 최신 branch/검수/CI를 확인하고 고정 SHA의 validate → run → verify/status를 사용합니다. A01 전체 완료·배포는 별도입니다.
+
 # Public Bid Agent — 로컬 실행 사용법
 
 > **BID-06 IMPLEMENTATION_DONE / 실자료 NOT_EVALUATED:** 수집 화면의 **RFP 정답 검수 대상 조회** 또는 상세 참가요건의 **검수 자료 다시 조회**에서 로컬 원본 SHA 대조, 독립 정답 구절/페이지/표·각주 위치 입력, 명시 승인·수정·보류, 표본 TP/FP/FN·Precision/Recall/F1/누락률을 제공합니다. 원본 선택·최신 차수/취소 확인·독립 정답/범위 검수 전 승인 불가. 기존 후보 라벨은 독립 정답으로 승격하지 않습니다. 승인 정답0이면 NOT_EVALUATED, 전체 문서 정확도/대표성은 미확인입니다. 검수 이력은 별도 로컬 rfp_ground_truth.json에만 저장하며 기존 원본/사용자 이력은 유지합니다. [설계](../docs/design/BID06_GROUND_TRUTH_2026-10-19.md).

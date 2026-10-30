@@ -1,3 +1,10 @@
+## 2026-10-31 H01 실행 코드 추가 — 검증 진행 중
+
+작업 정의 `harness/tasks/A01.json`, 명령 registry, `scripts/task_harness.py`의 validate/run/verify/status,
+구조화 unittest adapter와 제한 실행기를 구현했습니다. [반복 사용 안내](docs/implementation/HARNESS_USAGE.md)를 따릅니다.
+A01 날짜 테스트는 변경하지 않았고 H02가 다음 단계입니다. 외부 GO/CI/실자료 완료 및 운영 배포로 승격하지 않습니다.
+Linux 합성 인수 15개 실행 결과와 Windows/독립 검수/CI 결과는 별도 검증 기록으로 확정합니다.
+
 # AI 개발 작업 안내 - Public Bid Agent
 
 > **2026-10-31 하네스 인계:** [명세](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md), [Gateway 런북/실측 제한](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md), [H01 Codex 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md). H01 최소 task/runner/verifier/evidence → H02 A01 수정 순서. 하네스 NOT IMPLEMENTED, 노트북 Codex0.163.0/Python3.12.0 도움말 조회만 확인. 인증 상태 조회 timeout·종료 미확인으로 실제 모델 실행 미검증.
