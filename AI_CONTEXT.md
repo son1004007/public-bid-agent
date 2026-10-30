@@ -1,5 +1,7 @@
 # AI 개발 작업 안내 - Public Bid Agent
 
+> **2026-10-31 하네스 인계:** [명세](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md), [Gateway 런북/실측 제한](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md), [H01 Codex 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md). H01 최소 task/runner/verifier/evidence → H02 A01 수정 순서. 하네스 NOT IMPLEMENTED, 노트북 Codex0.163.0/Python3.12.0 도움말 조회만 확인. 인증 상태 조회 timeout·종료 미확인으로 실제 모델 실행 미검증.
+
 > **2026-10-30 검토·인계:** [AI 시작점](docs/implementation/AI_START_HERE.md) → [단계별 카드](docs/implementation/AI_EXECUTION_TASKS_2026-10-30.md) → [설계/구현 검토](docs/reviews/PRODUCT_REVIEW_AND_RESTART_PLAN_2026-10-30.md). 최신 확인 main a4440a2의 CI는 날짜 의존 테스트 1건 실패(40881574416). 첫 재개 작업 A01, 이후 BID-06 실제 정답/범위 평가. 아래 10월 19일 운영 수치는 과거 스냅샷이며 현재 PC는 이번에 확인하지 않았습니다. 이번 작업은 문서화이며 구현·운영 변경 없음.
 
 > **2026-10-19 BID-06 최신 실행:** 독립 정답 검수·표본 평가 **IMPLEMENTATION_DONE**: Python504·Node42·Chrome390/1440·Codex GO·실행a4b7cd4 개발2/main CI·기존localhost API/두폭 화면·393파일 백업/불변 인수 PASS. 실자료5718·승인 정답0·차수 결속 미검증으로 실자료 NOT_EVALUATED, 기존393파일 불변. 도구 IMPLEMENTATION_DONE과 실자료 VALIDATION_DONE은 별도이며 전체 DONE 금지. 최신 사용자 승인 범위는 독립GO/CI 후 main·기존localhost 배포까지, BID07/실제 입찰/외부 공개는 금지. [현재 검증](docs/reviews/BID06_GROUND_TRUTH_2026-10-19.md).

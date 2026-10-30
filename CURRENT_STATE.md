@@ -1,5 +1,12 @@
 # 현재 개발 상태
 
+## 2026-10-31 하네스 설계·Gateway 실행 안내
+
+- [하네스 계약](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md): task/명령 allowlist·고정 소스·구조화 테스트·독립 검수/CI 결속·실행 기록·재개/무효화·인수 시나리오. 코드 구현/제품 테스트/배포는 NOT RUN.
+- [Gateway 런북](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md): Windows 비승격 버전 probe 성공(Codex0.163.0/Python3.12.0). 별도 인증 상태 probe는 TIMEOUT_TERMINATION_UNCONFIRMED; 실제 모델 호출 가능 여부 미확인. 상세 증거·재개 절차는 런북 참조.
+- 기준 main `0892b35`의 [CI41066016072](https://github.com/son1004007/public-bid-agent/actions/runs/41066016072)는 failure 확인. 이번 문서 게시로 CI/제품 검증을 통과시켰다고 주장하지 않음.
+- 다음 개발: [H01 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md)로 최소 하네스가 실제 합성 테스트와 A01 결과를 기록하도록 구현. H02에서 A01 날짜 수정·전체 검증. 아래 A01 첫 작업은 첫 제품 수정 순서를 뜻함.
+
 ## 2026-10-30 설계·구현 검토 및 재개 문서
 
 - [제품 검토/근거/재개 계획](docs/reviews/PRODUCT_REVIEW_AND_RESTART_PLAN_2026-10-30.md), [AI 시작점](docs/implementation/AI_START_HERE.md), [작업 카드 A01~A08](docs/implementation/AI_EXECUTION_TASKS_2026-10-30.md).

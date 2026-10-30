@@ -1,5 +1,13 @@
 # 애자일 작업 백로그
 
+## 2026-10-31 하네스 구현 준비
+
+- [ ] H01: task 검증/허용 명령 실행/구조화 증거 저장 + A01 단일 회귀 연결.
+- [ ] H02: A01 날짜 수정·전체 회귀·독립 검수/CI 결속.
+- [ ] H03: 잠금·중단/재개·증거 무효화·Windows 프로세스 인수 강화.
+- [ ] H04: 필요할 때만 Codex adapter/후속 A 카드.
+- [명세·종료조건](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md), [노트북 실행 안내](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md), [H01 전달 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md). 지금은 문서화만 완료, 각 H 단계 NOT IMPLEMENTED. A01은 첫 제품 수정으로 유지하며 H01 성공이 A01 완료를 뜻하지 않는다.
+
 ## 2026-10-30 재개 작업 진입점
 
 - [AI 필독 순서/인계 규칙](docs/implementation/AI_START_HERE.md)과 [단계별 실행 카드](docs/implementation/AI_EXECUTION_TASKS_2026-10-30.md)를 따른다. 상태/실행 기록의 정본은 해당 카드이며 아래 목록은 진입 요약이다.
