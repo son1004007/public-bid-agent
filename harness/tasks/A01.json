@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "task_id": "A01",
+  "mode": "synthetic",
+  "depends_on": [],
+  "required_checks": [
+    "a01_deadline",
+    "local_regression",
+    "audit_regression",
+    "backend_regression",
+    "frontend_contract"
+  ],
+  "selected_checks": [
+    "a01_deadline"
+  ],
+  "allowed_changes": [
+    "local_app/test_procurement_filter.py",
+    "local_app/dashboard_backend.py",
+    "README.md",
+    "local_app/README.md",
+    "docs/reviews/",
+    "CURRENT_STATE.md",
+    "TASKS.md"
+  ],
+  "forbidden_changes": [
+    ".github/",
+    "harness/",
+    "scripts/"
+  ],
+  "requires_independent_review": true,
+  "requires_ci": true,
+  "requires_human_evidence": false,
+  "max_attempts": 1
+}

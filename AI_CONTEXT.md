@@ -1,3 +1,13 @@
+## 2026-10-31 H01 실행 구현·반복 사용 검증 완료
+
+H01의 작업 정의/실행기/검증기/실행 기록이 실제 코드로 추가되었습니다.
+[사용법](docs/implementation/HARNESS_USAGE.md) · [검증 기록](docs/reviews/H01_HARNESS_ACCEPTANCE_2026-10-31.md) · [PR #2](https://github.com/son1004007/public-bid-agent/pull/2).
+구현 기준 `3b7ff8b789bba2c44a48db487dba5d8f40e0bfe7`: Linux/노트북 Windows 자체 테스트 각각 15 PASS,
+GitHub Ubuntu/Windows 하네스 CI PASS, 독립 Codex 코드 검수 GO(H01 한정, 독립 테스트 NOT RUN).
+노트북 A01 run/verify/status 모두 VERIFY_FAILED와 task_complete=false로 기존 날짜 오류를 재현했습니다.
+다음 작업은 H02: A01 날짜 계약 수정·전체 회귀·외부 검수/CI 결속입니다. H03 resume/전체 잠금은 미구현입니다.
+개발 브랜치에 게시했으며 main 병합/운영 배포 및 A01 전체 완료는 별도입니다. 아래 날짜별 기록은 당시 상태입니다.
+
 # AI 개발 작업 안내 - Public Bid Agent
 
 > **2026-10-31 하네스 인계:** [명세](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md), [Gateway 런북/실측 제한](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md), [H01 Codex 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md). H01 최소 task/runner/verifier/evidence → H02 A01 수정 순서. 하네스 NOT IMPLEMENTED, 노트북 Codex0.163.0/Python3.12.0 도움말 조회만 확인. 인증 상태 조회 timeout·종료 미확인으로 실제 모델 실행 미검증.

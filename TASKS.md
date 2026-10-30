@@ -1,12 +1,22 @@
+## 2026-10-31 H01 실행 구현·반복 사용 검증 완료
+
+H01의 작업 정의/실행기/검증기/실행 기록이 실제 코드로 추가되었습니다.
+[사용법](docs/implementation/HARNESS_USAGE.md) · [검증 기록](docs/reviews/H01_HARNESS_ACCEPTANCE_2026-10-31.md) · [PR #2](https://github.com/son1004007/public-bid-agent/pull/2).
+구현 기준 `3b7ff8b789bba2c44a48db487dba5d8f40e0bfe7`: Linux/노트북 Windows 자체 테스트 각각 15 PASS,
+GitHub Ubuntu/Windows 하네스 CI PASS, 독립 Codex 코드 검수 GO(H01 한정, 독립 테스트 NOT RUN).
+노트북 A01 run/verify/status 모두 VERIFY_FAILED와 task_complete=false로 기존 날짜 오류를 재현했습니다.
+다음 작업은 H02: A01 날짜 계약 수정·전체 회귀·외부 검수/CI 결속입니다. H03 resume/전체 잠금은 미구현입니다.
+개발 브랜치에 게시했으며 main 병합/운영 배포 및 A01 전체 완료는 별도입니다. 아래 날짜별 기록은 당시 상태입니다.
+
 # 애자일 작업 백로그
 
 ## 2026-10-31 하네스 구현 준비
 
-- [ ] H01: task 검증/허용 명령 실행/구조화 증거 저장 + A01 단일 회귀 연결.
+- [x] H01: task 검증/허용 명령 실행/구조화 증거 저장 + A01 단일 회귀 연결. 검증 범위/제약은 위 최신 기록 참조.
 - [ ] H02: A01 날짜 수정·전체 회귀·독립 검수/CI 결속.
 - [ ] H03: 잠금·중단/재개·증거 무효화·Windows 프로세스 인수 강화.
 - [ ] H04: 필요할 때만 Codex adapter/후속 A 카드.
-- [명세·종료조건](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md), [노트북 실행 안내](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md), [H01 전달 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md). 지금은 문서화만 완료, 각 H 단계 NOT IMPLEMENTED. A01은 첫 제품 수정으로 유지하며 H01 성공이 A01 완료를 뜻하지 않는다.
+- [명세·종료조건](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md), [노트북 실행 안내](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md), [H01 전달 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md). H01은 위 최신 기록에서 구현·검증 완료. H02~H04는 미완료. A01은 첫 제품 수정으로 유지하며 H01 성공이 A01 완료를 뜻하지 않는다.
 
 ## 2026-10-30 재개 작업 진입점
 
