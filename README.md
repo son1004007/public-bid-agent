@@ -1,3 +1,5 @@
+> Work 비동기 실행: [작업 큐와 자동 재개](docs/implementation/WORK_ASYNC_RUNBOOK.md). 구현/판단은 Work, 노트북은 기존 H01 검사 실행만 담당합니다. 전체 제품 자동 완성은 아직 미검증입니다.
+
 > 2026-11-02 A01: 공고 정규화의 `normalize(item, *, at=...)`에 시간대가 있는 관측 시각을 주입할 수 있습니다. 생략 시 현재 KST를 한 번 읽어 관측 기록과 마감 판정에 동일하게 사용합니다. 마감 정각 CLOSED·취소 우선·등록기한 미확인의 기존 정책은 유지하며 날짜 회귀는 고정 시각으로 실행합니다.
 
 > **최신 H01 실행 진입점:** [반복 사용 하네스 안내](docs/implementation/HARNESS_USAGE.md). 실행 프로그램이 추가되었습니다. 아래 과거 NOT IMPLEMENTED는 설계 당시 이력입니다. 최신 branch/검수/CI를 확인하고 고정 SHA의 validate → run → verify/status를 사용합니다. A01 전체 완료·배포는 별도입니다.

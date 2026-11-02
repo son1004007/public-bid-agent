@@ -1,3 +1,5 @@
+> 2026-11-02 최신 사용자 지시: 구현/판단은 Work에서 수행하고 노트북 Codex 및 별도 검증 AI는 필수 구성에서 제외합니다. 필요한 독립 검수는 Work의 별도 문맥으로 최소 수행합니다. [비동기 실행/예약 재개](docs/implementation/WORK_ASYNC_RUNBOOK.md)를 확인하세요. 사용자가 main 병합·기존 localhost 배포까지 승인했으며 이전 제외 문구보다 우선합니다.
+
 > **최신 H01 실행 진입점:** [반복 사용 하네스 안내](docs/implementation/HARNESS_USAGE.md). 실행 프로그램이 추가되었습니다. 아래 과거 NOT IMPLEMENTED는 설계 당시 이력입니다. 최신 branch/검수/CI를 확인하고 고정 SHA의 validate → run → verify/status를 사용합니다. A01 전체 완료·배포는 별도입니다.
 
 # AI 개발 작업 규칙 (AGENTS.md)

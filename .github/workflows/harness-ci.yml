@@ -20,3 +20,5 @@ jobs:
           python-version: '3.12'
       - name: Harness synthetic acceptance
         run: python -m unittest discover -s scripts -p test_task_harness.py -v
+      - name: Work queue acceptance
+        run: python -m unittest discover -s scripts -p test_work_queue.py -v

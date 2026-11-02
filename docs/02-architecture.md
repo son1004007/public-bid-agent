@@ -1,3 +1,5 @@
+> Work 개발 큐는 운영 앱과 분리된 표준 라이브러리 도구입니다. [경계/상태/복구](implementation/WORK_ASYNC_RUNBOOK.md).
+
 ## 2026-10-31 개발 하네스 H01
 
 Python 3.12 표준 라이브러리와 Git만 사용하는 별도 개발 CLI입니다. 신규 pip/npm 의존성 없음. 운영 앱·저장 데이터 경로는 변경하지 않습니다. [사용 계약](implementation/HARNESS_USAGE.md).
