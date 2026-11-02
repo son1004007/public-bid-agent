@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "commands": {
+    "a01_deadline": {
+      "tests": [
+        "test_procurement_filter.DepartmentClassificationTests.test_title_without_technical_words_but_official_taxonomy_sw"
+      ],
+      "import_dir": "local_app",
+      "timeout_seconds": 30,
+      "output_limit_bytes": 65536
+    }
+  }
+}

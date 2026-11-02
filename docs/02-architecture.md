@@ -1,3 +1,7 @@
+## 2026-10-31 개발 하네스 H01
+
+Python 3.12 표준 라이브러리와 Git만 사용하는 별도 개발 CLI입니다. 신규 pip/npm 의존성 없음. 운영 앱·저장 데이터 경로는 변경하지 않습니다. [사용 계약](implementation/HARNESS_USAGE.md).
+
 # Public Bid Agent 아키텍처 및 구현 경계
 
 ## BID-05 문서 후속 작업 경계 (2026-10-19)

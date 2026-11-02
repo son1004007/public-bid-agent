@@ -1,6 +1,8 @@
+> **최신 H01 실행 진입점:** [반복 사용 하네스 안내](HARNESS_USAGE.md). 실행 프로그램이 추가되었습니다. 아래 과거 NOT IMPLEMENTED는 설계 당시 이력입니다. 최신 branch/검수/CI를 확인하고 고정 SHA의 validate → run → verify/status를 사용합니다. A01 전체 완료·배포는 별도입니다.
+
 # 다른 AI를 위한 시작점
 
-> **2026-10-31 하네스 경로 추가:** 필독 순서를 유지하고 [실행 명세](../design/EXECUTION_HARNESS_SPEC_2026-10-31.md) → [Gateway 런북](GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md) → [H01 프롬프트](CODEX_HARNESS_H01_PROMPT_2026-10-31.md)를 읽습니다. 하네스 개발 재개 시 H01로 단일 테스트 실제 실행부터, H02에서 A01 수정/검증으로 이어갑니다. 아래 A01 첫 작업은 첫 제품 수정 기준이며 하네스 전체를 먼저 완성하라는 뜻이 아닙니다. 현재 하네스는 NOT IMPLEMENTED입니다.
+> **2026-10-31 하네스 경로 추가:** 필독 순서를 유지하고 [실행 명세](../design/EXECUTION_HARNESS_SPEC_2026-10-31.md) → [Gateway 런북](GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md) → [H01 프롬프트](CODEX_HARNESS_H01_PROMPT_2026-10-31.md)를 읽습니다. 하네스 개발 재개 시 H01로 단일 테스트 실제 실행부터, H02에서 A01 수정/검증으로 이어갑니다. 아래 A01 첫 작업은 첫 제품 수정 기준이며 하네스 전체를 먼저 완성하라는 뜻이 아닙니다. H01 실행기는 구현됐으며 H02-1 날짜 오류 수정이 게시됐습니다. 최신 CURRENT_STATE와 H02 검증 기록에서 후속 미완료 작업을 확인합니다.
 
 이 문서는 새 ChatGPT/Codex/개발 AI가 현재 작업을 찾고, 한 단계씩 안전하게 이어가기 위한 안내다. **첫 작업 전에 최신 원격 파일을 읽는다.** 이 문서를 읽었다는 이유만으로 미래 작업 전체가 승인되거나 완료된 것은 아니다.
 

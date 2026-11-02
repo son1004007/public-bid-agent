@@ -9,6 +9,8 @@
 상태/부작용: dashboard.json만 원자 갱신. cases.json/operations.json/AI·인증정보 무변경.
 실패: 인증/통신/응답 오류는 실패; 저장된 공고를 0건 또는 취소로 오인하지 않음.
 불변: 공식 자격/실적/수익/AI 판단을 추측하지 않음.
+관측 시각: normalize의 선택적 at은 timezone-aware datetime만 허용. 미지정 시 현재 KST를
+             한 번 읽어 observed_at과 마감 판정에 함께 사용하며 기존 마감 정책은 유지한다.
 취소 보존: 같은 차수의 배치·페이지·조회기간 중복 병합에서 관측한 취소 공고종류를
              일반 응답으로 덮지 않는다. 다른 메타데이터는 기존 최신 응답 정책을 유지한다.
 첨부 병합: 기존 RFP 증거와 서로 다른 공식 별첨 레코드를 우선 보존하고 공고당 40개 상한 적용. 사람이 내린 결정과 추천 분리.
@@ -102,7 +104,10 @@ def _official_url(candidate) -> str | None:
     return None
 
 
-def normalize(item: dict) -> dict | None:
+def normalize(item: dict, *, at: datetime | None = None) -> dict | None:
+    if at is not None and (not isinstance(at, datetime) or at.utcoffset() is None):
+        raise ValueError("관측 시각은 시간대가 있는 datetime이어야 합니다")
+    clock = datetime.now(KST) if at is None else at.astimezone(KST)
     if not isinstance(item, dict):
         raise ProviderError("공식 목록 항목 형식 오류")
     no = item.get("bidNtceNo")
@@ -132,7 +137,7 @@ def normalize(item: dict) -> dict | None:
         "cat": _category(title), "budget": budget or "미확인",
         "end": closing or "미확인", "source": "G2B_OFFICIAL_API",
         "source_url": _official_url(raw_url),
-        "observed_at": datetime.now(KST).isoformat(),
+        "observed_at": clock.isoformat(),
         "notice_kind": _str(item.get("ntceKindNm"), 60),
         "notice_published_at": _str(item.get("bidNtceDt"), 40),
         "qualification_deadline": _str(item.get("bidQlfctRgstDt"), 40),
@@ -154,7 +159,7 @@ def normalize(item: dict) -> dict | None:
         "finalReason": "", "policyRef": None, "checked": "원문/참가자격 미검증",
         "fit": None, "margin": None, "hard": "unknown", "ops": None, "exp": None, "score": None,
     }
-    return apply_department_filter(normalized)
+    return apply_department_filter(normalized, at=clock)
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):

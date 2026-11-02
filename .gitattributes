@@ -1,0 +1,6 @@
+
+# Harness trust compares exact Git bytes on Windows and POSIX.
+scripts/task_harness.py text eol=lf
+scripts/harness_core/*.py text eol=lf
+scripts/test_task_harness.py text eol=lf
+harness/**/*.json text eol=lf

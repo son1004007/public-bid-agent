@@ -27,7 +27,7 @@ class DepartmentClassificationTests(unittest.TestCase):
             "bidClseDt":"2026-10-20 10:00:00","ntceKindNm":"등록공고",
             "ntceSpecFileNm1":"제안요청서.hwpx",
             "ntceSpecDocUrl1":"https://www.g2b.go.kr/pn/pnp/pnpe/UntyAtchFile/downloadRfpFile.do?test=1",
-        })
+        }, at=NOW)
         self.assertEqual(n["department_status"],"CANDIDATE")
         self.assertIn("SW",n["department_categories"])
         self.assertEqual(n["category_evidence"][0]["sources"][0],"공공조달분류")
@@ -81,6 +81,65 @@ class DepartmentClassificationTests(unittest.TestCase):
         self.assertEqual(new["notices"][0]["final"],"no_bid")
         self.assertEqual(new["notices"][0]["finalReason"],"검토 후 불참")
         self.assertEqual(new["notices"][0]["department_status"],"CANDIDATE")
+
+
+class NormalizationClockTests(unittest.TestCase):
+    """실제 normalize→apply→bid_window 경로의 고정 관측 시각 계약."""
+
+    def notice(self, closing="2026-10-20 00:00:00", **extra):
+        return {"bidNtceNo": "SYNTHETIC-A01", "bidNtceOrd": "000",
+                "bidNtceNm": "데이터 분석", "ntceKindNm": "등록공고",
+                "bidClseDt": closing, **extra}
+
+    def test_before_at_after_deadline_in_kst_and_utc(self):
+        due = datetime(2026, 10, 20, tzinfo=KST)
+        for seconds, expected in [(-1, "OPEN"), (0, "CLOSED"), (1, "CLOSED")]:
+            for zone in (KST, timezone.utc):
+                at = (due + timedelta(seconds=seconds)).astimezone(zone)
+                with self.subTest(seconds=seconds, zone=zone):
+                    n = db.normalize(self.notice(), at=at)
+                    self.assertEqual(n["window_status"], expected)
+                    self.assertEqual(n["observed_at"], at.astimezone(KST).isoformat())
+
+    def test_observation_is_independent_of_host_date(self):
+        for host_year in (2020, 2040):
+            for at, expected in [(NOW, "OPEN"),
+                                 (datetime(2030, 1, 1, tzinfo=KST), "CLOSED")]:
+                with self.subTest(host_year=host_year, at=at):
+                    class HostClock(datetime):
+                        @classmethod
+                        def now(cls, tz=None):
+                            return datetime(host_year, 1, 1, tzinfo=KST).astimezone(tz)
+                    with patch.object(flt, "datetime", HostClock):
+                        self.assertEqual(db.normalize(self.notice(), at=at)["window_status"], expected)
+
+    def test_default_clock_observation_matches_window(self):
+        n = db.normalize(self.notice())
+        observed = datetime.fromisoformat(n["observed_at"])
+        self.assertEqual(n["window_status"], flt.bid_window(n["end"], at=observed))
+        self.assertEqual(observed.utcoffset(), timedelta(hours=9))
+
+    def test_cancelled_has_priority_over_deadline_and_unknown(self):
+        for closing in ("2026-10-01 00:00:00", "2026-10-20 00:00:00", "미확인"):
+            with self.subTest(closing=closing):
+                n = db.normalize(self.notice(closing, ntceKindNm="취소공고"), at=NOW)
+                self.assertEqual(n["window_status"], "CANCELLED")
+
+    def test_unknown_deadline_and_registration_cutoff(self):
+        self.assertEqual(db.normalize(self.notice("미확인"), at=NOW)["window_status"], "UNKNOWN")
+        for cutoff, expected in [("미확인", "OPEN"), ("", "OPEN"),
+                                 ("2026-10-11 12:00:01", "OPEN"),
+                                 ("2026-10-11 12:00:00", "REGISTRATION_REVIEW"),
+                                 ("2026-10-11 11:59:59", "REGISTRATION_REVIEW")]:
+            with self.subTest(cutoff=cutoff):
+                n = db.normalize(self.notice(bidQlfctRgstDt=cutoff), at=NOW)
+                self.assertEqual(n["window_status"], expected)
+                self.assertEqual(n["legal_eligibility"], "UNVERIFIED")
+
+    def test_invalid_observation_time_is_rejected(self):
+        for at in (datetime(2026, 10, 11), "2026-10-11", 0):
+            with self.subTest(at=at), self.assertRaises(ValueError):
+                db.normalize(self.notice(), at=at)
 
 
 class DocumentBoundaryTests(unittest.TestCase):
