@@ -1,3 +1,13 @@
+## 2026-11-02 H02-1: A01 날짜 오류 수정·검증
+
+구현 `38c18e9c5b968fb500c6a7c88320b2a33d0f92fc`를 개발 브랜치 `feat/harness-h01`에 게시했습니다.
+`normalize(item, *, at=...)`의 고정 관측 시각을 기록과 마감 판정에 공유합니다. 기존 운영 마감 정책은 유지합니다.
+관련 16 tests PASS, Linux 감사14/하네스15/Node34 PASS, Sprint 1 CI backend/frontend PASS,
+독립 Codex 코드 검수 GO(A01 범위). 전체 Windows 인수의 별도 실패와 환경 제약은 검증 기록을 확인합니다.
+[실행 기록](docs/reviews/H02_A01_CLOCK_2026-11-02.md). **H02 전체 DONE 및 main 병합/운영 배포는 아님.**
+다음: H02-2 전체 검사 adapter 연결 → H02-3 동일 SHA 독립 검수/CI 증거 결속.
+H01 단일 검사 실행 결과의 missing_checks/WAITING_REVIEW/WAITING_CI는 아직 유지됩니다.
+
 ## 2026-10-31 H01 실행 구현·반복 사용 검증 완료
 
 H01의 작업 정의/실행기/검증기/실행 기록이 실제 코드로 추가되었습니다.
@@ -13,7 +23,7 @@ GitHub Ubuntu/Windows 하네스 CI PASS, 독립 Codex 코드 검수 GO(H01 한�
 ## 2026-10-31 하네스 구현 준비
 
 - [x] H01: task 검증/허용 명령 실행/구조화 증거 저장 + A01 단일 회귀 연결. 검증 범위/제약은 위 최신 기록 참조.
-- [ ] H02: A01 날짜 수정·전체 회귀·독립 검수/CI 결속.
+- [ ] H02: 전체 회귀 adapter·독립 검수/CI 결속 미완료. H02-1 날짜 오류 수정/코드 검수는 완료, Windows 전체 인수는 별도 잔여 문제 확인.
 - [ ] H03: 잠금·중단/재개·증거 무효화·Windows 프로세스 인수 강화.
 - [ ] H04: 필요할 때만 Codex adapter/후속 A 카드.
 - [명세·종료조건](docs/design/EXECUTION_HARNESS_SPEC_2026-10-31.md), [노트북 실행 안내](docs/implementation/GATEWAY_CODEX_HARNESS_RUNBOOK_2026-10-31.md), [H01 전달 프롬프트](docs/implementation/CODEX_HARNESS_H01_PROMPT_2026-10-31.md). H01은 위 최신 기록에서 구현·검증 완료. H02~H04는 미완료. A01은 첫 제품 수정으로 유지하며 H01 성공이 A01 완료를 뜻하지 않는다.

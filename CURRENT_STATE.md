@@ -1,3 +1,13 @@
+## 2026-11-02 H02-1: A01 날짜 오류 수정·검증
+
+구현 `38c18e9c5b968fb500c6a7c88320b2a33d0f92fc`를 개발 브랜치 `feat/harness-h01`에 게시했습니다.
+`normalize(item, *, at=...)`의 고정 관측 시각을 기록과 마감 판정에 공유합니다. 기존 운영 마감 정책은 유지합니다.
+관련 16 tests PASS, Linux 감사14/하네스15/Node34 PASS, Sprint 1 CI backend/frontend PASS,
+독립 Codex 코드 검수 GO(A01 범위). 전체 Windows 인수의 별도 실패와 환경 제약은 검증 기록을 확인합니다.
+[실행 기록](docs/reviews/H02_A01_CLOCK_2026-11-02.md). **H02 전체 DONE 및 main 병합/운영 배포는 아님.**
+다음: H02-2 전체 검사 adapter 연결 → H02-3 동일 SHA 독립 검수/CI 증거 결속.
+H01 단일 검사 실행 결과의 missing_checks/WAITING_REVIEW/WAITING_CI는 아직 유지됩니다.
+
 ## 2026-10-31 H01 실행 구현·반복 사용 검증 완료
 
 H01의 작업 정의/실행기/검증기/실행 기록이 실제 코드로 추가되었습니다.
