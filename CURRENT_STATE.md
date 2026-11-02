@@ -1,3 +1,13 @@
+## 2026-11-03 00:57 KST — 스케줄러 Git 소유권 원인 수정, 비동기 작업 실행 중
+
+- 원인 CONFIRMED: 기존 H02 runtime의 .git 소유자가 Administrators여서 Interactive/Limited 사용자 Git이 dubious ownership으로 거부했다. SSH 성공/인증 오류가 아니라 스케줄러 실행 계정과 저장소 소유권 불일치다. 실제 Git stderr로 확인.
+- 수정: 동일 일반 사용자 스케줄러에서 public GitHub 원본을 새 `D:\01_git\public-bid-agent-work-h02-user`에 clone하고 검수·CI 완료 SHA `a219b0fe05b3dd041ae2a2c6958e5ad163f8618f`로 detached checkout. clone task exit0, .git owner=TD-KISEOK\\User 확인. safe.directory 예외, ACL/권한/실행 정책 변경 없음.
+- `PublicBidAgent-WorkQueue-H02` action/WorkingDirectory와 기존 launcher `D:\Temp\bid-work-h02-worker.ps1`를 새 runtime에 연결. launcher에 Git preflight 로그/실패 exit를 추가. 원래 launcher는 .before-preflight로 보존. 고정 runtime 소스 파일 수정 없음.
+- 기존 queue `D:\Temp\bid-work-queue-h02`와 기존 요청 `h02-30-002`를 그대로 사용. 시작 전 기존 worker 없음, job은 request.json만 존재 확인. 새 ID 중복 제출·이전 결과 삭제 없음.
+- SSH 시작 요청 종료 이후 별도 연결에서 RUNNING/heartbeat 확인: worker PID19580, 시작 2026-11-03 00:57:05 KST, heartbeat 00:57:25 KST. trusted/candidate 모두 위 a219 전체 SHA. 스케줄러 Git preflight도 같은 SHA 반환. **최종 result는 아직 없으므로 PASS/비동기 인수 완료로 표시하지 않는다.**
+- 독립 Work 복구 설계 검수 GO(전달된 증거 기준, 별도 원격 재실행 아님). 동일 구현 SHA 기존 CI 3종 SUCCESS 재확인. 운영 clone/서버/사용자 데이터는 변경하지 않음.
+- 다음 회차: **002 result.json부터 회수**하고 ID/SHA/exit/cleanup/필수 결과 확인. 실행 중이면 중복 기동 금지. 성공하면 새 runtime을 계속 사용하고 H02-2 local/backend/frontend 검사 연결로 이동. 실패하면 원인별 수정. 이전 Administrators 소유 runtime을 다시 스케줄러에 연결하지 않는다. 최초 Work 후속 구현·GitHub 기록 경로 확인과 전체 제품 DONE은 별개다.
+
 ## 2026-11-03 H02 검사 병합·노트북 예약 실행 인수
 
 - PR #3 main 병합 완료: merge `cca76ffa8200cbb0e6eb7612828e8738cbf79062`, 구현 `a219b0fe05b3dd041ae2a2c6958e5ad163f8618f`. 날짜/분류16+감사14를 기존 adapter에 연결하고 packaging 개발 의존성 누락을 수정. 독립 Work 검수 GO.
