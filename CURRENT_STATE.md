@@ -1,3 +1,13 @@
+## 2026-11-02 사용자 승인 후 main 병합 / 배포 BLOCKED
+
+사용자는 사용자 확인 대신 AI 판단으로 진행하고 main 병합·배포·브라우저 검증까지 명시적으로 승인했습니다. 이전 'main 병합/배포 제외'는 이 요청 범위에서 대체됩니다. 실제 사람 승인이나 실자료 정답을 만들어내는 권한으로 해석하지 않습니다.
+
+PR #2를 `aa40f89d2854e5b34c7b6d3e8c6355c21315a111`로 main 병합했습니다. 병합 전 head `1761e970`의 Sprint1/Development harness/Windows acceptance CI 모두 SUCCESS 확인. 노트북 Chrome155/Node22 실제 합성 E2E는 390px·1440px 목록/상세·큐·파일 입력·수기 이력·BID06 검수 흐름 PASS. 이는 합성 검증이며 운영 화면 인수와 구별합니다.
+
+운영 8765 listener는 시작 전 없었으며 기존 데이터 폴더 400파일과 venv를 확인했습니다. main fetch→데이터 백업·검증→서버 기동→소스/원본 확인 명령을 실행했으나 Gateway job `job_01M6E2NRS800DMCQERYYGMW9SD`가 `TIMEOUT_TERMINATION_UNCONFIRMED`로 끝나 프로세스 종료/배포 여부 미확인입니다. 성공 로그·배포 marker 없음, 중간 read-only probe에서도 listener 미관측. 백업이나 기동 완료를 주장하지 않습니다. 겹치는 배포를 추가 실행하지 않았습니다.
+
+재개: 해당 job 종료와 현재 git/python/8765 listener·배포 marker를 먼저 읽기 전용 확인 → 기존 소스/데이터·백업 상태 대조 → 확인된 상태에서만 배포 재개. 운영자료/인증/보안 완화 없이 진행. H02-2/3 및 H03은 미완료이며 프로그램 전체 완성 아님.
+
 ## 2026-11-02 H02-1: A01 날짜 오류 수정·검증
 
 구현 `38c18e9c5b968fb500c6a7c88320b2a33d0f92fc`를 개발 브랜치 `feat/harness-h01`에 게시했습니다.
