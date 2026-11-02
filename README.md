@@ -1,3 +1,11 @@
+> H02 감사 테스트는 기존 개발 의존성 `packaging>=26,<27`을 재사용합니다. 큐 실행기 자체는 표준 라이브러리이며 감사 검사는 분리된 개발 Python에서 실행합니다.
+
+> H02-2 첫 연결: 날짜/분류 16개와 감사 14개를 기존 하네스로 실행합니다. 전체 local/backend/frontend 연결은 아직 미완료입니다. [사용법](docs/implementation/HARNESS_USAGE.md).
+
+> Windows 비동기 실행기 신뢰 대조를 위해 큐 Python 파일도 LF로 고정합니다.
+
+> Work 비동기 실행: [작업 큐와 자동 재개](docs/implementation/WORK_ASYNC_RUNBOOK.md). 구현/판단은 Work, 노트북은 기존 H01 검사 실행만 담당합니다. 전체 제품 자동 완성은 아직 미검증입니다.
+
 > 2026-11-02 A01: 공고 정규화의 `normalize(item, *, at=...)`에 시간대가 있는 관측 시각을 주입할 수 있습니다. 생략 시 현재 KST를 한 번 읽어 관측 기록과 마감 판정에 동일하게 사용합니다. 마감 정각 CLOSED·취소 우선·등록기한 미확인의 기존 정책은 유지하며 날짜 회귀는 고정 시각으로 실행합니다.
 
 > **최신 H01 실행 진입점:** [반복 사용 하네스 안내](docs/implementation/HARNESS_USAGE.md). 실행 프로그램이 추가되었습니다. 아래 과거 NOT IMPLEMENTED는 설계 당시 이력입니다. 최신 branch/검수/CI를 확인하고 고정 SHA의 validate → run → verify/status를 사용합니다. A01 전체 완료·배포는 별도입니다.

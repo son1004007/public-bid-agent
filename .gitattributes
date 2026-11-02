@@ -4,3 +4,6 @@ scripts/task_harness.py text eol=lf
 scripts/harness_core/*.py text eol=lf
 scripts/test_task_harness.py text eol=lf
 harness/**/*.json text eol=lf
+
+scripts/work_queue*.py text eol=lf
+scripts/test_work_queue.py text eol=lf

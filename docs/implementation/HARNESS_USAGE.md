@@ -1,9 +1,14 @@
+> 2026-11-02 H02-2: `a01_deadline`은 test_procurement_filter 전체 16개, `audit_regression`은 감사 14개를 정확한 test ID로 실행합니다. 기존 adapter/검증기를 그대로 재사용합니다. 누락된 local_regression/backend_regression/frontend_contract는 완료 처리하지 않습니다. 아래 단일 검사 문구는 H01 이력입니다.
+
 > 2026-11-02: A01 날짜 수정 후보 `38c18e9c5b968fb500c6a7c88320b2a33d0f92fc` 검증 결과와 후속 단계는 [H02-1 기록](../reviews/H02_A01_CLOCK_2026-11-02.md)을 확인하세요. 아래 H01 날짜 실패 설명은 초기 baseline 이력입니다. H02 전체 검사 adapter/외부 게이트 자동 결속은 아직 미구현입니다.
 
 # 실행 가능한 H01 하네스 사용법
 
 H01은 **작업 정의 → 허용 검사 실행 → 결과 검증 → 실행 기록**을 반복하는 개발 도구입니다.
-앱 운영 서버나 자동 코딩 에이전트가 아닙니다. Python 3.12와 Git만 필요합니다.
+앱 운영 서버나 자동 코딩 에이전트가 아닙니다. 기본 실행기는 Python 3.12와 Git을 사용합니다.
+H02 감사 검사를 실행할 분리된 개발 Python에는 기존 backend/requirements-dev.txt와 같은
+`packaging>=26,<27`이 필요합니다. `python -m pip install "packaging>=26,<27"`으로 설치하며
+운영 서버 Python에 설치하지 않습니다. 패키지 누락은 검사 실패로 기록하고 건너뛰지 않습니다.
 
 ## 새 AI의 시작 순서
 

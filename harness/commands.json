@@ -3,10 +3,46 @@
   "commands": {
     "a01_deadline": {
       "tests": [
-        "test_procurement_filter.DepartmentClassificationTests.test_title_without_technical_words_but_official_taxonomy_sw"
+        "test_procurement_filter.DepartmentClassificationTests.test_existing_decision_survives_reclassification",
+        "test_procurement_filter.DepartmentClassificationTests.test_generic_construction_word_does_not_make_software_candidate",
+        "test_procurement_filter.DepartmentClassificationTests.test_no_title_gate_retains_unmatched_rows",
+        "test_procurement_filter.DepartmentClassificationTests.test_rfp_text_can_reclassify_unrelated_title",
+        "test_procurement_filter.DepartmentClassificationTests.test_status_closing_cancelled_unknown_and_registration",
+        "test_procurement_filter.DepartmentClassificationTests.test_title_without_technical_words_but_official_taxonomy_sw",
+        "test_procurement_filter.DocumentBoundaryTests.test_document_priority_and_safe_fetch",
+        "test_procurement_filter.DocumentBoundaryTests.test_extraction_fake_binary_without_network",
+        "test_procurement_filter.DocumentBoundaryTests.test_official_domain_only",
+        "test_procurement_filter.DocumentBoundaryTests.test_profile_validation_conflict_and_version",
+        "test_procurement_filter.NormalizationClockTests.test_before_at_after_deadline_in_kst_and_utc",
+        "test_procurement_filter.NormalizationClockTests.test_cancelled_has_priority_over_deadline_and_unknown",
+        "test_procurement_filter.NormalizationClockTests.test_default_clock_observation_matches_window",
+        "test_procurement_filter.NormalizationClockTests.test_invalid_observation_time_is_rejected",
+        "test_procurement_filter.NormalizationClockTests.test_observation_is_independent_of_host_date",
+        "test_procurement_filter.NormalizationClockTests.test_unknown_deadline_and_registration_cutoff"
       ],
       "import_dir": "local_app",
       "timeout_seconds": 30,
+      "output_limit_bytes": 65536
+    },
+    "audit_regression": {
+      "tests": [
+        "test_audit_python_environment.InventoryTests.test_complete_matching_direct_and_transitive",
+        "test_audit_python_environment.InventoryTests.test_direct_requested_extra_reaches_conditional_dependency",
+        "test_audit_python_environment.InventoryTests.test_inactive_platform_and_python_markers_are_not_missing",
+        "test_audit_python_environment.InventoryTests.test_missing_and_version_mismatch_block",
+        "test_audit_python_environment.InventoryTests.test_nested_extra_revisits_package_and_recovers_deep_dependency",
+        "test_audit_python_environment.InventoryTests.test_no_credentials_or_local_paths_in_record",
+        "test_audit_python_environment.InventoryTests.test_reject_nonregistry_requirements",
+        "test_audit_python_sbom.PythonSbomTests.test_cli_does_not_overwrite",
+        "test_audit_python_sbom.PythonSbomTests.test_cyclonedx_graph_and_public_metadata",
+        "test_audit_python_sbom.PythonSbomTests.test_fail_closed_on_missing_dependency_or_unverified_graph",
+        "test_audit_python_sbom.PythonSbomTests.test_invalid_spdx_remains_unverified_metadata",
+        "test_audit_python_sbom.PythonSbomTests.test_pin_output_rejects_unresolved_dependency",
+        "test_audit_python_sbom.PythonSbomTests.test_pins_are_versioned_but_not_hash_locked",
+        "test_audit_python_sbom.PythonSbomTests.test_special_versions_use_percent_encoded_purls"
+      ],
+      "import_dir": "scripts",
+      "timeout_seconds": 60,
       "output_limit_bytes": 65536
     }
   }
