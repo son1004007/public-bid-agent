@@ -1,3 +1,14 @@
+## 2026-11-02 Work 비동기 인수와 H02-2 후속 진행
+
+- Work 큐 구현/검수 기준 87cfb4f9ca856dccbd39909b41a2c060aa44a7ef. Linux 큐8/H01 15 PASS, Windows 큐8 PASS. 독립 Work 검수 GO 및 실패 exit 전파 MINOR 해결.
+- 노트북 runtime: `D:\01_git\public-bid-agent-work-v2`, 큐: `D:\Temp\bid-work-queue-v2`. 일반 사용자 Interactive/Limited 작업 `PublicBidAgent-WorkQueue`는 1분마다 1건 처리하며 IgnoreNew/OS 잠금으로 중복 차단. 노트북 로그인/전원 유지 필요.
+- `a01-async-002`: SSH 제출 종료 후 2026-11-02 22:54:23 KST 완료. 별도 연결에서 SUCCEEDED/exit0/cleanup=true/report_present=true/LOCAL_VERIFIED 확인. run ID 55083239-713c-46b6-9004-953f20f99949. task_complete=false이며 전체 제품 완료 아님.
+- 초기 스케줄러 LastTaskResult=1 관측 이후 위 결과가 생성됨. 실패를 지우지 않으며 스케줄러 숫자보다 큐 result/실제 SHA가 정본. 오래된 `public-bid-agent-work-runtime` 및 `bid-work-queue/a01-async-001`은 미실행 구형 실험이며 스케줄러에 연결되지 않음. 삭제/재실행하지 않음.
+- Work 후속 실행에서 GitHub/로컬 코드/Gateway 접근과 기존 큐 결과 회수 확인. H02-2 첫 변경으로 날짜/분류16+감사14를 기존 adapter에 연결. 새 검증 AI/노트북 Codex 호출 없음. 후속 변경의 테스트/CI는 이번 검증 기록으로 확인.
+- 이전 87cfb4f CI: Development harness SUCCESS(41456521132), Sprint1 SUCCESS(41456521345). Windows API128 PASS 후 Chrome Browser.getVersion startup timeout FAIL(41456521306). UI 코드 미변경이며 원인 확정/전체 CI 성공으로 덮지 않음.
+- 운영 clone `D:\01_git\public-bid-agent-h01`은 b81c1c4 서버가 사용하므로 checkout 금지. PublicBidAgent-H02-LocalServer 시작·정확 소스 PID50892·HTTP200을 이전에 확인. 운영 Chrome 인수는 NOT RUN. 배포 후400파일 해시 검사는 사용 중 lease lock 읽기 거부로 완료되지 않았으며 원본 변경으로 단정하지 않음.
+- 다음: 이번30검사 실제 실행/독립 검수/동일SHA CI → 남은 local/backend/frontend 연결 → 검수/CI 증거 연결 → 제품 카드. 하네스만 확장하지 않음. 최초 후속 실행 성공은 이 단위에 한정하며 무기한 완성 보장은 아님.
+
 ## 2026-11-02 Work 자동 진행 우선
 
 - [ ] Work 큐 Linux/Windows 실행·중복/중단 인수 및 노트북 설치.

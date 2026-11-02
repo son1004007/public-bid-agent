@@ -1,3 +1,5 @@
+> H02 감사 테스트는 기존 개발 의존성 `packaging>=26,<27`을 재사용합니다. 큐 실행기 자체는 표준 라이브러리이며 감사 검사는 분리된 개발 Python에서 실행합니다.
+
 # Work 중심 비동기 개발 반복
 
 2026-11-02 사용자 최신 지시: 구현과 판단은 Work에서 수행하고 노트북은 실행만 담당한다.
@@ -59,3 +61,11 @@ stdin에 UTF-8 BOM이 붙는 경우 `TrimStart([char]0xFEFF)`로 제거한다. �
 
 예약 등록과 무인 실행 성공은 다르다. 최초 예약 실행에서 GitHub/Gateway 접근과 실제 후속 작업 기록을
 확인한 뒤 END_TO_END_AUTONOMOUS_VERIFIED로 표시한다. 이 표시는 아직 NOT VERIFIED다.
+
+## 확인된 노트북 설치 (2026-11-02)
+
+- runtime D:\01_git\public-bid-agent-work-v2, trusted SHA 87cfb4f9ca856dccbd39909b41a2c060aa44a7ef
+- queue D:\Temp\bid-work-queue-v2, task PublicBidAgent-WorkQueue, launcher D:\Temp\bid-work-worker.ps1
+- a01-async-002 SUCCEEDED, exit0/cleanup=true/LOCAL_VERIFIED. 원격 제출 후 별도 연결로 결과 회수.
+- 이 runtime은 H01 한 검사 정책으로 고정되어 있다. 새 H02 정책은 검수된 새 runtime/큐에서 실행하고 기존 runtime을 실행 중 바꾸지 않는다.
+- Work 후속 실행의 GitHub/Gateway 접근과 결과 회수를 확인했고 실제 H02-2 변경을 진행했다. 전체 제품 자동 완료와 구분한다.

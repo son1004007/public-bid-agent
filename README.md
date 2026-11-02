@@ -1,3 +1,7 @@
+> H02 감사 테스트는 기존 개발 의존성 `packaging>=26,<27`을 재사용합니다. 큐 실행기 자체는 표준 라이브러리이며 감사 검사는 분리된 개발 Python에서 실행합니다.
+
+> H02-2 첫 연결: 날짜/분류 16개와 감사 14개를 기존 하네스로 실행합니다. 전체 local/backend/frontend 연결은 아직 미완료입니다. [사용법](docs/implementation/HARNESS_USAGE.md).
+
 > Windows 비동기 실행기 신뢰 대조를 위해 큐 Python 파일도 LF로 고정합니다.
 
 > Work 비동기 실행: [작업 큐와 자동 재개](docs/implementation/WORK_ASYNC_RUNBOOK.md). 구현/판단은 Work, 노트북은 기존 H01 검사 실행만 담당합니다. 전체 제품 자동 완성은 아직 미검증입니다.
