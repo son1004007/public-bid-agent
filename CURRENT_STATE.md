@@ -1,3 +1,17 @@
+## 2026-11-02 22:14 KST 재개 점검: 소스·백업 완료 / 서버 기동 BLOCKED
+
+최신 PR #2 merged=true 및 head 1761e970의 CI 3종 SUCCESS를 API로 다시 확인했습니다. 프로그램 전체 완료는 아닙니다. H01과 H02-1은 완료, H02-2 전체 검사 연결·H02-3 검수/CI 결속·H03 잠금/재개는 미완료입니다. 작업 크기가 서로 달라 단순 카드 비율을 전체 제품 완성률로 사용하지 않습니다.
+
+이번 실행:
+- 이전 미확인 배포 이후 읽기 전용 probe 성공: 전용 clone은 1761e970/clean, git/python 실행 및 8765 listener 미관측, 배포 marker·백업 폴더 없음.
+- 비대화형 fetch 성공 후 b81c1c401ee6c2721df03f26f2e36601f4c873cf로 detached checkout. 사용자 작업 덮어쓰기 없음.
+- 기존 운영 데이터 400파일을 별도 폴더에 백업하고 원본/백업 SHA256 전부 일치 확인. Gateway job job_01M6E669KV00KT6GCAHT1J9FKK succeeded. 백업 manifest는 노트북 D:\\Temp\\public-bid-h02-backup.json에만 저장하며 비공개 파일명/내용은 GitHub에 게시하지 않았습니다.
+- 서버 시작 job job_01M6E67YM400YC19RRV70QYATJ: TIMEOUT_TERMINATION_UNCONFIRMED, 출력 0. 실패 위치/프로세스 종료를 확정하지 않습니다.
+- 직후 읽기 전용 job job_01M6E69PFZ00Z9FVR2J2CJ9WKQ succeeded: launch marker=False, python/8765 listener 미관측. 운영 배포/운영 브라우저 인수는 BLOCKED/NOT RUN. 합성 Chrome PASS 기록을 운영 인수로 대체하지 않습니다.
+- 같은 기동 명령 반복/권한 완화/운영자료 복원·덮어쓰기 없음. 원본의 기동 후 불변성 검사는 아직 NOT RUN.
+
+다음: 원격 기동 경로의 timeout 원인 분리 → 현재 프로세스/포트/marker와 백업 재검증 → 정확 소스 인수·GET 전용 Chrome 390/1440·400파일 불변성 확인. 그 뒤 H02-2 → H02-3 → H03 순서. 사용자 재승인 대기가 아니라 원격 실행 차단입니다. 노트북 전원/절전 및 Gateway 연결 상태 확인이 최소 사용자 확인 항목이며, 인증 문제로 확정하지 않습니다.
+
 ## 2026-11-02 사용자 승인 후 main 병합 / 배포 BLOCKED
 
 사용자는 사용자 확인 대신 AI 판단으로 진행하고 main 병합·배포·브라우저 검증까지 명시적으로 승인했습니다. 이전 'main 병합/배포 제외'는 이 요청 범위에서 대체됩니다. 실제 사람 승인이나 실자료 정답을 만들어내는 권한으로 해석하지 않습니다.
