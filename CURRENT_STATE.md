@@ -1,3 +1,22 @@
+## 2026-11-09 전체 회귀 실측 및 timeout 진단
+
+- PR #4 기존 SHA `4f6f2be30868f23aa2e5f6a5f87f89c90f271c92`의 CI 3종 SUCCESS: Sprint1 42611604930, Development harness 42611604945, Windows synthetic 42611604915. Linux 전체 485개는 63.487초, skipped=2이므로 하네스 전체 통과 증거가 아니다.
+- 전체 검사 시간 초과 시 report.json이 없을 수 있으므로 adapter가 기존 bounded stderr에 허용된 test ID만 `TEST_START`로 flush한다. 예외 본문/fixture/subtest 값은 추가 기록하지 않는다. 마지막 시작 검사는 원인 확정이나 완료 증거가 아니다. 120초 제한·skip 실패·증거 schema·권한 정책은 유지한다.
+- 변경 검증: 기존 하네스 15 PASS (3.374초, exit0), timeout/자식 cleanup/로그 보존 포함. 독립 Work 읽기 전용 검수 GO (검수자가 테스트를 재실행한 것은 아님). 새 변경 SHA의 CI는 별도 확인한다.
+- 준비된 노트북에서 기존 SHA 4f6f2be의 485개를 새 일반 사용자 task로 실측 중이다. 설치/큐 결과는 main WORK_ASYNC_RUNBOOK 최신 실행 기록을 확인한다. 기존 운영 clone과 비활성 큐 task는 변경하지 않았다.
+- 남은 작업: Windows 결과/cleanup/실제 skip 확인 → 필요 시 실패 원인 수정 → 전체 Windows CI 연결 → backend/frontend 연결 및 H02-3. 전체 제품 DONE/운영 배포 아님.
+
+## 2026-11-09 H02-2 로컬 회귀 연결 — IMPLEMENTED_UNVERIFIED
+
+기존 local_app 52개 모듈의 485개 고유 test ID를 local_regression으로 연결했습니다. 기존 adapter/정확 ID/skip 실패 정책과 120초 제한을 재사용합니다. 기존 개발 의존성 local_app/test-requirements.txt를 CI와 분리된 개발 Python에 설치합니다. backend_regression/frontend_contract 및 H02-3은 미완료입니다.
+
+- 이번 Work 분리 venv: registry 1 PASS, H01 15 PASS, 큐 8 PASS. 최초 기본 환경 registry FAIL(langchain_core 누락)을 의존성 설치 후 해결했습니다.
+- 독립 Work 코드 검수: Draft 게시 GO. 독립 기본 환경 registry는 같은 의존성 누락으로 FAIL, diff --check PASS. 병합/배포/전체 회귀 통과 승인이 아닙니다.
+- 미해결: 과거 Windows 전체 회귀 200초 이상 이력에 비해 120초 상한이 짧을 수 있습니다. 준비된 Windows에서 실제 실행 후 분할/시간 예산을 결정합니다. Linux Windows 전용 skip 및 OCR 미구비를 성공으로 바꾸지 않습니다.
+- 기존 비동기 인수 결과를 11/09 재확인: h02-30-002 SUCCEEDED, trusted/candidate a219b0fe05b3dd041ae2a2c6958e5ad163f8618f, exit0/cleanup=true/report_present=true, run ID a7cea97d-69b2-49f6-a0ca-24632a74065f, 완료 11/03 00:57:50 KST. 30개 검사 범위이며 제품 DONE 아님.
+- 현재 노트북 WorkQueue/WorkQueue-H02 스케줄러는 Disabled(State=1)로 관측되어 임의 재활성화하지 않았습니다. 새 검사 큐 제출/운영 clone 변경 없음. 최신 사용자 변경 여부를 보존하고 다음 원격 실행 전에 실제 상태를 다시 확인합니다.
+- 다음: 이 개발 브랜치 동일 SHA CI → 485개 실제 하네스 실행/시간 예산 검증 → 미해결 수정 후 main 병합 판단. 운영 브라우저 인수/전체 제품 완성은 별도입니다.
+
 ## 2026-11-03 00:57 KST — 스케줄러 Git 소유권 원인 수정, 비동기 작업 실행 중
 
 - 원인 CONFIRMED: 기존 H02 runtime의 .git 소유자가 Administrators여서 Interactive/Limited 사용자 Git이 dubious ownership으로 거부했다. SSH 성공/인증 오류가 아니라 스케줄러 실행 계정과 저장소 소유권 불일치다. 실제 Git stderr로 확인.

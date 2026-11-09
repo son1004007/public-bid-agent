@@ -20,7 +20,8 @@ class RegistryTests(unittest.TestCase):
     def test_registered_modules_have_no_omitted_or_extra_cases(self):
         registry = json.loads((ROOT / 'harness/commands.json').read_text())['commands']
         for check, modules in [('a01_deadline', ['test_procurement_filter']),
-                               ('audit_regression', ['test_audit_python_environment', 'test_audit_python_sbom'])]:
+                               ('audit_regression', ['test_audit_python_environment', 'test_audit_python_sbom']),
+                               ('local_regression', [p.stem for p in sorted((ROOT / 'local_app').glob('test_*.py'))])]:
             with self.subTest(check=check):
                 suite = unittest.defaultTestLoader.loadTestsFromNames(modules)
                 actual = list(test_ids(suite))
