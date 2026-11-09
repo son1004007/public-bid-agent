@@ -12,7 +12,8 @@
   ],
   "selected_checks": [
     "a01_deadline",
-    "audit_regression"
+    "audit_regression",
+    "local_regression"
   ],
   "allowed_changes": [
     "local_app/test_procurement_filter.py",

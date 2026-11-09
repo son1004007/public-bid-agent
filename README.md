@@ -1,3 +1,14 @@
+## 2026-11-09 H02-2 로컬 회귀 연결 — IMPLEMENTED_UNVERIFIED
+
+기존 local_app 52개 모듈의 485개 고유 test ID를 local_regression으로 연결했습니다. 기존 adapter/정확 ID/skip 실패 정책과 120초 제한을 재사용합니다. 기존 개발 의존성 local_app/test-requirements.txt를 CI와 분리된 개발 Python에 설치합니다. backend_regression/frontend_contract 및 H02-3은 미완료입니다.
+
+- 이번 Work 분리 venv: registry 1 PASS, H01 15 PASS, 큐 8 PASS. 최초 기본 환경 registry FAIL(langchain_core 누락)을 의존성 설치 후 해결했습니다.
+- 독립 Work 코드 검수: Draft 게시 GO. 독립 기본 환경 registry는 같은 의존성 누락으로 FAIL, diff --check PASS. 병합/배포/전체 회귀 통과 승인이 아닙니다.
+- 미해결: 과거 Windows 전체 회귀 200초 이상 이력에 비해 120초 상한이 짧을 수 있습니다. 준비된 Windows에서 실제 실행 후 분할/시간 예산을 결정합니다. Linux Windows 전용 skip 및 OCR 미구비를 성공으로 바꾸지 않습니다.
+- 기존 비동기 인수 결과를 11/09 재확인: h02-30-002 SUCCEEDED, trusted/candidate a219b0fe05b3dd041ae2a2c6958e5ad163f8618f, exit0/cleanup=true/report_present=true, run ID a7cea97d-69b2-49f6-a0ca-24632a74065f, 완료 11/03 00:57:50 KST. 30개 검사 범위이며 제품 DONE 아님.
+- 현재 노트북 WorkQueue/WorkQueue-H02 스케줄러는 Disabled(State=1)로 관측되어 임의 재활성화하지 않았습니다. 새 검사 큐 제출/운영 clone 변경 없음. 최신 사용자 변경 여부를 보존하고 다음 원격 실행 전에 실제 상태를 다시 확인합니다.
+- 다음: 이 개발 브랜치 동일 SHA CI → 485개 실제 하네스 실행/시간 예산 검증 → 미해결 수정 후 main 병합 판단. 운영 브라우저 인수/전체 제품 완성은 별도입니다.
+
 > H02 감사 테스트는 기존 개발 의존성 `packaging>=26,<27`을 재사용합니다. 큐 실행기 자체는 표준 라이브러리이며 감사 검사는 분리된 개발 Python에서 실행합니다.
 
 > H02-2 첫 연결: 날짜/분류 16개와 감사 14개를 기존 하네스로 실행합니다. 전체 local/backend/frontend 연결은 아직 미완료입니다. [사용법](docs/implementation/HARNESS_USAGE.md).
