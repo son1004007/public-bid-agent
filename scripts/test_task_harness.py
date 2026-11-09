@@ -68,6 +68,9 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual(r['state'],'TIMED_OUT')
         data=h.read_json(self.base/'run/run.json')
         self.assertTrue(data['checks'][0]['outcome']['cleanup'])
+        # A killed adapter cannot write report.json; progress must survive in the bounded log.
+        progress = (self.base/'run/smoke/stderr.log').read_text()
+        self.assertIn('TEST_START test_sample.Sample.test_ok', progress)
 
     def test_output_cap(self):
         r=self.run_fixture('import unittest\nclass Sample(unittest.TestCase):\n def test_ok(self):\n  print("x"*200000)\n')

@@ -1,3 +1,11 @@
+## 2026-11-09 전체 회귀 실측 및 timeout 진단
+
+- PR #4 기존 SHA `4f6f2be30868f23aa2e5f6a5f87f89c90f271c92`의 CI 3종 SUCCESS: Sprint1 42611604930, Development harness 42611604945, Windows synthetic 42611604915. Linux 전체 485개는 63.487초, skipped=2이므로 하네스 전체 통과 증거가 아니다.
+- 전체 검사 시간 초과 시 report.json이 없을 수 있으므로 adapter가 기존 bounded stderr에 허용된 test ID만 `TEST_START`로 flush한다. 예외 본문/fixture/subtest 값은 추가 기록하지 않는다. 마지막 시작 검사는 원인 확정이나 완료 증거가 아니다. 120초 제한·skip 실패·증거 schema·권한 정책은 유지한다.
+- 변경 검증: 기존 하네스 15 PASS (3.374초, exit0), timeout/자식 cleanup/로그 보존 포함. 독립 Work 읽기 전용 검수 GO (검수자가 테스트를 재실행한 것은 아님). 새 변경 SHA의 CI는 별도 확인한다.
+- 준비된 노트북에서 기존 SHA 4f6f2be의 485개를 새 일반 사용자 task로 실측 중이다. 설치/큐 결과는 main WORK_ASYNC_RUNBOOK 최신 실행 기록을 확인한다. 기존 운영 clone과 비활성 큐 task는 변경하지 않았다.
+- 남은 작업: Windows 결과/cleanup/실제 skip 확인 → 필요 시 실패 원인 수정 → 전체 Windows CI 연결 → backend/frontend 연결 및 H02-3. 전체 제품 DONE/운영 배포 아님.
+
 ## 2026-11-09 H02-2 로컬 회귀 연결 — IMPLEMENTED_UNVERIFIED
 
 기존 local_app 52개 모듈의 485개 고유 test ID를 local_regression으로 연결했습니다. 기존 adapter/정확 ID/skip 실패 정책과 120초 제한을 재사용합니다. 기존 개발 의존성 local_app/test-requirements.txt를 CI와 분리된 개발 Python에 설치합니다. backend_regression/frontend_contract 및 H02-3은 미완료입니다.

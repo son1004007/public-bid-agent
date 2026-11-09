@@ -1,6 +1,7 @@
 """신뢰된 unittest 결과 어댑터.
 입력: 부모가 전달한 실행 identity/정확한 test ID. 출력: 구조화 결과.
 부작용: 합성 테스트와 전용 결과 파일만. stdin 시작 신호 전 후보 import 금지.
+타임아웃 시 보고서가 없어도 마지막 시작 검사를 찾도록 허용된 ID만 stderr에 기록한다.
 테스트 자체는 소유자가 신뢰하는 코드이며 OS 보안 sandbox를 대체하지 않는다.
 """
 import json
@@ -21,6 +22,9 @@ def main():
             self.ids = []
         def startTest(self, test):
             self.ids.append(test.id())
+            # Do not log assertion messages, fixture data or parameterized subtest values.
+            identity = test.id() if test.id() in config['tests'] else '<unlisted>'
+            print('TEST_START ' + identity, file=sys.stderr, flush=True)
             super().startTest(test)
     result = Result()
     unittest.defaultTestLoader.loadTestsFromNames(config['tests']).run(result)
