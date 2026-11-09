@@ -1,3 +1,13 @@
+## 2026-11-09 재개 지점 — Draft PR #4
+
+[PR #4](https://github.com/son1004007/public-bid-agent/pull/4), branch `feat/h02-local-regression`, 구현 SHA `4f6f2be30868f23aa2e5f6a5f87f89c90f271c92`에 기존 485개 로컬 회귀 연결을 게시했습니다. 코드/README/현재 상태는 이 브랜치 기준으로 확인합니다. 이번 분리 venv의 registry1/H01 15/queue8 PASS, 독립 Work 검수는 Draft 게시 GO입니다. 기본 환경 의존성 누락 FAIL은 기록했고 별도 venv에서 해결했습니다.
+
+- 11/09 노트북 결과 재확인: `h02-30-002` SUCCEEDED/exit0/cleanup=true/report_present=true, run `a7cea97d-69b2-49f6-a0ca-24632a74065f`, trusted/candidate `a219b0fe05b3dd041ae2a2c6958e5ad163f8618f`. 실제 비동기 30개 검사는 11/03 00:57:50 KST에 완료됐습니다. 아래 과거 RUNNING 기록을 현재 상태로 사용하지 않습니다.
+- 현재 두 WorkQueue task는 Disabled(State=1)로 관측. 사용자의 후속 변경일 가능성이 있어 임의 재활성화하지 않았습니다. 운영 clone/data 변경 없음.
+- 새 SHA CI는 실행 중: Development harness 42611604945, Sprint1 42611604930, Windows acceptance 42611604915. **다음 회차 이 run의 종료 결과부터 확인**합니다. 실행 중인 CI/큐를 중복 등록하지 않습니다.
+- 485개 실제 하네스 실행은 NOT RUN. 120초 상한은 과거 200초 이상 실행 이력상 부족할 수 있어 실측/분할 또는 시간 예산 변경 검토 필요. Windows 전용·OCR skip을 성공으로 바꾸지 않습니다. 이 PR은 아직 main 병합/운영 배포하지 않습니다.
+- 다음: 동일 SHA CI 결과/실제 검사 시간 확인 → 필요 시간 예산 수정·재검수 → 준비된 Windows 전체 하네스 검증 → H02-2 나머지 backend/frontend와 H02-3. 제품 전체 DONE 아님.
+
 ## 2026-11-03 00:57 KST — 스케줄러 Git 소유권 원인 수정, 비동기 작업 실행 중
 
 - 원인 CONFIRMED: 기존 H02 runtime의 .git 소유자가 Administrators여서 Interactive/Limited 사용자 Git이 dubious ownership으로 거부했다. SSH 성공/인증 오류가 아니라 스케줄러 실행 계정과 저장소 소유권 불일치다. 실제 Git stderr로 확인.
