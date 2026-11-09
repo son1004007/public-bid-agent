@@ -1,3 +1,15 @@
+## 2026-11-09 21:56 KST — 485개 Windows 비동기 실측 시작 / 진단 코드 push
+
+- 실제 변경: PR [#4](https://github.com/son1004007/public-bid-agent/pull/4), `feat/h02-local-regression`에 `5dcf464b225173a686b14005bef566881ef6e579` push. timeout으로 report가 없을 때 마지막 시작 검사 ID를 확인하도록 기존 bounded stderr에 허용된 ID만 기록. 예외 본문/fixture/subtest 값은 추가 기록하지 않음. 120초·skip 실패·증거 스키마·권한 정책 유지. 마지막 시작 ID는 원인/완료 증거가 아님.
+- 검증: Work 분리 venv에서 기존 하네스 15 PASS / 3.374초 / exit0, timeout 자식 cleanup과 로그 보존 포함. 독립 Work 읽기 전용 검수 GO. 새 SHA CI는 진행 중: Sprint1 [42620951345](https://github.com/son1004007/public-bid-agent/actions/runs/42620951345), harness [42620951355](https://github.com/son1004007/public-bid-agent/actions/runs/42620951355), Windows [42620951362](https://github.com/son1004007/public-bid-agent/actions/runs/42620951362). 아직 main 병합/운영 배포하지 않음.
+- 기존 PR4 SHA `4f6f2be30868f23aa2e5f6a5f87f89c90f271c92` CI 3종 SUCCESS 확인. Linux 485개는 63.487초 / skipped=2이므로 전체 하네스 통과로 승격하지 않음. Windows 전체 검사의 CI 연결은 아직 하지 않았으며 노트북 실측부터 진행.
+- Gateway 실제 연결 성공. 기존 `h02-30-002`는 SUCCEEDED/exit0/cleanup=true, task_complete=false 그대로. 기존 `PublicBidAgent-WorkQueue`, `PublicBidAgent-WorkQueue-H02`는 Disabled 관측, 변경하지 않음. 새 실행 전 work_queue/task_harness 프로세스 미관측.
+- 새 일반 사용자 Interactive/Limited 일회 실행 task `PublicBidAgent-Regression-1109`를 등록·시작. 기존 실행 정책/권한 완화 없음. setup script `D:\Temp\bid-regression-1109.ps1`, log `D:\Temp\bid-regression-1109.log`. setup 자체는 target 존재 시 실패하도록 되어 있으므로 재실행하지 말 것.
+- 실제 새 runtime `D:\01_git\public-bid-agent-regression-1109`, trusted/candidate 모두 **4f6f2be 전체 SHA**. 별도 Python `D:\Temp\bid-regression-1109-venv\Scripts\python.exe`에 기존 test-requirements와 packaging 설치 완료. Tesseract eng/kor 확인. 운영 clone/운영 데이터는 변경하지 않음.
+- 실제 queue `D:\Temp\bid-regression-1109-queue`, job **local485-001**. 마지막 관측 RUNNING, PID11096, started_at=2026-11-09T12:54:37.232960Z, heartbeat=12:55:02.275246Z. SSH 시작 응답 후 별도 호출로 heartbeat 확인. **종료 결과/485 PASS는 아직 확인하지 않음.**
+- 다음 실행: 위 job의 result/running/실제 프로세스/task 상태부터 확인하고 새 작업 중복 등록 금지. cleanup 미확인은 재실행 금지. result 존재 시 ID/SHA/exit/cleanup 및 harness-run/run.json·report를 검토. 이번 진단 코드 5dcf464와 현재 실행 SHA 4f6f2be를 혼동하지 말 것. 새 SHA 실행 시 trusted adapter 일치가 필요하므로 실행 중 runtime checkout 금지.
+- 다음 개발: Windows 실측 실패/skip/시간 예산 처리 → H02-2 backend/frontend 연결 및 Windows 전체 CI → H02-3 증거 결속 → H03/제품 카드. 회사 증빙·사람 정답은 BLOCKED_EVIDENCE 유지. 전체 프로그램 DONE 아님; 예약 개발은 유지.
+
 ## 2026-11-09 재개 지점 — Draft PR #4
 
 [PR #4](https://github.com/son1004007/public-bid-agent/pull/4), branch `feat/h02-local-regression`, 구현 SHA `4f6f2be30868f23aa2e5f6a5f87f89c90f271c92`에 기존 485개 로컬 회귀 연결을 게시했습니다. 코드/README/현재 상태는 이 브랜치 기준으로 확인합니다. 이번 분리 venv의 registry1/H01 15/queue8 PASS, 독립 Work 검수는 Draft 게시 GO입니다. 기본 환경 의존성 누락 FAIL은 기록했고 별도 venv에서 해결했습니다.
