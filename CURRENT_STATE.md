@@ -1,3 +1,5 @@
+> **2026-11-14 최신 서버 전환 설계:** [서버 전환 설계 목차](docs/server-migration/README.md)부터 읽는다. React/TypeScript + Django/DRF + PostgreSQL, 서버 작업 워커/일정, DB 계정·최초 비밀번호 변경 강제, SSO 제외. 조직 정책은 공개 Git 밖의 승인된 연결 설정에서 원본을 읽고 적용한다. **설계 문서만 작성됨(NOT_IMPLEMENTED)**; 과거 로컬 전용/SSO 목표 문구보다 이번 결정을 우선하되 기존 운영·데이터·작업은 보존한다.
+
 ## 2026-11-03 00:57 KST — 스케줄러 Git 소유권 원인 수정, 비동기 작업 실행 중
 
 - 원인 CONFIRMED: 기존 H02 runtime의 .git 소유자가 Administrators여서 Interactive/Limited 사용자 Git이 dubious ownership으로 거부했다. SSH 성공/인증 오류가 아니라 스케줄러 실행 계정과 저장소 소유권 불일치다. 실제 Git stderr로 확인.

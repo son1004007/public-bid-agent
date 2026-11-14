@@ -1,3 +1,5 @@
+> **2026-11-14 최신 서버 전환 설계:** [서버 전환 설계 목차](docs/server-migration/README.md)부터 읽는다. React/TypeScript + Django/DRF + PostgreSQL, 서버 작업 워커/일정, DB 계정·최초 비밀번호 변경 강제, SSO 제외. 조직 정책은 공개 Git 밖의 승인된 연결 설정에서 원본을 읽고 적용한다. **설계 문서만 작성됨(NOT_IMPLEMENTED)**; 과거 로컬 전용/SSO 목표 문구보다 이번 결정을 우선하되 기존 운영·데이터·작업은 보존한다.
+
 ## 2026-11-02 H02-1: A01 날짜 오류 수정·검증
 
 구현 `38c18e9c5b968fb500c6a7c88320b2a33d0f92fc`를 개발 브랜치 `feat/harness-h01`에 게시했습니다.

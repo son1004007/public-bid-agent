@@ -1,3 +1,5 @@
+> **2026-11-14 서버 전환 목표 설계:** [최신 목차](../server-migration/README.md). SSO 제외·DB 계정/최초 암호 변경 강제. 현재 로컬 구현과 미래 서버 설계를 구분하며 이번 변경은 문서뿐이다.
+
 > **최신 H01 실행 진입점:** [반복 사용 하네스 안내](HARNESS_USAGE.md). 실행 프로그램이 추가되었습니다. 아래 과거 NOT IMPLEMENTED는 설계 당시 이력입니다. 최신 branch/검수/CI를 확인하고 고정 SHA의 validate → run → verify/status를 사용합니다. A01 전체 완료·배포는 별도입니다.
 
 # 다른 AI를 위한 시작점
