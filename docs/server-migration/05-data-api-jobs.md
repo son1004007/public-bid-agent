@@ -23,7 +23,7 @@
 
 원본 bytes는 비공개 volume에 불변 저장하고 DB에 SHA/크기/형식/버전을 보관한다. 원본 변경 시 새 DocumentVersion과 새 추출 작업을 만들며 기존 승인 정답을 자동으로 새 버전에 복사하지 않는다. 과거 관계를 입증할 수 없는 기존 캐시는 VERSION_UNVERIFIED로 이관한다. 추출 offset을 원본 페이지라고 변환하지 않는다.
 
-파일 경로/스토리지 키를 클라이언트가 지정할 수 없게 하고, 다운로드/뷰어 요청마다 객체 권한을 검사한다. 추출·원본·회사 정보가 로그나 에러 body에 들어가지 않는다. DB와 파일의 백업 세대를 manifest로 연결한다.
+파일 경로/스토리지 키를 클라이언트가 지정할 수 없게 하고, 다운로드/뷰어 요청마다 객체 권한을 검사한다. 추출·원본·회사 정보가 로그나 에러 body에 들어가지 않는다. DB와 파일의 백업 세대를 manifest로 연결한다. 파일은 임시 저장→크기/SHA 검증→동일 volume 원자 확정→DB 참조 게시 순서로 처리한다. DB 실패로 남은 파일은 orphan으로 격리·재조정하고 기존 참조 파일을 자동 삭제하지 않는다. SM04에서 각 crash 지점의 재실행과 불완전 파일 비노출을 검증한다.
 
 ## 3. API 공통 계약
 
@@ -31,14 +31,16 @@
 
 - 조회: `/api/notices`, `/api/notices/{id}`, `/api/document-queue`, `/api/reviews`, `/api/evaluations`, `/api/jobs/{id}`.
 - 명시 변경: `/api/collection-runs`, `/api/extraction-runs`, `/api/reviews/{id}/events`, `/api/decisions`, `/api/jobs/{id}/cancel`.
-- 401 미인증, 403 변경 필요/권한 없음, 409 revision/멱등키 충돌, 422 입력 불일치, 503 의존 서비스/스냅샷 불가를구분한다. Django 기본 응답과 명시 API 계약을통일하는 구현이 필요하며 기존 동작이 이 계약을 충족한 것으로 취급하지 않는다。
-- POST의 Idempotency-Key는 사용자+업무범위+동작에 묶고 request digest와 결과를 보존한다. 동일 키/동일 요청은 기존 작업·결과를 반환하고 다른 요청은409. timeout 후 무조건 새 작업 ID로 재제출하지 않는다.
+- 401 미인증, 403 변경 필요/권한 없음, 409 revision/멱등키 충돌, 422 입력 불일치, 503 의존 서비스/스냅샷 불가를 구분한다. Django 기본 응답과 명시 API 계약을 통일하는 구현이 필요하며 기존 동작이 이 계약을 충족한 것으로 취급하지 않는다.
+- POST의 Idempotency-Key는 사용자+업무범위+동작에 묶고 request digest와 결과를 보존한다. 동일 키/동일 요청은 기존 작업·결과를 반환하고 다른 요청은 409. timeout 후 무조건 새 작업 ID로 재제출하지 않는다.
 
 ## 4. 작업 원장과 재시도
 
 Redis 전달은 중복될 수 있다는 전제로 PostgreSQL 원장을 정본으로 삼는다. 업무 저장과 전달 요청은 같은 DB transaction의 outbox에 기록하고 dispatcher가 broker 전달을 재개한다. 워커는 unique 업무키/lease·fencing token으로 소유권을 검사하고 외부 호출과 저장을 멱등 처리한다. 단순 Redis lock 하나로 원본 보존을 보장한다고 쓰지 않는다.
 
 작업 상태는 QUEUED/RUNNING/SUCCEEDED/FAILED/CANCEL_REQUESTED/CANCELLED/REVIEW_REQUIRED. 시도는 별도 이력이며 기존 성공 결과를 실패 시도로 덮지 않는다. 다운로드 실패/추출 실패/근거 부족/권한 철회/worker 단절을 구분한다. heartbeat 유실은 자동 완료가 아니다. 취소는 요청과 실제 종료/cleanup 증거를 구분한다.
+
+예약은 CollectionConfig의 명시적 실행 주체와 허용 범위를 가진다. 사용자 또는 별도 서비스 주체 선택은 SM05에서 확정하며 암묵적 superuser 실행을 금지한다. 발급자 비활성/권한 철회/일정 비활성 시 대기 작업과 실행 중 작업의 정책을 명시한다. 실행 직전과 외부 I/O·결과 게시의 안전 지점에서 권한·일정 상태를 재검사하고 새로운 부작용을 중지하되 이미 확보한 성공 결과와 이력은 보존한다. 이미 전송된 외부 요청의 취소를 보장하지 않는다.
 
 일정 dispatcher는 하나만 운영하고 scheduled occurrence를 unique key로 중복 방지한다. 일시 네트워크 오류에만 횟수/전체 시간 상한과 backoff를 적용한다. 인증·자격·SHA/버전 충돌·문서 악성 입력은 자동 반복하지 않는다. PDF/OCR CPU 작업은 별도 동시성/시간·메모리/입출력 한도를 둔다. 사용자가 중지한 PC 스케줄러를 서버 전환 작업이 자동 재활성화하지 않는다.
 

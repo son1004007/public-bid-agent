@@ -1,6 +1,6 @@
 # 04. 화면별 설계와 사용자 흐름
 
-[전체 목차](README.md)
+[전체 목차](README.md) · [현재 구현 대응표·UI 참고 저장소](08-current-screens-and-ui-references.md)
 
 ## 1. 공통 구조
 

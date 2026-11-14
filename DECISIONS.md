@@ -1,3 +1,7 @@
+## 2026-11-14 별도 Astra 설계·스킬 검수
+
+사용자가 별도 Codex GPT Astra medium 검수와 지적 수정·문서화를 요청했다. `gpt-6-astra`/medium 별도 읽기 전용 문맥으로 수행한다. 이번 범위는 서버 설계 보완과 스킬 적용 기준이며 외부 스킬 설치·hook 활성화·서비스 구현은 포함하지 않는다. [검수·적용 기록](docs/server-migration/07-codex-skills-and-review.md)을 따른다.
+
 ## 2026-11-14 서버 전환·DB 계정 인증 — 사용자 확정
 
 Linux/Compose·React/TypeScript/Vite·Django/DRF·PostgreSQL·Celery/Redis·Nginx 방향을 채택한다. SSO는 도입하지 않고 DB 사용자 계정과 최초 인증 후 비밀번호 변경을 서버에서 강제한다. 조직 정책은 권한 있는 비공개 원본에서 읽고 적용하며 공개 Git에 복제하지 않는다. 이번 승인은 설계 문서 작성이며 코드 구현·데이터 이전·새 서버/외부 공개 배포 완료 또는 운영 실행 승인으로 확대하지 않는다. [서버 전환 설계 목차](docs/server-migration/README.md) 참조. 세부 화면/역할/보안 수치·실제 서버는 설계 초안/미정으로 구분한다.

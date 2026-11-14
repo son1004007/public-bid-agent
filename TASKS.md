@@ -1,3 +1,13 @@
+## 2026-11-14 현재 화면·UI 후보 문서화
+
+- [현재 화면 대응표·설계 완성도·GitHub UI 후보](docs/server-migration/08-current-screens-and-ui-references.md) 추가. 기본 설계는 준비됐으나 전체 상세 설계/UI 승인/서버 구현은 미완료다.
+- shadcn/ui·TanStack Table·PDF.js 조합을 제안하며 UI 패키지 설치/선정 확정은 하지 않았다. 소스 조사이며 운영 화면 재검증은 NOT RUN.
+
+## 2026-11-14 Astra 설계·스킬 검수 반영
+
+- GPT-6 Astra / medium 별도 읽기 전용 검수: 최초 P2 1건 수정 후 문서 범위 GO. 이관 식별키·파일/DB 실패 경계·예약 권한을 보완했다.
+- [스킬 선정·검수 기록](docs/server-migration/07-codex-skills-and-review.md): Django/React 선별 적용 조건, 일괄 워크플로 도입 보류, 독립 검수 절차. 스킬 설치·서비스 구현·배포는 하지 않았다.
+
 ## 2026-11-14 서버 전환 설계
 
 - [x] SM01 설계 초안: 스택·DB 계정/최초 암호 변경·정책 원본 연결·화면/API/데이터·이관 목차 작성. 별도 문맥 설계 게시 검수 GO·링크/정합성 검사 PASS. 구현 상태는 별도.

@@ -1,3 +1,13 @@
+## 2026-11-14 현재 화면·UI 후보 문서화
+
+- [현재 화면 대응표·설계 완성도·GitHub UI 후보](docs/server-migration/08-current-screens-and-ui-references.md) 추가. 기본 설계는 준비됐으나 전체 상세 설계/UI 승인/서버 구현은 미완료다.
+- shadcn/ui·TanStack Table·PDF.js 조합을 제안하며 UI 패키지 설치/선정 확정은 하지 않았다. 소스 조사이며 운영 화면 재검증은 NOT RUN.
+
+## 2026-11-14 Astra 설계·스킬 검수 반영
+
+- GPT-6 Astra / medium 별도 읽기 전용 검수: 최초 P2 1건 수정 후 문서 범위 GO. 이관 식별키·파일/DB 실패 경계·예약 권한을 보완했다.
+- [스킬 선정·검수 기록](docs/server-migration/07-codex-skills-and-review.md): Django/React 선별 적용 조건, 일괄 워크플로 도입 보류, 독립 검수 절차. 스킬 설치·서비스 구현·배포는 하지 않았다.
+
 > **2026-11-14 최신 서버 전환 설계:** [서버 전환 설계 목차](docs/server-migration/README.md)부터 읽는다. React/TypeScript + Django/DRF + PostgreSQL, 서버 작업 워커/일정, DB 계정·최초 비밀번호 변경 강제, SSO 제외. 조직 정책은 공개 Git 밖의 승인된 연결 설정에서 원본을 읽고 적용한다. **설계 문서만 작성됨(NOT_IMPLEMENTED)**; 과거 로컬 전용/SSO 목표 문구보다 이번 결정을 우선하되 기존 운영·데이터·작업은 보존한다.
 
 ## 2026-11-03 00:57 KST — 스케줄러 Git 소유권 원인 수정, 비동기 작업 실행 중
