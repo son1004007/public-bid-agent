@@ -17,3 +17,10 @@ coverage/
 **/user-json/
 *.tsbuildinfo
 .DS_Store
+
+# Local data, backups and unreviewed work never belong in public Git
+/data/
+/backups/
+/scratch/
+/BID04_USER_APPROVAL_LOCAL.txt
+*.sqlite3

@@ -1,0 +1,66 @@
+name: Server foundation CI
+on:
+  push:
+    branches: [main, 'feat/**', 'codex/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  foundation:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated locked foundation dependencies
+        run: python -m pip install --only-binary=:all: --require-hashes -r server/requirements-dev.lock
+      - name: Check dependency consistency
+        run: python -m pip check
+      - name: Check isolated test settings
+        run: python server/manage.py check --settings=bid_server.settings.test
+      - name: Run foundation and authentication synthetic regression
+        run: python server/manage.py test tests --settings=bid_server.settings.test --verbosity 1
+
+  postgres-authentication:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.12
+        env:
+          POSTGRES_USER: sm03_ci
+          POSTGRES_PASSWORD: synthetic-ci-only-password
+          POSTGRES_DB: sm03_fixture
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U sm03_ci -d sm03_fixture"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install locked dependencies
+        run: python -m pip install --only-binary=:all: --require-hashes -r server/requirements-dev.lock
+      - name: Create ephemeral synthetic database configuration
+        env:
+          SM03_TEST_DB_CONFIG_FILE: ${{ runner.temp }}/sm03-db.json
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          path = Path(os.environ["SM03_TEST_DB_CONFIG_FILE"])
+          path.write_text(json.dumps({"HOST": "127.0.0.1", "PORT": 5432, "NAME": "sm03_fixture", "USER": "sm03_ci", "PASSWORD": "synthetic-ci-only-password"}))
+          path.chmod(0o600)
+          PY
+      - name: Verify migration consistency
+        run: python server/manage.py makemigrations --check --dry-run --settings=bid_server.settings.test
+      - name: Run PostgreSQL authentication and concurrency regression
+        env:
+          SM03_TEST_DB_CONFIG_FILE: ${{ runner.temp }}/sm03-db.json
+        run: python server/manage.py test tests --settings=bid_server.settings.test_postgres --verbosity 0
