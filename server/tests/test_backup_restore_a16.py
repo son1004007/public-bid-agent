@@ -83,7 +83,7 @@ class BackupRestoreA16Tests(TestCase):
                 "name": "fake_db",
                 "dump_file": "db_dump.sql",
                 "dump_sha256": "0" * 64,  # mismatched SHA
-                "table_counts": {},
+                "table_counts": {"accounts_user": 0, "procurement_notice": 0, "procurement_noticeversion": 0, "procurement_document": 0, "procurement_documentversion": 0, "procurement_proposal": 0, "procurement_proposalrevision": 0, "procurement_proposalsection": 0, "jobs_job": 0, "jobs_jobattempt": 0},
             },
             "storage": {"files": []},
         }
@@ -107,7 +107,7 @@ class BackupRestoreA16Tests(TestCase):
             "database": {
                 "dump_file": "db_dump.sql",
                 "dump_sha256": sha256_file(dump),
-                "table_counts": {},
+                "table_counts": {"accounts_user": 0, "procurement_notice": 0, "procurement_noticeversion": 0, "procurement_document": 0, "procurement_documentversion": 0, "procurement_proposal": 0, "procurement_proposalrevision": 0, "procurement_proposalsection": 0, "jobs_job": 0, "jobs_jobattempt": 0},
             },
             "storage": {"files": []},
         }
