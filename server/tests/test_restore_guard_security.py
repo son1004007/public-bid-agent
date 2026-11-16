@@ -84,3 +84,30 @@ class RestoreGuardSecurityTests(SimpleTestCase):
                 with self.assertRaisesRegex(ValueError, "escapes backup directory"):
                     run_rehearsal(bundle, rehearsal_db_name="sm03_test_guard_rehearsal")
                 connect.assert_not_called()
+
+    def test_symlinked_storage_directory_cannot_escape_bundle(self):
+        from scripts.restore_rehearsal import run_rehearsal
+        import hashlib
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            bundle = root / "bundle"
+            outside = root / "outside"
+            bundle.mkdir()
+            outside.mkdir()
+            (bundle / "fixture.sql").write_bytes(b"-- synthetic fixture")
+            (outside / "private.txt").write_bytes(b"synthetic private data")
+            try:
+                (bundle / "storage").symlink_to(outside, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("directory symlinks unavailable on this platform")
+            digest = hashlib.sha256((bundle / "fixture.sql").read_bytes()).hexdigest()
+            outside_digest = hashlib.sha256((outside / "private.txt").read_bytes()).hexdigest()
+            (bundle / "manifest.json").write_text(json.dumps({
+                "backup_id": "synthetic",
+                "database": {"dump_file": "fixture.sql", "dump_sha256": digest, "table_counts": {}},
+                "storage": {"files": [{"relative_path": "private.txt", "sha256": outside_digest}]},
+            }), encoding="utf-8")
+            with patch("scripts.restore_rehearsal.psycopg.connect") as connect:
+                with self.assertRaisesRegex(ValueError, "escapes backup directory"):
+                    run_rehearsal(bundle, rehearsal_db_name="sm03_test_guard_rehearsal")
+                connect.assert_not_called()
