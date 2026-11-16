@@ -92,3 +92,46 @@ class BackupRestoreA16Tests(TestCase):
         with self.assertRaises(ValueError) as ctx:
             run_rehearsal(bundle_dir=fake_bundle)
         self.assertIn("Dump SHA-256 mismatch", str(ctx.exception))
+
+    def test_failed_psql_restore_cleans_only_newly_created_rehearsal_db(self):
+        """A failed restore must clean its newly created isolated DB, without touching the source."""
+        from unittest.mock import MagicMock, patch
+        from scripts import restore_rehearsal
+
+        bundle = self.output_dir / "restore_failure"
+        bundle.mkdir()
+        dump = bundle / "db_dump.sql"
+        dump.write_text("-- synthetic fixture", encoding="utf-8")
+        manifest = {
+            "backup_id": "synthetic-failed-restore",
+            "database": {
+                "dump_file": "db_dump.sql",
+                "dump_sha256": sha256_file(dump),
+                "table_counts": {},
+            },
+            "storage": {"files": []},
+        }
+        (bundle / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        cfg = {"HOST": "127.0.0.1", "PORT": 5432, "NAME": "source_db",
+               "USER": "synthetic", "PASSWORD": "synthetic"}
+        connection = MagicMock()
+        cursor = connection.cursor.return_value.__enter__.return_value
+
+        with (
+            patch.object(restore_rehearsal, "load_db_config", return_value=cfg),
+            patch.object(restore_rehearsal.psycopg, "connect", return_value=connection) as connect,
+            patch.object(restore_rehearsal.subprocess, "run") as run,
+        ):
+            run.return_value.returncode = 1
+            run.return_value.stderr = "synthetic failure"
+            with self.assertRaisesRegex(RuntimeError, "psql restore failed"):
+                restore_rehearsal.run_rehearsal(
+                    bundle, rehearsal_db_name="sm03_test_failure_rehearsal"
+                )
+
+        self.assertEqual(connect.call_count, 2)
+        statements = [str(call.args[0]) for call in cursor.execute.call_args_list]
+        self.assertEqual(len(statements), 2)
+        self.assertIn("CREATE DATABASE", statements[0])
+        self.assertIn("DROP DATABASE", statements[1])
+        self.assertNotIn("source_db", " ".join(statements))
