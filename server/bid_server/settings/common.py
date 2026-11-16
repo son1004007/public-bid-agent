@@ -18,6 +18,7 @@ AUTH_USER_MODEL = "accounts.User"
 MIDDLEWARE = [
     "bid_server.core.middleware.ApiBoundaryMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "bid_server.accounts.middleware.AuthGateMiddleware",
