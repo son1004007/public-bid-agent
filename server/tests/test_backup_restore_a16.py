@@ -135,3 +135,41 @@ class BackupRestoreA16Tests(TestCase):
         self.assertIn("CREATE DATABASE", statements[0])
         self.assertIn("DROP DATABASE", statements[1])
         self.assertNotIn("source_db", " ".join(statements))
+
+    def test_backup_counts_and_dump_share_exported_snapshot(self):
+        """The exporting transaction stays open through pg_dump and its snapshot is passed explicitly."""
+        from unittest.mock import MagicMock, patch
+        from scripts import backup_system
+
+        cfg = {"HOST": "127.0.0.1", "PORT": 5432, "NAME": "synthetic_db",
+               "USER": "synthetic", "PASSWORD": "synthetic"}
+        conn = MagicMock()
+        cur = conn.cursor.return_value.__enter__.return_value
+        cur.fetchone.return_value = ("000003A1-1",)
+        events = []
+
+        def fake_counts(connection):
+            self.assertIs(connection, conn)
+            events.append("count")
+            return {"accounts_user": 0}
+
+        def fake_dump(cmd, **kwargs):
+            self.assertIn("--snapshot", cmd)
+            self.assertEqual(cmd[cmd.index("--snapshot") + 1], "000003A1-1")
+            self.assertNotIn("rollback", events)
+            events.append("dump")
+            Path(cmd[cmd.index("-f") + 1]).write_bytes(b"-- synthetic dump")
+            return MagicMock(returncode=0)
+
+        conn.rollback.side_effect = lambda: events.append("rollback")
+        with (
+            patch.object(backup_system, "load_db_config", return_value=cfg),
+            patch("psycopg.connect", return_value=conn),
+            patch.object(backup_system, "get_table_counts", side_effect=fake_counts),
+            patch.object(backup_system.subprocess, "run", side_effect=fake_dump),
+        ):
+            bundle = backup_system.create_backup(output_dir=self.output_dir)
+
+        self.assertEqual(events, ["count", "dump", "rollback"])
+        manifest = json.loads((bundle / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["database"]["table_counts"], {"accounts_user": 0})
