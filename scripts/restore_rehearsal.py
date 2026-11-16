@@ -339,9 +339,13 @@ if __name__ == "__main__":
     b_dir = Path(args.bundle_dir)
     cfg_p = Path(args.config) if args.config else None
 
-    run_rehearsal(
+    report = run_rehearsal(
         bundle_dir=b_dir,
         rehearsal_db_name=args.rehearsal_db,
         config_path=cfg_p,
         keep_db=args.keep_db,
     )
+    # A parity/FK/write failure returns a FAILED report without raising. Propagate
+    # it as a nonzero process exit so CI and automation cannot mark it successful.
+    if report["status"] != "SUCCESS":
+        sys.exit(1)
