@@ -80,6 +80,20 @@ def run_rehearsal(
     db_meta = manifest["database"]
     storage_meta = manifest.get("storage", {})
 
+    # Fail closed before creating any database: an empty/partial manifest would
+    # otherwise make all([]) report success and silently skip missing tables.
+    required_tables = {
+        "accounts_user", "procurement_notice", "procurement_noticeversion",
+        "procurement_document", "procurement_documentversion",
+        "procurement_proposal", "procurement_proposalrevision",
+        "procurement_proposalsection", "jobs_job", "jobs_jobattempt",
+    }
+    table_counts = db_meta.get("table_counts")
+    if (not isinstance(table_counts, dict)
+            or set(table_counts) != required_tables
+            or any(type(count) is not int or count < 0 for count in table_counts.values())):
+        raise ValueError("Backup manifest table_counts must cover all required tables with nonnegative integer counts")
+
     print(f"[*] Starting Restore Rehearsal for Backup: {backup_id}")
     print(f"[*] Rehearsal Target Database: {rehearsal_db_name}")
 
