@@ -107,7 +107,9 @@ def run_rehearsal(
 
     # Verify Storage Artifacts
     storage_verification_errors = []
-    bundle_storage_dir = bundle_dir / "storage"
+    # Resolve storage relative to the verified bundle root, not as an independent trust root.
+    # A symlinked storage directory must never redirect verification outside the bundle.
+    bundle_storage_dir = bundle_member(bundle_root, "storage")
     for item in storage_meta.get("files", []):
         file_path = bundle_member(bundle_storage_dir.resolve(), item["relative_path"])
         if not file_path.exists():
