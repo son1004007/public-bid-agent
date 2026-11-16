@@ -34,7 +34,7 @@ class RestoreGuardSecurityTests(SimpleTestCase):
             digest = hashlib.sha256((bundle / "fixture.sql").read_bytes()).hexdigest()
             (bundle / "manifest.json").write_text(json.dumps({
                 "backup_id": "synthetic",
-                "database": {"dump_file": "fixture.sql", "dump_sha256": digest, "table_counts": {}},
+                "database": {"dump_file": "fixture.sql", "dump_sha256": digest, "table_counts": {"accounts_user": 0, "procurement_notice": 0, "procurement_noticeversion": 0, "procurement_document": 0, "procurement_documentversion": 0, "procurement_proposal": 0, "procurement_proposalrevision": 0, "procurement_proposalsection": 0, "jobs_job": 0, "jobs_jobattempt": 0}},
                 "storage": {"files": []},
             }), encoding="utf-8")
             cursor = MagicMock()
@@ -60,7 +60,7 @@ class RestoreGuardSecurityTests(SimpleTestCase):
             bundle.mkdir()
             (bundle / "manifest.json").write_text(json.dumps({
                 "backup_id": "synthetic",
-                "database": {"dump_file": "../outside.sql", "dump_sha256": "0" * 64, "table_counts": {}},
+                "database": {"dump_file": "../outside.sql", "dump_sha256": "0" * 64, "table_counts": {"accounts_user": 0, "procurement_notice": 0, "procurement_noticeversion": 0, "procurement_document": 0, "procurement_documentversion": 0, "procurement_proposal": 0, "procurement_proposalrevision": 0, "procurement_proposalsection": 0, "jobs_job": 0, "jobs_jobattempt": 0}},
                 "storage": {"files": []},
             }), encoding="utf-8")
             with patch("scripts.restore_rehearsal.psycopg.connect") as connect:
@@ -77,7 +77,7 @@ class RestoreGuardSecurityTests(SimpleTestCase):
             digest = hashlib.sha256((bundle / "fixture.sql").read_bytes()).hexdigest()
             (bundle / "manifest.json").write_text(json.dumps({
                 "backup_id": "synthetic",
-                "database": {"dump_file": "fixture.sql", "dump_sha256": digest, "table_counts": {}},
+                "database": {"dump_file": "fixture.sql", "dump_sha256": digest, "table_counts": {"accounts_user": 0, "procurement_notice": 0, "procurement_noticeversion": 0, "procurement_document": 0, "procurement_documentversion": 0, "procurement_proposal": 0, "procurement_proposalrevision": 0, "procurement_proposalsection": 0, "jobs_job": 0, "jobs_jobattempt": 0}},
                 "storage": {"files": [{"relative_path": "../fixture.sql", "sha256": digest}]},
             }), encoding="utf-8")
             with patch("scripts.restore_rehearsal.psycopg.connect") as connect:
@@ -104,10 +104,25 @@ class RestoreGuardSecurityTests(SimpleTestCase):
             outside_digest = hashlib.sha256((outside / "private.txt").read_bytes()).hexdigest()
             (bundle / "manifest.json").write_text(json.dumps({
                 "backup_id": "synthetic",
-                "database": {"dump_file": "fixture.sql", "dump_sha256": digest, "table_counts": {}},
+                "database": {"dump_file": "fixture.sql", "dump_sha256": digest, "table_counts": {"accounts_user": 0, "procurement_notice": 0, "procurement_noticeversion": 0, "procurement_document": 0, "procurement_documentversion": 0, "procurement_proposal": 0, "procurement_proposalrevision": 0, "procurement_proposalsection": 0, "jobs_job": 0, "jobs_jobattempt": 0}},
                 "storage": {"files": [{"relative_path": "private.txt", "sha256": outside_digest}]},
             }), encoding="utf-8")
             with patch("scripts.restore_rehearsal.psycopg.connect") as connect:
                 with self.assertRaisesRegex(ValueError, "escapes backup directory"):
                     run_rehearsal(bundle, rehearsal_db_name="sm03_test_guard_rehearsal")
                 connect.assert_not_called()
+
+    def test_incomplete_table_counts_rejected_before_database_connection(self):
+        from scripts.restore_rehearsal import run_rehearsal
+        for invalid_counts in ({}, {"procurement_notice": 1}, {"accounts_user": -1}):
+            with self.subTest(invalid_counts=invalid_counts), tempfile.TemporaryDirectory() as temp:
+                bundle = Path(temp)
+                (bundle / "manifest.json").write_text(json.dumps({
+                    "backup_id": "synthetic",
+                    "database": {"dump_file": "missing.sql", "dump_sha256": "0" * 64,
+                                 "table_counts": invalid_counts},
+                }), encoding="utf-8")
+                with patch("scripts.restore_rehearsal.psycopg.connect") as connect:
+                    with self.assertRaisesRegex(ValueError, "table_counts"):
+                        run_rehearsal(bundle)
+                    connect.assert_not_called()
