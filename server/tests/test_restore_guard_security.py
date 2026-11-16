@@ -52,3 +52,35 @@ class RestoreGuardSecurityTests(SimpleTestCase):
             self.assertIn("CREATE DATABASE", statement)
             self.assertNotIn("DROP DATABASE", statement)
             conn.close.assert_called_once()
+
+    def test_manifest_dump_path_cannot_escape_bundle(self):
+        from scripts.restore_rehearsal import run_rehearsal
+        with tempfile.TemporaryDirectory() as temp:
+            bundle = Path(temp) / "bundle"
+            bundle.mkdir()
+            (bundle / "manifest.json").write_text(json.dumps({
+                "backup_id": "synthetic",
+                "database": {"dump_file": "../outside.sql", "dump_sha256": "0" * 64, "table_counts": {}},
+                "storage": {"files": []},
+            }), encoding="utf-8")
+            with patch("scripts.restore_rehearsal.psycopg.connect") as connect:
+                with self.assertRaisesRegex(ValueError, "escapes backup directory"):
+                    run_rehearsal(bundle, rehearsal_db_name="sm03_test_guard_rehearsal")
+                connect.assert_not_called()
+
+    def test_manifest_storage_path_cannot_escape_bundle(self):
+        from scripts.restore_rehearsal import run_rehearsal
+        import hashlib
+        with tempfile.TemporaryDirectory() as temp:
+            bundle = Path(temp)
+            (bundle / "fixture.sql").write_bytes(b"-- synthetic fixture")
+            digest = hashlib.sha256((bundle / "fixture.sql").read_bytes()).hexdigest()
+            (bundle / "manifest.json").write_text(json.dumps({
+                "backup_id": "synthetic",
+                "database": {"dump_file": "fixture.sql", "dump_sha256": digest, "table_counts": {}},
+                "storage": {"files": [{"relative_path": "../fixture.sql", "sha256": digest}]},
+            }), encoding="utf-8")
+            with patch("scripts.restore_rehearsal.psycopg.connect") as connect:
+                with self.assertRaisesRegex(ValueError, "escapes backup directory"):
+                    run_rehearsal(bundle, rehearsal_db_name="sm03_test_guard_rehearsal")
+                connect.assert_not_called()
