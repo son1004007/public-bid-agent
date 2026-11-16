@@ -7,6 +7,7 @@
 """
 import json
 import os
+from io import StringIO
 import tempfile
 import uuid
 from datetime import datetime, timedelta
@@ -362,11 +363,11 @@ class AcceptanceA15LegacyMigrationIdempotencyTests(TestCase):
 
         try:
             # 1. dry-run 옵션 실행
-            call_command("import_legacy_notices", file=tmp_path, dry_run=True)
+            call_command("import_legacy_notices", file=tmp_path, dry_run=True, stdout=StringIO())
             self.assertEqual(Notice.objects.count(), 0)
 
             # 2. 실제 실행
-            call_command("import_legacy_notices", file=tmp_path)
+            call_command("import_legacy_notices", file=tmp_path, stdout=StringIO())
             self.assertEqual(Notice.objects.count(), 2)
 
             # 3. 잘못된 파일 경로 시 CommandError
