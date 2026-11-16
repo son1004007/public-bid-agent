@@ -128,6 +128,32 @@ class JobServiceUnitAndAcceptanceTests(TestCase):
         self.assertEqual(completed_job.state, JobState.SUCCEEDED)
         self.assertEqual(completed_job.result_ref, {"data": "valid"})
 
+    def test_expired_lease_rejects_heartbeat_and_completion_without_reassignment(self):
+        """A08: expiry itself invalidates a token, even before another worker acquires it."""
+        job, _ = JobService.create_job(
+            JobKind.EXTRACTION_RUN, {"payload": "expired-lease"}, self.user
+        )
+        leased, attempt = JobService.acquire_job_lease(
+            worker_id="worker-expired", lease_duration_seconds=30
+        )
+        self.assertEqual(leased.id, job.id)
+        Job.objects.filter(pk=job.pk).update(
+            lease_expires_at=timezone.now() - timedelta(seconds=1)
+        )
+
+        self.assertFalse(JobService.send_heartbeat(job.id, attempt.fencing_token))
+        with self.assertRaises(FencingTokenError):
+            JobService.complete_job(
+                job.id, attempt.fencing_token, {"data": "must-not-publish"}
+            )
+
+        job.refresh_from_db()
+        self.assertEqual(job.state, JobState.RUNNING)
+        self.assertEqual(job.result_ref, {})
+        self.assertFalse(Outbox.objects.filter(
+            job=job, message_kind="JOB_SUCCEEDED"
+        ).exists())
+
     def test_finite_retry_max_three_attempts(self):
         """A09: 일시 오류 시 최대 3회 재시도 후 FAILED로 종결 검증."""
         manifest = {"query": "sample-retry"}
