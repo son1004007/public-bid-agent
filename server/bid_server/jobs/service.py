@@ -193,7 +193,8 @@ class JobService:
         now = timezone.now()
         with transaction.atomic():
             job = Job.objects.select_for_update().filter(id=job_id).first()
-            if not job or job.state != JobState.RUNNING or job.lease_epoch != fencing_token:
+            if (not job or job.state != JobState.RUNNING or job.lease_epoch != fencing_token
+                    or job.lease_expires_at is None or job.lease_expires_at <= now):
                 return False
 
             job.lease_expires_at = now + timedelta(seconds=extend_seconds)
@@ -218,7 +219,8 @@ class JobService:
                 raise ValueError("작업을 찾을 수 없습니다.")
 
             # Stale Fencing Token 방어: 임대가 만료되었거나 다른 워커에게 넘어간 경우 게시 거부
-            if job.lease_epoch != fencing_token or job.state != JobState.RUNNING:
+            if (job.lease_epoch != fencing_token or job.state != JobState.RUNNING
+                    or job.lease_expires_at is None or job.lease_expires_at <= now):
                 raise FencingTokenError(
                     f"Fencing token 유효성 검증 실패 (job_token={job.lease_epoch}, provided={fencing_token}, state={job.state})."
                 )
