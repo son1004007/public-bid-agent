@@ -259,20 +259,16 @@ def run_rehearsal(
                 "UPDATE procurement_notice SET current_version_id = %s WHERE id = %s",
                 (test_version_id, test_notice_id),
             )
-            restored_conn.commit()
-
-            # Verify read back
+            # Verify the new write in the same transaction, then roll back all synthetic rows.
+            # Never commit rehearsal fixtures: exceptions must not leave test notices behind.
             cur.execute("SELECT notice_number, current_version_id FROM procurement_notice WHERE id = %s", (test_notice_id,))
             row = cur.fetchone()
             if row and row[0] == test_notice_num and str(row[1]) == test_version_id:
                 new_write_ok = True
-                print("[+] Post-restore new write test: SUCCESS (Notice & NoticeVersion created and verified).")
-
-            # Rollback / Cleanup test record
-            cur.execute("UPDATE procurement_notice SET current_version_id = NULL WHERE id = %s", (test_notice_id,))
-            cur.execute("DELETE FROM procurement_noticeversion WHERE notice_id = %s", (test_notice_id,))
-            cur.execute("DELETE FROM procurement_notice WHERE id = %s", (test_notice_id,))
-            restored_conn.commit()
+                print("[+] Post-restore new write test: SUCCESS (transactional readback).")
+            else:
+                raise RuntimeError("Post-restore synthetic write readback failed")
+            restored_conn.rollback()
     finally:
         restored_conn.close()
 
