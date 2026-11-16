@@ -1,6 +1,9 @@
 from django.test import SimpleTestCase
 from pathlib import Path
 import sys
+import json
+import tempfile
+from unittest.mock import MagicMock, patch
 ROOT=Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path: sys.path.insert(0,str(ROOT))
 from scripts.restore_rehearsal import validate_rehearsal_target
@@ -19,3 +22,33 @@ class RestoreGuardSecurityTests(SimpleTestCase):
     def test_disallow_repo_backup(self):
         with self.assertRaises(ValueError):
             create_backup(output_dir=Path(__file__).resolve().parents[2]/"backups")
+
+    def test_existing_rehearsal_database_is_never_dropped(self):
+        # An existing reserved-name database may contain data from a previous run.
+        # CREATE must fail closed rather than silently destroying that database.
+        from scripts.restore_rehearsal import run_rehearsal
+        with tempfile.TemporaryDirectory() as temp:
+            bundle = Path(temp)
+            (bundle / "fixture.sql").write_text("-- synthetic fixture", encoding="utf-8")
+            import hashlib
+            digest = hashlib.sha256((bundle / "fixture.sql").read_bytes()).hexdigest()
+            (bundle / "manifest.json").write_text(json.dumps({
+                "backup_id": "synthetic",
+                "database": {"dump_file": "fixture.sql", "dump_sha256": digest, "table_counts": {}},
+                "storage": {"files": []},
+            }), encoding="utf-8")
+            cursor = MagicMock()
+            cursor.execute.side_effect = RuntimeError("duplicate_database")
+            conn = MagicMock()
+            conn.cursor.return_value.__enter__.return_value = cursor
+            with patch("scripts.restore_rehearsal.load_db_config", return_value={
+                "HOST": "127.0.0.1", "PORT": 5432, "NAME": "source_db",
+                "USER": "synthetic", "PASSWORD": "synthetic",
+            }), patch("scripts.restore_rehearsal.psycopg.connect", return_value=conn):
+                with self.assertRaisesRegex(RuntimeError, "duplicate_database"):
+                    run_rehearsal(bundle, rehearsal_db_name="sm03_test_guard_rehearsal")
+            self.assertEqual(cursor.execute.call_count, 1)
+            statement = str(cursor.execute.call_args.args[0])
+            self.assertIn("CREATE DATABASE", statement)
+            self.assertNotIn("DROP DATABASE", statement)
+            conn.close.assert_called_once()
