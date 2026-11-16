@@ -146,148 +146,150 @@ def run_rehearsal(
     finally:
         maint_conn.close()
 
-    # 3. Restore Dump via psql
-    env = os.environ.copy()
-    env["PGPASSWORD"] = cfg["PASSWORD"]
-
-    restore_cmd = [
-        psql,
-        "-h", str(cfg["HOST"]),
-        "-p", str(cfg["PORT"]),
-        "-U", str(cfg["USER"]),
-        "-d", rehearsal_db_name,
-        "-f", str(dump_file),
-        "-v", "ON_ERROR_STOP=1",
-    ]
-
-    print(f"[*] Restoring database dump into {rehearsal_db_name}...")
-    t_restore_start = time.perf_counter()
-    res = subprocess.run(restore_cmd, env=env, capture_output=True, text=True)
-    rto_seconds = round(time.perf_counter() - t_restore_start, 3)
-
-    if res.returncode != 0:
-        raise RuntimeError(f"psql restore failed (code {res.returncode}): {res.stderr}")
-    print(f"[+] Database restore completed in {rto_seconds}s (RTO).")
-
-    # 4. Parity & Integrity Verification
-    restored_conn = psycopg.connect(
-        host=cfg["HOST"],
-        port=cfg["PORT"],
-        dbname=rehearsal_db_name,
-        user=cfg["USER"],
-        password=cfg["PASSWORD"],
-    )
-
-    table_parities = {}
-    fk_errors = []
-    new_write_ok = False
-
+    # Only a newly created rehearsal DB is eligible for cleanup. A restore failure
+    # must not bypass cleanup or leave a partial database available for reuse.
     try:
-        with restored_conn.cursor() as cur:
-            # A. Row count parity
-            for tbl, expected_count in db_meta["table_counts"].items():
-                try:
-                    # Table identifiers come from a backup manifest and must never be SQL interpolated.
-                    if not isinstance(tbl, str) or not re.fullmatch(r"[a-z_][a-z0-9_]*", tbl):
-                        raise ValueError("Invalid table name in backup manifest")
-                    cur.execute(sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(tbl)))
-                    actual_count = cur.fetchone()[0]
-                    matched = (actual_count == expected_count)
-                    table_parities[tbl] = {
-                        "manifest_count": expected_count,
-                        "restored_count": actual_count,
-                        "matched": matched,
-                    }
-                    if not matched:
-                        print(f"[!] Parity mismatch on {tbl}: expected {expected_count}, got {actual_count}")
-                except Exception as e:
-                    table_parities[tbl] = {
-                        "manifest_count": expected_count,
-                        "restored_count": -1,
-                        "matched": False,
-                        "error": str(e),
-                    }
-
-            # B. Foreign Key Integrity Checks
-            fk_queries = [
-                (
-                    "procurement_noticeversion_orphans",
-                    "SELECT count(*) FROM procurement_noticeversion nv WHERE NOT EXISTS (SELECT 1 FROM procurement_notice n WHERE n.id = nv.notice_id)",
-                ),
-                (
-                    "procurement_documentversion_orphans",
-                    "SELECT count(*) FROM procurement_documentversion dv WHERE NOT EXISTS (SELECT 1 FROM procurement_document d WHERE d.id = dv.document_id)",
-                ),
-                (
-                    "procurement_proposalsection_orphans",
-                    "SELECT count(*) FROM procurement_proposalsection ps WHERE NOT EXISTS (SELECT 1 FROM procurement_proposalrevision pr WHERE pr.id = ps.proposal_revision_id)",
-                ),
-                (
-                    "jobs_jobattempt_orphans",
-                    "SELECT count(*) FROM jobs_jobattempt ja WHERE NOT EXISTS (SELECT 1 FROM jobs_job j WHERE j.id = ja.job_id)",
-                ),
-            ]
-            for check_name, q in fk_queries:
-                cur.execute(q)
-                orphan_cnt = cur.fetchone()[0]
-                if orphan_cnt > 0:
-                    fk_errors.append(f"{check_name}: {orphan_cnt} orphaned rows detected")
-
-            # C. Post-Restore New Write Test (A16: "전환 후 새 쓰기와 rollback")
-            import uuid
-            test_notice_id = str(uuid.uuid4())
-            test_version_id = str(uuid.uuid4())
-            test_notice_num = f"REHEARSAL-{int(time.time())}"
-
-            # Insert new test notice & version
-            cur.execute(
-                "INSERT INTO procurement_notice (id, source, notice_number, created_at, updated_at) VALUES (%s, %s, %s, NOW(), NOW())",
-                (test_notice_id, "REHEARSAL_TEST", test_notice_num),
-            )
-            cur.execute(
-                """INSERT INTO procurement_noticeversion
-                   (id, notice_id, version_seq, source_revision, observed_at, title, buyer,
-                    source_url, deadline_raw, deadline_status, cancellation, correction,
-                    source_payload_digest, created_at, budget_amount, department_categories, extra_data)
-                   VALUES (%s, %s, 1, '1', NOW(), '리허설 검증 공고', '조달청',
-                           'https://test.kr', '2026-12-31', 'VALID', false, false,
-                           'digest', NOW(), 100000000, '[\"AI\"]'::jsonb, '{}'::jsonb)""",
-                (test_version_id, test_notice_id),
-            )
-            # Update current_version FK
-            cur.execute(
-                "UPDATE procurement_notice SET current_version_id = %s WHERE id = %s",
-                (test_version_id, test_notice_id),
-            )
-            # Verify the new write in the same transaction, then roll back all synthetic rows.
-            # Never commit rehearsal fixtures: exceptions must not leave test notices behind.
-            cur.execute("SELECT notice_number, current_version_id FROM procurement_notice WHERE id = %s", (test_notice_id,))
-            row = cur.fetchone()
-            if row and row[0] == test_notice_num and str(row[1]) == test_version_id:
-                new_write_ok = True
-                print("[+] Post-restore new write test: SUCCESS (transactional readback).")
-            else:
-                raise RuntimeError("Post-restore synthetic write readback failed")
-            restored_conn.rollback()
-    finally:
-        restored_conn.close()
-
-    # 5. Clean up rehearsal DB if not keeping
-    if not keep_db:
-        clean_conn = psycopg.connect(
+        # 3. Restore Dump via psql
+        env = os.environ.copy()
+        env["PGPASSWORD"] = cfg["PASSWORD"]
+    
+        restore_cmd = [
+            psql,
+            "-h", str(cfg["HOST"]),
+            "-p", str(cfg["PORT"]),
+            "-U", str(cfg["USER"]),
+            "-d", rehearsal_db_name,
+            "-f", str(dump_file),
+            "-v", "ON_ERROR_STOP=1",
+        ]
+    
+        print(f"[*] Restoring database dump into {rehearsal_db_name}...")
+        t_restore_start = time.perf_counter()
+        res = subprocess.run(restore_cmd, env=env, capture_output=True, text=True)
+        rto_seconds = round(time.perf_counter() - t_restore_start, 3)
+    
+        if res.returncode != 0:
+            raise RuntimeError(f"psql restore failed (code {res.returncode}): {res.stderr}")
+        print(f"[+] Database restore completed in {rto_seconds}s (RTO).")
+    
+        # 4. Parity & Integrity Verification
+        restored_conn = psycopg.connect(
             host=cfg["HOST"],
             port=cfg["PORT"],
-            dbname="postgres",
+            dbname=rehearsal_db_name,
             user=cfg["USER"],
             password=cfg["PASSWORD"],
-            autocommit=True,
         )
+    
+        table_parities = {}
+        fk_errors = []
+        new_write_ok = False
+    
         try:
-            with clean_conn.cursor() as cur:
-                print(f"[*] Cleaning up temporary database {rehearsal_db_name}...")
-                cur.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(sql.Identifier(rehearsal_db_name)))
+            with restored_conn.cursor() as cur:
+                # A. Row count parity
+                for tbl, expected_count in db_meta["table_counts"].items():
+                    try:
+                        # Table identifiers come from a backup manifest and must never be SQL interpolated.
+                        if not isinstance(tbl, str) or not re.fullmatch(r"[a-z_][a-z0-9_]*", tbl):
+                            raise ValueError("Invalid table name in backup manifest")
+                        cur.execute(sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(tbl)))
+                        actual_count = cur.fetchone()[0]
+                        matched = (actual_count == expected_count)
+                        table_parities[tbl] = {
+                            "manifest_count": expected_count,
+                            "restored_count": actual_count,
+                            "matched": matched,
+                        }
+                        if not matched:
+                            print(f"[!] Parity mismatch on {tbl}: expected {expected_count}, got {actual_count}")
+                    except Exception as e:
+                        table_parities[tbl] = {
+                            "manifest_count": expected_count,
+                            "restored_count": -1,
+                            "matched": False,
+                            "error": str(e),
+                        }
+    
+                # B. Foreign Key Integrity Checks
+                fk_queries = [
+                    (
+                        "procurement_noticeversion_orphans",
+                        "SELECT count(*) FROM procurement_noticeversion nv WHERE NOT EXISTS (SELECT 1 FROM procurement_notice n WHERE n.id = nv.notice_id)",
+                    ),
+                    (
+                        "procurement_documentversion_orphans",
+                        "SELECT count(*) FROM procurement_documentversion dv WHERE NOT EXISTS (SELECT 1 FROM procurement_document d WHERE d.id = dv.document_id)",
+                    ),
+                    (
+                        "procurement_proposalsection_orphans",
+                        "SELECT count(*) FROM procurement_proposalsection ps WHERE NOT EXISTS (SELECT 1 FROM procurement_proposalrevision pr WHERE pr.id = ps.proposal_revision_id)",
+                    ),
+                    (
+                        "jobs_jobattempt_orphans",
+                        "SELECT count(*) FROM jobs_jobattempt ja WHERE NOT EXISTS (SELECT 1 FROM jobs_job j WHERE j.id = ja.job_id)",
+                    ),
+                ]
+                for check_name, q in fk_queries:
+                    cur.execute(q)
+                    orphan_cnt = cur.fetchone()[0]
+                    if orphan_cnt > 0:
+                        fk_errors.append(f"{check_name}: {orphan_cnt} orphaned rows detected")
+    
+                # C. Post-Restore New Write Test (A16: "전환 후 새 쓰기와 rollback")
+                import uuid
+                test_notice_id = str(uuid.uuid4())
+                test_version_id = str(uuid.uuid4())
+                test_notice_num = f"REHEARSAL-{int(time.time())}"
+    
+                # Insert new test notice & version
+                cur.execute(
+                    "INSERT INTO procurement_notice (id, source, notice_number, created_at, updated_at) VALUES (%s, %s, %s, NOW(), NOW())",
+                    (test_notice_id, "REHEARSAL_TEST", test_notice_num),
+                )
+                cur.execute(
+                    """INSERT INTO procurement_noticeversion
+                       (id, notice_id, version_seq, source_revision, observed_at, title, buyer,
+                        source_url, deadline_raw, deadline_status, cancellation, correction,
+                        source_payload_digest, created_at, budget_amount, department_categories, extra_data)
+                       VALUES (%s, %s, 1, '1', NOW(), '리허설 검증 공고', '조달청',
+                               'https://test.kr', '2026-12-31', 'VALID', false, false,
+                               'digest', NOW(), 100000000, '[\"AI\"]'::jsonb, '{}'::jsonb)""",
+                    (test_version_id, test_notice_id),
+                )
+                # Update current_version FK
+                cur.execute(
+                    "UPDATE procurement_notice SET current_version_id = %s WHERE id = %s",
+                    (test_version_id, test_notice_id),
+                )
+                # Verify the new write in the same transaction, then roll back all synthetic rows.
+                # Never commit rehearsal fixtures: exceptions must not leave test notices behind.
+                cur.execute("SELECT notice_number, current_version_id FROM procurement_notice WHERE id = %s", (test_notice_id,))
+                row = cur.fetchone()
+                if row and row[0] == test_notice_num and str(row[1]) == test_version_id:
+                    new_write_ok = True
+                    print("[+] Post-restore new write test: SUCCESS (transactional readback).")
+                else:
+                    raise RuntimeError("Post-restore synthetic write readback failed")
+                restored_conn.rollback()
         finally:
-            clean_conn.close()
+            restored_conn.close()
+    finally:
+        if not keep_db:
+            clean_conn = psycopg.connect(
+                host=cfg["HOST"],
+                port=cfg["PORT"],
+                dbname="postgres",
+                user=cfg["USER"],
+                password=cfg["PASSWORD"],
+                autocommit=True,
+            )
+            try:
+                with clean_conn.cursor() as cur:
+                    print(f"[*] Cleaning up temporary database {rehearsal_db_name}...")
+                    cur.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(sql.Identifier(rehearsal_db_name)))
+            finally:
+                clean_conn.close()
 
     total_duration = round(time.perf_counter() - t_start, 3)
 
