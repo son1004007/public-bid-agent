@@ -60,6 +60,10 @@ jobs:
           PY
       - name: Verify migration consistency
         run: python server/manage.py makemigrations --check --dry-run --settings=bid_server.settings.test
+      - name: Initialize isolated synthetic source schema for backup rehearsal
+        env:
+          SM03_TEST_DB_CONFIG_FILE: ${{ runner.temp }}/sm03-db.json
+        run: python server/manage.py migrate --noinput --settings=bid_server.settings.test_postgres
       - name: Run PostgreSQL authentication and concurrency regression
         env:
           SM03_TEST_DB_CONFIG_FILE: ${{ runner.temp }}/sm03-db.json
