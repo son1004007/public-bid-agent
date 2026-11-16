@@ -47,9 +47,8 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def get_table_counts(cfg: dict) -> dict:
-    import psycopg
-
+def get_table_counts(conn) -> dict:
+    """Count source tables in the same exported PostgreSQL snapshot as pg_dump."""
     tables = [
         "accounts_user",
         "procurement_notice",
@@ -63,23 +62,13 @@ def get_table_counts(cfg: dict) -> dict:
         "jobs_jobattempt",
     ]
     counts = {}
-    conn = psycopg.connect(
-        host=cfg["HOST"],
-        port=cfg["PORT"],
-        dbname=cfg["NAME"],
-        user=cfg["USER"],
-        password=cfg["PASSWORD"],
-    )
-    try:
-        with conn.cursor() as cur:
-            for tbl in tables:
-                try:
-                    cur.execute(f"SELECT count(*) FROM {tbl}")
-                    counts[tbl] = cur.fetchone()[0]
-                except Exception:
-                    raise RuntimeError(f"Cannot read source table {tbl}")
-    finally:
-        conn.close()
+    with conn.cursor() as cur:
+        for tbl in tables:
+            try:
+                cur.execute(f"SELECT count(*) FROM {tbl}")
+                counts[tbl] = cur.fetchone()[0]
+            except Exception:
+                raise RuntimeError(f"Cannot read source table {tbl}") from None
     return counts
 
 
@@ -102,33 +91,41 @@ def create_backup(
     print(f"[*] Starting backup generation for bundle: {backup_id}")
     print(f"[*] Target DB: {cfg['HOST']}:{cfg['PORT']}/{cfg['NAME']}")
 
-    # 1. Row counts snapshot
-    print("[*] Snapshotting table row counts...")
-    table_counts = get_table_counts(cfg)
-
-    # 2. pg_dump execution
+    # Export one REPEATABLE READ snapshot and keep the exporting transaction
+    # open until pg_dump exits. This ensures row counts and dump share one MVCC view.
+    import psycopg
     dump_file = bundle_dir / "db_dump.sql"
     env = os.environ.copy()
     env["PGPASSWORD"] = cfg["PASSWORD"]
-
-    dump_cmd = [
-        pg_dump,
-        "-h", str(cfg["HOST"]),
-        "-p", str(cfg["PORT"]),
-        "-U", str(cfg["USER"]),
-        "-d", str(cfg["NAME"]),
-        "--clean",
-        "--if-exists",
-        "--no-owner",
-        "--no-acl",
-        "-f", str(dump_file),
-    ]
-
-    t0 = time.perf_counter()
-    res = subprocess.run(dump_cmd, env=env, capture_output=True, text=True)
-    if res.returncode != 0:
-        raise RuntimeError(f"pg_dump failed (code {res.returncode}): {res.stderr}")
-    dump_duration = time.perf_counter() - t0
+    conn = psycopg.connect(
+        host=cfg["HOST"], port=cfg["PORT"], dbname=cfg["NAME"],
+        user=cfg["USER"], password=cfg["PASSWORD"],
+    )
+    try:
+        with conn.cursor() as cur:
+            cur.execute("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+            cur.execute("SELECT pg_export_snapshot()")
+            snapshot_id = cur.fetchone()[0]
+        print("[*] Counting source rows in exported snapshot...")
+        table_counts = get_table_counts(conn)
+        dump_cmd = [
+            pg_dump,
+            "-h", str(cfg["HOST"]),
+            "-p", str(cfg["PORT"]),
+            "-U", str(cfg["USER"]),
+            "-d", str(cfg["NAME"]),
+            "--snapshot", snapshot_id,
+            "--clean", "--if-exists", "--no-owner", "--no-acl",
+            "-f", str(dump_file),
+        ]
+        t0 = time.perf_counter()
+        res = subprocess.run(dump_cmd, env=env, capture_output=True, text=True)
+        if res.returncode != 0:
+            raise RuntimeError(f"pg_dump failed (code {res.returncode})")
+        dump_duration = time.perf_counter() - t0
+    finally:
+        conn.rollback()
+        conn.close()
 
     dump_sha256 = sha256_file(dump_file)
     dump_size = dump_file.stat().st_size
