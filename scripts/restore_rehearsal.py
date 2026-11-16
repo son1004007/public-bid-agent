@@ -127,9 +127,9 @@ def run_rehearsal(
     )
     try:
         with maint_conn.cursor() as cur:
-            print(f"[*] Dropping existing {rehearsal_db_name} if exists...")
-            cur.execute(sql.SQL("DROP DATABASE IF EXISTS {}").format(sql.Identifier(rehearsal_db_name)))
-            print(f"[*] Creating clean database {rehearsal_db_name}...")
+            # Never drop a pre-existing database, even within the rehearsal namespace.
+            # A collision is an explicit stop; only a freshly created target is ours.
+            print(f"[*] Creating new rehearsal database {rehearsal_db_name}...")
             cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(rehearsal_db_name)))
     finally:
         maint_conn.close()
