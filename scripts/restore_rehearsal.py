@@ -84,7 +84,17 @@ def run_rehearsal(
     print(f"[*] Rehearsal Target Database: {rehearsal_db_name}")
 
     # 1. Verify Manifest and Dump Integrity
-    dump_file = bundle_dir / db_meta["dump_file"]
+    # A manifest is untrusted input: never follow absolute paths or ../ outside this bundle.
+    bundle_root = bundle_dir.resolve(strict=True)
+    def bundle_member(root: Path, relative: str) -> Path:
+        if not isinstance(relative, str) or not relative or "\\x00" in relative:
+            raise ValueError("Invalid bundle member path")
+        candidate = (root / relative).resolve()
+        if not candidate.is_relative_to(root):
+            raise ValueError("Bundle member escapes backup directory")
+        return candidate
+
+    dump_file = bundle_member(bundle_root, db_meta["dump_file"])
     if not dump_file.exists():
         raise FileNotFoundError(f"Dump file {dump_file} not found.")
 
@@ -99,7 +109,7 @@ def run_rehearsal(
     storage_verification_errors = []
     bundle_storage_dir = bundle_dir / "storage"
     for item in storage_meta.get("files", []):
-        file_path = bundle_storage_dir / item["relative_path"]
+        file_path = bundle_member(bundle_storage_dir.resolve(), item["relative_path"])
         if not file_path.exists():
             storage_verification_errors.append(f"Missing file: {item['relative_path']}")
             continue
@@ -175,7 +185,10 @@ def run_rehearsal(
             # A. Row count parity
             for tbl, expected_count in db_meta["table_counts"].items():
                 try:
-                    cur.execute(f"SELECT count(*) FROM {tbl}")
+                    # Table identifiers come from a backup manifest and must never be SQL interpolated.
+                    if not isinstance(tbl, str) or not re.fullmatch(r"[a-z_][a-z0-9_]*", tbl):
+                        raise ValueError("Invalid table name in backup manifest")
+                    cur.execute(sql.SQL("SELECT count(*) FROM {}").format(sql.Identifier(tbl)))
                     actual_count = cur.fetchone()[0]
                     matched = (actual_count == expected_count)
                     table_parities[tbl] = {
