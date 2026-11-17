@@ -125,7 +125,9 @@ def run_rehearsal(
     # A symlinked storage directory must never redirect verification outside the bundle.
     bundle_storage_dir = bundle_member(bundle_root, "storage")
     for item in storage_meta.get("files", []):
-        file_path = bundle_member(bundle_storage_dir.resolve(), item["relative_path"])
+        file_path = bundle_member(bundle_storage_dir, item["relative_path"])
+        if not file_path.is_relative_to(bundle_storage_dir):
+            raise ValueError("Storage member escapes storage directory")
         if not file_path.exists():
             storage_verification_errors.append(f"Missing file: {item['relative_path']}")
             continue
