@@ -207,9 +207,12 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
             source_payload_digest="f" * 64,
         )
         doc = Document.objects.create(notice=notice, logical_key="synthetic-rfp")
+        import hashlib
+        self.valid_payload = b"Synthetic RFP requirements for a test only."
         self.version = DocumentVersion.objects.create(
             document=doc, notice_version=nv, version_seq=1,
-            sha256="e" * 64, size_bytes=20, media_type="text/plain",
+            sha256=hashlib.sha256(self.valid_payload).hexdigest(),
+            size_bytes=len(self.valid_payload), media_type="text/plain",
         )
         self.url = f"/api/v1/documents/{self.version.pk}/extract"
 
@@ -239,10 +242,25 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
     def test_valid_synthetic_plain_text_is_persisted(self):
         from bid_server.procurement.models import ExtractionRun, DocumentStructure
         res = self.client.post(
-            self.url, data="Synthetic RFP requirements for a test only.".encode(),
+            self.url, data=self.valid_payload,
             content_type="text/plain", secure=True,
             HTTP_X_CSRFTOKEN=self.csrf_token, HTTP_ORIGIN="https://testserver",
         )
         self.assertEqual(res.status_code, 201)
         self.assertEqual(ExtractionRun.objects.count(), 1)
         self.assertEqual(DocumentStructure.objects.count(), 1)
+
+    def test_different_source_bytes_rejected_without_persistence(self):
+        from bid_server.procurement.models import ExtractionRun, DocumentStructure
+        # Same size but different digest must not create extracted evidence.
+        bad_payload = b"X" + self.valid_payload[1:]
+        for payload in (bad_payload, self.valid_payload + b"extra"):
+            with self.subTest(length=len(payload)):
+                res = self.client.post(
+                    self.url, data=payload, content_type="text/plain", secure=True,
+                    HTTP_X_CSRFTOKEN=self.csrf_token, HTTP_ORIGIN="https://testserver",
+                )
+                self.assertEqual(res.status_code, 409)
+                self.assertEqual(res.json()["error"], "DOCUMENT_SOURCE_MISMATCH")
+                self.assertEqual(ExtractionRun.objects.count(), 0)
+                self.assertEqual(DocumentStructure.objects.count(), 0)
