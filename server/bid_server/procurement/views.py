@@ -4,6 +4,7 @@
 관련: docs/server-migration/18-screen-api-contract.md §31-35.
 """
 from datetime import timedelta
+import hashlib
 from django.db import connection
 from django.db.models import Count, Q, F
 from django.shortcuts import get_object_or_404
@@ -394,6 +395,17 @@ class DocumentExtractAPIView(APIView):
             return Response(
                 {"error": "DOCUMENT_TOO_LARGE"},
                 status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            )
+
+        # The extraction must be bound to the immutable source document version.
+        # A valid-looking arbitrary payload is not evidence of the stored RFP.
+        if (
+            len(raw_bytes) != doc_version.size_bytes
+            or hashlib.sha256(raw_bytes).hexdigest() != doc_version.sha256.lower()
+        ):
+            return Response(
+                {"error": "DOCUMENT_SOURCE_MISMATCH"},
+                status=status.HTTP_409_CONFLICT,
             )
 
         run = ExtractionService.extract_and_persist(
