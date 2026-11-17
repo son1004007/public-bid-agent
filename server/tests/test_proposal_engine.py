@@ -254,3 +254,8 @@ class ProposalEngineAcceptanceTests(TestCase):
         self.assertEqual(export_res["Content-Type"], "application/x-hwp")
         self.assertTrue(len(export_res.content) > 100)
         self.assertIn("X-Artifact-SHA256", export_res)
+        self.assertEqual(ExportArtifact.objects.count(), 0)
+        repeat_res = self.client.get(f"{export_url}?format=hwpx", secure=True)
+        self.assertEqual(repeat_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(ExportArtifact.objects.count(), 0)
+

@@ -349,15 +349,9 @@ class ProposalExportAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Artifact 기록
-        ExportArtifact.objects.create(
-            proposal_revision=rev,
-            format=fmt.upper(),
-            file_name=file_name,
-            sha256=sha256_hash,
-            size_bytes=size_bytes,
-            storage_path=f"artifacts/{file_name}",
-        )
+        # GET is a read-only, on-demand download. Do not persist an artifact
+        # record for bytes that are not actually stored at storage_path.
+        # A future persisted export must use a separately authorized POST.
 
         content_type = (
             "application/x-hwp" if fmt == "hwpx"
