@@ -261,6 +261,6 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
                     HTTP_X_CSRFTOKEN=self.csrf_token, HTTP_ORIGIN="https://testserver",
                 )
                 self.assertEqual(res.status_code, 409)
-                self.assertEqual(res.json()["error"], "DOCUMENT_SOURCE_MISMATCH")
+                self.assertEqual(res.json()["data"]["error"], "DOCUMENT_SOURCE_MISMATCH")
                 self.assertEqual(ExtractionRun.objects.count(), 0)
                 self.assertEqual(DocumentStructure.objects.count(), 0)
