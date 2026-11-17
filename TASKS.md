@@ -1,3 +1,7 @@
+## 2026-11-17 PR #5 focused security review blocker
+
+- [ ] SEC-REVIEW-20261117-P1: [검수 기록](docs/reviews/PR5_SECURITY_SEMANTIC_2026-11-17.md) — DocumentExtractAPIView empty/short request silently fabricates RFP source and persists extraction. Reject without writes, add negative test and confirm document scope. Draft 유지, merge NO_GO until fixed/tested. Windows source has 34 untracked files and modified tracked files; original must not be touched.
+
 ## 2026-11-17 사업부 집계 원가·공동 사업 검토 — 후속 구현 백로그
 
 정본: [사업부 집계 원가·공동 검토 설계](docs/server-migration/09-aggregate-cost-and-shared-review.md). PR #5 보안 검수 및 로컬 인수 게이트를 우회하지 않으며, 이후 SM04~SM07에 아래 작업을 순차 연결한다.
