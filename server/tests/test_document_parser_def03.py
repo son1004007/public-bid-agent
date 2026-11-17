@@ -173,3 +173,54 @@ class DocumentParserAcceptanceTests(TestCase):
         tbl_chunks = [c for c in chunks if c.path == ChunkPath.TABLE]
         self.assertTrue(len(text_chunks) >= 1)
         self.assertTrue(len(tbl_chunks) >= 1)
+
+class DocumentExtractHTTPIntegrityTests(TestCase):
+    """Missing/short/unsupported input must never create synthetic extraction evidence."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from rest_framework.test import APIClient
+        self.user = get_user_model().objects.create_user(
+            username="extract-integrity-user",
+            password="SyntheticTestPassword123!",
+            must_change_password=False,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+        notice = Notice.objects.create(source="G2B_OFFICIAL_API", notice_number="SYNTH-EXTRACT-01")
+        nv = NoticeVersion.objects.create(
+            notice=notice, version_seq=1, observed_at=timezone.now(),
+            title="Synthetic test notice", buyer="Synthetic agency",
+            source_payload_digest="f" * 64,
+        )
+        doc = Document.objects.create(notice=notice, logical_key="synthetic-rfp")
+        self.version = DocumentVersion.objects.create(
+            document=doc, notice_version=nv, version_seq=1,
+            sha256="e" * 64, size_bytes=20, media_type="text/plain",
+        )
+        self.url = f"/api/v1/documents/{self.version.pk}/extract"
+
+    def test_missing_and_short_payloads_do_not_persist(self):
+        from bid_server.procurement.models import ExtractionRun, DocumentStructure
+        for payload in (b"", b"abc"):
+            with self.subTest(payload=payload):
+                res = self.client.post(self.url, data=payload, content_type="text/plain", secure=True)
+                self.assertEqual(res.status_code, 400)
+                self.assertEqual(ExtractionRun.objects.count(), 0)
+                self.assertEqual(DocumentStructure.objects.count(), 0)
+
+    def test_unsupported_media_type_does_not_persist(self):
+        from bid_server.procurement.models import ExtractionRun
+        res = self.client.post(self.url, data=b'{"fake":"source"}', content_type="application/json", secure=True)
+        self.assertEqual(res.status_code, 415)
+        self.assertEqual(ExtractionRun.objects.count(), 0)
+
+    def test_valid_synthetic_plain_text_is_persisted(self):
+        from bid_server.procurement.models import ExtractionRun, DocumentStructure
+        res = self.client.post(
+            self.url, data="Synthetic RFP requirements for a test only.".encode(),
+            content_type="text/plain", secure=True,
+        )
+        self.assertEqual(res.status_code, 201)
+        self.assertEqual(ExtractionRun.objects.count(), 1)
+        self.assertEqual(DocumentStructure.objects.count(), 1)

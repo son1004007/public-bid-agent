@@ -376,11 +376,25 @@ class DocumentExtractAPIView(APIView):
         doc_version = get_object_or_404(
             DocumentVersion.objects.select_related("document"), pk=pk
         )
-        # Check simulated or uploaded raw bytes
+        # No synthetic fallback: only explicitly supplied source bytes may be parsed.
+        # This endpoint currently accepts plain-text payloads only; binary document
+        # formats require a separately validated upload/storage contract.
+        if request.content_type not in ("text/plain", "application/octet-stream"):
+            return Response(
+                {"error": "UNSUPPORTED_MEDIA_TYPE"},
+                status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            )
         raw_bytes = request.body
-        if not raw_bytes or len(raw_bytes) < 4:
-            # fallback sample text
-            raw_bytes = f"# {doc_version.document.logical_key}\n과업지시서 및 제안요청서 본문 내용입니다.".encode("utf-8")
+        if len(raw_bytes) < 4:
+            return Response(
+                {"error": "DOCUMENT_BODY_REQUIRED"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(raw_bytes) > 10 * 1024 * 1024:
+            return Response(
+                {"error": "DOCUMENT_TOO_LARGE"},
+                status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            )
 
         run = ExtractionService.extract_and_persist(
             document_version=doc_version,

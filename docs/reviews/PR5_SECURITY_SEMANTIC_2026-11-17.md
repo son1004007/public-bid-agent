@@ -19,3 +19,7 @@ Required minimum correction before GO: reject missing/short body with a determin
 ## Next gate
 
 Keep draft and main unchanged. Implement minimal fix with tests in a separate clean workspace or isolated GitHub branch; rerun same-HEAD CI and independent review. Continue full authn/authz, CSRF, secret, restore, concurrency, dependency and CI trust-boundary review. Check secrets/PII committed and original protected data hashes before deployment. Windows localhost test must use a non-conflicting port and a clean SHA-matched checkout.
+
+## 2026-11-17 follow-up fix (pending CI)
+
+On PR head 86c25c9872d4f657aa50acf9bb035095d01ba994, removed the synthetic text fallback in `DocumentExtractAPIView`. Empty/short payloads now return 400, unsupported media type 415, and payloads above 10 MiB 413 before persistence. Added 3 isolated HTTP integrity tests covering empty/short, unsupported and valid synthetic plain-text input. Code change committed only to PR branch, not main; local test execution and same-head Actions verification pending. The endpoint deliberately does not claim support for binary document uploads; content-type/file-format and document source provenance/tenant authorization still need independent review before shared deployment. This change does not solve the separate object-scope finding.

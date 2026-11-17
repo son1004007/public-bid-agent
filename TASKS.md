@@ -1,3 +1,9 @@
+## 2026-11-17 PR #5 P1 extraction integrity fix
+
+- [x] Remove fabricated RFP fallback and reject missing/short input; add HTTP regression tests (source commit pending verification).
+- [ ] Same-head CI and independent review of document source binding, format validation, object scope and upload size.
+- [ ] Full PR semantic review, protected data SHA evidence, Windows isolated HTTP smoke, merge gates.
+
 ## 2026-11-17 PR #5 focused security review blocker
 
 - [ ] SEC-REVIEW-20261117-P1: [검수 기록](docs/reviews/PR5_SECURITY_SEMANTIC_2026-11-17.md) — DocumentExtractAPIView empty/short request silently fabricates RFP source and persists extraction. Reject without writes, add negative test and confirm document scope. Draft 유지, merge NO_GO until fixed/tested. Windows source has 34 untracked files and modified tracked files; original must not be touched.
