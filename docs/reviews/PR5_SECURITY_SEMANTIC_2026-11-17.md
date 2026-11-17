@@ -23,3 +23,12 @@ Keep draft and main unchanged. Implement minimal fix with tests in a separate cl
 ## 2026-11-17 follow-up fix (pending CI)
 
 On PR head 86c25c9872d4f657aa50acf9bb035095d01ba994, removed the synthetic text fallback in `DocumentExtractAPIView`. Empty/short payloads now return 400, unsupported media type 415, and payloads above 10 MiB 413 before persistence. Added 3 isolated HTTP integrity tests covering empty/short, unsupported and valid synthetic plain-text input. Code change committed only to PR branch, not main; local test execution and same-head Actions verification pending. The endpoint deliberately does not claim support for binary document uploads; content-type/file-format and document source provenance/tenant authorization still need independent review before shared deployment. This change does not solve the separate object-scope finding.
+
+
+## 2026-11-17 19:48 KST — P1 source binding follow-up
+
+- Rechecked PR #5 head `782cde6a6b89b50c0ebb60599b9174d6ab91a37b`: same-head four workflow families SUCCESS (Server foundation 44060277740/44060269123, Sprint 1 44060277621, Harness 44060277841, Windows synthetic 44060277758). These results predate this follow-up and cannot verify the new HEAD.
+- P1 found: `DocumentExtractAPIView` accepted any nonempty text/plain body and persisted `ExtractionRun` under an existing `DocumentVersion` without comparing bytes to immutable `sha256` and `size_bytes`. A caller could attach unrelated text to an RFP version; provenance and downstream evidence would be false.
+- Changed `server/bid_server/procurement/views.py` to reject mismatched size or SHA-256 with HTTP 409 before extraction writes. Changed `server/tests/test_document_parser_def03.py` synthetic fixture to use real digest/size and added same-size wrong-digest and wrong-size negative cases asserting zero persisted runs/structures.
+- Commits `af36ca33c0d80c8e9c40393f225dea2234f34237`, `a277fd8425c9358bb6753f7a827c6a5fc5ae83e2`. Explicit file allowlist only; no local/Windows workspace writes.
+- **UNVERIFIED**: same-head CI, independent review, source object access authorization, uploaded body limit at middleware, parser format/media-type consistency, legacy direct service callers, whole-PR security, Windows isolated HTTP, protected data SHA. Keep PR draft and main merge NO_GO until all gates.
