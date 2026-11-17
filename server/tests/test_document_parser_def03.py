@@ -186,7 +186,20 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
             must_change_password=False,
         )
         self.client = APIClient()
-        self.client.force_authenticate(user=self.user)
+        # Establish the actual session/epoch expected by AuthGateMiddleware.
+        csrf = self.client.get("/api/v1/auth/csrf", secure=True)
+        self.assertEqual(csrf.status_code, 200)
+        token = csrf.json()["data"]["csrf_token"]
+        login = self.client.post(
+            "/api/v1/auth/login",
+            {"username": self.user.username, "password": "SyntheticTestPassword123!"},
+            format="json", secure=True, HTTP_X_CSRFTOKEN=token,
+            HTTP_ORIGIN="https://testserver",
+        )
+        self.assertEqual(login.status_code, 200)
+        self.csrf_token = self.client.get(
+            "/api/v1/auth/csrf", secure=True
+        ).json()["data"]["csrf_token"]
         notice = Notice.objects.create(source="G2B_OFFICIAL_API", notice_number="SYNTH-EXTRACT-01")
         nv = NoticeVersion.objects.create(
             notice=notice, version_seq=1, observed_at=timezone.now(),
@@ -204,14 +217,22 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
         from bid_server.procurement.models import ExtractionRun, DocumentStructure
         for payload in (b"", b"abc"):
             with self.subTest(payload=payload):
-                res = self.client.post(self.url, data=payload, content_type="text/plain", secure=True)
-                self.assertEqual(res.status_code, 400)
+                res = self.client.post(
+                    self.url, data=payload, content_type="text/plain", secure=True,
+                    HTTP_X_CSRFTOKEN=self.csrf_token,
+                    HTTP_ORIGIN="https://testserver",
+                )
+                self.assertEqual(res.status_code, 411 if not payload else 400)
                 self.assertEqual(ExtractionRun.objects.count(), 0)
                 self.assertEqual(DocumentStructure.objects.count(), 0)
 
     def test_unsupported_media_type_does_not_persist(self):
         from bid_server.procurement.models import ExtractionRun
-        res = self.client.post(self.url, data=b'{"fake":"source"}', content_type="application/json", secure=True)
+        res = self.client.post(
+            self.url, data=b'{"fake":"source"}', content_type="application/json",
+            secure=True, HTTP_X_CSRFTOKEN=self.csrf_token,
+            HTTP_ORIGIN="https://testserver",
+        )
         self.assertEqual(res.status_code, 415)
         self.assertEqual(ExtractionRun.objects.count(), 0)
 
@@ -220,6 +241,7 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
         res = self.client.post(
             self.url, data="Synthetic RFP requirements for a test only.".encode(),
             content_type="text/plain", secure=True,
+            HTTP_X_CSRFTOKEN=self.csrf_token, HTTP_ORIGIN="https://testserver",
         )
         self.assertEqual(res.status_code, 201)
         self.assertEqual(ExtractionRun.objects.count(), 1)
