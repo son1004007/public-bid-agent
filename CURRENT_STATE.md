@@ -1,3 +1,8 @@
+## 2026-11-17 사업부 집계 원가·공동 사업 검토 (DESIGN_UPDATED / IMPLEMENTATION_PENDING)
+
+- [사업부 집계 원가·공동 검토 설계](docs/server-migration/09-aggregate-cost-and-shared-review.md)을 신규 설계 정본으로 작성하고 인증, UI, DB/API, 인수 조건과 작업 원장에 연결했다. 개인 급여/단가 미수집·사업부 합계만 입력·공통 사업 수익성 조회·업무 결정 권한 분리 방향이다.
+- 구현/DB migration/실제 원가 등록/원격 설치/독립 검수는 NOT RUN. 기존 PR #5 보안 결함 수정 및 검수/CI/격리 배포 조건을 유지하며, 해당 검증 이후 합성 데이터로 단계별 구현한다. 회사 내부 시범 운영은 별도 환경/회사 승인과 보안 인수를 전제로 한다.
+
 ## 2026-11-17 PR #5 job ledger security follow-up (IMPLEMENTED_UNVERIFIED)
 
 - Prior review findings: stale failure publication, cancellation state transition, cross-user job authorization. Candidate changes and synthetic regression cases are in this commit. Owner-only scope is fail-closed until explicit broader authorization exists; expired cancellation is REVIEW_REQUIRED pending cleanup, not proof of physical cancellation.

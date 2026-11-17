@@ -1,3 +1,13 @@
+## 2026-11-17 사업부 집계 원가·공동 사업 검토 — 후속 구현 백로그
+
+정본: [사업부 집계 원가·공동 검토 설계](docs/server-migration/09-aggregate-cost-and-shared-review.md). PR #5 보안 검수 및 로컬 인수 게이트를 우회하지 않으며, 이후 SM04~SM07에 아래 작업을 순차 연결한다.
+
+- [ ] AGG-01 (SM03/04): 권한/공개 정책 및 집계 기준·원가 정의 확정, API/DB schema allowlist 설계, 합성 fixture. 급여/개인원가 원본 수집·저장·업로드 금지.
+- [ ] AGG-02 (SM04/06): 사업부 총인건비·총 MM·가용 MM 승인 버전/변경 이력, 평균 원가와 사업별 손익 결정적 계산, 누락/만료/충돌 상태, 개인·소그룹 원가 비노출.
+- [ ] AGG-03 (SM06): 동일 사업부 전 사용자 공통 분석 화면 및 의견, 기준 수정·최종 결정 권한 분리. 개인 작업/비밀/원본 범위 보존.
+- [ ] AGG-04 (SM06/07): 집계 역산/과거 버전·export·로그/API·타 부서·직책 우회 음성 테스트, 비용 계산 단위/정합성, 동시 수정, UI 인수, 별도 문맥 독립 검수. 기존 자료는 읽기 전용 검토/승인 집계만 복사하고 원본 불변 해시 확인.
+- [ ] AGG-05 (SM07): 회사 승인된 격리 시범 환경에서 사용자 피드백 수집, 승인된 집계만 등록, backup/restore/rollback 및 접근권한 검증. 실제 회사 서버 설치는 별도 허가·작업공간 확정 후 진행.
+
 ## 2026-11-17 PR #5 security follow-up
 
 - [ ] Verify job ledger fencing, cancellation and owner-scope candidate regression tests on exact HEAD and independently review.

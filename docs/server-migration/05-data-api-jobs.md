@@ -12,7 +12,9 @@
 | ExtractionRun / Chunk | 문서 버전+추출기 버전·페이지/offset/표·OCR 정보·잘림/경고·해시 |
 | ReviewScope / ReviewEvent / GoldSpan | 독립 정답·위치·분류·승인/보류·작성자·시각·수정/이전 버전 |
 | EvaluationRun | 승인 표본 집합·prediction snapshot·규칙 버전·TP/FP/FN·범위/한계 |
-| CompanyEvidence | 회사/면허/실적/인력/MM/원가 근거·확인일·접근 범위·유효 기간 |
+| CompanyEvidence | 회사/면허/실적/집계 역량·MM 근거·확인일·접근 범위·유효 기간 (급여 원본 제외) |
+| DepartmentCostBasis / DepartmentCostBasisVersion | 사업부 합계 인건비·총 MM·기간·원가 구성 정책·승인/검증 상태·revision, 개인별 원가 없음 |
+| BidCostEstimate | 공고 버전·승인 원가 기준 버전·사업 필요 MM·기타 비용 가정·예상 매출/손익·검증 상태 |
 | DecisionProfile / DecisionEvent | 기준 버전·가중치·판단 당시 근거·사람 선택/사유·이력 |
 | CollectionConfig / Job / JobAttempt | 예약·명시 실행·멱등키·시도·lease/heartbeat·오류/결과 참조 |
 | AuditEvent | 누가/어떤 범위/언제/무슨 변경을 했는지 최소 감사 |
@@ -51,3 +53,7 @@ Redis 전달은 중복될 수 있다는 전제로 PostgreSQL 원장을 정본으
 공식 API·AI 공급자·DB/Redis 비밀은 서버 secret 참조로 주입하고 화면/DB export/로그에서 평문 공개하지 않는다. 사용자 로그인 암호와 API 공급자 키는 별개이며 단일 공통 기본 암호를 만들지 않는다.
 
 인증·암호 변경에는 위 일반 업무 결과 재전달 규칙을 그대로 적용하지 않는다. [인증 계약](03-authentication.md)의 commit 결과 불명·재로그인 절차를 따르고 암호/세션 비밀/인증 응답 원문을 멱등 결과로 캐시·재노출하지 않는다.
+
+## 6. 집계 원가와 공통 분석 API
+
+[09 최신 상세 계약](09-aggregate-cost-and-shared-review.md)이 원가/공유 범위를 우선한다. 서버에서 승인 집계 버전에 결속해 결정적으로 계산하고 회사·사업부 범위를 강제한다. 집계 기준 원본과 공개용 projection을 분리하며 일반 조회/검색/export/AI 입력에 개인·계약상 비공개 원본을 포함하지 않는다. 기존 작업 소유권/API 권한은 그대로 유지한다. 기준정보 변경 권한·revision·승인 감사와 불변 견적 버전을 검증한다. 구체 엔드포인트/모델은 AGG-01에서 확정한다.
