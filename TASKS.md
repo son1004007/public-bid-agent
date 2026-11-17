@@ -1,3 +1,8 @@
+## 2026-11-17 PR #5 security follow-up
+
+- [ ] Verify job ledger fencing, cancellation and owner-scope candidate regression tests on exact HEAD and independently review.
+- [ ] Review pre-publication domain side effects, cross-owner business-key handling/concurrency, remaining PR files, secrets, Windows isolation and protected-data hashes before merge.
+
 ## 2026-11-14 현재 화면·UI 후보 문서화
 
 - [현재 화면 대응표·설계 완성도·GitHub UI 후보](docs/server-migration/08-current-screens-and-ui-references.md) 추가. 기본 설계는 준비됐으나 전체 상세 설계/UI 승인/서버 구현은 미완료다.

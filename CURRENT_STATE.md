@@ -1,3 +1,8 @@
+## 2026-11-17 PR #5 job ledger security follow-up (IMPLEMENTED_UNVERIFIED)
+
+- Prior review findings: stale failure publication, cancellation state transition, cross-user job authorization. Candidate changes and synthetic regression cases are in this commit. Owner-only scope is fail-closed until explicit broader authorization exists; expired cancellation is REVIEW_REQUIRED pending cleanup, not proof of physical cancellation.
+- CI / independent review / artifact-side-effect fencing / protected-data SHA / isolated Windows HTTP / main merge: pending. No production or private data changes.
+
 ## 2026-11-14 현재 화면·UI 후보 문서화
 
 - [현재 화면 대응표·설계 완성도·GitHub UI 후보](docs/server-migration/08-current-screens-and-ui-references.md) 추가. 기본 설계는 준비됐으나 전체 상세 설계/UI 승인/서버 구현은 미완료다.

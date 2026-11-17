@@ -154,6 +154,73 @@ class JobServiceUnitAndAcceptanceTests(TestCase):
             job=job, message_kind="JOB_SUCCEEDED"
         ).exists())
 
+    def test_expired_or_completed_lease_cannot_fail(self):
+        job, _ = JobService.create_job(JobKind.COLLECTION_RUN, {"case": "stale-fail"}, self.user)
+        _, attempt = JobService.acquire_job_lease("worker")
+        Job.objects.filter(pk=job.pk).update(lease_expires_at=timezone.now() - timedelta(seconds=1))
+        before = Outbox.objects.filter(job=job).count()
+        with self.assertRaises(FencingTokenError):
+            JobService.fail_job(job.id, attempt.fencing_token, "LATE")
+        attempt.refresh_from_db()
+        self.assertIsNone(attempt.ended_at)
+        self.assertEqual(Outbox.objects.filter(job=job).count(), before)
+        _, current = JobService.acquire_job_lease("replacement")
+        JobService.complete_job(job.id, current.fencing_token, {"ok": True})
+        job.refresh_from_db()
+        revision = job.revision
+        before = Outbox.objects.filter(job=job).count()
+        with self.assertRaises(FencingTokenError):
+            JobService.fail_job(job.id, current.fencing_token, "LATE")
+        job.refresh_from_db()
+        self.assertEqual(job.state, JobState.SUCCEEDED)
+        self.assertEqual(job.result_ref, {"ok": True})
+        self.assertEqual(job.revision, revision)
+        self.assertEqual(Outbox.objects.filter(job=job).count(), before)
+
+    def test_cancel_requested_wins_over_worker_completion(self):
+        job, _ = JobService.create_job(JobKind.COLLECTION_RUN, {"case": "cancel-complete"}, self.user)
+        _, attempt = JobService.acquire_job_lease("worker")
+        JobService.cancel_job(job.id)
+        final = JobService.complete_job(job.id, attempt.fencing_token, {"must_not_publish": True})
+        self.assertEqual(final.state, JobState.CANCELLED)
+        self.assertEqual(final.result_ref, {})
+        self.assertIsNone(final.lease_expires_at)
+        attempt.refresh_from_db()
+        self.assertIsNotNone(attempt.ended_at)
+        self.assertEqual(attempt.result_ref, {})
+        self.assertEqual(Outbox.objects.filter(job=job, message_kind="JOB_CANCELLED").count(), 1)
+        self.assertFalse(Outbox.objects.filter(job=job, message_kind="JOB_SUCCEEDED").exists())
+
+    def test_cancel_requested_wins_over_worker_failure(self):
+        job, _ = JobService.create_job(JobKind.COLLECTION_RUN, {"case": "cancel-fail"}, self.user)
+        _, attempt = JobService.acquire_job_lease("worker")
+        JobService.cancel_job(job.id)
+        final = JobService.fail_job(job.id, attempt.fencing_token, "TIMEOUT", RetryClass.RETRYABLE_TRANSIENT)
+        self.assertEqual(final.state, JobState.CANCELLED)
+        self.assertIsNone(final.lease_expires_at)
+        attempt.refresh_from_db()
+        self.assertIsNotNone(attempt.ended_at)
+        self.assertEqual(Outbox.objects.filter(job=job, message_kind="JOB_CANCELLED").count(), 1)
+        self.assertIsNone(JobService.acquire_job_lease("replacement"))
+
+    def test_expired_cancel_requires_review_without_reacquisition(self):
+        job, _ = JobService.create_job(JobKind.COLLECTION_RUN, {"case": "cancel-expired"}, self.user)
+        _, attempt = JobService.acquire_job_lease("worker")
+        JobService.cancel_job(job.id)
+        Job.objects.filter(pk=job.pk).update(lease_expires_at=timezone.now() - timedelta(seconds=1))
+        self.assertIsNone(JobService.acquire_job_lease("replacement"))
+        job.refresh_from_db()
+        self.assertEqual(job.state, JobState.REVIEW_REQUIRED)
+        self.assertEqual(job.stop_reason, "CANCEL_LEASE_EXPIRED")
+        self.assertIsNone(job.lease_expires_at)
+        with self.assertRaises(FencingTokenError):
+            JobService.complete_job(job.id, attempt.fencing_token, {"late": True})
+        with self.assertRaises(InvalidStateTransitionError):
+            JobService.retry_job(job.id)
+        attempt.refresh_from_db()
+        self.assertIsNotNone(attempt.ended_at)
+        self.assertEqual(Outbox.objects.filter(job=job, message_kind="JOB_REVIEW_REQUIRED").count(), 1)
+
     def test_finite_retry_max_three_attempts(self):
         """A09: 일시 오류 시 최대 3회 재시도 후 FAILED로 종결 검증."""
         manifest = {"query": "sample-retry"}
@@ -367,6 +434,26 @@ class JobAPITests(TestCase):
         d_body = detail_res.json()
         self.assertEqual(d_body["data"]["id"], str(job.id))
         self.assertEqual(d_body["data"]["state"], JobState.QUEUED)
+
+    def test_other_owner_and_ownerless_jobs_are_not_visible_or_mutable(self):
+        other = User.objects.create_user(username="other-job-owner", password=PASSWORD_FIXTURE,
+                                         must_change_password=False, role="director")
+        own, _ = JobService.create_job(JobKind.COLLECTION_RUN, {"case": "own"}, self.user)
+        foreign, _ = JobService.create_job(JobKind.COLLECTION_RUN, {"case": "foreign"}, other)
+        orphan, _ = JobService.create_job(JobKind.COLLECTION_RUN, {"case": "orphan"})
+        listed = self.client.get("/api/v1/jobs", secure=True).json()
+        self.assertEqual(listed["page"]["total"], 1)
+        self.assertEqual([item["id"] for item in listed["data"]], [str(own.id)])
+        for job in [foreign, orphan]:
+            before = Outbox.objects.filter(job=job).count()
+            self.assertEqual(self.client.get(f"/api/v1/jobs/{job.id}", secure=True).status_code, 404)
+            for action in ["cancel", "retry"]:
+                self.assertEqual(self.post(f"/api/v1/jobs/{job.id}/{action}",
+                                           {"expected_revision": job.revision}).status_code, 404)
+            job.refresh_from_db()
+            self.assertEqual(job.state, JobState.QUEUED)
+            self.assertEqual(job.revision, 1)
+            self.assertEqual(Outbox.objects.filter(job=job).count(), before)
 
     def test_api_cancel_and_retry(self):
         """API를 통한 작업 취소 및 재시도, revision 충돌(409) 처리 검증."""

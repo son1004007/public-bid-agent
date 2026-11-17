@@ -53,25 +53,34 @@ class JobWorkerPipeline:
                 JobService.complete_job(
                     job.id, fencing_token, result_ref={"status": "completed", "kind": job.kind}
                 )
+        except FencingTokenError:
+            # stale worker는 실패 보고로 원장을 다시 변경하지 않는다.
+            logger.warning("작업 임대 만료로 결과 게시를 거부했습니다.")
         except ProviderExecutionError as p_err:
             # A27 / STOP: 외부 모델 장애 시 즉시 STOPPED 상태로 전환하고 자동 재시도 큐 차단
             logger.error("외부 모델 장애 발생으로 작업을 즉시 STOP 처리합니다: %s", p_err)
-            JobService.fail_job(
-                job.id,
-                fencing_token,
-                error_code="PROVIDER_ERROR",
-                retry_class=RetryClass.STOP_EXTERNAL_FAILURE,
-                stop_reason=str(p_err),
-            )
+            try:
+                JobService.fail_job(
+                    job.id,
+                    fencing_token,
+                    error_code="PROVIDER_ERROR",
+                    retry_class=RetryClass.STOP_EXTERNAL_FAILURE,
+                    stop_reason=str(p_err),
+                )
+            except FencingTokenError:
+                logger.warning("작업 임대 만료로 실패 보고를 거부했습니다.")
         except Exception as e:
             logger.exception("작업 실행 중 예외 발생: %s", e)
-            JobService.fail_job(
-                job.id,
-                fencing_token,
-                error_code="EXECUTION_ERROR",
-                retry_class=RetryClass.RETRYABLE_TRANSIENT,
-                stop_reason=str(e),
-            )
+            try:
+                JobService.fail_job(
+                    job.id,
+                    fencing_token,
+                    error_code="EXECUTION_ERROR",
+                    retry_class=RetryClass.RETRYABLE_TRANSIENT,
+                    stop_reason=str(e),
+                )
+            except FencingTokenError:
+                logger.warning("작업 임대 만료로 실패 보고를 거부했습니다.")
 
         job.refresh_from_db()
         return job

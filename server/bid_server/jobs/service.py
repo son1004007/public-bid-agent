@@ -27,6 +27,10 @@ class FencingTokenError(Exception):
     pass
 
 
+class JobNotFoundError(ValueError):
+    """존재하지 않거나 요청자의 소유 범위 밖인 작업."""
+
+
 class RevisionConflictError(Exception):
     """낙관적 락 revision 불일치 시 발생 (409 CONFLICT)."""
     pass
@@ -46,6 +50,37 @@ def compute_manifest_digest(manifest: dict[str, Any]) -> str:
     """작업 매니페스트의 canonical SHA-256 해시를 산출한다."""
     canonical = json.dumps(manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def owned_jobs(actor_user):
+    """HTTP 사용자는 자신의 작업만 조회/제어한다. 관리자 예외를 암묵적으로 부여하지 않는다."""
+    return Job.objects.filter(owner_user_id=actor_user.pk)
+
+
+def _assert_live_lease(job, fencing_token, now):
+    if (job.lease_epoch != fencing_token
+            or job.state not in (JobState.RUNNING, JobState.CANCEL_REQUESTED)
+            or job.lease_expires_at is None or job.lease_expires_at <= now):
+        raise FencingTokenError("유효한 작업 임대가 아닙니다.")
+
+
+def _finish_cancel(job, now, *, expired=False):
+    """취소 응답은 완료, 워커 단절은 cleanup 미확인 검토 상태로 기록한다."""
+    job.state = JobState.REVIEW_REQUIRED if expired else JobState.CANCELLED
+    job.stop_reason = "CANCEL_LEASE_EXPIRED" if expired else ""
+    job.lease_owner = ""
+    job.lease_expires_at = None
+    job.revision += 1
+    job.save(update_fields=["state", "stop_reason", "lease_owner", "lease_expires_at", "revision", "updated_at"])
+    JobAttempt.objects.filter(job=job, attempt_no=job.current_attempt, ended_at__isnull=True).update(
+        ended_at=now, error_code="CANCEL_LEASE_EXPIRED" if expired else "CANCELLED"
+    )
+    Outbox.objects.create(
+        job=job,
+        message_kind="JOB_REVIEW_REQUIRED" if expired else "JOB_CANCELLED",
+        payload_reference={"job_id": str(job.id), "reason": job.stop_reason or "CANCEL_PREVAILS"},
+    )
+    return job
 
 
 class JobService:
@@ -70,10 +105,13 @@ class JobService:
             # 활성 상태(QUEUED, RUNNING)의 동일 작업 확인
             existing_active = (
                 Job.objects.select_for_update()
-                .filter(business_key=business_key, state__in=[JobState.QUEUED, JobState.RUNNING])
+                .filter(business_key=business_key, state__in=[JobState.QUEUED, JobState.RUNNING, JobState.CANCEL_REQUESTED])
                 .first()
             )
             if existing_active:
+                # 전역 업무키 충돌이 타 사용자 작업 참조를 노출하지 않게 한다.
+                if existing_active.owner_user_id != getattr(owner_user, "pk", None):
+                    raise ActiveJobConflictError("활성 작업 업무키 충돌")
                 return existing_active, False
 
             job = Job.objects.create(
@@ -119,24 +157,21 @@ class JobService:
             # 1. QUEUED 작업 우선, 또는 2. lease 만료된 RUNNING 작업(워커 장애 복구)
             candidate = qs.filter(
                 models.Q(state=JobState.QUEUED)
-                | (models.Q(state=JobState.RUNNING) & models.Q(lease_expires_at__lt=now))
+                | (models.Q(state=JobState.RUNNING) & models.Q(lease_expires_at__lte=now))
+                | (models.Q(state=JobState.CANCEL_REQUESTED) & (
+                    models.Q(lease_expires_at__lte=now) | models.Q(lease_expires_at__isnull=True)
+                ))
             ).first()
 
             if not candidate:
                 return None
 
             job = candidate
+            now = timezone.now()
 
-            # 취소 요청 여부 사전 점검
-            if job.cancellation_requested_at:
-                job.state = JobState.CANCELLED
-                job.revision += 1
-                job.save(update_fields=["state", "revision", "updated_at"])
-                Outbox.objects.create(
-                    job=job,
-                    message_kind="JOB_CANCELLED",
-                    payload_reference={"job_id": str(job.id), "reason": "CANCELLED_BEFORE_LEASE"},
-                )
+            # 워커 응답 없는 취소는 cleanup 확인 전 재점유/재시도를 금지한다.
+            if job.state == JobState.CANCEL_REQUESTED or job.cancellation_requested_at:
+                _finish_cancel(job, now, expired=job.state != JobState.QUEUED)
                 return None
 
             next_attempt = job.current_attempt + 1
@@ -190,9 +225,9 @@ class JobService:
     @staticmethod
     def send_heartbeat(job_id: uuid.UUID, fencing_token: int, extend_seconds: int = 60) -> bool:
         """워커의 활성 상태를 알리고 임대(Lease) 만료를 연장한다."""
-        now = timezone.now()
         with transaction.atomic():
             job = Job.objects.select_for_update().filter(id=job_id).first()
+            now = timezone.now()
             if (not job or job.state != JobState.RUNNING or job.lease_epoch != fencing_token
                     or job.lease_expires_at is None or job.lease_expires_at <= now):
                 return False
@@ -212,32 +247,14 @@ class JobService:
         result_ref: dict[str, Any],
     ) -> Job:
         """작업을 정상 완료 처리하고 산출물 참조를 원자적으로 게시한다 (A08)."""
-        now = timezone.now()
         with transaction.atomic():
             job = Job.objects.select_for_update().filter(id=job_id).first()
             if not job:
                 raise ValueError("작업을 찾을 수 없습니다.")
-
-            # Stale Fencing Token 방어: 임대가 만료되었거나 다른 워커에게 넘어간 경우 게시 거부
-            if (job.lease_epoch != fencing_token or job.state != JobState.RUNNING
-                    or job.lease_expires_at is None or job.lease_expires_at <= now):
-                raise FencingTokenError(
-                    f"Fencing token 유효성 검증 실패 (job_token={job.lease_epoch}, provided={fencing_token}, state={job.state})."
-                )
-
-            # 취소 요청이 있었던 경우 완료 대신 취소로 종결
-            if job.cancellation_requested_at:
-                job.state = JobState.CANCELLED
-                job.lease_owner = ""
-                job.lease_expires_at = None
-                job.revision += 1
-                job.save(update_fields=["state", "lease_owner", "lease_expires_at", "revision", "updated_at"])
-                Outbox.objects.create(
-                    job=job,
-                    message_kind="JOB_CANCELLED",
-                    payload_reference={"job_id": str(job.id), "reason": "CANCEL_PREVAILS"},
-                )
-                return job
+            now = timezone.now()
+            _assert_live_lease(job, fencing_token, now)
+            if job.state == JobState.CANCEL_REQUESTED or job.cancellation_requested_at:
+                return _finish_cancel(job, now)
 
             job.state = JobState.SUCCEEDED
             job.result_ref = result_ref
@@ -268,14 +285,14 @@ class JobService:
         external_request_reference: str = "",
     ) -> Job:
         """작업 실패 처리 및 확정 정책에 따른 즉시 STOP 또는 유한 재시도 분기 (A27)."""
-        now = timezone.now()
         with transaction.atomic():
             job = Job.objects.select_for_update().filter(id=job_id).first()
             if not job:
                 raise ValueError("작업을 찾을 수 없습니다.")
-
-            if job.lease_epoch != fencing_token:
-                raise FencingTokenError("Fencing token이 일치하지 않습니다.")
+            now = timezone.now()
+            _assert_live_lease(job, fencing_token, now)
+            if job.state == JobState.CANCEL_REQUESTED or job.cancellation_requested_at:
+                return _finish_cancel(job, now)
 
             JobAttempt.objects.filter(job=job, attempt_no=job.current_attempt).update(
                 ended_at=now,
@@ -330,9 +347,11 @@ class JobService:
         """작업 취소를 요청하거나 즉시 취소한다."""
         now = timezone.now()
         with transaction.atomic():
-            job = Job.objects.select_for_update().filter(id=job_id).first()
+            # actor_user=None은 내부 신뢰 호출 전용; HTTP에서는 세션 사용자를 반드시 전달한다.
+            qs = Job.objects.all() if actor_user is None else owned_jobs(actor_user)
+            job = qs.select_for_update().filter(id=job_id).first()
             if not job:
-                raise ValueError("작업을 찾을 수 없습니다.")
+                raise JobNotFoundError("작업을 찾을 수 없습니다.")
 
             if expected_revision is not None and job.revision != expected_revision:
                 raise RevisionConflictError(
@@ -370,14 +389,19 @@ class JobService:
     ) -> Job:
         """사용자의 명시적 지시에 따라 실패 또는 중지된 작업을 대기열로 재개한다 (A28)."""
         with transaction.atomic():
-            job = Job.objects.select_for_update().filter(id=job_id).first()
+            # actor_user=None은 내부 신뢰 호출 전용; HTTP에서는 세션 사용자를 반드시 전달한다.
+            qs = Job.objects.all() if actor_user is None else owned_jobs(actor_user)
+            job = qs.select_for_update().filter(id=job_id).first()
             if not job:
-                raise ValueError("작업을 찾을 수 없습니다.")
+                raise JobNotFoundError("작업을 찾을 수 없습니다.")
 
             if expected_revision is not None and job.revision != expected_revision:
                 raise RevisionConflictError(
                     f"Job revision 충돌 (expected={expected_revision}, current={job.revision})"
                 )
+
+            if job.cancellation_requested_at:
+                raise InvalidStateTransitionError("취소 요청 작업은 정리 확인 전 재시도할 수 없습니다.")
 
             # 명시 재개 허용 상태 (FAILED, STOPPED, REVIEW_REQUIRED)
             if job.state not in [JobState.FAILED, JobState.STOPPED, JobState.REVIEW_REQUIRED]:

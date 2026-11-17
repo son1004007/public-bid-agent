@@ -573,3 +573,9 @@ Windows SID 동등성으로 예약 작업 소유자를 확인하도록 등록 �
 - `local_app/json_transaction.py` serializes local dashboard/RFP read-modify-write operations using an in-process thread lock plus OS file lock. The Windows byte-range lock is acquired before any write to its lock file; it is released on context exit. The lock file may be created inside the approved local data directory, but user JSON/RFP content is not written to it.
 - The server foundation and restore rehearsal in PR #5 are isolated development features, not approval to migrate or delete production data. Backup/restore requires guarded loopback/test targets; backup database row-count parity alone is not proof of zero data loss, and document/storage files require separate verification.
 - Server signing secrets belong outside Git. Local development must not use fixed credentials, `DEBUG=True` in production, public listeners, or live company RFPs. Existing 127.0.0.1 services, uncommitted user files, and private data must remain unchanged. PR merge/deployment remain gated on full security review, complete CI success and protected-data hash verification.
+
+
+### 2026-11-17 PR #5 job ledger security follow-up
+- Job worker completion/failure requires a live matching lease under row lock. Cancellation wins over result publication; an expired cancellation enters REVIEW_REQUIRED and cannot be retried automatically or through the existing retry endpoint while cleanup is unconfirmed.
+- Job API list/detail/cancel/retry is owner-scoped, including directors; ownerless jobs are not exposed. No new global manager permission is assumed. Existing local app data/storage and deployment are unchanged.
+- Regression tests added; CI and independent review must be verified before merge. Domain writes performed before ledger publication need separate review; ledger fencing alone is not proof of artifact rollback.

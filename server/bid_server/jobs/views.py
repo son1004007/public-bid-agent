@@ -1,6 +1,6 @@
 """작업 API 뷰 계약.
 목적: 작업 목록/상세 조회, 명시 취소(/cancel), 명시 재시도(/retry) 엔드포인트를 제공한다.
-경계: 세션 인증된 사용자만 접근 가능(ClosedUntilAuthentication). 원문 전문과 내부 스택트레이스를 반환하지 않는다.
+경계: 세션 인증된 사용자 자신의 작업만 조회/제어 가능. 타 범위 및 없는 작업은 동일 404. 관리자 자동 우회 없음.
 부작용: /cancel 및 /retry 요청 시 JobService를 통한 원자적 상태 변경 및 Outbox 이벤트 생성.
 실패: revision 불일치 시 409 Conflict, 부적절한 상태 전이 시 422 ValidationError, 미인증 시 401.
 관련: docs/server-migration/18-screen-api-contract.md §50-51, 19-automation-and-provider-contract.md.
@@ -8,7 +8,7 @@
 import uuid
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.exceptions import APIException, NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bid_server.core.permissions import ClosedUntilAuthentication
@@ -17,6 +17,8 @@ from .models import Job, JobState, JobKind
 from .serializers import JobSerializer, JobControlInputSerializer
 from .service import (
     JobService,
+    JobNotFoundError,
+    owned_jobs,
     RevisionConflictError,
     InvalidStateTransitionError,
 )
@@ -40,7 +42,7 @@ class JobListAPIView(APIView):
         except ValueError:
             limit = 20
 
-        qs = Job.objects.all().order_by("-created_at")
+        qs = owned_jobs(request.user).order_by("-created_at")
         if state:
             qs = qs.filter(state=state)
         if kind:
@@ -56,7 +58,7 @@ class JobDetailAPIView(APIView):
     permission_classes = [ClosedUntilAuthentication]
 
     def get(self, request, job_id):
-        job = get_object_or_404(Job.objects.prefetch_related("attempts"), id=job_id)
+        job = get_object_or_404(owned_jobs(request.user).prefetch_related("attempts"), id=job_id)
         serializer = JobSerializer(job)
         return Response(serializer.data)
 
@@ -75,6 +77,8 @@ class JobCancelAPIView(APIView):
                 expected_revision=expected_revision,
                 actor_user=request.user,
             )
+        except JobNotFoundError as exc:
+            raise NotFound() from exc
         except RevisionConflictError as exc:
             raise Conflict(str(exc))
         except InvalidStateTransitionError as exc:
@@ -97,6 +101,8 @@ class JobRetryAPIView(APIView):
                 expected_revision=expected_revision,
                 actor_user=request.user,
             )
+        except JobNotFoundError as exc:
+            raise NotFound() from exc
         except RevisionConflictError as exc:
             raise Conflict(str(exc))
         except InvalidStateTransitionError as exc:
