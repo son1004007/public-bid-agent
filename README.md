@@ -567,3 +567,9 @@ Windows SID 동등성으로 예약 작업 소유자를 확인하도록 등록 �
 ### Codex 2차 지적: 공식 첨부 목록의 조용한 절단 보완
 - 공식 첨부 목록은 **400건 이내에서 identity를 대조**합니다. 121번째의 정상 공식 첨부는 분석 대상에 포함됩니다. 400건을 초과하면 공식 첨부 탐색 상한을 `PARTIAL`과 명시적 경고로 표시하고 누락 원인을 감추지 않습니다.
 - 합성 회귀 2건(121번째 정상 첨부 인식, 401번째 이후 탐색 상한 경고)을 추가했습니다. 앞의 Codex 개선 사항(출처 파일명 결속 및 최대 120개의 증거 이력에서 성공 2개 선정)은 유지합니다.
+
+
+### 2026-11-17 PR #5 local transaction and server security boundary
+- `local_app/json_transaction.py` serializes local dashboard/RFP read-modify-write operations using an in-process thread lock plus OS file lock. The Windows byte-range lock is acquired before any write to its lock file; it is released on context exit. The lock file may be created inside the approved local data directory, but user JSON/RFP content is not written to it.
+- The server foundation and restore rehearsal in PR #5 are isolated development features, not approval to migrate or delete production data. Backup/restore requires guarded loopback/test targets; backup database row-count parity alone is not proof of zero data loss, and document/storage files require separate verification.
+- Server signing secrets belong outside Git. Local development must not use fixed credentials, `DEBUG=True` in production, public listeners, or live company RFPs. Existing 127.0.0.1 services, uncommitted user files, and private data must remain unchanged. PR merge/deployment remain gated on full security review, complete CI success and protected-data hash verification.
