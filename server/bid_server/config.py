@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import ipaddress
+import json
 import os
 from pathlib import Path
 import re
@@ -71,6 +72,39 @@ def secret_file(env: Mapping[str, str], name: str, *, minimum: int = 1) -> str:
         return value
     except (OSError, ValueError, UnicodeError):
         raise invalid(name + "_FILE") from None
+
+
+def load_local_database(path: Path) -> dict:
+    """Read only explicit local PostgreSQL fields; never spread arbitrary options."""
+    try:
+        private = private_path({"LOCAL_DATABASE_FILE": str(path)}, "LOCAL_DATABASE_FILE")
+        flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
+        with os.fdopen(os.open(private, flags), "rb") as stream:
+            metadata = os.fstat(stream.fileno())
+            if not stat.S_ISREG(metadata.st_mode) or (os.name != "nt" and metadata.st_mode & 0o077):
+                raise ValueError
+            raw = stream.read(4097)
+        if len(raw) > 4096:
+            raise ValueError
+        cfg = json.loads(raw.decode("utf-8"))
+        if not isinstance(cfg, dict) or set(cfg) != {"HOST", "PORT", "NAME", "USER", "PASSWORD"}:
+            raise ValueError
+        if cfg["HOST"] not in ("127.0.0.1", "::1"):
+            raise ValueError
+        if type(cfg["PORT"]) not in (int, str) or not re.fullmatch(r"[0-9]{1,5}", str(cfg["PORT"])):
+            raise ValueError
+        if not 1 <= int(cfg["PORT"]) <= 65535:
+            raise ValueError
+        for key in ("NAME", "USER"):
+            if not isinstance(cfg[key], str) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,63}", cfg[key]):
+                raise ValueError
+        if cfg["NAME"].lower() in ("postgres", "template0", "template1"):
+            raise ValueError
+        if not isinstance(cfg["PASSWORD"], str) or not cfg["PASSWORD"] or any(c in cfg["PASSWORD"] for c in "\r\n\x00"):
+            raise ValueError
+        return {**cfg, "PORT": int(cfg["PORT"])}
+    except (ImproperlyConfigured, OSError, ValueError, TypeError, UnicodeError):
+        raise invalid("LOCAL_DATABASE_FILE") from None
 
 
 def valid_host(value: str) -> bool:
