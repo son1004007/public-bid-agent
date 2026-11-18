@@ -1,3 +1,9 @@
+## 2026-11-19 PR #5 checkpoint — proposal relationship security
+
+- [x] Previous revision contract server foundation (including Chrome and PostgreSQL), Windows synthetic, development harness passed on 17dfc334; Sprint 1 still pending at observation.
+- [ ] Verify 3c379017 candidate (owned current revision, related notice source consistency, fresh account eligibility, worker/export boundaries) with exact-head CI.
+- [ ] Remaining release gates: independent semantic review; credential incident applicability and remediation if used; immutable protected-data baseline; fixed-SHA isolated Windows HTTP/browser and rollback (not original dirty checkout); private media ACL. Main merge and existing localhost release remain NO_GO.
+
 ## 2026-11-19 PR #5 checkpoint — Chrome PASS and revision contract
 
 - [x] Exact db926073: all CI families SUCCESS, actual Chrome test PASS (job 135188347561).
