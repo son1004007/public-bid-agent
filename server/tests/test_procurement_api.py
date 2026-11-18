@@ -171,7 +171,9 @@ class ProcurementAPITests(TestCase):
         self.assertEqual(counts["ai_candidates"], 1)
         self.assertEqual(counts["data_candidates"], 1)
         self.assertEqual(counts["urgent_deadline_3d"], 1)  # DATA notice (D-1)
-        self.assertEqual(data["collection_health"]["status"], "ONLINE")
+        self.assertEqual(data["collection_health"]["status"], "UNVERIFIED")
+        self.assertIsNone(data["collection_health"]["source"])
+        self.assertEqual(counts["major_candidates"], 2)
 
     def test_notice_list_all(self):
         res = self.client.get("/api/v1/notices", secure=True)
