@@ -27,11 +27,26 @@ class PayloadTooLargeError(ValueError):
     pass
 
 
+class ProposalAccessError(ValueError):
+    """제안서 소유권이 없거나 확인되지 않은 작업."""
+
+
+def owned_proposals(actor_user):
+    """명시 소유자만 접근하며 미지정/삭제된 소유자는 자동 승계하지 않는다."""
+    if not getattr(actor_user, "is_active", False):
+        return Proposal.objects.none()
+    return Proposal.objects.filter(owner_user_id=actor_user.pk)
+
+
 class ProposalService:
     @staticmethod
-    def get_or_create_proposal(notice: Notice) -> Proposal:
-        """공고에 대한 제안서 작업 공간을 조회하거나 없으면 생성한다."""
-        proposal, _ = Proposal.objects.get_or_create(notice=notice)
+    def get_or_create_proposal(notice: Notice, *, owner_user=None) -> Proposal:
+        """내부 생성 시 소유자를 명시한다. 기등록 작업의 소유권은 변경하지 않는다."""
+        proposal, _ = Proposal.objects.get_or_create(
+            notice=notice, defaults={"owner_user": owner_user},
+        )
+        if owner_user is not None and proposal.owner_user_id != owner_user.pk:
+            raise ProposalAccessError("Proposal access denied.")
         return proposal
 
     @staticmethod
@@ -47,6 +62,7 @@ class ProposalService:
         metadata: Optional[Dict[str, Any]] = None,
         requirement_mappings: Optional[List[Dict[str, Any]]] = None,
         evidence_references: Optional[List[Dict[str, Any]]] = None,
+        actor_user=None,
     ) -> ProposalRevision:
         """제안서 전체 리비전과 하위 모든 절을 단일 원자적 DB 트랜잭션으로 생성한다 (DEF-02)."""
         # 1. Validation: 절별 50,000자 상한 및 필수 필드 검사
@@ -60,6 +76,12 @@ class ProposalService:
         with transaction.atomic():
             # 부모 Proposal 잠금 획득 (동시성 경합 방지)
             locked_proposal = Proposal.objects.select_for_update().get(id=proposal.id)
+
+            if actor_user is not None and (
+                not getattr(actor_user, "is_active", False)
+                or locked_proposal.owner_user_id != actor_user.pk
+            ):
+                raise ProposalAccessError("Proposal access denied.")
 
             current_rev = locked_proposal.current_revision
             current_seq = current_rev.seq if current_rev else 0
