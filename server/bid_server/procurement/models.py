@@ -383,6 +383,10 @@ class Proposal(models.Model):
     """특정 공고에 대한 단일 제안서 작업 공간."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     notice = models.OneToOneField(Notice, on_delete=models.CASCADE, related_name="proposal")
+    owner_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="owned_proposals",
+    )
     current_revision = models.ForeignKey(
         "ProposalRevision",
         null=True,
