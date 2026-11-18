@@ -7,7 +7,7 @@ import hashlib
 import os
 from pathlib import Path
 import tempfile
-import uuid
+import re
 
 from django.conf import settings
 from bid_server.config import REPOSITORY_ROOT
@@ -80,7 +80,7 @@ def read_verified_artifact(key, digest, size):
     """Read only service-generated keys within the configured private root."""
     parts = key.split("/")
     if (len(parts) != 2 or not parts[0].startswith("bid-export-")
-            or not parts[0][11:].isalnum() or parts[1] != "artifact"):
+            or not re.fullmatch(r"[a-z0-9_]{8}", parts[0][11:]) or parts[1] != "artifact"):
         raise ArtifactStorageError("Artifact integrity check failed.")
     root = _root()
     path = root / parts[0] / parts[1]
