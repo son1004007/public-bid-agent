@@ -34,7 +34,10 @@ from .serializers import (
     ProposalRevisionSerializer,
     DocumentStructureSerializer,
 )
-from .proposal_service import ProposalService, RevisionConflictError, PayloadTooLargeError
+from .proposal_service import (
+    ProposalService, ProposalAccessError, owned_proposals,
+    RevisionConflictError, PayloadTooLargeError,
+)
 from .generator import ProposalExportService
 from .extractor_service import ExtractionService, DocumentSourceMismatchError
 from bid_server.jobs.models import JobKind
@@ -258,7 +261,7 @@ class ProposalListAPIView(APIView):
 
     def get(self, request):
         notice_id = request.query_params.get("notice_id", "").strip()
-        qs = Proposal.objects.select_related("notice", "current_revision").all()
+        qs = owned_proposals(request.user).select_related("notice", "current_revision")
         if notice_id:
             qs = qs.filter(notice_id=notice_id)
         serializer = ProposalSerializer(qs, many=True)
@@ -271,7 +274,7 @@ class ProposalDetailAPIView(APIView):
 
     def get(self, request, pk):
         proposal = get_object_or_404(
-            Proposal.objects.select_related("notice", "current_revision"), pk=pk
+            owned_proposals(request.user).select_related("notice", "current_revision"), pk=pk
         )
         serializer = ProposalSerializer(proposal)
         return Response(serializer.data)
@@ -282,7 +285,7 @@ class ProposalRevisionCreateAPIView(APIView):
     permission_classes = [ClosedUntilAuthentication]
 
     def post(self, request, pk):
-        proposal = get_object_or_404(Proposal, pk=pk)
+        proposal = get_object_or_404(owned_proposals(request.user), pk=pk)
         data = request.data or {}
 
         title = data.get("title", "")
@@ -296,6 +299,7 @@ class ProposalRevisionCreateAPIView(APIView):
                 title=title,
                 sections=sections,
                 author=request.user,
+                actor_user=request.user,
                 expected_parent_seq=expected_parent_seq,
                 summary=summary,
                 provenance="HUMAN",
@@ -303,6 +307,8 @@ class ProposalRevisionCreateAPIView(APIView):
             )
             serializer = ProposalRevisionSerializer(new_rev)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except ProposalAccessError:
+            return Response({"error": "PROPOSAL_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
         except PayloadTooLargeError as p_err:
             return Response(
                 {"error": "PAYLOAD_TOO_LARGE", "detail": str(p_err)},
@@ -327,7 +333,7 @@ class ProposalExportAPIView(APIView):
 
     def get(self, request, pk):
         try:
-            proposal = Proposal.objects.select_related("current_revision", "notice").get(pk=pk)
+            proposal = owned_proposals(request.user).select_related("current_revision", "notice").get(pk=pk)
         except Proposal.DoesNotExist:
             return Response({"error": "PROPOSAL_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
 
