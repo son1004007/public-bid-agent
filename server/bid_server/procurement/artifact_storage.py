@@ -6,8 +6,9 @@ reconciliation rather than deleting any possibly committed artifact.
 import hashlib
 import os
 from pathlib import Path
-import tempfile
+import uuid
 import re
+import stat
 
 from django.conf import settings
 from bid_server.config import REPOSITORY_ROOT
@@ -39,6 +40,8 @@ def _root():
 def _verify(path, digest, size):
     if not 0 < size <= MAX_ARTIFACT_BYTES or path.is_symlink():
         raise ArtifactStorageError("Artifact integrity check failed.")
+    if not stat.S_ISREG(path.stat().st_mode):
+        raise ArtifactStorageError("Artifact integrity check failed.")
     with path.open("rb") as stream:
         raw = stream.read(MAX_ARTIFACT_BYTES + 1)
     if len(raw) != size or hashlib.sha256(raw).hexdigest() != digest:
@@ -55,7 +58,8 @@ def store_verified_artifact(raw, digest, size):
     try:
         # A unique directory, never shared or addressed by a caller, prevents
         # name collisions and overwriting any existing artifact file.
-        directory = Path(tempfile.mkdtemp(prefix="bid-export-", dir=root))
+        directory = root / ("bid-export-" + uuid.uuid4().hex)
+        directory.mkdir(mode=0o700, exist_ok=False)
         staging = directory / "pending"
         final = directory / "artifact"
         with staging.open("xb") as stream:
@@ -80,7 +84,7 @@ def read_verified_artifact(key, digest, size):
     """Read only service-generated keys within the configured private root."""
     parts = key.split("/")
     if (len(parts) != 2 or not parts[0].startswith("bid-export-")
-            or not re.fullmatch(r"[a-z0-9_]{8}", parts[0][11:]) or parts[1] != "artifact"):
+            or not re.fullmatch(r"[0-9a-f]{32}", parts[0][11:]) or parts[1] != "artifact"):
         raise ArtifactStorageError("Artifact integrity check failed.")
     root = _root()
     path = root / parts[0] / parts[1]
