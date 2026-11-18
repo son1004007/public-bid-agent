@@ -1,3 +1,9 @@
+## 2026-11-19 PR #5 checkpoint — Chrome PASS and revision contract
+
+- [x] Exact db926073: all CI families SUCCESS, actual Chrome test PASS (job 135188347561).
+- [ ] Verify revision validation and optimistic concurrency candidate 16a0126f on exact-head CI. API clients must supply expected_parent_seq and valid complete section fields.
+- [ ] Independent semantic review, credential incident applicability and remediation if used, protected-data hash baseline, private media ACL, isolated Windows HTTP/browser and rollback. Do not modify dirty original checkout or existing listener. Only then approved main merge and existing localhost deployment.
+
 ## 2026-11-19 PR #5 checkpoint — browser failure recovery
 
 - [x] Inspect exact-head browser failure logs and distinguish passing foundation/PostgreSQL from Chrome failure; implement temporary static/media root isolation.
