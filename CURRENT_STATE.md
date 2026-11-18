@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 live workspace integration (IMPLEMENTED_UNVERIFIED / NO_GO)
+
+- Third security review at 5d48f6a3: exact-head four CI families SUCCESS (44405320307, 44405320181, 44405320001, 44405320131).
+- Candidate 01cec9f9: live workspace no longer submits a fixed privileged credential; explicit login, password-change form, logout and CSRF, full-access gating, stale response invalidation and clearing of business data. Escapes API text before HTML rendering, validates source links, no fabricated fallback URL. Dashboard now reports UNVERIFIED collection health instead of ONLINE; totals reflect stored data, major count is open >= 300M KRW; urgent filter and offset pagination connected. Removed duplicate HTML generator and replaced credential-bearing live probe with explicit synthetic HTTP test entrypoint.
+- Credential incident: fixed login material existed in the public branch HTML and scripts. Removed from current candidate, not from Git history or previously built artifacts; treat as compromised if ever used. Actual account match/rotation, session invalidation and artifact review NOT RUN. Never log or reproduce credential. Verify on approved target before deployment, rotate any affected real account through authorized process. No automatic account or production state mutation.
+- Added four synthetic node VM tests to Sprint 1 CI. New candidate CI queued/in progress (44406761933, 44406761929, 44406762069, 44406761957). Actual browser, complete UI/API contract, limited-session reload recovery (existing exact allowlist remains), proposal/job/collection feature parity, whole-PR independent review, protected-data hashes and isolated rollback/runtime tests still pending. No Main merge/deploy.
+
 ## 2026-11-19 PR #5 security review pass 3 (IMPLEMENTED_UNVERIFIED / NO_GO)
 
 - Previous pass 2 at aecb602a: all four CI families SUCCESS (44404150227, 44404149997, 44404149993, 44404150064).
