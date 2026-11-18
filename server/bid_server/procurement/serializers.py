@@ -3,6 +3,7 @@
 경계: 민감 시스템 내부 키나 원시 비밀번호는 노출하지 않는다.
 관련: docs/server-migration/18-screen-api-contract.md §31-35.
 """
+from urllib.parse import urlsplit, urlunsplit
 from rest_framework import serializers
 from .models import (
     Notice,
@@ -21,7 +22,32 @@ from .models import (
 )
 
 
+def public_source_url(value):
+    """Expose only public procurement links without credentials or query secrets.
+
+    The original URL remains in the private data source; links with query
+    parameters are withheld rather than changing their meaning.
+    """
+    if not isinstance(value, str) or not value or any(ord(c) < 33 or c == "\\" for c in value):
+        return ""
+    try:
+        parts = urlsplit(value)
+        host = parts.hostname or ""
+        if (parts.scheme != "https" or not (host == "g2b.go.kr" or host.endswith(".g2b.go.kr"))
+                or parts.username is not None or parts.password is not None
+                or parts.port not in (None, 443) or parts.query or parts.fragment):
+            return ""
+        return urlunsplit(("https", parts.netloc, parts.path, "", ""))
+    except ValueError:
+        return ""
+
+
 class DocumentVersionSerializer(serializers.ModelSerializer):
+    source_url = serializers.SerializerMethodField()
+
+    def get_source_url(self, obj):
+        return public_source_url(obj.source_url)
+
     class Meta:
         model = DocumentVersion
         fields = [
@@ -60,7 +86,10 @@ class NoticeSummarySerializer(serializers.ModelSerializer):
     correction = serializers.BooleanField(source="current_version.correction", read_only=True)
     budget_amount = serializers.IntegerField(source="current_version.budget_amount", read_only=True)
     categories = serializers.ListField(source="current_version.department_categories", read_only=True)
-    source_url = serializers.CharField(source="current_version.source_url", read_only=True)
+    source_url = serializers.SerializerMethodField()
+
+    def get_source_url(self, obj):
+        return public_source_url(obj.current_version.source_url) if obj.current_version else ""
     document_count = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -98,8 +127,15 @@ class NoticeDetailSerializer(serializers.ModelSerializer):
     correction = serializers.BooleanField(source="current_version.correction", read_only=True)
     budget_amount = serializers.IntegerField(source="current_version.budget_amount", read_only=True)
     categories = serializers.ListField(source="current_version.department_categories", read_only=True)
-    extra_data = serializers.DictField(source="current_version.extra_data", read_only=True)
-    source_url = serializers.CharField(source="current_version.source_url", read_only=True)
+    extra_data = serializers.SerializerMethodField()
+
+    def get_extra_data(self, obj):
+        # Legacy analysis/decision payloads are not an approved shared projection.
+        return {}
+    source_url = serializers.SerializerMethodField()
+
+    def get_source_url(self, obj):
+        return public_source_url(obj.current_version.source_url) if obj.current_version else ""
     documents = DocumentSerializer(many=True, read_only=True)
     total_versions = serializers.IntegerField(read_only=True)
 
