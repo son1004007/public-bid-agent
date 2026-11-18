@@ -1,3 +1,11 @@
+## 2026-11-19 PR #5 recovery checkpoint
+
+- [x] Artifact and provenance changes: previous same-head CI 4/4 at 24e395bf; independent review remains pending.
+- [x] First focused review: parser limits and format binding, no fictitious worker success; same-head CI 4/4 at 40f1cae2.
+- [ ] Second focused review candidate 04c30300: session validity, storage/secret separation, legacy attachment digest, shared URL/metadata projection. Await exact-head CI and review.
+- [ ] Inspect local settings/launcher and credential/reauthentication limits; remaining public data and provider/collection trust boundary; CI workflow trust and dependency audit; update the API/UI contract and check feature regressions from fail-closed behavior. Do not treat missing handlers as working functionality.
+- [ ] Independent whole-PR review; protected-data hash, isolated Windows HTTP and rollback evidence; main merge and approved localhost deployment only after all gates.
+
 ## 2026-11-17 PR #5 P1 extraction integrity fix
 
 - [x] Remove fabricated RFP fallback and reject missing/short input; add HTTP regression tests (source commit pending verification).
