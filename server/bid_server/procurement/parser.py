@@ -53,7 +53,7 @@ def _read_xml(z, name):
     # Only UTF-8 XML is accepted at this boundary. Reject alternate encodings
     # and DTD/entity declarations before handing data to ElementTree.
     decoded = data.decode("utf-8-sig", errors="strict")
-    if "\\x00" in decoded or re.search(r"<!\s*(?:DOCTYPE|ENTITY)\b", decoded, re.I):
+    if "\x00" in decoded or re.search(r"<!\s*(?:DOCTYPE|ENTITY)\b", decoded, re.I):
         raise ParserError("Forbidden XML declaration.")
     declaration = re.match(r"\s*<\?xml\s+([^?]*)\?>", decoded, re.I)
     if declaration:
@@ -411,7 +411,7 @@ def parse_plain(raw_bytes: bytes) -> Dict[str, Any]:
         except UnicodeDecodeError:
             raise ParserError("Unsupported text encoding.") from None
 
-    if any(ord(c) < 32 and c not in "\\n\\r\\t" for c in text):
+    if any(ord(c) < 32 and c not in "\n\r\t" for c in text):
         raise ParserError("Invalid text document.")
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     if not lines or len(lines) > MAX_OUTPUT_BLOCKS:
@@ -445,7 +445,7 @@ def parse_document_bytes(file_name: str, raw_bytes: bytes) -> Dict[str, Any]:
             result = parse_hwpx(raw_bytes)
         elif ext == "docx":
             result = parse_docx(raw_bytes)
-        elif ext in ("txt", "md") and not raw_bytes.startswith((b"PK", b"%PDF-")):
+        elif ext in ("txt", "md") and not raw_bytes.startswith((b"PK", b"%PDF-", b"\xd0\xcf\x11\xe0")):
             result = parse_plain(raw_bytes)
         else:
             raise ParserError("Unsupported document format.")
