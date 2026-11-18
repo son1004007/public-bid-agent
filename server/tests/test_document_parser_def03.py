@@ -99,6 +99,30 @@ class DocumentParserAcceptanceTests(TestCase):
             media_type="application/x-hwp+zip",
         )
 
+    def test_worker_rejects_unverified_document_sources_without_writes(self):
+        """검증된 저장소 원본이 없으면 합성/클라이언트 본문을 쓰지 않고 실패한다."""
+        from bid_server.jobs.models import JobAttempt, JobKind, JobState, RetryClass
+        from bid_server.jobs.service import JobService
+        from bid_server.jobs.workers import JobWorkerPipeline
+        from bid_server.procurement.models import ExtractionRun, DocumentStructure
+
+        for extra in ({}, {"raw_bytes_simulated": "untrusted synthetic text"}):
+            with self.subTest(has_manifest_body=bool(extra)):
+                job, _ = JobService.create_job(
+                    kind=JobKind.EXTRACTION_RUN,
+                    input_manifest={"document_version_id": str(self.doc_version.pk), **extra},
+                )
+                executed = JobWorkerPipeline().execute_next_job()
+                self.assertEqual(executed.pk, job.pk)
+                self.assertEqual(executed.state, JobState.FAILED)
+                self.assertEqual(executed.current_attempt, 1)
+                self.assertEqual(executed.result_ref, {})
+                attempt = JobAttempt.objects.get(job=job, attempt_no=1)
+                self.assertEqual(attempt.error_code, "DOCUMENT_SOURCE_UNAVAILABLE")
+                self.assertEqual(attempt.retry_class, RetryClass.NON_RETRYABLE)
+                self.assertEqual(ExtractionRun.objects.count(), 0)
+                self.assertEqual(DocumentStructure.objects.count(), 0)
+
     def test_hwpx_parser_extracts_table_grid_and_footnotes(self):
         """HWPX 파서가 표의 병합 span 및 각주 앵커를 정확히 추출함을 검증 (DEF-03)."""
         raw_hwpx = create_sample_hwpx_bytes()
