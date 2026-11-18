@@ -383,6 +383,41 @@ class ProposalEngineAcceptanceTests(TestCase):
         self.assertEqual(executed.attempts.last().error_code, "ARTIFACT_STORAGE_UNAVAILABLE")
         self.assertFalse(ExportArtifact.objects.exists())
 
+    def test_revision_http_validates_snapshot_and_requires_concurrency_base(self):
+        proposal = ProposalService.get_or_create_proposal(self.notice, owner_user=self.user)
+        route = f"/api/v1/proposals/{proposal.id}/revisions"
+        section = {"section_key": "s1", "ordinal": 1, "title": "Synthetic section", "body": "fixture"}
+        valid = {"title": "Synthetic draft", "expected_parent_seq": 0, "sections": [section]}
+
+        def post(payload):
+            return self.client.post(route, payload, format="json", secure=True,
+                                    HTTP_X_CSRFTOKEN=self.csrf_token, HTTP_ORIGIN="https://testserver")
+
+        for payload in (
+            {"title": valid["title"], "sections": [section]},
+            {**valid, "expected_parent_seq": True},
+            {**valid, "expected_parent_seq": "0"},
+            {**valid, "sections": []},
+            {**valid, "sections": ["invalid"]},
+            {**valid, "sections": [{**section, "body": {"private": "fixture"}}]},
+            {**valid, "sections": [section, {**section, "ordinal": 2}]},
+            {**valid, "sections": [section, {**section, "section_key": "s2"}]},
+            {**valid, "sections": [{**section, "title": ""}]},
+            {**valid, "title": "invalid\x00title"},
+            {**valid, "provenance": "AI_DRAFT"},
+        ):
+            with self.subTest(case=type(payload).__name__):
+                self.assertEqual(post(payload).status_code, 422)
+                self.assertEqual(proposal.revisions.count(), 0)
+        self.assertEqual(post({**valid, "sections": [{**section, "body": "A" * 50001}]}).status_code, 413)
+        self.assertEqual(proposal.revisions.count(), 0)
+        self.assertEqual(post(valid).status_code, 201)
+        self.assertEqual(post(valid).status_code, 409)
+        self.assertEqual(proposal.revisions.count(), 1)
+        self.assertEqual(post({**valid, "expected_parent_seq": 1}).status_code, 201)
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.current_revision.seq, 2)
+
     def test_proposal_rest_api_endpoints(self):
         """제안서 목록, 신규 리비전 커밋(DEF-02) 및 파일 다운로드(A29) REST API 검증."""
         proposal = ProposalService.get_or_create_proposal(self.notice, owner_user=self.user)
@@ -397,6 +432,7 @@ class ProposalEngineAcceptanceTests(TestCase):
         # 2. POST /api/v1/proposals/{id}/revisions
         rev_payload = {
             "title": "API 테스트 제안서 v1",
+            "expected_parent_seq": 0,
             "sections": [
                 {"section_key": "sec1", "ordinal": 1, "title": "개요", "body": "API를 통한 제안서 절 커밋."},
                 {"section_key": "sec2", "ordinal": 2, "title": "상세", "body": "두 번째 절 내용."},
