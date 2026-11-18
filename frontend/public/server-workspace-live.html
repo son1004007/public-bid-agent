@@ -378,7 +378,7 @@
     </header>
 
     <section id="authPanel" style="padding:24px; max-width:480px">
- <form id="loginForm"><h2>로그인</h2><label>계정 <input id="username" autocomplete="username" required maxlength="150"></label><br><label>비밀번호 <input id="password" type="password" autocomplete="current-password" required maxlength="128"></label><br><button class="primary" type="submit">로그인</button></form>
+ <form id="loginForm" hidden><h2>로그인</h2><label>계정 <input id="username" autocomplete="username" required maxlength="150"></label><br><label>비밀번호 <input id="password" type="password" autocomplete="current-password" required maxlength="128"></label><br><button class="primary" type="submit">로그인</button></form>
  <form id="passwordForm" hidden><h2>최초 비밀번호 변경</h2><label>현재 비밀번호 <input id="currentPassword" type="password" autocomplete="current-password" required maxlength="128"></label><br><label>새 비밀번호 <input id="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label><br><button type="submit" class="primary">변경 후 재로그인</button></form>
  <p id="authStatus" role="status">인증 확인 중</p>
 </section>
@@ -393,12 +393,12 @@
         <div class="metric-card" onclick="setStatusFilter('open', true)">
           <small>⏰ 72시간 내 마감 임박</small>
           <b id="mUrgent" style="color: var(--red);">-</b>
-          <div class="desc">D-0 ~ D-2 긴급 조치 대상</div>
+          <div class="desc">72시간 이내 마감 예정</div>
         </div>
         <div class="metric-card" onclick="setSort('budget')">
           <small>💰 3억 이상 대형 사업</small>
           <b id="mMajor">-</b>
-          <div class="desc">대형 정보화·플랫폼 구축 사업</div>
+          <div class="desc">진행 중인 3억 원 이상 공고</div>
         </div>
         <div class="metric-card" onclick="resetFilters()">
           <small>📦 조달청 총 수집 공고</small>
@@ -463,6 +463,7 @@
           </tbody>
         </table>
       </div>
+      <div style="display:flex;gap:10px;padding-top:16px;align-items:center"><button id="prevPage" disabled>이전</button><span id="pageInfo">-</span><button id="nextPage" disabled>다음</button></div>
     </main>
   </div>
 </div>
@@ -513,9 +514,11 @@ let currentCategory = '';
 let currentSort = 'deadline';
 
 // Calculate D-Day string and badge class
-function getDDay(deadlineStr) {
+function getDDay(deadlineStr, cancelled = false) {
+  if (cancelled) return { str: "취소", badge: "badge-cat" };
   if (!deadlineStr) return { str: '미정', badge: 'badge-cat' };
   const end = new Date(deadlineStr);
+  if (!Number.isFinite(end.getTime())) return {str:"미정", badge:"badge-cat"};
   const now = new Date();
   const diffSec = (end - now) / 1000;
   const dDay = Math.floor(diffSec / 86400);
@@ -562,6 +565,9 @@ function clearBusiness() {
   document.getElementById('businessContent').hidden = true;
   document.getElementById('noticeTableBody').replaceChildren();
   document.getElementById('resultCount').textContent = '-';
+  document.getElementById('pageInfo').textContent = '-';
+  document.getElementById('prevPage').disabled = true;
+  document.getElementById('nextPage').disabled = true;
   for (const id of ['mTotal','mAi','mUrgent','mMajor']) document.getElementById(id).textContent = '-';
   document.getElementById('collectionStatus').textContent = '수집 상태 미확인';
   document.getElementById('connectionStatus').textContent = '연결 미확인';
@@ -686,6 +692,8 @@ async function loadDashboard() {
 
 // 3. Load Notices
 let targetPresetActive = false;
+let urgentOnly = false;
+let offset = 0;
 
 function toggleAiTargetPreset(btn) {
   targetPresetActive = !targetPresetActive;
@@ -711,14 +719,17 @@ function toggleAiTargetPreset(btn) {
   loadNotices();
 }
 
-async function loadNotices() {
+async function loadNotices(keepPage = false) {
   if (!fullAccess) return;
   const seq = ++listSeq;
+  if (!keepPage) offset = 0;
   const q = document.getElementById('searchInput').value.trim();
   const status = document.getElementById('statusSelect').value;
   const sort = document.getElementById('sortSelect').value;
 
   const tbody = document.getElementById('noticeTableBody');
+  document.getElementById('prevPage').disabled = true;
+  document.getElementById('nextPage').disabled = true;
   tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px;"><div class="loading-spinner"></div> 공고 검색 중...</td></tr>`;
 
   const params = new URLSearchParams();
@@ -733,13 +744,18 @@ async function loadNotices() {
     params.set('budget_max', '2000000000');
     params.set('status', 'open');
   }
+  if (urgentOnly && !targetPresetActive) params.set('deadline_to', new Date(Date.now() + 72 * 3600000).toISOString());
   params.set('limit', '50');
+  params.set('offset', String(offset));
 
   try {
     const body = await readBusiness(`/api/v1/notices?${params.toString()}`);
     if (seq !== listSeq || !fullAccess) return;
     const items = body.data;
-    const total = body.page ? body.page.total : items.length;
+    const total = body.page?.total ?? items.length;
+    document.getElementById('prevPage').disabled = offset === 0;
+    document.getElementById('nextPage').disabled = !body.page?.next_cursor;
+    document.getElementById('pageInfo').textContent = items.length ? (offset + 1) + '–' + (offset + items.length) + ' / ' + total : '0 / ' + total;
 
     document.getElementById('resultCount').textContent = total.toLocaleString();
 
@@ -749,7 +765,7 @@ async function loadNotices() {
     }
 
     tbody.innerHTML = items.map(n => {
-      const dday = getDDay(n.deadline_at);
+      const dday = getDDay(n.deadline_at, n.cancellation);
       const cats = (n.categories || []).map(c => `<span class="badge badge-cat">${escapeHtml(c)}</span>`).join('');
       const bg = formatBudget(n.budget_amount);
       const dl = n.deadline_at ? n.deadline_at.replace('T', ' ').substring(0, 16) : '미확인';
@@ -774,6 +790,9 @@ async function loadNotices() {
     tbody.innerHTML = '<tr><td colspan="6">공고 목록을 불러오지 못했습니다.</td></tr>';
   }
 }
+
+document.getElementById('prevPage').addEventListener('click', () => { offset = Math.max(0, offset - 50); loadNotices(true); });
+document.getElementById('nextPage').addEventListener('click', () => { offset += 50; loadNotices(true); });
 
 // 4. Open Detail Drawer
 document.getElementById('noticeTableBody').addEventListener('click', event => {
@@ -807,7 +826,7 @@ async function openNoticeDetail(noticeId) {
     document.getElementById('dBuyer').textContent = data.buyer;
     document.getElementById('dBudget').textContent = formatBudget(data.budget_amount);
 
-    const dday = getDDay(data.deadline_at);
+    const dday = getDDay(data.deadline_at, data.cancellation);
     document.getElementById('dBadge').className = `badge ${dday.badge}`;
     document.getElementById('dBadge').textContent = dday.str;
     document.getElementById('dDeadline').textContent = data.deadline_at ? data.deadline_at.replace('T', ' ').substring(0, 19) : (data.deadline_raw || '미확인');
@@ -815,7 +834,7 @@ async function openNoticeDetail(noticeId) {
     document.getElementById('dCategories').innerHTML = (data.categories || []).map(c => `<span class="badge badge-cat">${escapeHtml(c)}</span>`).join(' ') || '일반';
 
     const g2bUrl = allowedSourceUrl(data.source_url);
-    document.getElementById('dSourceUrl').textContent = g2bUrl ? '승인된 공개 링크' : '공개 링크 미확인';
+    document.getElementById('dSourceUrl').textContent = g2bUrl ? '허용된 공개 출처 링크' : '공개 링크 미확인';
     if (g2bUrl) { link.href = g2bUrl; link.hidden = false; }
 
     const docs = data.documents || [];
@@ -823,7 +842,7 @@ async function openNoticeDetail(noticeId) {
       document.getElementById('dDocuments').innerHTML = '<div style="font-size:12px; color:var(--muted);">조회 가능한 첨부 문서가 없습니다.</div>';
     } else {
       document.getElementById('dDocuments').innerHTML = docs.map(d => {
-        const v = (d.versions && d.versions[0]) || {};
+        const v = [...(d.versions || [])].sort((a,b) => b.version_seq - a.version_seq)[0] || {};
         const sz = v.size_bytes ? `${Math.round(v.size_bytes / 1024)} KB` : '';
         return `<div class="doc-item">
           <span class="doc-icon">📄</span>
@@ -864,9 +883,11 @@ function setCategoryFilter(cat) {
   loadNotices();
 }
 
-function setStatusFilter(status, urgentOnly) {
+function setStatusFilter(status, urgent) {
+  urgentOnly = !!urgent;
+  targetPresetActive = false;
   document.getElementById('statusSelect').value = status;
-  if (urgentOnly) {
+  if (urgent) {
     document.getElementById('sortSelect').value = 'deadline';
   }
   loadNotices();
@@ -880,6 +901,7 @@ function setSort(s) {
 function resetFilters() {
   currentCategory = '';
   targetPresetActive = false;
+  urgentOnly = false;
   const pBtn = document.getElementById('presetAiTargetBtn');
   if (pBtn) {
     pBtn.classList.remove('active');
