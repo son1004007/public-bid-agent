@@ -1,3 +1,9 @@
+## 2026-11-19 PR #5 isolated notebook acceptance (RUNNING / NO_GO)
+
+- Exact-head 78fa59044f90f3c06a37979fbf48a3afb9d844ef: all four CI families SUCCESS (44418194680, 44418194768, 44418194683, 44418194688). Ubuntu foundation job 135203921891 log: 188 tests, OK (5 conditional skips); actual Chrome/ChromeDriver 157.0.8103.50, browser acceptance 1 test in 5.265s OK. PostgreSQL migration/authorization regression and Sprint 1 frontend build/VM regression steps succeeded.
+- Windows Gateway target ready; submitted bounded non-elevated job job_01M7RGZNRE00Y3Q35A190ZPJE3 to use an isolated public clone at exactly that SHA, existing isolated Python (no package installation), explicitly selected synthetic SQLite tests and actual temporary loopback HTTP auth/notice/logout probe. Before/after original Git SHA/status, three specified legacy JSON paths and 8000/8765 listener identities are compared without disclosing their contents or hashes. Missing paths, custom runtime locations, PostgreSQL data and full document corpus are not certified by this limited preservation probe. At last observation the job was RUNNING, no output and no exit evidence. Do not duplicate it; inspect the same job for terminal result. No claim of successful Windows test or preservation yet.
+- Independent review, credential incident applicability, actual private-media ACL and production rollback/data baseline remain unverified. Main merge/deployment NO_GO. No operational database or service mutation is authorized by the synthetic probe.
+
 ## 2026-11-19 PR #5 proposal relationship/access review (IMPLEMENTED_UNVERIFIED / NO_GO)
 
 - Previous head 17dfc334: Server foundation SUCCESS (44417419600; actual Ubuntu Chrome acceptance step success, PostgreSQL regression and migration check success), Development harness SUCCESS (44417419642), Windows synthetic acceptance SUCCESS (44417419641); Sprint 1 (44417419667) still in progress at last observation.
