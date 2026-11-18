@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 workspace session recovery / real browser gate (IMPLEMENTED_UNVERIFIED / NO_GO)
+
+- Prior workspace candidate at 071aaecb: four exact-head CI families SUCCESS (44406886967, 44406887018, 44406887165, 44406887023). Sprint 1 frontend job explicitly ran live workspace authentication and rendering regression and dependency advisory gate successfully.
+- Candidate c412b56b: allow only canonical data-free workspace GET for limited or expired session recovery; protected business APIs remain blocked and invalid sessions flushed. No fallback to simulated preview. Canonical HTML script is hash-bound by response CSP, inline event handlers removed; referrer protection. Regression cases verify limited-session reload, expired-session flush, business denial, CSP script hash and inline-handler contract.
+- Added opt-in actual Chrome / WebDriver loopback HTTP acceptance using Django LiveServerTestCase, synthetic SQLite data and first-password-change account only. Tests login, forced password change/reload, notice rendering/detail (hostile text), logout/cleared UI. CI hosted Linux uses existing image ChromeDriver, no external installer, no sandbox weakening or operational account. Source: https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md and https://developer.chrome.com/docs/chromedriver/get-started. The rest of existing test suite does not opt in. New CI observed queued/in progress (44408622718, 44408620988, 44408621216, 44408621218); real Chrome test NOT VERIFIED yet.
+- Next: read new CI job/step evidence, fix failures without weakening auth/CSP or browser sandbox. Still pending: credential incident runtime applicability, complete workflow/dependency review, whole-PR independent review, protected data baseline, isolated Windows local HTTP/browser/rollback and approved main/localhost release. No production DB or runtime changes, no merge.
+
 ## 2026-11-19 PR #5 live workspace integration (IMPLEMENTED_UNVERIFIED / NO_GO)
 
 - Third security review at 5d48f6a3: exact-head four CI families SUCCESS (44405320307, 44405320181, 44405320001, 44405320131).
