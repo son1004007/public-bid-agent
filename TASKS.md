@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — notebook timeout and portable HTTP
+
+- [x] Exact 78fa5904: four CI workflows passed; actual Chrome test log confirmed; 188 foundation tests (5 skipped).
+- [ ] Notebook isolated acceptance BLOCKED by Gateway TIMEOUT_TERMINATION_UNCONFIRMED. Follow-up original HEAD/44 changes/listener unchanged at observation, no candidate folder; full hashes and test NOT RUN/NOT VERIFIED. Reconcile timed-out process before a new clone/test, split steps and keep source/data isolated.
+- [ ] Verify portable HTTP candidate f55b35b1 on exact-head Linux/Windows hosted CI alongside existing Chrome gate.
+- [ ] Independent review, credential incident applicability/remediation, protected-data baseline and isolated actual notebook acceptance/rollback/private media ACL. Main merge and deployment NO_GO.
+
 ## 2026-11-19 PR #5 checkpoint — proposal relationship security
 
 - [x] Previous revision contract server foundation (including Chrome and PostgreSQL), Windows synthetic, development harness passed on 17dfc334; Sprint 1 still pending at observation.
