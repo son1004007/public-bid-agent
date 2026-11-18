@@ -6,6 +6,7 @@
 관련: 문서03,18,29 및 tests.test_auth.
 """
 import time
+import math
 from django.conf import settings
 from django.contrib.auth import SESSION_KEY
 from django.middleware.csrf import CsrfViewMiddleware
@@ -37,10 +38,11 @@ class AuthGateMiddleware:
             last = request.session.get("last_seen")
             epoch = request.session.get("auth_epoch")
             invalid = (not user.is_active or (user.locked_until and user.locked_until > timezone.now())
-                       or epoch != user.auth_epoch or not isinstance(login, (int, float))
-                       or not isinstance(last, (int, float)))
+                       or type(epoch) is not int or epoch != user.auth_epoch
+                       or type(login) not in (int, float) or type(last) not in (int, float)
+                       or not math.isfinite(login) or not math.isfinite(last))
             if not invalid:
-                invalid = (now < login or now < last or now-login >= settings.AUTH_ABSOLUTE_SECONDS
+                invalid = (last < login or now < login or now < last or now-login >= settings.AUTH_ABSOLUTE_SECONDS
                            or now-last >= settings.AUTH_IDLE_SECONDS
                            or (user.must_change_password and (now-login >= settings.AUTH_LIMITED_SECONDS
                                or not user.temporary_expires_at or user.temporary_expires_at <= timezone.now())))
