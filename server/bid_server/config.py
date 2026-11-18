@@ -149,8 +149,16 @@ def load_config(env: Mapping[str, str]) -> RuntimeConfig:
         raise invalid("DATABASE_NAME/DATABASE_USER")
     password = secret_file(env, "DATABASE_PASSWORD")
     media = private_path(env, "PRIVATE_MEDIA_ROOT")
-    if media.exists() and not media.is_dir():
+    if (media.exists() and not media.is_dir()) or REPOSITORY_ROOT.is_relative_to(media):
         raise invalid("PRIVATE_MEDIA_ROOT")
+    # Storage is not a secret directory. Prevent overlapping paths even if
+    # a future file-serving adapter is incorrectly configured.
+    for secret_name in ("DJANGO_SECRET_KEY_FILE", "DATABASE_PASSWORD_FILE", "REDIS_URL_FILE",
+                        "PUBLIC_BID_POLICY_SOURCE_FILE"):
+        if secret_name in env:
+            private = private_path(env, secret_name)
+            if private.is_relative_to(media) or media.is_relative_to(private):
+                raise invalid("PRIVATE_MEDIA_ROOT")
     sslmode = env.get("DATABASE_SSLMODE", "verify-full" if environment == "production" else "disable")
     if sslmode not in ({"verify-full"} if environment == "production" else {"disable", "require", "verify-full"}):
         raise invalid("DATABASE_SSLMODE")
