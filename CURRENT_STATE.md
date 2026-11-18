@@ -1,3 +1,11 @@
+## 2026-11-19 PR #5 security review pass 1 (IMPLEMENTED_UNVERIFIED / NO_GO)
+
+- Previous artifact/provenance candidate 24e395bf: CI 4/4 SUCCESS (44402267508, 44402267556, 44402267558, 44402267744).
+- Focused same-session source review (not independent whole-PR review) identified unbounded archive XML parsing, unsupported/binary content treated as text, registered media mismatch, and unimplemented job kinds falsely reporting success.
+- Candidate fd14520d adds parser input/ZIP expansion/member/XML/depth/node/output bounds, UTF-8 XML only with DTD/entity rejection, strict format dispatch, registered media recheck under extraction lock, HTTP text-only contract and safe 422 on parser error. Unsupported job kinds fail without success event. New negative tests included. Candidate CI queued at observation; no runtime or independent review claim.
+- Conservative limits are provisional (10 MiB parser input, 32 MiB archive declared expansion, 2 MiB XML, 512 members, 48 nesting levels, 20,000 nodes per XML, 4,000 output blocks/table cells; HTTP middleware retains 1 MiB). Binary HTTP extraction, PDF/legacy HWP and unimplemented job handlers are not enabled. Need actual workload and runtime Expat version verification, parser structural correctness, aggregate output/time/resource limits, protected data SHA, full workflow trust/dependency review and independent review before merge.
+- No main merge, operating DB migration, or deployment. See PR #5.
+
 ## 2026-11-19 PR #5 artifact and provenance follow-up (IMPLEMENTED_UNVERIFIED)
 
 - Prior document-scope candidate 6040c633: all four CI families SUCCESS (44399876680, 44399876705, 44399876732, 44399876572).
