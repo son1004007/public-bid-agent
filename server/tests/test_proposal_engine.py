@@ -183,33 +183,30 @@ class ProposalEngineAcceptanceTests(TestCase):
             self.assertIn("2. 기술 아키텍처", doc_xml)
 
     def test_job_worker_proposal_generation_and_stop_on_failure(self):
-        """워커 파이프라인이 정상 생성과 모델 장애 시 STOP 상태 전이를 올바르게 제어함을 검증 (A27, A28)."""
         pipeline = JobWorkerPipeline(worker_name="test-worker")
-
-        # 1. 정상 제안서 생성 작업
         job1, _ = JobService.create_job(
-            kind=JobKind.PROPOSAL_GENERATION,
-            owner_user=self.user,
+            kind=JobKind.PROPOSAL_GENERATION, owner_user=self.user,
             input_manifest={"notice_id": str(self.notice.id)},
         )
         executed1 = pipeline.execute_next_job()
-        self.assertEqual(executed1.id, job1.id)
-        self.assertEqual(executed1.state, JobState.SUCCEEDED)
-        self.assertIn("revision_id", executed1.result_ref)
+        self.assertEqual(executed1.pk, job1.pk)
+        self.assertEqual(executed1.state, JobState.STOPPED)
+        self.assertEqual(executed1.stop_reason, "PROVIDER_NOT_CONFIGURED")
+        self.assertEqual(executed1.attempts.last().error_code, "PROVIDER_NOT_CONFIGURED")
+        self.assertFalse(Proposal.objects.exists())
 
-        # 2. 외부 LLM 모델 장애 발생 시 STOP 처리 검증 (A27)
         job2, _ = JobService.create_job(
-            kind=JobKind.PROPOSAL_GENERATION,
-            owner_user=self.user,
-            input_manifest={"notice_id": str(self.notice.id), "simulate_provider_error": True},
+            kind=JobKind.PROPOSAL_GENERATION, owner_user=self.user,
+            input_manifest={"notice_id": str(self.notice.id), "draft_mode": "template"},
         )
         executed2 = pipeline.execute_next_job()
-        self.assertEqual(executed2.id, job2.id)
-        self.assertEqual(executed2.state, JobState.STOPPED)
-        self.assertIn("STOP 정책 적용", executed2.stop_reason)
-        # Attempt error code 확인
-        last_attempt = executed2.attempts.last()
-        self.assertEqual(last_attempt.error_code, "PROVIDER_ERROR")
+        self.assertEqual(executed2.pk, job2.pk)
+        self.assertEqual(executed2.state, JobState.SUCCEEDED)
+        rev = ProposalRevision.objects.get(pk=executed2.result_ref["revision_id"])
+        self.assertEqual(rev.status, "TEMPLATE_DRAFT")
+        self.assertEqual(rev.provenance, "TEMPLATE")
+        self.assertFalse(rev.metadata["verified"])
+        self.assertNotIn("model", rev.metadata)
 
     def test_expired_worker_cannot_start_proposal_writes(self):
         from datetime import timedelta
@@ -246,7 +243,7 @@ class ProposalEngineAcceptanceTests(TestCase):
         from unittest.mock import patch
 
         job, _ = JobService.create_job(
-            JobKind.PROPOSAL_GENERATION, {"notice_id": str(self.notice.id)}, self.user,
+            JobKind.PROPOSAL_GENERATION, {"notice_id": str(self.notice.id), "draft_mode": "template"}, self.user,
         )
         with patch.object(JobService, "complete_job", side_effect=FencingTokenError("expired")):
             executed = JobWorkerPipeline().execute_next_job()
@@ -265,8 +262,11 @@ class ProposalEngineAcceptanceTests(TestCase):
         export_job, _ = JobService.create_job(
             JobKind.PROPOSAL_EXPORT, {"revision_id": str(rev.pk), "format": "hwpx"}, self.user,
         )
-        with patch.object(JobService, "complete_job", side_effect=FencingTokenError("expired")):
-            executed = JobWorkerPipeline().execute_next_job()
+        import tempfile
+        from django.test import override_settings
+        with tempfile.TemporaryDirectory() as tmp, override_settings(PRIVATE_MEDIA_ROOT=tmp):
+            with patch.object(JobService, "complete_job", side_effect=FencingTokenError("expired")):
+                executed = JobWorkerPipeline().execute_next_job()
         self.assertEqual(executed.pk, export_job.pk)
         self.assertEqual(executed.state, JobState.RUNNING)
         self.assertEqual(executed.result_ref, {})
@@ -329,6 +329,58 @@ class ProposalEngineAcceptanceTests(TestCase):
         self.assertEqual(proposal.current_revision_id, rev.pk)
         self.assertEqual(proposal.owner_user_id, other.pk)
         self.assertEqual(proposal.revisions.count(), 1)
+        self.assertFalse(ExportArtifact.objects.exists())
+
+    def test_worker_stores_and_verifies_artifact_download(self):
+        import hashlib
+        import tempfile
+        from pathlib import Path
+        from django.test import override_settings
+
+        proposal = ProposalService.get_or_create_proposal(self.notice, owner_user=self.user)
+        rev = ProposalService.create_atomic_revision(
+            proposal=proposal, title="verified export",
+            sections=[{"section_key": "s1", "ordinal": 1, "title": "section", "body": "fixture"}],
+        )
+        job, _ = JobService.create_job(
+            JobKind.PROPOSAL_EXPORT, {"revision_id": str(rev.pk), "format": "docx"}, self.user,
+        )
+        with tempfile.TemporaryDirectory() as tmp, override_settings(PRIVATE_MEDIA_ROOT=tmp):
+            executed = JobWorkerPipeline().execute_next_job()
+            self.assertEqual(executed.pk, job.pk)
+            self.assertEqual(executed.state, JobState.SUCCEEDED)
+            artifact = ExportArtifact.objects.get(pk=executed.result_ref["artifact_id"])
+            path = Path(tmp) / artifact.storage_path
+            raw = path.read_bytes()
+            self.assertEqual(len(raw), artifact.size_bytes)
+            self.assertEqual(hashlib.sha256(raw).hexdigest(), artifact.sha256)
+            url = f"/api/v1/artifacts/{artifact.pk}/download"
+            res = self.client.get(url, secure=True)
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res.content, raw)
+            self.assertEqual(res["X-Artifact-SHA256"], artifact.sha256)
+            path.write_bytes(b"tampered")
+            self.assertEqual(self.client.get(url, secure=True).status_code, 409)
+            path.unlink()
+            self.assertEqual(self.client.get(url, secure=True).status_code, 409)
+            Proposal.objects.filter(pk=proposal.pk).update(owner_user=None)
+            self.assertEqual(self.client.get(url, secure=True).status_code, 404)
+
+    def test_worker_without_private_storage_never_publishes_export(self):
+        from django.test import override_settings
+        proposal = ProposalService.get_or_create_proposal(self.notice, owner_user=self.user)
+        rev = ProposalService.create_atomic_revision(
+            proposal=proposal, title="unavailable export",
+            sections=[{"section_key": "s1", "ordinal": 1, "title": "section", "body": "fixture"}],
+        )
+        job, _ = JobService.create_job(
+            JobKind.PROPOSAL_EXPORT, {"revision_id": str(rev.pk), "format": "docx"}, self.user,
+        )
+        with override_settings(PRIVATE_MEDIA_ROOT=None):
+            executed = JobWorkerPipeline().execute_next_job()
+        self.assertEqual(executed.pk, job.pk)
+        self.assertEqual(executed.state, JobState.FAILED)
+        self.assertEqual(executed.attempts.last().error_code, "ARTIFACT_STORAGE_UNAVAILABLE")
         self.assertFalse(ExportArtifact.objects.exists())
 
     def test_proposal_rest_api_endpoints(self):
