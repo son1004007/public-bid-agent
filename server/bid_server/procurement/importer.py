@@ -290,8 +290,14 @@ class LegacyNoticeImporter:
         """단일 첨부 문서를 처리하고 SHA-256 변경 시 새 DocumentVersion 생성 및 과거 버전 STALE 처리 (A06)."""
         logical_key = str(att.get("logical_key") or att.get("name") or att.get("file_name") or "ATTACHMENT").strip()
         source_attachment_id = str(att.get("id") or att.get("attachment_id") or "").strip() or None
-        sha256 = str(att.get("sha256") or att.get("hash") or compute_canonical_digest(att)).strip()
-        size_bytes = int(att.get("size_bytes") or att.get("size") or 0)
+        # A metadata digest is not a digest of the source file.
+        declared_digest = str(att.get("sha256") or att.get("hash") or "").strip().lower()
+        sha256 = declared_digest if re.fullmatch(r"[0-9a-f]{64}", declared_digest) else ""
+        raw_size = att.get("size_bytes") or att.get("size") or 0
+        if isinstance(raw_size, bool) or not re.fullmatch(r"[0-9]{1,18}", str(raw_size)):
+            raise ValueError("Invalid attachment size.")
+        size_bytes = int(raw_size)
+        source_identified = bool(sha256 and size_bytes > 0)
         media_type = str(att.get("media_type") or "application/octet-stream").strip()
         source_url = str(att.get("url") or att.get("source_url") or "").strip()
 
@@ -306,14 +312,23 @@ class LegacyNoticeImporter:
         # 기존 버전들 조회
         last_doc_version = document.versions.order_by("-version_seq").first()
 
-        if last_doc_version and last_doc_version.sha256 == sha256:
+        if (source_identified and last_doc_version
+                and last_doc_version.sha256 == sha256
+                and last_doc_version.size_bytes == size_bytes
+                and last_doc_version.media_type == media_type):
             # 동일한 파일 해시인 경우 기존 버전 유지
             return last_doc_version
 
         # 새로운 파일 바이트 관측: 이전 최신 버전들을 STALE로 전환 (A06: 과거 버전 불변 보존)
-        document.versions.filter(freshness=DocumentFreshness.CURRENT).update(
-            freshness=DocumentFreshness.STALE
-        )
+        if source_identified:
+            document.versions.filter(freshness=DocumentFreshness.CURRENT).update(
+                freshness=DocumentFreshness.STALE
+            )
+        else:
+            # An unverified observation must not assert that known bytes changed.
+            document.versions.filter(freshness=DocumentFreshness.CURRENT).update(
+                freshness=DocumentFreshness.REVIEW_REQUIRED
+            )
 
         doc_seq = (last_doc_version.version_seq + 1) if last_doc_version else 1
         new_doc_version = DocumentVersion.objects.create(
@@ -324,7 +339,7 @@ class LegacyNoticeImporter:
             size_bytes=size_bytes,
             media_type=media_type,
             source_url=source_url,
-            freshness=DocumentFreshness.CURRENT,
+            freshness=DocumentFreshness.CURRENT if source_identified else DocumentFreshness.UNVERIFIED,
         )
         results["created_doc_versions"] += 1
         return new_doc_version
