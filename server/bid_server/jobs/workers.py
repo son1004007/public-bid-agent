@@ -71,26 +71,26 @@ class JobWorkerPipeline:
                 logger.warning("작업 임대 만료로 실패 보고를 거부했습니다.")
         except ProviderExecutionError as p_err:
             # A27 / STOP: 외부 모델 장애 시 즉시 STOPPED 상태로 전환하고 자동 재시도 큐 차단
-            logger.error("외부 모델 장애 발생으로 작업을 즉시 STOP 처리합니다: %s", p_err)
+            logger.error("외부 모델 실행을 STOP 처리합니다.")
             try:
                 JobService.fail_job(
                     job.id,
                     fencing_token,
-                    error_code="PROVIDER_ERROR",
+                    error_code="PROVIDER_NOT_CONFIGURED" if str(p_err) == "PROVIDER_NOT_CONFIGURED" else "PROVIDER_ERROR",
                     retry_class=RetryClass.STOP_EXTERNAL_FAILURE,
                     stop_reason=str(p_err),
                 )
             except FencingTokenError:
                 logger.warning("작업 임대 만료로 실패 보고를 거부했습니다.")
         except Exception as e:
-            logger.exception("작업 실행 중 예외 발생: %s", e)
+            logger.error("작업 실행 중 예외 발생.")
             try:
                 JobService.fail_job(
                     job.id,
                     fencing_token,
                     error_code="EXECUTION_ERROR",
                     retry_class=RetryClass.RETRYABLE_TRANSIENT,
-                    stop_reason=str(e),
+                    stop_reason="EXECUTION_ERROR",
                 )
             except FencingTokenError:
                 logger.warning("작업 임대 만료로 실패 보고를 거부했습니다.")
@@ -117,61 +117,41 @@ class JobWorkerPipeline:
         notice = Notice.objects.get(id=notice_id)
         current_nv = notice.current_version
 
-        # A27 / STOP 검증 분기: 외부 공급자 장애 시뮬레이션
-        if manifest.get("simulate_provider_error"):
-            raise ProviderExecutionError("외부 LLM 공급자 응답 타임아웃 (HTTP 504 Gateway Timeout). STOP 정책 적용.")
-
-        if not getattr(job.owner_user, "is_active", False):
+        if not getattr(job.owner_user, "is_active", False) or job.owner_user.must_change_password:
             raise ProposalAccessError("Proposal access denied.")
+        existing = Proposal.objects.filter(notice=notice).first()
+        if existing is not None and existing.owner_user_id != job.owner_user_id:
+            raise ProposalAccessError("Proposal access denied.")
+
+        # No provider adapter/approved egress exists yet. Never claim a model
+        # call from a static string or a caller-supplied simulation flag.
+        if manifest.get("draft_mode") != "template":
+            raise ProviderExecutionError("PROVIDER_NOT_CONFIGURED")
+
         proposal = ProposalService.get_or_create_proposal(notice, owner_user=job.owner_user)
-
-        # 5개 표준 제안 절 생성
-        buyer_name = current_nv.buyer if current_nv else "발주기관"
-        notice_title = current_nv.title if current_nv else "공공입찰 프로젝트"
-
+        notice_title = current_nv.title if current_nv else notice.notice_number
         sections = [
-            {
-                "section_key": "understanding",
-                "ordinal": 1,
-                "title": "1. 사업의 이해 및 추진 전략",
-                "body": f"본 제안은 {buyer_name}의 '{notice_title}' 사업 목표를 완벽히 달성하기 위해 당사의 최신 AI 기술 역량을 집약하여 수립되었습니다.\n\n주요 추진 전략은 안정성과 확장성을 겸비한 아키텍처를 토대로 단계별 위험을 최소화하는 것입니다.",
-            },
-            {
-                "section_key": "strategy",
-                "ordinal": 2,
-                "title": "2. 제안 기술 및 시스템 아키텍처",
-                "body": "본 시스템은 고가용성 클라우드 인프라와 PostgreSQL 기반의 안전한 원장 데이터 모델을 채택합니다. 생성형 AI 파이프라인은 정확도 우선 원칙에 따라 검증된 데이터셋과 상호 교차 검증을 수행합니다.",
-            },
-            {
-                "section_key": "execution",
-                "ordinal": 3,
-                "title": "3. 사업 수행 계획 및 일정 관리",
-                "body": "착수 단계부터 요구사항 분석, 시스템 설계, 단계별 기능 구현, 통합 테스트, 시범 운영에 이르기까지 5단계 마일스톤을 엄격히 준수합니다.",
-            },
-            {
-                "section_key": "management",
-                "ordinal": 4,
-                "title": "4. 프로젝트 관리 및 품질 보증 방안",
-                "body": "형상 관리, 변경 관리, 위험 관리 체계를 수립하고, 테스트 주도 개발(TDD)을 통해 100% 검증 통과를 보장합니다.",
-            },
-            {
-                "section_key": "support",
-                "ordinal": 5,
-                "title": "5. 지원 부문 및 기술 이전 계획",
-                "body": "운영자 및 실무 담당자를 위한 체계적인 교육 훈련과 안정화 기간 동안의 24/7 기술 지원 체계를 상시 가동합니다.",
-            },
+            {"section_key": key, "ordinal": ordinal, "title": title,
+             "body": "[미검증 템플릿] " + instruction}
+            for ordinal, (key, title, instruction) in enumerate([
+                ("understanding", "사업 이해", "공식 요구사항 및 사업 목표를 확인하여 작성하십시오."),
+                ("strategy", "기술 및 아키텍처", "검증된 기술 역량과 요구사항 매핑을 작성하십시오."),
+                ("execution", "수행 일정", "승인된 인력 및 일정 근거를 작성하십시오."),
+                ("management", "품질 및 위험 관리", "검증 기준 및 위험 대응 방안을 작성하십시오."),
+                ("support", "지원 및 기술 이전", "계약상 지원 범위와 수행 가능 여부를 확인하십시오."),
+            ], 1)
         ]
-
-        # 단일 원자적 스냅샷 리비전 생성 (DEF-02)
         rev = ProposalService.create_atomic_revision(
             proposal=proposal,
-            title=f"{notice_title} 제안서 초안",
+            title=f"[미검증 템플릿] {notice_title}",
             sections=sections,
             author=job.owner_user,
             actor_user=job.owner_user,
+            status="TEMPLATE_DRAFT",
+            provenance="TEMPLATE",
             expected_parent_seq=manifest.get("expected_parent_seq"),
-            summary=f"{buyer_name} 대상 {notice_title} 최적화 제안서 초안 (AI_DRAFT)",
-            metadata={"generated_by_job": str(job.id), "model": "gemini-2.0-pro"},
+            summary="정적 템플릿입니다. AI 생성 및 요구사항 검증을 수행하지 않았습니다.",
+            metadata={"generated_by_job": str(job.id), "source": "static_template", "verified": False},
         )
 
         return {
