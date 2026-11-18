@@ -257,7 +257,7 @@ class ProposalEngineAcceptanceTests(TestCase):
         self.assertFalse(ProposalRevision.objects.exists())
         self.assertFalse(ProposalSection.objects.exists())
 
-        proposal = ProposalService.get_or_create_proposal(self.notice)
+        proposal = ProposalService.get_or_create_proposal(self.notice, owner_user=self.user)
         rev = ProposalService.create_atomic_revision(
             proposal=proposal, title="synthetic export",
             sections=[{"section_key": "s1", "ordinal": 1, "title": "section", "body": "fixture"}],
@@ -274,9 +274,66 @@ class ProposalEngineAcceptanceTests(TestCase):
         proposal.refresh_from_db()
         self.assertEqual(proposal.current_revision_id, rev.pk)
 
+    def test_other_or_unassigned_proposal_is_not_visible_or_writable(self):
+        other = User.objects.create_user(
+            username="other-proposal-owner", password=PASSWORD_FIXTURE,
+            must_change_password=False, role="director",
+        )
+        proposal = ProposalService.get_or_create_proposal(self.notice, owner_user=other)
+        rev = ProposalService.create_atomic_revision(
+            proposal=proposal, title="private fixture",
+            sections=[{"section_key": "s1", "ordinal": 1, "title": "section", "body": "private"}],
+            author=other,
+        )
+        url = f"/api/v1/proposals/{proposal.pk}"
+        for owner in (other, None):
+            with self.subTest(owner=owner):
+                Proposal.objects.filter(pk=proposal.pk).update(owner_user=owner)
+                listing = self.client.get("/api/v1/proposals", secure=True)
+                self.assertEqual(listing.status_code, 200)
+                self.assertEqual(listing.json().get("data", listing.json()), [])
+                self.assertEqual(self.client.get(url, secure=True).status_code, 404)
+                self.assertEqual(self.client.get(url + "/export?format=docx", secure=True).status_code, 404)
+                res = self.client.post(
+                    url + "/revisions", {"title": "unauthorized", "sections": []},
+                    format="json", secure=True, HTTP_X_CSRFTOKEN=self.csrf_token,
+                    HTTP_ORIGIN="https://testserver",
+                )
+                self.assertEqual(res.status_code, 404)
+                self.assertEqual(ProposalRevision.objects.filter(proposal=proposal).count(), 1)
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.current_revision_id, rev.pk)
+
+    def test_worker_rejects_cross_owner_proposal_generation_and_export(self):
+        other = User.objects.create_user(
+            username="worker-other", password=PASSWORD_FIXTURE,
+            must_change_password=False, role="director",
+        )
+        proposal = ProposalService.get_or_create_proposal(self.notice, owner_user=other)
+        rev = ProposalService.create_atomic_revision(
+            proposal=proposal, title="private fixture",
+            sections=[{"section_key": "s1", "ordinal": 1, "title": "section", "body": "private"}],
+        )
+        for kind, manifest in (
+            (JobKind.PROPOSAL_GENERATION, {"notice_id": str(self.notice.pk)}),
+            (JobKind.PROPOSAL_EXPORT, {"revision_id": str(rev.pk), "format": "docx"}),
+        ):
+            with self.subTest(kind=kind):
+                job, _ = JobService.create_job(kind, manifest, owner_user=self.user)
+                executed = JobWorkerPipeline().execute_next_job()
+                self.assertEqual(executed.pk, job.pk)
+                self.assertEqual(executed.state, JobState.FAILED)
+                self.assertEqual(executed.result_ref, {})
+                self.assertEqual(executed.attempts.last().error_code, "PROPOSAL_ACCESS_DENIED")
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.current_revision_id, rev.pk)
+        self.assertEqual(proposal.owner_user_id, other.pk)
+        self.assertEqual(proposal.revisions.count(), 1)
+        self.assertFalse(ExportArtifact.objects.exists())
+
     def test_proposal_rest_api_endpoints(self):
         """제안서 목록, 신규 리비전 커밋(DEF-02) 및 파일 다운로드(A29) REST API 검증."""
-        proposal = ProposalService.get_or_create_proposal(self.notice)
+        proposal = ProposalService.get_or_create_proposal(self.notice, owner_user=self.user)
 
         # 1. GET /api/v1/proposals
         list_res = self.client.get(f"/api/v1/proposals?notice_id={self.notice.id}", secure=True)
