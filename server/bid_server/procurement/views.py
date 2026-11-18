@@ -37,7 +37,7 @@ from .serializers import (
     DocumentStructureSerializer,
 )
 from .proposal_service import (
-    ProposalService, ProposalAccessError, owned_proposals,
+    ProposalService, ProposalAccessError, owned_proposals, owned_proposal_revisions,
     RevisionConflictError, PayloadTooLargeError,
 )
 from .parser import ParserError
@@ -414,7 +414,7 @@ class StoredArtifactDownloadAPIView(APIView):
     def get(self, request, pk):
         artifact = get_object_or_404(
             ExportArtifact.objects.filter(
-                proposal_revision__proposal__in=owned_proposals(request.user),
+                proposal_revision__in=owned_proposal_revisions(request.user),
             ),
             pk=pk,
         )
