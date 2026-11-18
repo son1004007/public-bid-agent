@@ -1,3 +1,9 @@
+## 2026-11-19 PR #5 Chrome acceptance PASS / revision API hardening (NO_GO for release)
+
+- Exact-head db926073: all four CI families SUCCESS (44413719353, 44413719121, 44413719185, 44413719154). Server foundation Ubuntu job 135188347561 explicitly ran real Chrome workspace HTTP acceptance: Chrome and ChromeDriver 157.0.8103.78, 1 test in 4.631s, OK. Verified from actual job log, not just workflow conclusion. Synthetic loopback DB only; Windows operational runtime not tested.
+- Follow-up review identified missing optimistic concurrency base and unvalidated revision snapshot in ProposalRevisionCreateAPIView. Candidate 16a0126f requires integer expected_parent_seq, bounded title/summary/sections, exact field types/keys, unique section key and ordinal, 413 for overlong body, 422 for malformed payload, 409 for stale revision. Standard safe errors without echoing section text. Regression covers invalid input, zero writes, successful initial save, stale conflict, subsequent correct save. This intentionally tightens the HTTP contract; trusted internal service callers are unchanged. New candidate CI not yet confirmed.
+- Release gates remain: verify new same-head CI (including Chrome), whole-PR independent review, credential incident applicability and remediation if necessary, protected-data hashes, isolated Windows runtime/rollback and media-root ACL. No operational DB changes, main merge or deployment.
+
 ## 2026-11-19 PR #5 Chrome gate failure recovery (IMPLEMENTED_UNVERIFIED / NO_GO)
 
 - Exact-head 1d228655: Sprint 1, Development harness, Windows synthetic acceptance SUCCESS; Server foundation FAILURE (44408746610). PostgreSQL and Windows foundation jobs passed; Ubuntu foundation synthetic regression passed, actual Chrome step failed. Job 135170903330 logs show Django LiveServerTestCase static handler TypeError (None STATIC_URL parsed into bytes).
