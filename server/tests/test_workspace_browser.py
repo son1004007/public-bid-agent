@@ -60,12 +60,30 @@ class WorkspaceBrowserTest(LiveServerTestCase):
         notice.current_version = version
         notice.save()
 
+        opener = build_opener(ProxyHandler({}))
+        # Preflight HTTP before browser navigation.
+        with opener.open(self.live_server_url + "/workspace", timeout=10) as page:
+            self.assertEqual(page.status, 200)
+            self.assertIn(b'id="loginForm"', page.read())
+            self.assertIn("script-src-attr 'none'", page.headers["Content-Security-Policy"])
+        from urllib.error import HTTPError
+        for prefix in ("__test_static__", "__test_media__"):
+            with self.assertRaises(HTTPError) as denied:
+                opener.open(self.live_server_url + "/" + prefix + "/manage.py", timeout=5)
+            self.assertEqual(denied.exception.code, 404)
+
+        chrome = shutil.which("google-chrome") or shutil.which("chromium")
+        self.assertTrue(chrome, "Installed Chrome binary is required")
+        print(subprocess.check_output([chrome, "--version"], text=True, timeout=10).strip(), flush=True)
+
         driver = shutil.which("chromedriver")
         if not driver:
             candidate = Path(os.environ.get("CHROMEWEBDRIVER", "/nonexistent")) / "chromedriver"
             if candidate.is_file():
                 driver = str(candidate)
         self.assertTrue(driver, "ChromeDriver is required for the browser gate")
+        print(subprocess.check_output([driver, "--version"], text=True, timeout=10).strip(), flush=True)
+        profile = self.enterContext(tempfile.TemporaryDirectory())
         with socket.socket() as sock:
             sock.bind(("127.0.0.1", 0))
             port = sock.getsockname()[1]
@@ -85,13 +103,11 @@ class WorkspaceBrowserTest(LiveServerTestCase):
 
         self.addCleanup(close_process)
         endpoint = f"http://127.0.0.1:{port}"
-        opener = build_opener(ProxyHandler({}))
-
-        def call(method, path, body=None):
+        def call(method, path, body=None, timeout=25):
             req = Request(endpoint + path, method=method,
                           data=None if body is None else json.dumps(body).encode(),
                           headers={"Content-Type": "application/json"})
-            with opener.open(req, timeout=15) as response:
+            with opener.open(req, timeout=timeout) as response:
                 return json.load(response)["value"]
 
         end = time.monotonic() + 10
@@ -107,12 +123,13 @@ class WorkspaceBrowserTest(LiveServerTestCase):
 
         session = call("POST", "/session", {"capabilities": {"alwaysMatch": {
             "browserName": "chrome",
-            "goog:chromeOptions": {"args": [
+            "goog:chromeOptions": {"binary": chrome, "args": [
+                "--user-data-dir=" + profile,
                 "--headless", "--disable-background-networking", "--disable-sync",
                 "--no-first-run", "--window-size=1280,900",
             ]},
             "timeouts": {"pageLoad": 15000, "script": 10000, "implicit": 0},
-        }}})
+        }}}, timeout=65)
         base = "/session/" + session["sessionId"]
 
         def stop_browser():
@@ -148,17 +165,6 @@ class WorkspaceBrowserTest(LiveServerTestCase):
             fill("username", username)
             fill("password", password)
             submit("loginForm")
-
-        # Preflight HTTP before browser navigation.
-        with opener.open(self.live_server_url + "/workspace", timeout=10) as page:
-            self.assertEqual(page.status, 200)
-            self.assertIn(b'id="loginForm"', page.read())
-            self.assertIn("script-src-attr 'none'", page.headers["Content-Security-Policy"])
-        from urllib.error import HTTPError
-        for prefix in ("__test_static__", "__test_media__"):
-            with self.assertRaises(HTTPError) as denied:
-                opener.open(self.live_server_url + "/" + prefix + "/manage.py", timeout=5)
-            self.assertEqual(denied.exception.code, 404)
 
         call("POST", base + "/url", {"url": self.live_server_url + "/workspace"})
         login(old_password)
