@@ -1,3 +1,9 @@
+## 2026-11-19 PR #5 checkpoint — third focused review
+
+- [x] Second focused review candidate: CI 4/4 at aecb602a; independent review remains.
+- [ ] Third review candidate e9fbd75b: loopback settings, local startup, backup isolation, restore provenance precondition, two CI workflow action pins. Verify new exact-head CI.
+- [ ] Remaining release gates: complete dependency/workflow trust review, API/UI compatibility, source/provider and unimplemented handler policy, separate-context independent semantic review, protected original data hashes and isolated Windows runtime smoke/rollback. Keep main merge and deployment NO_GO until gates pass.
+
 ## 2026-11-19 PR #5 recovery checkpoint
 
 - [x] Artifact and provenance changes: previous same-head CI 4/4 at 24e395bf; independent review remains pending.
