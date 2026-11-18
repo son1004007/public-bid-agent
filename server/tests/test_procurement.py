@@ -274,6 +274,28 @@ class AcceptanceA06DocumentVersioningTests(TestCase):
         self.assertEqual(doc.versions.count(), 2)  # 과거 버전 보존
 
 
+    def test_missing_attachment_digest_does_not_fabricate_binary_identity(self):
+        importer = LegacyNoticeImporter()
+        item = {"id": "missing-digest", "title": "Synthetic notice",
+                "attachments": [{"logical_key": "RFP", "size_bytes": 123}]}
+        importer.import_notices([item])
+        first = DocumentVersion.objects.get(document__logical_key="RFP")
+        self.assertEqual(first.sha256, "")
+        self.assertEqual(first.freshness, DocumentFreshness.UNVERIFIED)
+        importer.import_notices([item])
+        self.assertEqual(first.document.versions.count(), 1)
+        changed = {**item, "attachments": [{"logical_key": "RFP",
+                    "size_bytes": 123, "sha256": "a" * 64}]}
+        importer.import_notices([changed])
+        current = first.document.versions.get(version_seq=2)
+        self.assertEqual(current.sha256, "a" * 64)
+        self.assertEqual(current.freshness, DocumentFreshness.CURRENT)
+        self.assertFalse(current.shared_read_approved)
+        importer.import_notices([{**item, "title": "Unverified new observation"}])
+        current.refresh_from_db()
+        self.assertEqual(current.freshness, DocumentFreshness.REVIEW_REQUIRED)
+
+
 class AcceptanceA15LegacyMigrationIdempotencyTests(TestCase):
     """A15: JSON 이관 반복, 동일 legacy ID 다른 snapshot/내용 변경 멱등성 검증."""
 
