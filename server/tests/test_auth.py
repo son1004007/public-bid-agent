@@ -289,6 +289,19 @@ class AuthenticationTests(TestCase):
             session.save()
             self.assertEqual(self.client.get("/api/v1/auth/session", secure=True).status_code, 401)
 
+    def test_corrupted_session_fields_fail_closed(self):
+        for key, value in (
+            ("auth_epoch", True), ("login_at", float("nan")),
+            ("last_seen", float("inf")), ("last_seen", True),
+            ("login_at", 10 ** 400), ("last_seen", 0),
+        ):
+            with self.subTest(key=key, value=str(value)[:20]):
+                self.login()
+                session = self.client.session
+                session[key] = value
+                session.save()
+                self.assertEqual(self.client.get("/api/v1/auth/session", secure=True).status_code, 401)
+
     def test_logout_csrf_and_idempotent_empty_response(self):
         self.login()
         for _ in range(2):
