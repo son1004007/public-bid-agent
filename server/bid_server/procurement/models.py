@@ -144,6 +144,11 @@ class DocumentVersion(models.Model):
     sha256 = models.CharField(max_length=64, help_text="문서 바이트 SHA-256")
     size_bytes = models.BigIntegerField(default=0)
     media_type = models.CharField(max_length=150, blank=True, default="application/octet-stream")
+    owner_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="owned_document_versions",
+    )
+    shared_read_approved = models.BooleanField(default=False)
     storage_key = models.TextField(blank=True, default="", help_text="내부 보관 저장소 키")
     source_url = models.TextField(blank=True, default="")
     acquired_at = models.DateTimeField(default=timezone.now)
