@@ -24,7 +24,7 @@ from .models import (
     ChunkCategory,
     ChunkPath,
 )
-from .parser import parse_document_bytes
+from .parser import parse_document_bytes, ParserError
 
 
 class DocumentAccessError(ValueError):
@@ -80,8 +80,23 @@ class ExtractionService:
         if actor_user is not None:
             _assert_document_access(document_version, actor_user)
         _assert_source_matches(document_version, size, digest)
-        fname = file_name or document_version.document.logical_key or "document.bin"
+        allowed = {
+            "text/plain": ("txt", "PLAIN"),
+            "text/markdown": ("md", "PLAIN"),
+            "application/x-hwp+zip": ("hwpx", "HWPX"),
+            "application/hwp+zip": ("hwpx", "HWPX"),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ("docx", "DOCX"),
+        }
+        registered_media = document_version.media_type.split(";")[0].strip().lower()
+        if registered_media not in allowed:
+            raise ParserError("Unsupported registered document format.")
+        ext, expected_format = allowed[registered_media]
+        fname = file_name or f"document.{ext}"
+        if fname.lower().rsplit(".", 1)[-1] != ext:
+            raise ParserError("Document format mismatch.")
         parsed = parse_document_bytes(fname, raw_bytes)
+        if parsed["format"] != expected_format:
+            raise ParserError("Document format mismatch.")
 
         with transaction.atomic():
             # 파싱 중 원본 메타데이터가 변경되었더라도 잘못된 결속을 저장하지 않는다.
@@ -91,6 +106,8 @@ class ExtractionService:
             if actor_user is not None:
                 _assert_document_access(document_version, actor_user)
             _assert_source_matches(document_version, size, digest)
+            if document_version.media_type.split(";")[0].strip().lower() != registered_media:
+                raise DocumentSourceMismatchError("Document format changed during extraction.")
             # 1. ExtractionRun 생성
             run = ExtractionRun.objects.create(
                 document_version=document_version,
