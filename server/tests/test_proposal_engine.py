@@ -26,7 +26,7 @@ from bid_server.procurement.proposal_service import (
 )
 from bid_server.procurement.generator import ProposalExportService
 from bid_server.jobs.models import Job, JobKind, JobState
-from bid_server.jobs.service import JobService
+from bid_server.jobs.service import JobService, FencingTokenError
 from bid_server.jobs.workers import JobWorkerPipeline
 
 User = get_user_model()
@@ -210,6 +210,69 @@ class ProposalEngineAcceptanceTests(TestCase):
         # Attempt error code 확인
         last_attempt = executed2.attempts.last()
         self.assertEqual(last_attempt.error_code, "PROVIDER_ERROR")
+
+    def test_expired_worker_cannot_start_proposal_writes(self):
+        from datetime import timedelta
+        from unittest.mock import patch
+
+        job, _ = JobService.create_job(
+            JobKind.PROPOSAL_GENERATION, {"notice_id": str(self.notice.id)}, self.user,
+        )
+        leased, attempt = JobService.acquire_job_lease("stale-worker")
+        Job.objects.filter(pk=job.pk).update(lease_expires_at=timezone.now() - timedelta(seconds=1))
+        with patch.object(JobService, "acquire_job_lease", return_value=(leased, attempt)):
+            executed = JobWorkerPipeline().execute_next_job()
+        self.assertEqual(executed.state, JobState.RUNNING)
+        self.assertEqual(executed.result_ref, {})
+        self.assertFalse(Proposal.objects.exists())
+        self.assertFalse(ProposalRevision.objects.exists())
+
+    def test_cancelled_worker_does_not_create_proposal(self):
+        from unittest.mock import patch
+
+        job, _ = JobService.create_job(
+            JobKind.PROPOSAL_GENERATION, {"notice_id": str(self.notice.id)}, self.user,
+        )
+        leased, attempt = JobService.acquire_job_lease("cancelled-worker")
+        JobService.cancel_job(job.pk)
+        with patch.object(JobService, "acquire_job_lease", return_value=(leased, attempt)):
+            executed = JobWorkerPipeline().execute_next_job()
+        self.assertEqual(executed.state, JobState.CANCELLED)
+        self.assertEqual(executed.result_ref, {})
+        self.assertFalse(Proposal.objects.exists())
+        self.assertFalse(ProposalRevision.objects.exists())
+
+    def test_failed_fence_rolls_back_proposal_and_export_writes(self):
+        from unittest.mock import patch
+
+        job, _ = JobService.create_job(
+            JobKind.PROPOSAL_GENERATION, {"notice_id": str(self.notice.id)}, self.user,
+        )
+        with patch.object(JobService, "complete_job", side_effect=FencingTokenError("expired")):
+            executed = JobWorkerPipeline().execute_next_job()
+        self.assertEqual(executed.pk, job.pk)
+        self.assertEqual(executed.state, JobState.RUNNING)
+        self.assertEqual(executed.result_ref, {})
+        self.assertFalse(Proposal.objects.exists())
+        self.assertFalse(ProposalRevision.objects.exists())
+        self.assertFalse(ProposalSection.objects.exists())
+
+        proposal = ProposalService.get_or_create_proposal(self.notice)
+        rev = ProposalService.create_atomic_revision(
+            proposal=proposal, title="synthetic export",
+            sections=[{"section_key": "s1", "ordinal": 1, "title": "section", "body": "fixture"}],
+        )
+        export_job, _ = JobService.create_job(
+            JobKind.PROPOSAL_EXPORT, {"revision_id": str(rev.pk), "format": "hwpx"}, self.user,
+        )
+        with patch.object(JobService, "complete_job", side_effect=FencingTokenError("expired")):
+            executed = JobWorkerPipeline().execute_next_job()
+        self.assertEqual(executed.pk, export_job.pk)
+        self.assertEqual(executed.state, JobState.RUNNING)
+        self.assertEqual(executed.result_ref, {})
+        self.assertFalse(ExportArtifact.objects.exists())
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.current_revision_id, rev.pk)
 
     def test_proposal_rest_api_endpoints(self):
         """제안서 목록, 신규 리비전 커밋(DEF-02) 및 파일 다운로드(A29) REST API 검증."""
