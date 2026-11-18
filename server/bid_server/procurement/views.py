@@ -6,7 +6,7 @@
 from datetime import timedelta
 import hashlib
 from django.db import connection
-from django.db.models import Count, Q, F
+from django.db.models import Count, Q, F, Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.http import HttpResponse
@@ -39,7 +39,9 @@ from .proposal_service import (
     RevisionConflictError, PayloadTooLargeError,
 )
 from .generator import ProposalExportService
-from .extractor_service import ExtractionService, DocumentSourceMismatchError
+from .extractor_service import (
+    ExtractionService, DocumentSourceMismatchError, DocumentAccessError, scoped_document_versions,
+)
 from bid_server.jobs.models import JobKind
 from bid_server.jobs.service import JobService
 
@@ -68,8 +70,11 @@ class NoticeListAPIView(APIView):
         except ValueError:
             offset = 0
 
+        visible_versions = scoped_document_versions(request.user)
         qs = Notice.objects.select_related("current_version").annotate(
-            document_count=Count("documents")
+            document_count=Count(
+                "documents", filter=Q(documents__versions__in=visible_versions), distinct=True,
+            )
         )
 
         now = timezone.now()
@@ -161,9 +166,13 @@ class NoticeDetailAPIView(APIView):
     permission_classes = [ClosedUntilAuthentication]
 
     def get(self, request, notice_id):
+        visible_versions = scoped_document_versions(request.user)
+        visible_documents = Document.objects.filter(
+            versions__in=visible_versions,
+        ).distinct().prefetch_related(Prefetch("versions", queryset=visible_versions))
         notice = get_object_or_404(
             Notice.objects.select_related("current_version")
-            .prefetch_related("documents__versions", "versions")
+            .prefetch_related(Prefetch("documents", queryset=visible_documents), "versions")
             .annotate(total_versions=Count("versions", distinct=True)),
             id=notice_id,
         )
@@ -375,7 +384,7 @@ class DocumentExtractAPIView(APIView):
 
     def post(self, request, pk):
         doc_version = get_object_or_404(
-            DocumentVersion.objects.select_related("document"), pk=pk
+            scoped_document_versions(request.user, write=True).select_related("document"), pk=pk
         )
         # No synthetic fallback: only explicitly supplied source bytes may be parsed.
         # This endpoint currently accepts plain-text payloads only; binary document
@@ -413,7 +422,10 @@ class DocumentExtractAPIView(APIView):
                 document_version=doc_version,
                 raw_bytes=raw_bytes,
                 file_name=doc_version.document.logical_key + ".txt",
+                actor_user=request.user,
             )
+        except DocumentAccessError:
+            return Response({"error": "DOCUMENT_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
         except DocumentSourceMismatchError:
             return Response(
                 {"error": "DOCUMENT_SOURCE_MISMATCH"},
@@ -437,7 +449,7 @@ class DocumentStructureAPIView(APIView):
     permission_classes = [ClosedUntilAuthentication]
 
     def get(self, request, pk):
-        doc_version = get_object_or_404(DocumentVersion, pk=pk)
+        doc_version = get_object_or_404(scoped_document_versions(request.user), pk=pk)
         structures = DocumentStructure.objects.filter(document_version=doc_version)
         serializer = DocumentStructureSerializer(structures, many=True)
         return Response(serializer.data)
