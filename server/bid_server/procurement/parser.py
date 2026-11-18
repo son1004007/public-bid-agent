@@ -18,6 +18,69 @@ class ParserError(ValueError):
     pass
 
 
+# Conservative parser limits until large-document workload is measured.
+MAX_INPUT_BYTES = 10 * 1024 * 1024
+MAX_XML_BYTES = 2 * 1024 * 1024
+MAX_ARCHIVE_BYTES = 32 * 1024 * 1024
+MAX_ARCHIVE_ENTRIES = 512
+MAX_XML_NODES = 20000
+MAX_XML_DEPTH = 48
+MAX_OUTPUT_BLOCKS = 4000
+
+
+def _check_input(raw):
+    if not raw or len(raw) > MAX_INPUT_BYTES:
+        raise ParserError("Document size exceeds parser limit or is empty.")
+
+
+def _check_zip(z):
+    entries = z.infolist()
+    if (len(entries) > MAX_ARCHIVE_ENTRIES
+            or sum(info.file_size for info in entries) > MAX_ARCHIVE_BYTES
+            or len({info.filename.casefold() for info in entries}) != len(entries)
+            or any(info.flag_bits & 1 for info in entries)):
+        raise ParserError("Unsupported archive structure or size.")
+
+
+def _read_xml(z, name):
+    info = z.getinfo(name)
+    if info.file_size > MAX_XML_BYTES:
+        raise ParserError("XML size exceeds parser limit.")
+    with z.open(info) as stream:
+        data = stream.read(MAX_XML_BYTES + 1)
+    if len(data) != info.file_size or len(data) > MAX_XML_BYTES:
+        raise ParserError("XML size exceeds parser limit.")
+    # Only UTF-8 XML is accepted at this boundary. Reject alternate encodings
+    # and DTD/entity declarations before handing data to ElementTree.
+    decoded = data.decode("utf-8-sig", errors="strict")
+    if "\\x00" in decoded or re.search(r"<!\s*(?:DOCTYPE|ENTITY)\b", decoded, re.I):
+        raise ParserError("Forbidden XML declaration.")
+    declaration = re.match(r"\s*<\?xml\s+([^?]*)\?>", decoded, re.I)
+    if declaration:
+        encoding = re.search(r"""encoding\s*=\s*['"]([^'"]+)['"]""", declaration.group(1), re.I)
+        if encoding and encoding.group(1).lower() not in ("utf-8", "utf8"):
+            raise ParserError("Unsupported XML encoding.")
+    parser = ET.XMLPullParser(events=("start", "end"))
+    root = None
+    depth = count = 0
+    for start in range(0, len(data), 4096):
+        parser.feed(data[start:start + 4096])
+        for event, node in parser.read_events():
+            if event == "start":
+                if root is None:
+                    root = node
+                depth += 1
+                count += 1
+                if depth > MAX_XML_DEPTH or count > MAX_XML_NODES:
+                    raise ParserError("XML structure exceeds parser limit.")
+            else:
+                depth -= 1
+    parser.close()
+    if root is None or depth != 0:
+        raise ParserError("Invalid XML document.")
+    return root
+
+
 def _local_tag(elem: ET.Element) -> str:
     """XML 네임스페이스를 제외한 로컬 태그 이름을 반환한다."""
     tag = elem.tag
@@ -28,6 +91,7 @@ def _local_tag(elem: ET.Element) -> str:
 
 def parse_hwpx(raw_bytes: bytes) -> Dict[str, Any]:
     """HWPX (OWPML) 문서에서 본문, 표(병합/좌표), 각주(앵커)를 파싱한다."""
+    _check_input(raw_bytes)
     if not zipfile.is_zipfile(io.BytesIO(raw_bytes)):
         raise ParserError("유효한 HWPX (ZIP) 파일이 아닙니다.")
 
@@ -40,20 +104,18 @@ def parse_hwpx(raw_bytes: bytes) -> Dict[str, Any]:
     block_counter = 0
 
     with zipfile.ZipFile(io.BytesIO(raw_bytes)) as z:
+        _check_zip(z)
         names = z.namelist()
         section_names = [n for n in names if re.fullmatch(r"Contents/section\d+\.xml", n, re.I)]
         section_names.sort(key=lambda n: int(re.search(r"section(\d+)\.xml", n, re.I).group(1)))
 
-        if not section_names:
-            # Fallback for alternative paths
-            section_names = [n for n in names if n.lower().startswith("contents/") and n.lower().endswith(".xml")]
+        if not section_names or len(section_names) > 32:
+            raise ParserError("Missing or excessive HWPX sections.")
 
         for s_idx, sec_path in enumerate(section_names):
-            xml_data = z.read(sec_path)
-            if b"<!DOCTYPE" in xml_data.upper() or b"<!ENTITY" in xml_data.upper():
-                raise ParserError("보안상 금지된 DTD/ENTITY가 포함된 HWPX 문서입니다.")
-
-            root = ET.fromstring(xml_data)
+            root = _read_xml(z, sec_path)
+            if _local_tag(root) != "sec":
+                raise ParserError("Invalid HWPX section.")
 
             # Traverse elements
             for elem in root.iter():
@@ -192,6 +254,7 @@ def parse_hwpx(raw_bytes: bytes) -> Dict[str, Any]:
 
 def parse_docx(raw_bytes: bytes) -> Dict[str, Any]:
     """DOCX 문서에서 본문, 표(병합/좌표), 각주를 파싱한다."""
+    _check_input(raw_bytes)
     if not zipfile.is_zipfile(io.BytesIO(raw_bytes)):
         raise ParserError("유효한 DOCX (ZIP) 파일이 아닙니다.")
 
@@ -204,16 +267,18 @@ def parse_docx(raw_bytes: bytes) -> Dict[str, Any]:
     block_counter = 0
 
     with zipfile.ZipFile(io.BytesIO(raw_bytes)) as z:
+        _check_zip(z)
         if "word/document.xml" not in z.namelist():
             raise ParserError("word/document.xml이 누락된 비정상 DOCX 문서입니다.")
 
-        xml_data = z.read("word/document.xml")
-        root = ET.fromstring(xml_data)
+        root = _read_xml(z, "word/document.xml")
+        if _local_tag(root) != "document":
+            raise ParserError("Invalid DOCX document.")
 
         # 1. Parse footnotes.xml if present
         if "word/footnotes.xml" in z.namelist():
             try:
-                fn_root = ET.fromstring(z.read("word/footnotes.xml"))
+                fn_root = _read_xml(z, "word/footnotes.xml")
                 for fn_elem in fn_root.iter():
                     if _local_tag(fn_elem) == "footnote":
                         fn_num = fn_elem.attrib.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}id") or fn_elem.attrib.get("id") or "1"
@@ -226,8 +291,8 @@ def parse_docx(raw_bytes: bytes) -> Dict[str, Any]:
                                     "locator": {"footnote_num": fn_num},
                                     "anchor_refs": [],
                                 })
-            except Exception as e:
-                warnings.append(f"각주 XML 파싱 중 경고: {e}")
+            except (ParserError, ET.ParseError, UnicodeError, ValueError):
+                raise ParserError("Invalid DOCX footnotes.") from None
 
         # 2. Iterate elements in body
         body = root.find(".//{*}body")
@@ -337,15 +402,20 @@ def parse_docx(raw_bytes: bytes) -> Dict[str, Any]:
 
 def parse_plain(raw_bytes: bytes) -> Dict[str, Any]:
     """일반 텍스트/마크다운 문서를 파싱한다."""
+    _check_input(raw_bytes)
     try:
         text = raw_bytes.decode("utf-8-sig")
     except UnicodeDecodeError:
         try:
             text = raw_bytes.decode("cp949")
         except UnicodeDecodeError:
-            text = raw_bytes.decode("utf-8", errors="replace")
+            raise ParserError("Unsupported text encoding.") from None
 
+    if any(ord(c) < 32 and c not in "\\n\\r\\t" for c in text):
+        raise ParserError("Invalid text document.")
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if not lines or len(lines) > MAX_OUTPUT_BLOCKS:
+        raise ParserError("Empty or excessive text blocks.")
     blocks = []
     for idx, ln in enumerate(lines):
         blocks.append({
@@ -369,9 +439,22 @@ def parse_document_bytes(file_name: str, raw_bytes: bytes) -> Dict[str, Any]:
     """확장자 및 매직 바이트에 따라 적합한 파서를 호출한다."""
     ext = file_name.lower().split(".")[-1] if "." in file_name else ""
 
-    if ext == "hwpx" or (raw_bytes.startswith(b"PK") and "Contents/section" in str(raw_bytes[:2000])):
-        return parse_hwpx(raw_bytes)
-    elif ext == "docx" or (raw_bytes.startswith(b"PK") and "word/" in str(raw_bytes[:2000])):
-        return parse_docx(raw_bytes)
-    else:
-        return parse_plain(raw_bytes)
+    _check_input(raw_bytes)
+    try:
+        if ext == "hwpx":
+            result = parse_hwpx(raw_bytes)
+        elif ext == "docx":
+            result = parse_docx(raw_bytes)
+        elif ext in ("txt", "md") and not raw_bytes.startswith((b"PK", b"%PDF-")):
+            result = parse_plain(raw_bytes)
+        else:
+            raise ParserError("Unsupported document format.")
+    except (ET.ParseError, UnicodeError, zipfile.BadZipFile, RuntimeError, ValueError, OSError) as exc:
+        if isinstance(exc, ParserError):
+            raise
+        raise ParserError("Invalid document content.") from None
+    if not result["blocks"] or len(result["blocks"]) > MAX_OUTPUT_BLOCKS:
+        raise ParserError("Empty or excessive document blocks.")
+    if sum(len(t["cells"]) for t in result["tables"]) > MAX_OUTPUT_BLOCKS:
+        raise ParserError("Excessive document table cells.")
+    return result
