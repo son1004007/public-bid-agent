@@ -20,6 +20,7 @@ from bid_server.procurement.models import (
 )
 from bid_server.procurement.proposal_service import ProposalService, ProposalAccessError, owned_proposals
 from bid_server.procurement.generator import ProposalExportService
+from bid_server.procurement.artifact_storage import ArtifactStorageError, store_verified_artifact
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ class JobWorkerPipeline:
             elif job.kind == JobKind.PROPOSAL_GENERATION:
                 JobService.complete_db_operation(job.id, fencing_token, self._run_proposal_generation)
             elif job.kind == JobKind.PROPOSAL_EXPORT:
-                JobService.complete_db_operation(job.id, fencing_token, self._run_proposal_export)
+                self._run_proposal_export(job, fencing_token)
             else:
                 JobService.complete_job(
                     job.id, fencing_token, result_ref={"status": "completed", "kind": job.kind}
@@ -56,6 +57,12 @@ class JobWorkerPipeline:
         except FencingTokenError:
             # stale worker는 실패 보고로 원장을 다시 변경하지 않는다.
             logger.warning("작업 임대 만료로 결과 게시를 거부했습니다.")
+        except ArtifactStorageError:
+            try:
+                JobService.fail_job(job.id, fencing_token, error_code="ARTIFACT_STORAGE_UNAVAILABLE",
+                                    retry_class=RetryClass.NON_RETRYABLE)
+            except FencingTokenError:
+                logger.warning("작업 임대 만료로 실패 보고를 거부했습니다.")
         except ProposalAccessError:
             try:
                 JobService.fail_job(job.id, fencing_token, error_code="PROPOSAL_ACCESS_DENIED",
@@ -174,10 +181,10 @@ class JobWorkerPipeline:
             "sections_count": len(sections),
         }
 
-    def _run_proposal_export(self, job: Job) -> dict[str, Any]:
+    def _run_proposal_export(self, job: Job, fencing_token: int):
         manifest = job.input_manifest
         revision_id = manifest.get("revision_id")
-        target_format = manifest.get("format", "hwpx")
+        target_format = manifest.get("format", "hwpx").strip().lower()
 
         rev = ProposalRevision.objects.filter(
             id=revision_id, proposal__in=owned_proposals(job.owner_user),
@@ -188,19 +195,33 @@ class JobWorkerPipeline:
             rev, target_format
         )
 
-        artifact = ExportArtifact.objects.create(
-            proposal_revision=rev,
-            format=target_format.upper(),
-            file_name=file_name,
-            sha256=sha256_hash,
-            size_bytes=size_bytes,
-            storage_path=f"artifacts/{file_name}",
-        )
+        # Private file before DB publication. On fence/cancellation/DB failure
+        # the unique finalized file remains an unpublished orphan for reconciliation.
+        storage_key = store_verified_artifact(raw_bytes, sha256_hash, size_bytes)
 
-        return {
-            "artifact_id": str(artifact.id),
-            "format": artifact.format,
-            "file_name": artifact.file_name,
-            "sha256": artifact.sha256,
-            "size_bytes": artifact.size_bytes,
-        }
+        def publish(locked_job):
+            # Recheck scope under the proposal lock, not the stale job snapshot.
+            proposal = owned_proposals(locked_job.owner_user).select_for_update().filter(
+                pk=rev.proposal_id,
+            ).first()
+            if proposal is None or not ProposalRevision.objects.filter(
+                pk=rev.pk, proposal=proposal,
+            ).exists():
+                raise ProposalAccessError("Proposal access denied.")
+            artifact = ExportArtifact.objects.create(
+                proposal_revision=rev,
+                format=target_format.upper(),
+                file_name=file_name,
+                sha256=sha256_hash,
+                size_bytes=size_bytes,
+                storage_path=storage_key,
+            )
+            return {
+                "artifact_id": str(artifact.id),
+                "format": artifact.format,
+                "file_name": artifact.file_name,
+                "sha256": artifact.sha256,
+                "size_bytes": artifact.size_bytes,
+            }
+
+        JobService.complete_db_operation(job.id, fencing_token, publish)
