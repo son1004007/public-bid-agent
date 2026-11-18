@@ -168,6 +168,8 @@ class ProposalExportService:
 
         notice = revision.proposal.notice
         current_nv = revision.notice_version
+        if current_nv is not None and current_nv.notice_id != notice.pk:
+            raise ValueError("Proposal revision source is inconsistent.")
         notice_info = {
             "notice_number": notice.notice_number,
             "buyer": current_nv.buyer if current_nv else "공공 발주처",
