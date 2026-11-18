@@ -277,6 +277,7 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
         self.valid_payload = b"Synthetic RFP requirements for a test only."
         self.version = DocumentVersion.objects.create(
             document=doc, notice_version=nv, version_seq=1,
+            owner_user=self.user,
             sha256=hashlib.sha256(self.valid_payload).hexdigest(),
             size_bytes=len(self.valid_payload), media_type="text/plain",
         )
@@ -330,3 +331,38 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
                 self.assertEqual(res.json()["data"]["error"], "DOCUMENT_SOURCE_MISMATCH")
                 self.assertEqual(ExtractionRun.objects.count(), 0)
                 self.assertEqual(DocumentStructure.objects.count(), 0)
+
+    def test_document_scope_denies_unclassified_and_other_owner_writes(self):
+        from django.contrib.auth import get_user_model
+        from bid_server.procurement.models import ExtractionRun, DocumentStructure
+        other = get_user_model().objects.create_user(
+            username="other-document-owner", password="SyntheticTestPassword123!",
+            must_change_password=False, role="director",
+        )
+        structure_url = f"/api/v1/documents/{self.version.pk}/structures"
+        for owner, shared, expected_read in (
+            (None, False, 404), (other, False, 404), (other, True, 200),
+        ):
+            with self.subTest(shared=shared, owner=owner):
+                DocumentVersion.objects.filter(pk=self.version.pk).update(
+                    owner_user=owner, shared_read_approved=shared,
+                )
+                self.assertEqual(self.client.get(structure_url, secure=True).status_code, expected_read)
+                res = self.client.post(
+                    self.url, data=self.valid_payload, content_type="text/plain",
+                    secure=True, HTTP_X_CSRFTOKEN=self.csrf_token,
+                    HTTP_ORIGIN="https://testserver",
+                )
+                self.assertEqual(res.status_code, 404)
+                self.assertFalse(ExtractionRun.objects.exists())
+                self.assertFalse(DocumentStructure.objects.exists())
+
+    def test_service_rejects_unauthorized_actor(self):
+        from bid_server.procurement.extractor_service import DocumentAccessError
+        from bid_server.procurement.models import ExtractionRun
+        DocumentVersion.objects.filter(pk=self.version.pk).update(owner_user=None)
+        with self.assertRaises(DocumentAccessError):
+            ExtractionService.extract_and_persist(
+                self.version, self.valid_payload, "rfp.txt", actor_user=self.user,
+            )
+        self.assertFalse(ExtractionRun.objects.exists())
