@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — live workspace
+
+- [x] Third focused review CI 4/4 at 5d48f6a3; independent and runtime review pending.
+- [ ] Workspace candidate 01cec9f9: explicit auth, safe rendering, honest dashboard, paging, synthetic regression. Verify exact-head CI, then real isolated browser flows and API contract.
+- [ ] Verify whether publicly committed fixed login material was used against an actual account. If so, revoke/rotate affected credential, invalidate affected sessions and review artifact/log/history exposure through approved process; never reproduce the value. Removing source is not rotation; no history rewrite or runtime change yet.
+- [ ] Review remaining UI/API compatibility, limited-session reload, data collection/provider functionality, workflow/dependency gates and independent full PR review. Protected-data baseline, isolated Windows smoke and rollback before merge/approved localhost deployment.
+
 ## 2026-11-19 PR #5 checkpoint — third focused review
 
 - [x] Second focused review candidate: CI 4/4 at aecb602a; independent review remains.
