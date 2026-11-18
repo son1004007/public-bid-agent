@@ -2,6 +2,7 @@
 목적: Job 생성, Fencing Token 기반 워커 Lease 점유, 하트비트, 성공 완료, 외부 장애 STOP, 취소 및 명시 재시도 서비스를 원자적으로 제공한다.
 경계: 외부 Celery 프로세스 및 LLM 공급자 호출의 불확실성을 격리하고, PostgreSQL select_for_update 행 잠금으로 멱등성과 상태 전이를 보장한다.
 부작용: Job 상태 변경 시 revision 증가 및 Outbox 이벤트 행 동시 커밋.
+DB 전용 작업은 임대 행 잠금과 도메인 쓰기/완료 게시를 단일 트랜잭션으로 결속한다. 외부 I/O는 금지한다.
 실패: 만료된 펜싱 토큰(A08), 낙관적 락 충돌(409), 허용되지 않은 상태 전이 시 예외 발생 및 롤백.
 관련: docs/server-migration/19-automation-and-provider-contract.md, 20-acceptance-and-open-decisions.md (A08, A09, A10, A27, A28).
 """
@@ -9,7 +10,7 @@ import hashlib
 import json
 import uuid
 from datetime import timedelta
-from typing import Any
+from typing import Any, Callable
 from django.db import transaction, models
 from django.utils import timezone
 from .models import (
@@ -239,6 +240,32 @@ class JobService:
                 heartbeat_at=now
             )
             return True
+
+    @staticmethod
+    def complete_db_operation(
+        job_id: uuid.UUID,
+        fencing_token: int,
+        operation: Callable[[Job], dict[str, Any]],
+    ) -> Job:
+        """DB 전용 작업의 쓰기와 완료 게시를 같은 트랜잭션으로 결속한다.
+
+        operation은 제한된 로컬 계산/DB 작업만 허용한다. 외부 API, 파일
+        쓰기 등 롤백할 수 없는 작업은 이 경계를 사용하지 않는다.
+        """
+        with transaction.atomic():
+            job = Job.objects.select_for_update().get(pk=job_id)
+            now = timezone.now()
+            _assert_live_lease(job, fencing_token, now)
+            if job.state == JobState.CANCEL_REQUESTED or job.cancellation_requested_at:
+                return _finish_cancel(job, now)
+
+            result_ref = operation(job)
+            # 도메인 쓰기 후에도 현재 시각 기준 임대가 유효해야 한다.
+            # 실패하면 방금 실행한 모든 DB 쓰기와 Outbox를 함께 롤백한다.
+            completed = JobService.complete_job(job_id, fencing_token, result_ref)
+            if completed.state != JobState.SUCCEEDED:
+                raise FencingTokenError("작업 완료 전 상태가 변경되었습니다.")
+            return completed
 
     @staticmethod
     def complete_job(
