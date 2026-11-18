@@ -6,8 +6,11 @@
 실패/재시도: 잘못된 query400, method405. health가 정상이어도 업무 API 사용 가능을 뜻하지 않음.
 관련: server/openapi.json, docs/server-migration/28, tests/test_api.py.
 """
+import base64
+import hashlib
+import re
 from pathlib import Path
-from django.conf import settings
+from bid_server.core.errors import json_error
 from django.http import HttpResponse
 from rest_framework.exceptions import ParseError
 from rest_framework.permissions import AllowAny
@@ -35,9 +38,21 @@ class WorkspaceView(APIView):
     def get(self, request):
         repo_root = Path(__file__).resolve().parents[3]
         path = repo_root / "frontend" / "public" / "server-workspace-live.html"
-        if not path.exists():
-            path = repo_root / "frontend" / "public" / "server-workspace-preview.html"
-        return HttpResponse(
-            path.read_text(encoding="utf-8"),
-            content_type="text/html; charset=utf-8",
+        try:
+            html = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            return json_error(request, 503)
+        # The live shell is canonical; never fall back to a simulated workflow.
+        scripts = re.findall(r"<script>(.*?)</script>", html, flags=re.S)
+        if len(scripts) != 1:
+            return json_error(request, 503)
+        digest = base64.b64encode(hashlib.sha256(scripts[0].encode("utf-8")).digest()).decode("ascii")
+        response = HttpResponse(html, content_type="text/html; charset=utf-8")
+        response["Content-Security-Policy"] = (
+            "default-src 'none'; script-src 'sha256-" + digest + "'; "
+            "script-src-attr 'none'; style-src 'unsafe-inline'; connect-src 'self'; "
+            "img-src 'self' data:; object-src 'none'; base-uri 'none'; "
+            "frame-ancestors 'none'; form-action 'self'"
         )
+        response["Referrer-Policy"] = "no-referrer"
+        return response
