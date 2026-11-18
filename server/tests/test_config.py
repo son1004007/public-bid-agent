@@ -97,6 +97,12 @@ class ConfigurationTests(TestCase):
                 with self.subTest(key=key):
                     self.reject({**self.env, key: value})
 
+    def test_media_root_cannot_contain_repository_secrets_or_policy(self):
+        self.reject({**self.env, "PRIVATE_MEDIA_ROOT": str(REPOSITORY_ROOT.parent)}, "PRIVATE_MEDIA_ROOT")
+        self.reject({**self.env, "PRIVATE_MEDIA_ROOT": str(self.root)}, "PRIVATE_MEDIA_ROOT")
+        self.reject({**self.env, "PUBLIC_BID_POLICY_SOURCE_FILE":
+                     str(self.root / "private" / "policy.json")}, "PRIVATE_MEDIA_ROOT")
+
     def test_missing_directory_and_nonutf8_secret_rejected(self):
         for value in [self.root / "missing", self.root]:
             self.reject({**self.env, "DJANGO_SECRET_KEY_FILE": str(value)})
