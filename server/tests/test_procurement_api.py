@@ -296,3 +296,24 @@ class ProcurementAPITests(TestCase):
         self.assertEqual(self.client.get(
             f"/api/v1/documents/{invalid.pk}/structures", secure=True,
         ).status_code, 404)
+
+    def test_public_notice_does_not_expose_unapproved_metadata_or_source_secrets(self):
+        self.nv_ai_v1.extra_data = {"score": 90, "final": {"private": "SENSITIVE_FIXTURE"}}
+        for url in ("javascript:alert(1)", "https://g2b.go.kr/?token=SENSITIVE_FIXTURE",
+                    "https://user:secret@g2b.go.kr/test", "https://g2b.go.kr.example.invalid/test",
+                    "http://localhost:8080/private"):
+            with self.subTest(url=url):
+                self.nv_ai_v1.source_url = url
+                self.nv_ai_v1.save(update_fields=["source_url", "extra_data"])
+                res = self.client.get(f"/api/v1/notices/{self.notice_ai.pk}", secure=True)
+                self.assertEqual(res.status_code, 200)
+                self.assertEqual(res.json()["data"]["source_url"], "")
+                self.assertEqual(res.json()["data"]["extra_data"], {})
+                listing = self.client.get("/api/v1/notices?q=민원", secure=True)
+                self.assertEqual(listing.json()["data"][0]["source_url"], "")
+        self.nv_ai_v1.source_url = "https://g2b.go.kr/test-ai"
+        self.nv_ai_v1.save(update_fields=["source_url"])
+        res = self.client.get(f"/api/v1/notices/{self.notice_ai.pk}", secure=True)
+        self.assertEqual(res.json()["data"]["source_url"], "https://g2b.go.kr/test-ai")
+        self.nv_ai_v1.refresh_from_db()
+        self.assertEqual(self.nv_ai_v1.extra_data["final"]["private"], "SENSITIVE_FIXTURE")
