@@ -304,6 +304,60 @@ class ProposalEngineAcceptanceTests(TestCase):
         proposal.refresh_from_db()
         self.assertEqual(proposal.current_revision_id, rev.pk)
 
+    def test_cross_linked_current_revision_and_source_are_not_visible(self):
+        from bid_server.procurement.proposal_service import ProposalAccessError
+        other = User.objects.create_user(username="cross-linked-owner", password=PASSWORD_FIXTURE,
+                                         must_change_password=False)
+        another_notice = Notice.objects.create(source="G2B_OFFICIAL_API", notice_number="CROSS-LINK-001")
+        another_version = NoticeVersion.objects.create(
+            notice=another_notice, version_seq=1, observed_at=timezone.now(),
+            title="Other notice", buyer="Synthetic private buyer", source_payload_digest="d" * 64,
+        )
+        another_notice.current_version = another_version
+        another_notice.save()
+        foreign = ProposalService.get_or_create_proposal(another_notice, owner_user=other)
+        sections = [{"section_key": "s1", "ordinal": 1, "title": "Section", "body": "Synthetic private text"}]
+        other_revision = ProposalService.create_atomic_revision(foreign, "Other revision", sections)
+        own = ProposalService.get_or_create_proposal(self.notice, owner_user=self.user)
+        own_revision = ProposalService.create_atomic_revision(own, "Own revision", sections)
+        route = f"/api/v1/proposals/{own.pk}"
+        for foreign_current, source_id in ((other_revision.pk, None), (own_revision.pk, another_version.pk)):
+            with self.subTest(cross_pointer=foreign_current != own_revision.pk):
+                Proposal.objects.filter(pk=own.pk).update(current_revision_id=foreign_current)
+                ProposalRevision.objects.filter(pk=own_revision.pk).update(notice_version_id=source_id)
+                self.assertEqual(self.client.get("/api/v1/proposals", secure=True).json()["data"], [])
+                self.assertEqual(self.client.get(route, secure=True).status_code, 404)
+                self.assertEqual(self.client.get(route + "/export?format=docx", secure=True).status_code, 404)
+                self.assertEqual(self.client.post(route + "/revisions", {
+                    "title": "No write", "sections": sections, "expected_parent_seq": 1,
+                }, format="json", secure=True, HTTP_X_CSRFTOKEN=self.csrf_token,
+                    HTTP_ORIGIN="https://testserver").status_code, 404)
+                self.assertEqual(own.revisions.count(), 1)
+                with self.assertRaises(ProposalAccessError):
+                    ProposalService.create_atomic_revision(own, "No write", sections, actor_user=self.user)
+
+    def test_revoked_owner_snapshot_denies_write_and_worker_export(self):
+        from datetime import timedelta
+        from bid_server.procurement.proposal_service import ProposalAccessError, owned_proposals
+        proposal = ProposalService.get_or_create_proposal(self.notice, owner_user=self.user)
+        sections = [{"section_key": "s1", "ordinal": 1, "title": "Section", "body": "fixture"}]
+        revision = ProposalService.create_atomic_revision(proposal, "Fixture", sections)
+        job, _ = JobService.create_job(JobKind.PROPOSAL_EXPORT, {
+            "revision_id": str(revision.pk), "format": "docx",
+        }, owner_user=self.user)
+        fresh = User.objects.get(pk=self.user.pk)
+        fresh.locked_until = timezone.now() + timedelta(minutes=5)
+        fresh.save(update_fields=["locked_until"])
+        self.assertFalse(owned_proposals(self.user).exists())
+        with self.assertRaises(ProposalAccessError):
+            ProposalService.create_atomic_revision(proposal, "No write", sections, actor_user=self.user)
+        executed = JobWorkerPipeline().execute_next_job()
+        self.assertEqual(executed.pk, job.pk)
+        self.assertEqual(executed.state, JobState.FAILED)
+        self.assertEqual(executed.attempts.last().error_code, "PROPOSAL_ACCESS_DENIED")
+        self.assertEqual(proposal.revisions.count(), 1)
+        self.assertFalse(ExportArtifact.objects.exists())
+
     def test_worker_rejects_cross_owner_proposal_generation_and_export(self):
         other = User.objects.create_user(
             username="worker-other", password=PASSWORD_FIXTURE,
