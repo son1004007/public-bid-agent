@@ -374,6 +374,7 @@ class LegacyIdentity(models.Model):
 
 class ProposalStatus(models.TextChoices):
     AI_DRAFT = "AI_DRAFT", "AI 초안"
+    TEMPLATE_DRAFT = "TEMPLATE_DRAFT", "미검증 템플릿 초안"
     EDITED = "EDITED", "사용자 편집"
     REVIEWED = "REVIEWED", "검토 완료"
     APPROVED = "APPROVED", "승인 완료"
@@ -381,6 +382,7 @@ class ProposalStatus(models.TextChoices):
 
 class ProposalProvenance(models.TextChoices):
     AI_DRAFT = "AI_DRAFT", "AI 자동 생성"
+    TEMPLATE = "TEMPLATE", "정적 템플릿"
     HUMAN = "HUMAN", "사용자 수동 작성"
 
 
