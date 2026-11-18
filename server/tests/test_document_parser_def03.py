@@ -125,6 +125,54 @@ class DocumentParserAcceptanceTests(TestCase):
                 self.assertEqual(ExtractionRun.objects.count(), 0)
                 self.assertEqual(DocumentStructure.objects.count(), 0)
 
+    def test_parser_rejects_oversized_xml_dtd_and_unsupported_formats(self):
+        from bid_server.procurement.parser import ParserError, MAX_XML_BYTES
+        cases = (
+            ("rfp.docx", b"<document>" + b"A" * MAX_XML_BYTES + b"</document>"),
+            ("rfp.docx", b"<!DOCTYPE document [<!ENTITY x 'sample'>]><document>&x;</document>"),
+            ("rfp.docx", "<!DOCTYPE document><document/>".encode("utf-16")),
+            ("rfp.hwpx", b"<sec>" + b"<p>" * 50 + b"</p>" * 50 + b"</sec>"),
+        )
+        for name, content in cases:
+            with self.subTest(name=name, size=len(content)):
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                    member = "word/document.xml" if name.endswith("docx") else "Contents/section0.xml"
+                    archive.writestr(member, content)
+                with self.assertRaises(ParserError):
+                    parse_document_bytes(name, buf.getvalue())
+
+        for name, content in (
+            ("rfp.pdf", b"%PDF-1.7 fixture"),
+            ("rfp.txt", b"%PDF-1.7 fixture"),
+            ("rfp.txt", create_sample_hwpx_bytes()),
+            ("rfp.txt", bytes([0, 1, 2, 3])),
+        ):
+            with self.subTest(name=name):
+                with self.assertRaises(ParserError):
+                    parse_document_bytes(name, content)
+
+    def test_service_rejects_registered_media_mismatch(self):
+        from bid_server.procurement.parser import ParserError
+        from bid_server.procurement.models import ExtractionRun
+        DocumentVersion.objects.filter(pk=self.doc_version.pk).update(media_type="text/plain")
+        with self.assertRaises(ParserError):
+            ExtractionService.extract_and_persist(self.doc_version, self.raw_hwpx, "rfp.hwpx")
+        self.assertFalse(ExtractionRun.objects.exists())
+
+    def test_unimplemented_job_kind_does_not_report_success(self):
+        from bid_server.jobs.models import JobKind, JobState, Outbox
+        from bid_server.jobs.service import JobService
+        from bid_server.jobs.workers import JobWorkerPipeline
+        for kind in (JobKind.COLLECTION_RUN, JobKind.CLASSIFICATION_RUN,
+                     JobKind.EVALUATION_RUN, JobKind.CONNECTION_CHECK):
+            job, _ = JobService.create_job(kind, {"fixture": True})
+            result = JobWorkerPipeline().execute_next_job()
+            self.assertEqual(result.pk, job.pk)
+            self.assertEqual(result.state, JobState.FAILED)
+            self.assertEqual(result.attempts.last().error_code, "JOB_KIND_NOT_IMPLEMENTED")
+            self.assertFalse(Outbox.objects.filter(job=job, message_kind="JOB_SUCCEEDED").exists())
+
     def test_hwpx_parser_extracts_table_grid_and_footnotes(self):
         """HWPX 파서가 표의 병합 span 및 각주 앵커를 정확히 추출함을 검증 (DEF-03)."""
         raw_hwpx = create_sample_hwpx_bytes()
@@ -366,3 +414,22 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
                 self.version, self.valid_payload, "rfp.txt", actor_user=self.user,
             )
         self.assertFalse(ExtractionRun.objects.exists())
+
+    def test_http_rejects_registered_binary_and_invalid_text(self):
+        from bid_server.procurement.models import ExtractionRun, DocumentStructure
+        for payload, media, sent_media, expected in (
+            (b"%PDF-1.7 fixture", "application/pdf", "text/plain", 415),
+            (create_sample_hwpx_bytes(), "application/x-hwp+zip", "application/octet-stream", 415),
+            (bytes([0, 1, 2, 3]), "text/plain", "text/plain", 422),
+        ):
+            with self.subTest(media=media):
+                DocumentVersion.objects.filter(pk=self.version.pk).update(
+                    sha256=hashlib.sha256(payload).hexdigest(), size_bytes=len(payload), media_type=media,
+                )
+                res = self.client.post(
+                    self.url, data=payload, content_type=sent_media, secure=True,
+                    HTTP_X_CSRFTOKEN=self.csrf_token, HTTP_ORIGIN="https://testserver",
+                )
+                self.assertEqual(res.status_code, expected)
+                self.assertFalse(ExtractionRun.objects.exists())
+                self.assertFalse(DocumentStructure.objects.exists())
