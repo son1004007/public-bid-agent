@@ -29,6 +29,12 @@ jobs:
       - name: Run foundation and authentication synthetic regression
         run: python server/manage.py test tests --settings=bid_server.settings.test --verbosity 1
 
+      - name: Portable loopback HTTP acceptance (synthetic only)
+        env:
+          BID_WORKSPACE_HTTP: '1'
+        timeout-minutes: 3
+        run: python server/manage.py test tests.test_workspace_http --settings=bid_server.settings.test --verbosity 2
+
       - name: Real Chrome workspace HTTP acceptance (synthetic only)
         if: runner.os == 'Linux'
         env:
