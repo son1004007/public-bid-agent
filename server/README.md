@@ -1,3 +1,12 @@
+## 2026-11-19 security review: local launcher and recovery contract (candidate)
+
+- Windows loopback staging uses `scripts/start_web_service.ps1`. Preprovision the existing private signing-key file and DB JSON outside Git with restrictive ACLs. The launcher no longer generates keys implicitly, accepts no plaintext `BID_LOCAL_SECRET_KEY`, and validates settings before binding 127.0.0.1:8000. DB JSON must contain exactly HOST, PORT, NAME, USER, PASSWORD; host must be a numeric loopback, not a remote endpoint. Actual local DB name, Windows ACL and listener must be checked before deployment.
+- Local artifact storage is `%LOCALAPPDATA%/PublicBidAgent/local-media`, preprovisioned separately with restrictive ACLs; no creation during settings import. Missing storage means export fails closed. No deployment or existing key rotation is authorized by this change.
+- Backup generations use unique directories outside Git, reject overlapping/symlink storage roots and do not overwrite existing bundles. Stop writes or use an approved coordinated snapshot for DB + storage; a DB snapshot plus a file copy is not proof of a consistent storage generation.
+- Restore rehearsal now requires `--trusted-dump-sha256` from an independently approved record (or `trusted_dump_sha256=` for Python callers), not a digest copied from an untrusted manifest. Only trusted source/admin dumps may be executed in an isolated cluster. PostgreSQL documents arbitrary-code risks: https://www.postgresql.org/docs/17/app-pgdump.html. This check is not a sandbox or signature; an attacker who controls the approved digest or source can still compromise restore.
+- Synthetic tests require explicitly configured SM03_TEST_DB_CONFIG_FILE and no longer fall back to the workstation's DB. Foundation and Sprint 1 workflows pin upstream action revisions and disable persisted checkout credentials; other workflows and dependency inventories still need review. GitHub guidance: https://docs.github.com/en/actions/reference/security/secure-use.
+- This is a source candidate, not evidence of successful local launch, recovery, independent review or current-head CI. See CURRENT_STATE.md.
+
 # Isolated Django server foundation
 
 SM02 구현 범위: Django/DRF 설정, 공통 API envelope, 안전 오류, process health와 정적 OpenAPI. 기존 local_app과 backend의 패키지/데이터/설정을 변경하지 않는다. SM03 DB 세션 인증과 최초 암호 변경 게이트를 구현했다. 실제 운영 계정/업무/수집/모델/DB 이관은 없다.
