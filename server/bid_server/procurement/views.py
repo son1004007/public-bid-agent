@@ -256,10 +256,15 @@ class DashboardAPIView(APIView):
                 "data_candidates": data_count,
                 "sw_candidates": sw_count,
                 "urgent_deadline_3d": urgent_count,
+                "major_candidates": Notice.objects.filter(
+                    current_version__cancellation=False,
+                    current_version__deadline_at__gte=now,
+                    current_version__budget_amount__gte=300000000,
+                ).count(),
             },
             "collection_health": {
-                "status": "ONLINE",
-                "source": "G2B_OFFICIAL_API",
+                "status": "UNVERIFIED",
+                "source": None,
                 "last_sync_at": last_sync,
             },
             "as_of": now.isoformat(),
