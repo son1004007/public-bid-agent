@@ -8,7 +8,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from django.core.exceptions import ImproperlyConfigured
-from bid_server.config import REPOSITORY_ROOT, load_config, secret_file
+from bid_server.config import REPOSITORY_ROOT, load_config, secret_file, load_local_database
 
 
 class ConfigurationTests(TestCase):
@@ -96,6 +96,23 @@ class ConfigurationTests(TestCase):
             for value in ["relative/path", str(REPOSITORY_ROOT / "fixture-secret")]:
                 with self.subTest(key=key):
                     self.reject({**self.env, key: value})
+
+    def test_local_database_rejects_remote_hosts_arbitrary_options_and_missing_files(self):
+        import json
+        cfg = {"HOST": "127.0.0.1", "PORT": 5432, "NAME": "sm03_fixture",
+               "USER": "synthetic", "PASSWORD": "fixture-secret"}
+        path = self.write("local-db.json", json.dumps(cfg, indent=2).encode())
+        self.assertEqual(load_local_database(path), cfg)
+        for bad in ({**cfg, "HOST": "remote.invalid"}, {**cfg, "OPTIONS": {}},
+                    {**cfg, "ENGINE": "django.db.backends.sqlite3"},
+                    {**cfg, "NAME": "postgres"}, {**cfg, "PORT": True}):
+            self.write("local-db.json", json.dumps(bad).encode())
+            with self.assertRaises(ImproperlyConfigured) as caught:
+                load_local_database(path)
+            self.assertNotIn("fixture-secret", str(caught.exception))
+            self.assertNotIn(str(self.root), str(caught.exception))
+        with self.assertRaises(ImproperlyConfigured):
+            load_local_database(self.root / "missing.json")
 
     def test_media_root_cannot_contain_repository_secrets_or_policy(self):
         self.reject({**self.env, "PRIVATE_MEDIA_ROOT": str(REPOSITORY_ROOT.parent)}, "PRIVATE_MEDIA_ROOT")
