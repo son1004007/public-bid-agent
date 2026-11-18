@@ -31,12 +31,11 @@ class BackupRestoreA16Tests(TestCase):
         """PostgreSQL 환경이 주어졌을 때 완전한 백업 생성 및 복구 리허설 무결성을 검증 (A16)."""
         cfg_env = os.environ.get("SM03_TEST_DB_CONFIG_FILE")
         if not cfg_env or not Path(cfg_env).exists():
-            default_cfg = Path(os.environ.get("LOCALAPPDATA", "")) / "PublicBidAgent" / "sm03-postgres" / "connection.private.json"
-            if not default_cfg.exists():
-                self.skipTest("PostgreSQL configuration not found, skipping live rehearsal.")
-            cfg_path = default_cfg
-        else:
-            cfg_path = Path(cfg_env)
+            self.skipTest("Explicit isolated PostgreSQL test configuration required.")
+        cfg_path = Path(cfg_env)
+        cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+        self.assertEqual(cfg["HOST"], "127.0.0.1")
+        self.assertTrue(cfg["NAME"].startswith("sm03_"))
 
         # 1. 백업 생성
         bundle_dir = create_backup(
@@ -60,6 +59,7 @@ class BackupRestoreA16Tests(TestCase):
             rehearsal_db_name="sm03_test_a16_rehearsal",
             config_path=cfg_path,
             keep_db=False,
+            trusted_dump_sha256=sha256_file(bundle_dir / "db_dump.sql"),
         )
 
         self.assertEqual(report["status"], "SUCCESS")
@@ -126,10 +126,12 @@ class BackupRestoreA16Tests(TestCase):
             run.return_value.stderr = "synthetic failure"
             with self.assertRaisesRegex(RuntimeError, "psql restore failed"):
                 restore_rehearsal.run_rehearsal(
-                    bundle, rehearsal_db_name="sm03_test_failure_rehearsal"
+                    bundle, rehearsal_db_name="sm03_test_failure_rehearsal",
+                    trusted_dump_sha256=sha256_file(dump)
                 )
 
         self.assertEqual(connect.call_count, 2)
+        self.assertIn("-X", run.call_args.args[0])
         statements = [str(call.args[0]) for call in cursor.execute.call_args_list]
         self.assertEqual(len(statements), 2)
         self.assertIn("CREATE DATABASE", statements[0])
