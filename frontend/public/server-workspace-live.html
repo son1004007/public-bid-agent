@@ -378,29 +378,29 @@
     </header>
 
     <section id="authPanel" style="padding:24px; max-width:480px">
- <form id="loginForm" hidden><h2>로그인</h2><label>계정 <input id="username" autocomplete="username" required maxlength="150"></label><br><label>비밀번호 <input id="password" type="password" autocomplete="current-password" required maxlength="128"></label><br><button class="primary" type="submit">로그인</button></form>
- <form id="passwordForm" hidden><h2>최초 비밀번호 변경</h2><label>현재 비밀번호 <input id="currentPassword" type="password" autocomplete="current-password" required maxlength="128"></label><br><label>새 비밀번호 <input id="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label><br><button type="submit" class="primary">변경 후 재로그인</button></form>
+ <form id="loginForm" method="post" hidden><h2>로그인</h2><label>계정 <input id="username" autocomplete="username" required maxlength="150"></label><br><label>비밀번호 <input id="password" type="password" autocomplete="current-password" required maxlength="128"></label><br><button class="primary" type="submit">로그인</button></form>
+ <form id="passwordForm" method="post" hidden><h2>최초 비밀번호 변경</h2><label>현재 비밀번호 <input id="currentPassword" type="password" autocomplete="current-password" required maxlength="128"></label><br><label>새 비밀번호 <input id="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label><br><button type="submit" class="primary">변경 후 재로그인</button></form>
  <p id="authStatus" role="status">인증 확인 중</p>
 </section>
 <main class="content" id="businessContent" hidden>
       <!-- 1. Metrics Row -->
       <div class="metrics-grid">
-        <div class="metric-card" onclick="setCategoryFilter('AI')">
+        <div class="metric-card" id="metricAi">
           <small>🌟 AI / LLM 특화 사업</small>
           <b id="mAi">-</b>
           <div class="desc">생성형 AI, SLLM, 에이전트 등</div>
         </div>
-        <div class="metric-card" onclick="setStatusFilter('open', true)">
+        <div class="metric-card" id="metricUrgent">
           <small>⏰ 72시간 내 마감 임박</small>
           <b id="mUrgent" style="color: var(--red);">-</b>
           <div class="desc">72시간 이내 마감 예정</div>
         </div>
-        <div class="metric-card" onclick="setSort('budget')">
+        <div class="metric-card" id="metricMajor">
           <small>💰 3억 이상 대형 사업</small>
           <b id="mMajor">-</b>
           <div class="desc">진행 중인 3억 원 이상 공고</div>
         </div>
-        <div class="metric-card" onclick="resetFilters()">
+        <div class="metric-card" id="metricTotal">
           <small>📦 조달청 총 수집 공고</small>
           <b id="mTotal">-</b>
           <div class="desc">DB에 등록된 공고 수</div>
@@ -409,31 +409,31 @@
 
       <!-- 2. Search Toolbar -->
       <div class="search-toolbar">
-        <input type="text" id="searchInput" class="search-input" placeholder="공고명, 발주기관, 공고번호 검색..." onkeyup="if(event.key==='Enter') loadNotices()">
+        <input type="text" id="searchInput" class="search-input" placeholder="공고명, 발주기관, 공고번호 검색..." >
 
         <div class="category-pills">
-          <button class="cat-btn active" data-cat="" onclick="selectCategory(this, '')">전체</button>
-          <button class="cat-btn" data-cat="AI" onclick="selectCategory(this, 'AI')">AI·LLM</button>
-          <button class="cat-btn" data-cat="DATA" onclick="selectCategory(this, 'DATA')">DATA</button>
-          <button class="cat-btn" data-cat="SW" onclick="selectCategory(this, 'SW')">SW</button>
+          <button class="cat-btn active" data-cat="" >전체</button>
+          <button class="cat-btn" data-cat="AI" >AI·LLM</button>
+          <button class="cat-btn" data-cat="DATA" >DATA</button>
+          <button class="cat-btn" data-cat="SW" >SW</button>
         </div>
 
-        <button id="presetAiTargetBtn" class="cat-btn" style="background:#eef6ff; border-color:#3182ce; color:#2b6cb0; font-weight:700; white-space:nowrap;" onclick="toggleAiTargetPreset(this)">🎯 전략: 1주+ & 5억~20억 AI/LLM</button>
+        <button id="presetAiTargetBtn" class="cat-btn" style="background:#eef6ff; border-color:#3182ce; color:#2b6cb0; font-weight:700; white-space:nowrap;" >🎯 전략: 1주+ & 5억~20억 AI/LLM</button>
 
-        <select id="statusSelect" class="filter-select" onchange="loadNotices()">
+        <select id="statusSelect" class="filter-select" >
           <option value="">전체 상태</option>
           <option value="open" selected>진행 중 (Open)</option>
           <option value="closed">마감 완료</option>
           <option value="cancelled">취소 이력</option>
         </select>
 
-        <select id="sortSelect" class="filter-select" onchange="loadNotices()">
+        <select id="sortSelect" class="filter-select" >
           <option value="deadline">마감일 임박순 (D-Day)</option>
           <option value="budget">예산 높은순</option>
           <option value="newest">최신 등록순</option>
         </select>
 
-        <button class="primary" onclick="loadNotices()">검색</button>
+        <button class="primary" id="searchBtn">검색</button>
       </div>
 
       <!-- 3. Notice Table Card -->
@@ -469,7 +469,7 @@
 </div>
 
 <!-- Notice Detail Drawer -->
-<div class="drawer-overlay" id="drawerOverlay" onclick="if(event.target===this) closeDrawer()">
+<div class="drawer-overlay" id="drawerOverlay" >
   <div class="drawer">
     <div class="drawer-header">
       <div>
@@ -477,7 +477,7 @@
         <h2 id="dTitle" style="margin-top: 8px;">공고 제목</h2>
         <div id="dNoticeNo" style="font-size: 12px; color: var(--muted); margin-top: 4px;">공고번호: -</div>
       </div>
-      <button class="drawer-close" onclick="closeDrawer()">&times;</button>
+      <button class="drawer-close" data-close-drawer>&times;</button>
     </div>
 
     <dl class="dl-facts">
@@ -504,7 +504,7 @@
       <a id="dG2bLink" hidden target="_blank" rel="noopener noreferrer" class="primary button" style="flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; color: #fff; background: var(--accent); font-weight: 600;">
         나라장터 공식 상세페이지 열기 ↗
       </a>
-      <button onclick="closeDrawer()" style="padding: 10px 18px;">닫기</button>
+      <button data-close-drawer style="padding: 10px 18px;">닫기</button>
     </div>
   </div>
 </div>
@@ -898,7 +898,7 @@ function setSort(s) {
   loadNotices();
 }
 
-function resetFilters() {
+function resetFilters(reload = true) {
   currentCategory = '';
   targetPresetActive = false;
   urgentOnly = false;
@@ -915,7 +915,7 @@ function resetFilters() {
     if (b.dataset.cat === '') b.classList.add('active');
     else if (b.id !== 'presetAiTargetBtn') b.classList.remove('active');
   });
-  loadNotices();
+  if (reload) loadNotices();
 }
 
 // Nav clicks
@@ -932,6 +932,30 @@ document.querySelectorAll('.nav button').forEach(b => {
     else if (v === 'jobs') window.open('/api/v1/jobs', '_blank', 'noopener,noreferrer');
   });
 });
+
+// Event listeners instead of inline handlers: the server CSP allows only this script.
+document.getElementById('metricAi').addEventListener('click', () => setCategoryFilter('AI'));
+document.getElementById('metricUrgent').addEventListener('click', () => setStatusFilter('open', true));
+document.getElementById('metricMajor').addEventListener('click', () => {
+  resetFilters(false);
+  document.getElementById('sortSelect').value = 'budget';
+  loadNotices();
+});
+document.getElementById('metricTotal').addEventListener('click', () => resetFilters());
+document.getElementById('searchInput').addEventListener('keyup', event => {
+  if (event.key === 'Enter') loadNotices();
+});
+for (const btn of document.querySelectorAll('.cat-btn[data-cat]')) {
+  btn.addEventListener('click', () => selectCategory(btn, btn.dataset.cat));
+}
+document.getElementById('presetAiTargetBtn').addEventListener('click', event => toggleAiTargetPreset(event.currentTarget));
+document.getElementById('statusSelect').addEventListener('change', () => { urgentOnly = false; loadNotices(); });
+document.getElementById('sortSelect').addEventListener('change', () => loadNotices());
+document.getElementById('searchBtn').addEventListener('click', () => loadNotices());
+document.getElementById('drawerOverlay').addEventListener('click', event => {
+  if (event.target === event.currentTarget) closeDrawer();
+});
+for (const btn of document.querySelectorAll('[data-close-drawer]')) btn.addEventListener('click', closeDrawer);
 
 // Init on page load
 window.addEventListener('DOMContentLoaded', async () => {
