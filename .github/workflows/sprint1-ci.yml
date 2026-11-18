@@ -70,6 +70,8 @@ jobs:
         run: node --test scripts/test_bid_document_queue_ui.cjs
       - name: BID-06 independent ground truth UI contract (synthetic only)
         run: node --test scripts/test_rfp_ground_truth_ui.cjs
+      - name: Live workspace authentication and rendering regression (synthetic only)
+        run: node --test scripts/test_live_workspace_security.cjs
       - name: Static publishing preview syntax and boundaries
         run: python scripts/check_ui_preview.py
       - name: Verify standalone preview included in build
