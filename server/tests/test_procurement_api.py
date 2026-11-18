@@ -78,6 +78,7 @@ class ProcurementAPITests(TestCase):
             document=self.doc_ai,
             notice_version=self.nv_ai_v1,
             version_seq=1,
+            shared_read_approved=True,
             sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             size_bytes=1048576,
             media_type="application/pdf",
@@ -262,3 +263,36 @@ class ProcurementAPITests(TestCase):
         self.assertEqual(data[0]["version_seq"], 2)
         self.assertTrue(data[0]["correction"])
         self.assertEqual(data[1]["version_seq"], 1)
+
+    def test_notice_attachments_filter_versions_and_counts_by_access(self):
+        other = User.objects.create_user(
+            username="other-attachment-owner", password=PASSWORD_FIXTURE,
+            must_change_password=False, role="director",
+        )
+        hidden_doc = Document.objects.create(
+            notice=self.notice_ai, logical_key="restricted-fixture",
+        )
+        for doc, seq in ((self.doc_ai, 2), (hidden_doc, 1)):
+            DocumentVersion.objects.create(
+                document=doc, notice_version=self.nv_ai_v1, version_seq=seq,
+                sha256="a" * 64, size_bytes=50, owner_user=other,
+                source_url="https://example.invalid/restricted-fixture",
+            )
+        # Even explicitly shared rows with inconsistent notice linkage must not leak.
+        invalid = DocumentVersion.objects.create(
+            document=hidden_doc, notice_version=self.nv_data_v1, version_seq=2,
+            sha256="b" * 64, size_bytes=50, shared_read_approved=True,
+        )
+        res = self.client.get(f"/api/v1/notices/{self.notice_ai.pk}", secure=True)
+        self.assertEqual(res.status_code, 200)
+        docs = res.json()["data"]["documents"]
+        self.assertEqual(len(docs), 1)
+        self.assertEqual(docs[0]["logical_key"], "RFP")
+        self.assertEqual([v["version_seq"] for v in docs[0]["versions"]], [1])
+        self.assertNotIn("restricted-fixture", str(docs))
+        res = self.client.get("/api/v1/notices?q=민원", secure=True)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["data"][0]["document_count"], 1)
+        self.assertEqual(self.client.get(
+            f"/api/v1/documents/{invalid.pk}/structures", secure=True,
+        ).status_code, 404)
