@@ -36,7 +36,7 @@ from .serializers import (
 )
 from .proposal_service import ProposalService, RevisionConflictError, PayloadTooLargeError
 from .generator import ProposalExportService
-from .extractor_service import ExtractionService
+from .extractor_service import ExtractionService, DocumentSourceMismatchError
 from bid_server.jobs.models import JobKind
 from bid_server.jobs.service import JobService
 
@@ -402,11 +402,22 @@ class DocumentExtractAPIView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        run = ExtractionService.extract_and_persist(
-            document_version=doc_version,
-            raw_bytes=raw_bytes,
-            file_name=doc_version.document.logical_key + ".txt",
-        )
+        try:
+            run = ExtractionService.extract_and_persist(
+                document_version=doc_version,
+                raw_bytes=raw_bytes,
+                file_name=doc_version.document.logical_key + ".txt",
+            )
+        except DocumentSourceMismatchError:
+            return Response(
+                {"error": "DOCUMENT_SOURCE_MISMATCH"},
+                status=status.HTTP_409_CONFLICT,
+            )
+        except DocumentVersion.DoesNotExist:
+            return Response(
+                {"error": "DOCUMENT_SOURCE_MISMATCH"},
+                status=status.HTTP_409_CONFLICT,
+            )
         return Response({
             "extraction_run_id": str(run.id),
             "state": run.state,
