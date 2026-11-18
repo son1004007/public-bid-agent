@@ -9,6 +9,7 @@
 import hashlib
 from typing import Optional, Dict, Any
 from django.db import transaction
+from django.db.models import F, Q
 from django.utils import timezone
 from .models import (
     DocumentVersion,
@@ -24,6 +25,33 @@ from .models import (
     ChunkPath,
 )
 from .parser import parse_document_bytes
+
+
+class DocumentAccessError(ValueError):
+    """Document version is not in the actor's authorized scope."""
+
+
+def _eligible_actor(actor):
+    return bool(getattr(actor, "is_authenticated", False)
+                and actor.is_active and not actor.must_change_password)
+
+
+def scoped_document_versions(actor, *, write=False):
+    qs = DocumentVersion.objects.filter(
+        notice_version__notice_id=F("document__notice_id"),
+    )
+    if not _eligible_actor(actor):
+        return qs.none()
+    scope = Q(owner_user_id=actor.pk)
+    if not write:
+        scope |= Q(shared_read_approved=True)
+    return qs.filter(scope)
+
+
+def _assert_document_access(version, actor):
+    if (not _eligible_actor(actor) or version.owner_user_id != actor.pk
+            or version.notice_version.notice_id != version.document.notice_id):
+        raise DocumentAccessError("Document access denied.")
 
 
 class DocumentSourceMismatchError(ValueError):
@@ -42,12 +70,15 @@ class ExtractionService:
         raw_bytes: bytes,
         file_name: Optional[str] = None,
         job_attempt_id: Optional[Any] = None,
+        *, actor_user=None,
     ) -> ExtractionRun:
         """단일 문서 버전을 파싱하고 모든 계층 구조를 단일 트랜잭션으로 저장한다."""
         size = len(raw_bytes)
         digest = hashlib.sha256(raw_bytes).hexdigest()
         # 호출자가 수정한 in-memory 모델 대신 DB에 저장된 원본 정보를 검증한다.
         document_version = DocumentVersion.objects.get(pk=document_version.pk)
+        if actor_user is not None:
+            _assert_document_access(document_version, actor_user)
         _assert_source_matches(document_version, size, digest)
         fname = file_name or document_version.document.logical_key or "document.bin"
         parsed = parse_document_bytes(fname, raw_bytes)
@@ -57,6 +88,8 @@ class ExtractionService:
             document_version = DocumentVersion.objects.select_for_update().get(
                 pk=document_version.pk,
             )
+            if actor_user is not None:
+                _assert_document_access(document_version, actor_user)
             _assert_source_matches(document_version, size, digest)
             # 1. ExtractionRun 생성
             run = ExtractionRun.objects.create(
