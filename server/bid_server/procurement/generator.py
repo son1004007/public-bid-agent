@@ -167,7 +167,7 @@ class ProposalExportService:
             raise ValueError(f"지원하지 않는 제안서 출력 서식입니다: {target_format} (지원: hwpx, docx)")
 
         notice = revision.proposal.notice
-        current_nv = notice.current_version
+        current_nv = revision.notice_version
         notice_info = {
             "notice_number": notice.notice_number,
             "buyer": current_nv.buyer if current_nv else "공공 발주처",
@@ -181,13 +181,10 @@ class ProposalExportService:
         ]
 
         if not sections_data:
-            # Fallback for empty revision
-            sections_data = [
-                {"ordinal": 1, "title": "사업 이해 및 추진 전략", "body": revision.summary or "본 제안서는 당사의 최적 솔루션을 제안합니다."}
-            ]
+            raise ValueError("Proposal revision has no sections.")
 
         safe_title = revision.title or "제안서_초안"
-        safe_name = "".join(c for c in safe_title if c.isalnum() or c in (" ", "_", "-")).strip()
+        safe_name = "".join(c for c in safe_title if c.isalnum() or c in (" ", "_", "-")).strip()[:80] or "proposal"
 
         if fmt == "hwpx":
             raw_bytes = build_hwpx_bytes(revision.title, sections_data, notice_info)
