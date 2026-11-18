@@ -2,8 +2,11 @@
 
 목적: DocumentVersion의 원본 바이트를 파싱하여 DocumentStructure, DocumentBlock,
       TableBlock, TableCell, FootnoteBlock, Chunk를 원자적으로 영속화한다.
+불변조건: DB에 등록된 원본 SHA-256/크기와 일치하는 바이트만 파싱 및 저장한다.
+호출자가 넘긴 모델 메타데이터를 신뢰하지 않으며, 불일치 시 전체 영속화 없이 실패한다.
 관련: docs/server-migration/17-domain-and-postgresql-contract.md §16, 27-html-defects-and-stop-verification.md.
 """
+import hashlib
 from typing import Optional, Dict, Any
 from django.db import transaction
 from django.utils import timezone
@@ -23,6 +26,15 @@ from .models import (
 from .parser import parse_document_bytes
 
 
+class DocumentSourceMismatchError(ValueError):
+    """등록된 원본과 추출 입력이 일치하지 않는다."""
+
+
+def _assert_source_matches(version: DocumentVersion, size: int, digest: str) -> None:
+    if size != version.size_bytes or digest != version.sha256.lower():
+        raise DocumentSourceMismatchError("Document source does not match registered version.")
+
+
 class ExtractionService:
     @staticmethod
     def extract_and_persist(
@@ -32,10 +44,20 @@ class ExtractionService:
         job_attempt_id: Optional[Any] = None,
     ) -> ExtractionRun:
         """단일 문서 버전을 파싱하고 모든 계층 구조를 단일 트랜잭션으로 저장한다."""
+        size = len(raw_bytes)
+        digest = hashlib.sha256(raw_bytes).hexdigest()
+        # 호출자가 수정한 in-memory 모델 대신 DB에 저장된 원본 정보를 검증한다.
+        document_version = DocumentVersion.objects.get(pk=document_version.pk)
+        _assert_source_matches(document_version, size, digest)
         fname = file_name or document_version.document.logical_key or "document.bin"
         parsed = parse_document_bytes(fname, raw_bytes)
 
         with transaction.atomic():
+            # 파싱 중 원본 메타데이터가 변경되었더라도 잘못된 결속을 저장하지 않는다.
+            document_version = DocumentVersion.objects.select_for_update().get(
+                pk=document_version.pk,
+            )
+            _assert_source_matches(document_version, size, digest)
             # 1. ExtractionRun 생성
             run = ExtractionRun.objects.create(
                 document_version=document_version,
