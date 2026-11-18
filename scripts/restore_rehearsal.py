@@ -39,11 +39,11 @@ def get_pg_bin_path() -> Path:
 
 
 def load_db_config(config_path: Path | None = None) -> dict:
-    if config_path and config_path.exists():
+    if config_path is not None:
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
     env_cfg = os.environ.get("SM03_TEST_DB_CONFIG_FILE")
-    if env_cfg and Path(env_cfg).exists():
+    if env_cfg:
         with open(env_cfg, "r", encoding="utf-8") as f:
             return json.load(f)
     default_cfg = Path(os.environ.get("LOCALAPPDATA", "")) / "PublicBidAgent" / "sm03-postgres" / "connection.private.json"
@@ -66,6 +66,7 @@ def run_rehearsal(
     rehearsal_db_name: str = "sm03_restore_rehearsal",
     config_path: Path | None = None,
     keep_db: bool = False,
+    *, trusted_dump_sha256: str | None = None,
 ) -> dict:
     # Fail closed before touching any PostgreSQL database.
     t_start = time.perf_counter()
@@ -139,6 +140,13 @@ def run_rehearsal(
         raise ValueError(f"Storage verification errors: {storage_verification_errors}")
     print(f"[+] Storage artifacts verified ({len(storage_meta.get('files', []))} files).")
 
+    # A checksum from the bundle itself is not a trust decision. Only run
+    # a dump whose provenance was independently approved by the operator.
+    if (not isinstance(trusted_dump_sha256, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", trusted_dump_sha256)
+            or trusted_dump_sha256 != actual_dump_sha256):
+        raise ValueError("Trusted dump SHA-256 required from an independent record")
+
     # 2. Re-create Clean Target Rehearsal DB
     cfg = load_db_config(config_path)
     validate_rehearsal_target(rehearsal_db_name, cfg)
@@ -171,6 +179,7 @@ def run_rehearsal(
     
         restore_cmd = [
             psql,
+            "-X",
             "-h", str(cfg["HOST"]),
             "-p", str(cfg["PORT"]),
             "-U", str(cfg["USER"]),
@@ -181,11 +190,11 @@ def run_rehearsal(
     
         print(f"[*] Restoring database dump into {rehearsal_db_name}...")
         t_restore_start = time.perf_counter()
-        res = subprocess.run(restore_cmd, env=env, capture_output=True, text=True)
+        res = subprocess.run(restore_cmd, env=env, capture_output=True, text=True, timeout=300)
         rto_seconds = round(time.perf_counter() - t_restore_start, 3)
     
         if res.returncode != 0:
-            raise RuntimeError(f"psql restore failed (code {res.returncode}): {res.stderr}")
+            raise RuntimeError(f"psql restore failed (code {res.returncode})")
         print(f"[+] Database restore completed in {rto_seconds}s (RTO).")
     
         # 4. Parity & Integrity Verification
@@ -349,6 +358,7 @@ if __name__ == "__main__":
     parser.add_argument("bundle_dir", help="Path to backup bundle directory")
     parser.add_argument("--rehearsal-db", default="sm03_restore_rehearsal", help="Rehearsal database name")
     parser.add_argument("--config", default=None, help="Path to connection.private.json")
+    parser.add_argument("--trusted-dump-sha256", required=True, help="SHA-256 from independently approved private backup record")
     parser.add_argument("--keep-db", action="store_true", help="Keep rehearsal DB without dropping")
     args = parser.parse_args()
 
@@ -360,6 +370,7 @@ if __name__ == "__main__":
         rehearsal_db_name=args.rehearsal_db,
         config_path=cfg_p,
         keep_db=args.keep_db,
+        trusted_dump_sha256=args.trusted_dump_sha256,
     )
     # A parity/FK/write failure returns a FAILED report without raising. Propagate
     # it as a nonzero process exit so CI and automation cannot mark it successful.
