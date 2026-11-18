@@ -1,3 +1,8 @@
+## 2026-11-19 PR #5 notebook acceptance timeout / portable HTTP gate (NO_GO)
+
+- Notebook job job_01M7RGZNRE00Y3Q35A190ZPJE3 ended FAILED, TIMEOUT_TERMINATION_UNCONFIRMED; reported exitCode 0 is not a pass. No output, test, clone, protected hashes or rollback evidence. Read-only follow-up job succeeded: original HEAD 1994a2f, 44 porcelain entries, loopback 8000 still listening; no candidate folder or matching command-line marker observed. These checks do not prove every timed-out process terminated or all protected data unchanged. Do not repeat the long remote command blindly, terminate unrelated processes or alter original checkout.
+- Source candidate f55b35b1 adds portable opt-in actual loopback HTTP acceptance (anonymous/CSRF/first password/change/relogin/logout, CSP, no static/media file exposure) independent of Chrome. Runs in existing hosted Windows and Linux matrix with synthetic SQLite; no new packages or operational DB settings. New same-head CI not yet verified. The actual notebook remains NOT_VERIFIED; next retry split into bounded read-only preflight, exact-SHA source acquisition and separately bounded test commands after termination is reconciled. No Main merge or deployment.
+
 ## 2026-11-19 PR #5 isolated notebook acceptance (RUNNING / NO_GO)
 
 - Exact-head 78fa59044f90f3c06a37979fbf48a3afb9d844ef: all four CI families SUCCESS (44418194680, 44418194768, 44418194683, 44418194688). Ubuntu foundation job 135203921891 log: 188 tests, OK (5 conditional skips); actual Chrome/ChromeDriver 157.0.8103.50, browser acceptance 1 test in 5.265s OK. PostgreSQL migration/authorization regression and Sprint 1 frontend build/VM regression steps succeeded.
