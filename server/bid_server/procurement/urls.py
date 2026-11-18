@@ -9,6 +9,7 @@ from .views import (
     ProposalDetailAPIView,
     ProposalRevisionCreateAPIView,
     ProposalExportAPIView,
+    StoredArtifactDownloadAPIView,
     DocumentExtractAPIView,
     DocumentStructureAPIView,
 )
@@ -22,6 +23,7 @@ urlpatterns = [
     path("proposals/<uuid:pk>", ProposalDetailAPIView.as_view(), name="proposal-detail"),
     path("proposals/<uuid:pk>/revisions", ProposalRevisionCreateAPIView.as_view(), name="proposal-revisions"),
     path("proposals/<uuid:pk>/export", ProposalExportAPIView.as_view(), name="proposal-export"),
+    path("artifacts/<uuid:pk>/download", StoredArtifactDownloadAPIView.as_view(), name="artifact-download"),
     path("documents/<uuid:pk>/extract", DocumentExtractAPIView.as_view(), name="document-extract"),
     path("documents/<uuid:pk>/structures", DocumentStructureAPIView.as_view(), name="document-structures"),
 ]
