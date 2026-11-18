@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 document scope follow-up (IMPLEMENTED_UNVERIFIED)
+
+- Prior proposal-owner candidate at c25dbef1: all four CI workflows SUCCESS (44399179614, 44399179600, 44399179592, 44399179605).
+- Document version scope candidate f2ab313f: migration 0005 adds nullable owner and explicit shared-read approval default false. Owner or explicitly shared version can be read by authenticated eligible users in current single-workspace server; extraction write requires owner. Scope applied to document structure, notice attachment metadata and counts. Reject inconsistent document/notice-version linkage. Service rechecks actor scope under write lock; trusted internal caller contract remains.
+- Regression cases include hidden/unclassified versions, shared read without write, cross-owner access and mismatched notice linkage. New CI/independent review pending. No automatic legacy classification, no production migration. Existing attachments require approved classification before being shown. Approval UI, multi-department grants, safe URL/notice extra metadata review, binary parser limits, worker source resolver and real file persistence remain pending.
+- Next: reject false persisted export success and synthetic provider provenance; complete remaining review and isolated deployment gates.
+
 ## 2026-11-19 PR #5 security follow-up (IMPLEMENTED_UNVERIFIED)
 
 - Prior document service source-binding SHA 6b107f86 and worker DB fencing SHA f1e7950b: each all four CI workflow families SUCCESS. This is not independent review or deployment approval.
