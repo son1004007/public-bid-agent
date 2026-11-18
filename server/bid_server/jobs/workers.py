@@ -4,6 +4,7 @@
       작업을 Fencing Token 임대 하에 실행하며, 외부 LLM 공급자 장애 시 즉시 STOP 상태로 전이하여
       불완전한 자동 초안 생성 및 무단 재시도를 철저히 차단한다.
 불변조건: 승인된 원본 조회 및 무결성 계약이 없으면 문서 추출은 비재시도 실패하며 합성 증거를 저장하지 않는다.
+불변조건: DB 전용 제안서 작업의 쓰기 및 결과 게시는 동일 임대 트랜잭션에서 처리한다.
 관련: docs/server-migration/19-automation-and-provider-contract.md §87-100, 20-acceptance-and-open-decisions.md (A27, A28).
 """
 import logging
@@ -45,9 +46,9 @@ class JobWorkerPipeline:
             if job.kind == JobKind.EXTRACTION_RUN:
                 self._run_extraction(job, fencing_token)
             elif job.kind == JobKind.PROPOSAL_GENERATION:
-                self._run_proposal_generation(job, fencing_token)
+                JobService.complete_db_operation(job.id, fencing_token, self._run_proposal_generation)
             elif job.kind == JobKind.PROPOSAL_EXPORT:
-                self._run_proposal_export(job, fencing_token)
+                JobService.complete_db_operation(job.id, fencing_token, self._run_proposal_export)
             else:
                 JobService.complete_job(
                     job.id, fencing_token, result_ref={"status": "completed", "kind": job.kind}
@@ -97,7 +98,7 @@ class JobWorkerPipeline:
             stop_reason="Verified document source is not configured.",
         )
 
-    def _run_proposal_generation(self, job: Job, fencing_token: int):
+    def _run_proposal_generation(self, job: Job) -> dict[str, Any]:
         manifest = job.input_manifest
         notice_id = manifest.get("notice_id")
         notice = Notice.objects.get(id=notice_id)
@@ -157,18 +158,14 @@ class JobWorkerPipeline:
             metadata={"generated_by_job": str(job.id), "model": "gemini-2.0-pro"},
         )
 
-        JobService.complete_job(
-            job.id,
-            fencing_token,
-            result_ref={
-                "proposal_id": str(proposal.id),
-                "revision_id": str(rev.id),
-                "revision_seq": rev.seq,
-                "sections_count": len(sections),
-            },
-        )
+        return {
+            "proposal_id": str(proposal.id),
+            "revision_id": str(rev.id),
+            "revision_seq": rev.seq,
+            "sections_count": len(sections),
+        }
 
-    def _run_proposal_export(self, job: Job, fencing_token: int):
+    def _run_proposal_export(self, job: Job) -> dict[str, Any]:
         manifest = job.input_manifest
         revision_id = manifest.get("revision_id")
         target_format = manifest.get("format", "hwpx")
@@ -187,14 +184,10 @@ class JobWorkerPipeline:
             storage_path=f"artifacts/{file_name}",
         )
 
-        JobService.complete_job(
-            job.id,
-            fencing_token,
-            result_ref={
-                "artifact_id": str(artifact.id),
-                "format": artifact.format,
-                "file_name": artifact.file_name,
-                "sha256": artifact.sha256,
-                "size_bytes": artifact.size_bytes,
-            },
-        )
+        return {
+            "artifact_id": str(artifact.id),
+            "format": artifact.format,
+            "file_name": artifact.file_name,
+            "sha256": artifact.sha256,
+            "size_bytes": artifact.size_bytes,
+        }
