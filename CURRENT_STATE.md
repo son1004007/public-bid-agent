@@ -1,3 +1,9 @@
+## 2026-11-19 PR #5 security review pass 2 (IMPLEMENTED_UNVERIFIED / NO_GO)
+
+- Previous pass 1 at 40f1cae2: all four CI families SUCCESS (44403336280, 44403335701, 44403335698, 44403336082).
+- Focused source review candidate 04c30300: reject malformed/nonfinite/out-of-order session timestamps and non-integer epoch; reject private media root overlapping repository or configured secret/policy paths; do not substitute metadata digest for absent binary SHA-256 during legacy import (UNVERIFIED or REVIEW_REQUIRED freshness); withhold unapproved legacy extra_data and unsafe source URLs from shared notice/attachment responses. Conservative URL projection allows only HTTPS g2b.go.kr and subdomains without userinfo/query/fragment; original stored URLs and metadata are preserved. No automatic public classification. Declared digest is not independent source verification.
+- Added regression tests in auth, configuration, legacy importer and procurement API. New CI pending. Server-side read-only import path inspected; live collection/SSRF network path, reauthentication throttling, local settings/Windows ACL, complete shared publication policy, original source verification, historical digest remediation, whole PR review and runtime gates still pending. No real external calls, production DB changes, main merge or deployment.
+
 ## 2026-11-19 PR #5 security review pass 1 (IMPLEMENTED_UNVERIFIED / NO_GO)
 
 - Previous artifact/provenance candidate 24e395bf: CI 4/4 SUCCESS (44402267508, 44402267556, 44402267558, 44402267744).
