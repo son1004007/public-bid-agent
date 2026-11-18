@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 security review pass 3 (IMPLEMENTED_UNVERIFIED / NO_GO)
+
+- Previous pass 2 at aecb602a: all four CI families SUCCESS (44404150227, 44404149997, 44404149993, 44404150064).
+- Candidate e9fbd75b: validated exact local DB fields and numeric loopback host; required private preprovisioned signing key; launcher checks settings before startup; no implicit key generation, plaintext override or migration. Backup has unique generation directory, path overlap/link checks, chunked copy, bounded subprocess; restore requires independently approved dump SHA-256, skips psql startup scripts and bounds execution. Tests no longer fall back to real local DB when explicit test DB missing.
+- Foundation and Sprint 1 workflows pin first-party actions to resolved upstream commit SHAs and disable persisted checkout credentials. Existing dependency audit and hash gates remain intact; other workflows, runtime images and complete advisory review still pending. See server/README.md.
+- Added regression cases; current candidate CI and independent review pending. Actual Windows private config/ACL, media root, isolated HTTP, coordinated DB/storage snapshot and restore E2E not run. Independently supplied checksum is a trust prerequisite, not sandboxing or cryptographic source authentication. Preserve dirty original worktree and existing listeners; no main merge, production DB, deployment or external calls.
+
 ## 2026-11-19 PR #5 security review pass 2 (IMPLEMENTED_UNVERIFIED / NO_GO)
 
 - Previous pass 1 at 40f1cae2: all four CI families SUCCESS (44403336280, 44403335701, 44403335698, 44403336082).
