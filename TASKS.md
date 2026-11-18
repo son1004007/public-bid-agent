@@ -1,3 +1,9 @@
+## 2026-11-19 PR #5 checkpoint — browser acceptance gate
+
+- [x] Previous workspace candidate: four CI workflow successes at 071aaecb, confirmed frontend VM regression step.
+- [ ] Candidate c412b56b: limited/expired session shell recovery, hash-bound CSP, no inline event handlers, no static preview fallback, real Chrome + synthetic Django loopback test. Verify exact-head CI and actual Chrome step, do not mark done merely because test exists.
+- [ ] Credential incident applicability/rotation if used, complete API/UI and workflow/dependency review, independent review, protected data hashes and isolated Windows HTTP/browser/rollback. Main merge / existing localhost deployment only after gates pass.
+
 ## 2026-11-19 PR #5 checkpoint — live workspace
 
 - [x] Third focused review CI 4/4 at 5d48f6a3; independent and runtime review pending.
