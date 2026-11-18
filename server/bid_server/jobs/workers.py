@@ -51,8 +51,9 @@ class JobWorkerPipeline:
             elif job.kind == JobKind.PROPOSAL_EXPORT:
                 self._run_proposal_export(job, fencing_token)
             else:
-                JobService.complete_job(
-                    job.id, fencing_token, result_ref={"status": "completed", "kind": job.kind}
+                JobService.fail_job(
+                    job.id, fencing_token, error_code="JOB_KIND_NOT_IMPLEMENTED",
+                    retry_class=RetryClass.NON_RETRYABLE,
                 )
         except FencingTokenError:
             # stale worker는 실패 보고로 원장을 다시 변경하지 않는다.
