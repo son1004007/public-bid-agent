@@ -18,7 +18,7 @@ from bid_server.procurement.models import (
     ExportArtifact,
     Notice,
 )
-from bid_server.procurement.proposal_service import ProposalService, ProposalAccessError, owned_proposals
+from bid_server.procurement.proposal_service import ProposalService, ProposalAccessError, owned_proposals, owned_proposal_revisions
 from bid_server.procurement.generator import ProposalExportService
 from bid_server.procurement.artifact_storage import ArtifactStorageError, store_verified_artifact
 
@@ -167,9 +167,7 @@ class JobWorkerPipeline:
         revision_id = manifest.get("revision_id")
         target_format = manifest.get("format", "hwpx").strip().lower()
 
-        rev = ProposalRevision.objects.filter(
-            id=revision_id, proposal__in=owned_proposals(job.owner_user),
-        ).first()
+        rev = owned_proposal_revisions(job.owner_user).filter(id=revision_id).first()
         if rev is None:
             raise ProposalAccessError("Proposal access denied.")
         raw_bytes, file_name, sha256_hash, size_bytes = ProposalExportService.export_proposal_revision(
@@ -185,7 +183,7 @@ class JobWorkerPipeline:
             proposal = owned_proposals(locked_job.owner_user).select_for_update().filter(
                 pk=rev.proposal_id,
             ).first()
-            if proposal is None or not ProposalRevision.objects.filter(
+            if proposal is None or not owned_proposal_revisions(locked_job.owner_user).filter(
                 pk=rev.pk, proposal=proposal,
             ).exists():
                 raise ProposalAccessError("Proposal access denied.")
