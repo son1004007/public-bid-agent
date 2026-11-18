@@ -18,7 +18,7 @@ from bid_server.procurement.models import (
     ExportArtifact,
     Notice,
 )
-from bid_server.procurement.proposal_service import ProposalService
+from bid_server.procurement.proposal_service import ProposalService, ProposalAccessError, owned_proposals
 from bid_server.procurement.generator import ProposalExportService
 
 logger = logging.getLogger(__name__)
@@ -56,6 +56,12 @@ class JobWorkerPipeline:
         except FencingTokenError:
             # stale worker는 실패 보고로 원장을 다시 변경하지 않는다.
             logger.warning("작업 임대 만료로 결과 게시를 거부했습니다.")
+        except ProposalAccessError:
+            try:
+                JobService.fail_job(job.id, fencing_token, error_code="PROPOSAL_ACCESS_DENIED",
+                                    retry_class=RetryClass.NON_RETRYABLE)
+            except FencingTokenError:
+                logger.warning("작업 임대 만료로 실패 보고를 거부했습니다.")
         except ProviderExecutionError as p_err:
             # A27 / STOP: 외부 모델 장애 시 즉시 STOPPED 상태로 전환하고 자동 재시도 큐 차단
             logger.error("외부 모델 장애 발생으로 작업을 즉시 STOP 처리합니다: %s", p_err)
@@ -108,7 +114,9 @@ class JobWorkerPipeline:
         if manifest.get("simulate_provider_error"):
             raise ProviderExecutionError("외부 LLM 공급자 응답 타임아웃 (HTTP 504 Gateway Timeout). STOP 정책 적용.")
 
-        proposal = ProposalService.get_or_create_proposal(notice)
+        if not getattr(job.owner_user, "is_active", False):
+            raise ProposalAccessError("Proposal access denied.")
+        proposal = ProposalService.get_or_create_proposal(notice, owner_user=job.owner_user)
 
         # 5개 표준 제안 절 생성
         buyer_name = current_nv.buyer if current_nv else "발주기관"
@@ -153,6 +161,7 @@ class JobWorkerPipeline:
             title=f"{notice_title} 제안서 초안",
             sections=sections,
             author=job.owner_user,
+            actor_user=job.owner_user,
             expected_parent_seq=manifest.get("expected_parent_seq"),
             summary=f"{buyer_name} 대상 {notice_title} 최적화 제안서 초안 (AI_DRAFT)",
             metadata={"generated_by_job": str(job.id), "model": "gemini-2.0-pro"},
@@ -170,7 +179,11 @@ class JobWorkerPipeline:
         revision_id = manifest.get("revision_id")
         target_format = manifest.get("format", "hwpx")
 
-        rev = ProposalRevision.objects.get(id=revision_id)
+        rev = ProposalRevision.objects.filter(
+            id=revision_id, proposal__in=owned_proposals(job.owner_user),
+        ).first()
+        if rev is None:
+            raise ProposalAccessError("Proposal access denied.")
         raw_bytes, file_name, sha256_hash, size_bytes = ProposalExportService.export_proposal_revision(
             rev, target_format
         )
