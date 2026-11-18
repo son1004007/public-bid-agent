@@ -15,6 +15,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from bid_server.core.permissions import ClosedUntilAuthentication
+from bid_server.core.errors import json_error
 from bid_server.core.responses import PageResponse
 from .models import (
     Notice,
@@ -303,12 +304,38 @@ class ProposalRevisionCreateAPIView(APIView):
 
     def post(self, request, pk):
         proposal = get_object_or_404(owned_proposals(request.user), pk=pk)
-        data = request.data or {}
-
+        data = request.data
+        # Every HTTP save carries an explicit optimistic-concurrency base.
+        # Reject malformed snapshots before any write or database constraint error.
+        if not isinstance(data, dict) or set(data) - {"title", "sections", "expected_parent_seq", "summary"}:
+            return json_error(request, 422)
         title = data.get("title", "")
-        sections = data.get("sections", [])
+        sections = data.get("sections")
         expected_parent_seq = data.get("expected_parent_seq")
         summary = data.get("summary", "")
+        if (type(expected_parent_seq) is not int or not 0 <= expected_parent_seq <= 2147483647
+                or not isinstance(title, str) or not title.strip() or len(title) > 500
+                or not isinstance(summary, str) or len(summary) > 50000
+                or not isinstance(sections, list) or not 1 <= len(sections) <= 100):
+            return json_error(request, 422)
+        keys, ordinals = set(), set()
+        for section in sections:
+            if not isinstance(section, dict) or set(section) != {"section_key", "ordinal", "title", "body"}:
+                return json_error(request, 422)
+            key, ordinal, heading, body = (section[name] for name in ("section_key", "ordinal", "title", "body"))
+            if (not isinstance(key, str) or not key.strip() or len(key) > 100
+                    or type(ordinal) is not int or not 1 <= ordinal <= 2147483647
+                    or not isinstance(heading, str) or not heading.strip() or len(heading) > 300
+                    or not isinstance(body, str)):
+                return json_error(request, 422)
+            if len(body) > 50000:
+                return json_error(request, 413)
+            if any("\x00" in value for value in (key, heading, body)) or key in keys or ordinal in ordinals:
+                return json_error(request, 422)
+            keys.add(key)
+            ordinals.add(ordinal)
+        if "\x00" in title or "\x00" in summary:
+            return json_error(request, 422)
 
         try:
             new_rev = ProposalService.create_atomic_revision(
@@ -326,16 +353,10 @@ class ProposalRevisionCreateAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except ProposalAccessError:
             return Response({"error": "PROPOSAL_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
-        except PayloadTooLargeError as p_err:
-            return Response(
-                {"error": "PAYLOAD_TOO_LARGE", "detail": str(p_err)},
-                status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            )
-        except RevisionConflictError as c_err:
-            return Response(
-                {"error": "REVISION_CONFLICT", "detail": str(c_err)},
-                status=status.HTTP_409_CONFLICT,
-            )
+        except PayloadTooLargeError:
+            return json_error(request, 413)
+        except RevisionConflictError:
+            return json_error(request, 409)
 
 
 class ProposalExportAPIView(APIView):
