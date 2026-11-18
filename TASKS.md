@@ -1,3 +1,11 @@
+## 2026-11-19 PR #5 checkpoint — browser failure recovery
+
+- [x] Inspect exact-head browser failure logs and distinguish passing foundation/PostgreSQL from Chrome failure; implement temporary static/media root isolation.
+- [x] Inspect second failure (session creation timeout), add explicit installed Chrome binary/version, temporary profile, separate HTTP preflight and bounded startup.
+- [x] Notebook read-only preflight: original dirty checkout (44 entries), active loopback 8000, Python/Chrome/key/config present, local-media absent.
+- [ ] Verify f531457a (or later exact head) all CI including Chrome step; no skips or relaxed security. Root cause of second failure not confirmed.
+- [ ] Complete independent review and credential incident applicability; preserve original data, approve/verify private media ACL and use separate clean fixed-SHA isolated Windows loopback test/rollback. Main merge and existing localhost deployment remain gated.
+
 ## 2026-11-19 PR #5 checkpoint — browser acceptance gate
 
 - [x] Previous workspace candidate: four CI workflow successes at 071aaecb, confirmed frontend VM regression step.
