@@ -2,6 +2,7 @@
 목적: HWPX/DOCX 문서의 표(병합 셀/좌표), 각주(앵커 결속) 추출 및 DB 영속화 무결성을 검증한다.
 관련: docs/server-migration/17-domain-and-postgresql-contract.md §16, 27-html-defects-and-stop-verification.md (DEF-03).
 """
+import hashlib
 import io
 import zipfile
 from django.test import TestCase
@@ -15,7 +16,7 @@ from bid_server.procurement.models import (
     ChunkPath,
 )
 from bid_server.procurement.parser import parse_hwpx, parse_docx, parse_document_bytes
-from bid_server.procurement.extractor_service import ExtractionService
+from bid_server.procurement.extractor_service import ExtractionService, DocumentSourceMismatchError
 
 
 def create_sample_hwpx_bytes() -> bytes:
@@ -90,12 +91,13 @@ class DocumentParserAcceptanceTests(TestCase):
             notice=self.notice,
             logical_key="RFP",
         )
+        self.raw_hwpx = create_sample_hwpx_bytes()
         self.doc_version = DocumentVersion.objects.create(
             document=self.document,
             notice_version=self.notice_version,
             version_seq=1,
-            sha256="b" * 64,
-            size_bytes=1024,
+            sha256=hashlib.sha256(self.raw_hwpx).hexdigest(),
+            size_bytes=len(self.raw_hwpx),
             media_type="application/x-hwp+zip",
         )
 
@@ -160,9 +162,29 @@ class DocumentParserAcceptanceTests(TestCase):
         self.assertEqual(tbl["row_count"], 2)
         self.assertEqual(tbl["column_count"], 2)
 
+    def test_service_rejects_mismatched_source_even_without_http(self):
+        """길이/해시 불일치 및 호출자 모델 조작은 파싱 전에 차단한다."""
+        from unittest.mock import patch
+        from bid_server.procurement.models import ExtractionRun, DocumentStructure, Chunk
+
+        bad = bytes([self.raw_hwpx[0] ^ 1]) + self.raw_hwpx[1:]
+        with patch("bid_server.procurement.extractor_service.parse_document_bytes") as parser:
+            for payload in (bad, self.raw_hwpx + b"extra"):
+                with self.subTest(size=len(payload)):
+                    with self.assertRaises(DocumentSourceMismatchError):
+                        ExtractionService.extract_and_persist(self.doc_version, payload, "rfp.hwpx")
+            # 메모리상의 메타데이터를 조작해도 DB 원본과 일치해야 한다.
+            self.doc_version.sha256 = hashlib.sha256(bad).hexdigest()
+            with self.assertRaises(DocumentSourceMismatchError):
+                ExtractionService.extract_and_persist(self.doc_version, bad, "rfp.hwpx")
+            parser.assert_not_called()
+        self.assertEqual(ExtractionRun.objects.count(), 0)
+        self.assertEqual(DocumentStructure.objects.count(), 0)
+        self.assertEqual(Chunk.objects.count(), 0)
+
     def test_extraction_service_persists_full_def03_hierarchy(self):
         """ExtractionService가 DB에 DocumentStructure/Blocks/Tables/Cells/Footnotes/Chunks를 완전 영속화함을 검증."""
-        raw_hwpx = create_sample_hwpx_bytes()
+        raw_hwpx = self.raw_hwpx
         run = ExtractionService.extract_and_persist(
             document_version=self.doc_version,
             raw_bytes=raw_hwpx,
