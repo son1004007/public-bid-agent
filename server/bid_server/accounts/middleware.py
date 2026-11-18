@@ -29,6 +29,8 @@ class AuthGateMiddleware:
             name = resolve(request.path_info).url_name
         except Resolver404:
             name = None
+        # Public, data-free HTML shell is needed to recover a limited or expired session.
+        shell = request.method == "GET" and name in {"workspace-index", "workspace"}
         had_auth = SESSION_KEY in request.session
         user = request.user
         if user.is_authenticated:
@@ -49,13 +51,17 @@ class AuthGateMiddleware:
                 request.session.flush()
                 from django.contrib.auth.models import AnonymousUser
                 request.user = AnonymousUser()
+                if shell:
+                    return self.get_response(request)
                 return json_error(request, 401)
             request.session["last_seen"] = now
-            if user.must_change_password and name not in self.LIMITED:
+            if user.must_change_password and name not in self.LIMITED and not shell:
                 return json_error(request, 403, password_change=True)
         else:
             if had_auth:
                 request.session.flush()
+                if shell:
+                    return self.get_response(request)
                 return json_error(request, 401)
             if name is not None and name not in self.PUBLIC:
                 return json_error(request, 401)
