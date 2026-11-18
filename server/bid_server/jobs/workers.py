@@ -3,6 +3,7 @@
 목적: 문서 파싱(EXTRACTION_RUN), 제안서 초안 생성(PROPOSAL_GENERATION), 제안서 파일 출력(PROPOSAL_EXPORT)
       작업을 Fencing Token 임대 하에 실행하며, 외부 LLM 공급자 장애 시 즉시 STOP 상태로 전이하여
       불완전한 자동 초안 생성 및 무단 재시도를 철저히 차단한다.
+불변조건: 승인된 원본 조회 및 무결성 계약이 없으면 문서 추출은 비재시도 실패하며 합성 증거를 저장하지 않는다.
 관련: docs/server-migration/19-automation-and-provider-contract.md §87-100, 20-acceptance-and-open-decisions.md (A27, A28).
 """
 import logging
@@ -11,13 +12,11 @@ from django.utils import timezone
 from .models import Job, JobKind, JobState, RetryClass
 from .service import JobService, FencingTokenError
 from bid_server.procurement.models import (
-    DocumentVersion,
     Proposal,
     ProposalRevision,
     ExportArtifact,
     Notice,
 )
-from bid_server.procurement.extractor_service import ExtractionService
 from bid_server.procurement.proposal_service import ProposalService
 from bid_server.procurement.generator import ProposalExportService
 
@@ -86,29 +85,16 @@ class JobWorkerPipeline:
         return job
 
     def _run_extraction(self, job: Job, fencing_token: int):
-        manifest = job.input_manifest
-        doc_v_id = manifest.get("document_version_id")
-        doc_v = DocumentVersion.objects.get(id=doc_v_id)
-
-        raw_bytes = manifest.get("raw_bytes_simulated")
-        if not raw_bytes:
-            # Generate sample rfp content if empty
-            raw_bytes = f"# {doc_v.document.logical_key}\n과업지시서 및 제안요청서 본문 내용입니다.".encode("utf-8")
-
-        run = ExtractionService.extract_and_persist(
-            document_version=doc_v,
-            raw_bytes=raw_bytes,
-            file_name=doc_v.document.logical_key + ".txt",
-            job_attempt_id=job.id,
-        )
-
-        JobService.complete_job(
+        # 현재 승인된 원본 저장소 resolver가 없다. 매니페스트는 참조만
+        # 담으며 본문이나 합성 데이터를 원본으로 신뢰하지 않는다.
+        # 원본 접근권한 및 바이트 SHA/크기 검증이 구현되기 전에는 실패로
+        # 종결하고 추출 증거를 생성하지 않는다.
+        JobService.fail_job(
             job.id,
             fencing_token,
-            result_ref={
-                "extraction_run_id": str(run.id),
-                "coverage": run.coverage,
-            },
+            error_code="DOCUMENT_SOURCE_UNAVAILABLE",
+            retry_class=RetryClass.NON_RETRYABLE,
+            stop_reason="Verified document source is not configured.",
         )
 
     def _run_proposal_generation(self, job: Job, fencing_token: int):
