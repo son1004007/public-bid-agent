@@ -86,6 +86,45 @@ class AuthenticationTests(TestCase):
         self.assertEqual(self.client.get("/api/v1/auth/session", secure=True).status_code, 200)
         self.assertEqual(self.post("/api/v1/auth/logout", {}).status_code, 204)
 
+    def test_limited_and_expired_session_can_reopen_auth_shell_only(self):
+        self.assertEqual(self.login().status_code, 200)
+        for path in ("/", "/workspace"):
+            page = self.client.get(path, secure=True)
+            self.assertEqual(page.status_code, 200)
+            self.assertContains(page, 'id="passwordForm"')
+            self.assertEqual(page["Cache-Control"], "no-store")
+            self.assertEqual(self.client.get("/api/v1/notices", secure=True).status_code, 403)
+        self.assertEqual(self.post("/workspace", {}).status_code, 403)
+        self.assertEqual(self.client.get("/api/v1/auth/session", secure=True).json()["data"]["access"],
+                         "PASSWORD_CHANGE_REQUIRED")
+
+        session = self.client.session
+        session["login_at"] = time.time() - 901
+        session["last_seen"] = time.time()
+        session.save()
+        self.assertEqual(self.client.get("/workspace", secure=True).status_code, 200)
+        self.assertNotIn(SESSION_KEY, self.client.session)
+        self.assertEqual(self.client.get("/api/v1/auth/session", secure=True).status_code, 401)
+        self.assertEqual(self.client.get("/api/v1/notices", secure=True).status_code, 401)
+
+    def test_workspace_script_hash_and_no_inline_handlers(self):
+        import base64
+        import hashlib
+        import re
+        page = self.client.get("/workspace", secure=True)
+        self.assertEqual(page.status_code, 200)
+        text = page.content.decode("utf-8")
+        scripts = re.findall(r"<script>(.*?)</script>", text, flags=re.S)
+        self.assertEqual(len(scripts), 1)
+        digest = base64.b64encode(hashlib.sha256(scripts[0].encode("utf-8")).digest()).decode("ascii")
+        policy = page["Content-Security-Policy"]
+        self.assertIn("script-src 'sha256-" + digest + "'", policy)
+        self.assertIn("script-src-attr 'none'", policy)
+        self.assertIn("connect-src 'self'", policy)
+        self.assertIn("frame-ancestors 'none'", policy)
+        self.assertEqual(page["Referrer-Policy"], "no-referrer")
+        self.assertNotRegex(text.split("<script>", 1)[0], r"\son[a-z]+\s*=")
+
     def test_a01_superuser_has_no_gate_exemption(self):
         self.user.is_superuser = True
         self.user.is_staff = True
