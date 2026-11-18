@@ -11,6 +11,9 @@ import os
 import subprocess
 import sys
 import time
+import uuid
+import stat
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -25,11 +28,11 @@ def get_pg_bin_path() -> Path:
 
 
 def load_db_config(config_path: Path | None = None) -> dict:
-    if config_path and config_path.exists():
+    if config_path is not None:
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
     env_cfg = os.environ.get("SM03_TEST_DB_CONFIG_FILE")
-    if env_cfg and Path(env_cfg).exists():
+    if env_cfg:
         with open(env_cfg, "r", encoding="utf-8") as f:
             return json.load(f)
     default_cfg = Path(os.environ.get("LOCALAPPDATA", "")) / "PublicBidAgent" / "sm03-postgres" / "connection.private.json"
@@ -77,19 +80,37 @@ def create_backup(
     config_path: Path | None = None,
     storage_dir: Path | None = None,
 ) -> Path:
-    if output_dir.resolve().is_relative_to(Path(__file__).resolve().parents[1]):
+    repo_root = Path(__file__).resolve().parents[1]
+    output_dir = output_dir.resolve()
+    if output_dir.is_relative_to(repo_root) or repo_root.is_relative_to(output_dir):
         raise ValueError("Backup output must be outside the Git working tree")
+    if storage_dir is not None:
+        if storage_dir.is_symlink():
+            raise ValueError("Storage root must not be a symbolic link")
+        storage_dir = storage_dir.resolve(strict=True)
+        if (not storage_dir.is_dir() or storage_dir.is_relative_to(repo_root)
+                or repo_root.is_relative_to(storage_dir) or output_dir.is_relative_to(storage_dir)
+                or storage_dir.is_relative_to(output_dir)):
+            raise ValueError("Invalid or overlapping backup storage root")
+        # Preflight before opening PostgreSQL: never traverse file or directory links.
+        for directory, dirs, files in os.walk(storage_dir, followlinks=False):
+            for name in dirs + files:
+                entry = Path(directory) / name
+                if entry.is_symlink() or not entry.resolve().is_relative_to(storage_dir):
+                    raise ValueError("Storage contains an unsafe link")
+                if not (entry.is_dir() or entry.is_file()):
+                    raise ValueError("Storage contains a nonregular entry")
     cfg = load_db_config(config_path)
     pg_bin = get_pg_bin_path()
     pg_dump = str(pg_bin / "pg_dump.exe") if pg_bin.name else "pg_dump"
 
     timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    backup_id = f"backup_{timestamp_str}"
+    backup_id = f"backup_{timestamp_str}_{uuid.uuid4().hex}"
     bundle_dir = output_dir / backup_id
-    bundle_dir.mkdir(parents=True, exist_ok=True)
+    bundle_dir.mkdir(mode=0o700, parents=True, exist_ok=False)
 
     print(f"[*] Starting backup generation for bundle: {backup_id}")
-    print(f"[*] Target DB: {cfg['HOST']}:{cfg['PORT']}/{cfg['NAME']}")
+
 
     # Export one REPEATABLE READ snapshot and keep the exporting transaction
     # open until pg_dump exits. This ensures row counts and dump share one MVCC view.
@@ -119,7 +140,7 @@ def create_backup(
             "-f", str(dump_file),
         ]
         t0 = time.perf_counter()
-        res = subprocess.run(dump_cmd, env=env, capture_output=True, text=True)
+        res = subprocess.run(dump_cmd, env=env, capture_output=True, text=True, timeout=300)
         if res.returncode != 0:
             raise RuntimeError(f"pg_dump failed (code {res.returncode})")
         dump_duration = time.perf_counter() - t0
@@ -137,13 +158,24 @@ def create_backup(
     bundle_storage_dir.mkdir(exist_ok=True)
 
     if storage_dir and storage_dir.exists():
-        for root, _, files in os.walk(storage_dir):
+        for root, dirs, files in os.walk(storage_dir, followlinks=False):
+            if any((Path(root) / name).is_symlink() for name in dirs):
+                raise ValueError("Storage contains an unsafe link")
             for file in files:
                 src_path = Path(root) / file
                 rel_path = src_path.relative_to(storage_dir)
                 dest_path = bundle_storage_dir / rel_path
                 dest_path.parent.mkdir(parents=True, exist_ok=True)
-                dest_path.write_bytes(src_path.read_bytes())
+                if src_path.is_symlink() or not src_path.resolve(strict=True).is_relative_to(storage_dir):
+                    raise ValueError("Storage contains an unsafe link")
+                before = src_path.stat()
+                if not stat.S_ISREG(before.st_mode):
+                    raise ValueError("Storage contains a nonregular file")
+                with src_path.open("rb") as source, dest_path.open("xb") as dest:
+                    shutil.copyfileobj(source, dest, length=65536)
+                after = src_path.stat()
+                if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
+                    raise ValueError("Storage changed during backup; retry when quiesced")
 
                 h = sha256_file(dest_path)
                 storage_files_meta.append({
