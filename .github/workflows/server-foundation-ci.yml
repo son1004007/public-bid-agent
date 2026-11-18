@@ -29,6 +29,13 @@ jobs:
       - name: Run foundation and authentication synthetic regression
         run: python server/manage.py test tests --settings=bid_server.settings.test --verbosity 1
 
+      - name: Real Chrome workspace HTTP acceptance (synthetic only)
+        if: runner.os == 'Linux'
+        env:
+          BID_WORKSPACE_BROWSER: '1'
+        timeout-minutes: 5
+        run: python server/manage.py test tests.test_workspace_browser --settings=bid_server.settings.test --verbosity 2
+
   postgres-authentication:
     runs-on: ubuntu-latest
     services:
