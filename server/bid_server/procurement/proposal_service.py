@@ -6,6 +6,8 @@
 """
 from typing import List, Dict, Any, Optional
 from django.db import transaction
+from django.db.models import Exists, OuterRef, Q, F
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import (
     Proposal,
@@ -32,10 +34,25 @@ class ProposalAccessError(ValueError):
 
 
 def owned_proposals(actor_user):
-    """명시 소유자만 접근하며 미지정/삭제된 소유자는 자동 승계하지 않는다."""
-    if not getattr(actor_user, "is_active", False):
+    """Fresh owner eligibility and consistent current-revision pointer."""
+    if not getattr(actor_user, "is_authenticated", False):
         return Proposal.objects.none()
-    return Proposal.objects.filter(owner_user_id=actor_user.pk)
+    valid_current = ProposalRevision.objects.filter(
+        pk=OuterRef("current_revision_id"), proposal_id=OuterRef("pk"),
+    ).filter(Q(notice_version__isnull=True) | Q(notice_version__notice_id=OuterRef("notice_id")))
+    return Proposal.objects.filter(
+        owner_user_id=actor_user.pk, owner_user__is_active=True,
+        owner_user__must_change_password=False,
+        owner_user__auth_epoch=actor_user.auth_epoch,
+    ).filter(
+        Q(owner_user__locked_until__isnull=True) | Q(owner_user__locked_until__lte=timezone.now()),
+    ).filter(Q(current_revision_id__isnull=True) | Exists(valid_current))
+
+
+def owned_proposal_revisions(actor_user):
+    return ProposalRevision.objects.filter(
+        proposal__in=owned_proposals(actor_user),
+    ).filter(Q(notice_version__isnull=True) | Q(notice_version__notice_id=F("proposal__notice_id")))
 
 
 class ProposalService:
@@ -77,13 +94,19 @@ class ProposalService:
             # 부모 Proposal 잠금 획득 (동시성 경합 방지)
             locked_proposal = Proposal.objects.select_for_update().get(id=proposal.id)
 
-            if actor_user is not None and (
-                not getattr(actor_user, "is_active", False)
-                or locked_proposal.owner_user_id != actor_user.pk
-            ):
+            if actor_user is not None and not owned_proposals(actor_user).filter(pk=locked_proposal.pk).exists():
                 raise ProposalAccessError("Proposal access denied.")
 
             current_rev = locked_proposal.current_revision
+            if current_rev is not None and (
+                current_rev.proposal_id != locked_proposal.pk
+                or (current_rev.notice_version_id is not None
+                    and current_rev.notice_version.notice_id != locked_proposal.notice_id)
+            ):
+                raise ProposalAccessError("Proposal revision is inconsistent.")
+            current_notice = locked_proposal.notice.current_version
+            if current_notice is not None and current_notice.notice_id != locked_proposal.notice_id:
+                raise ProposalAccessError("Notice version is inconsistent.")
             current_seq = current_rev.seq if current_rev else 0
 
             # Expected parent seq 검증 (A03, DEF-04)
@@ -99,7 +122,7 @@ class ProposalService:
                 proposal=locked_proposal,
                 seq=next_seq,
                 parent_revision=current_rev,
-                notice_version=locked_proposal.notice.current_version,
+                notice_version=current_notice,
                 status=status,
                 provenance=provenance,
                 author=author,
