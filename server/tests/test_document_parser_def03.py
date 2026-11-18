@@ -182,6 +182,26 @@ class DocumentParserAcceptanceTests(TestCase):
         self.assertEqual(DocumentStructure.objects.count(), 0)
         self.assertEqual(Chunk.objects.count(), 0)
 
+    def test_service_rechecks_source_before_persistence(self):
+        """파싱 중 등록 원본이 바뀌면 추출 결과를 저장하지 않는다."""
+        from unittest.mock import patch
+        from bid_server.procurement.models import ExtractionRun, DocumentStructure, Chunk
+
+        def changed_source(file_name, raw_bytes):
+            parsed = parse_document_bytes(file_name, raw_bytes)
+            DocumentVersion.objects.filter(pk=self.doc_version.pk).update(sha256="0" * 64)
+            return parsed
+
+        with patch(
+            "bid_server.procurement.extractor_service.parse_document_bytes",
+            side_effect=changed_source,
+        ):
+            with self.assertRaises(DocumentSourceMismatchError):
+                ExtractionService.extract_and_persist(self.doc_version, self.raw_hwpx, "rfp.hwpx")
+        self.assertEqual(ExtractionRun.objects.count(), 0)
+        self.assertEqual(DocumentStructure.objects.count(), 0)
+        self.assertEqual(Chunk.objects.count(), 0)
+
     def test_extraction_service_persists_full_def03_hierarchy(self):
         """ExtractionService가 DB에 DocumentStructure/Blocks/Tables/Cells/Footnotes/Chunks를 완전 영속화함을 검증."""
         raw_hwpx = self.raw_hwpx
