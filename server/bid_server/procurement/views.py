@@ -10,6 +10,7 @@ from django.db.models import Count, Q, F, Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.http import HttpResponse
+from django.utils.http import content_disposition_header
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -39,6 +40,7 @@ from .proposal_service import (
     RevisionConflictError, PayloadTooLargeError,
 )
 from .generator import ProposalExportService
+from .artifact_storage import ArtifactStorageError, read_verified_artifact
 from .extractor_service import (
     ExtractionService, DocumentSourceMismatchError, DocumentAccessError, scoped_document_versions,
 )
@@ -373,8 +375,36 @@ class ProposalExportAPIView(APIView):
             else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
         response = HttpResponse(raw_bytes, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{file_name}"'
+        response["Content-Disposition"] = content_disposition_header(True, file_name)
         response["X-Artifact-SHA256"] = sha256_hash
+        return response
+
+
+class StoredArtifactDownloadAPIView(APIView):
+    """Download a published artifact only after authorization and byte verification."""
+    permission_classes = [ClosedUntilAuthentication]
+
+    def get(self, request, pk):
+        artifact = get_object_or_404(
+            ExportArtifact.objects.filter(
+                proposal_revision__proposal__in=owned_proposals(request.user),
+            ),
+            pk=pk,
+        )
+        if artifact.format not in ("HWPX", "DOCX"):
+            return Response({"error": "ARTIFACT_UNAVAILABLE"}, status=status.HTTP_409_CONFLICT)
+        try:
+            raw = read_verified_artifact(artifact.storage_path, artifact.sha256, artifact.size_bytes)
+        except ArtifactStorageError:
+            return Response({"error": "ARTIFACT_UNAVAILABLE"}, status=status.HTTP_409_CONFLICT)
+        content_type = (
+            "application/x-hwp" if artifact.format == "HWPX"
+            else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        response = HttpResponse(raw, content_type=content_type)
+        response["Content-Disposition"] = content_disposition_header(True, artifact.file_name)
+        response["X-Artifact-SHA256"] = artifact.sha256
+        response["Cache-Control"] = "private, no-store"
         return response
 
 
