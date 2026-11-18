@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 artifact and provenance follow-up (IMPLEMENTED_UNVERIFIED)
+
+- Prior document-scope candidate 6040c633: all four CI families SUCCESS (44399876680, 44399876705, 44399876732, 44399876572).
+- Candidate e2433596: private export storage stages bytes, checks SHA-256/size before and after atomic rename in a unique private directory, then publishes artifact and job result under fencing/ownership transaction. Stored download verifies scope and bytes; missing/tampered files return 409. Legacy path-only artifacts are hidden from revision listings; no deletion. Original GET export remains read-only and now uses pinned notice version, rejects missing sections.
+- Default PROPOSAL_GENERATION stops with PROVIDER_NOT_CONFIGURED without writes. Explicit draft_mode=template produces labeled TEMPLATE_DRAFT/TEMPLATE (migration 0006), no invented model identity or capability guarantees. Actual provider, external calls, and company data processing remain NOT IMPLEMENTED.
+- Added synthetic tests for storage availability, saved byte download/modify/delete, denied scope, template provenance and fencing rollback. New CI and independent review pending. Private root must already exist outside Git and be OS-access-restricted; local settings do not configure it. Orphan files remain private and require manifest reconciliation, storage lifecycle/backup crash testing, file format validation in actual editors and production-like ACL verification are still pending. No operating DB or runtime changed.
+
 ## 2026-11-19 PR #5 document scope follow-up (IMPLEMENTED_UNVERIFIED)
 
 - Prior proposal-owner candidate at c25dbef1: all four CI workflows SUCCESS (44399179614, 44399179600, 44399179592, 44399179605).
