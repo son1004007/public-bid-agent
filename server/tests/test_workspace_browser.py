@@ -9,6 +9,7 @@ from pathlib import Path
 import shutil
 import socket
 import subprocess
+import tempfile
 import time
 from datetime import timedelta
 from unittest import skipUnless
@@ -25,6 +26,21 @@ from bid_server.procurement.models import Notice, NoticeVersion, DeadlineStatus
 @override_settings(SESSION_COOKIE_SECURE=False, CSRF_COOKIE_SECURE=False)
 class WorkspaceBrowserTest(LiveServerTestCase):
     host = "127.0.0.1"
+
+    @classmethod
+    def setUpClass(cls):
+        # LiveServerTestCase wraps the app in static/media WSGI handlers.
+        # Use isolated empty roots, never the working directory or private files.
+        root = Path(cls.enterClassContext(tempfile.TemporaryDirectory()))
+        static_root = root / "static"
+        media_root = root / "media"
+        static_root.mkdir()
+        media_root.mkdir()
+        cls.enterClassContext(override_settings(
+            STATIC_URL="/__test_static__/", MEDIA_URL="/__test_media__/",
+            STATIC_ROOT=str(static_root), MEDIA_ROOT=str(media_root),
+        ))
+        super().setUpClass()
 
     def test_password_change_reload_and_notice_then_logout(self):
         self.assertEqual(os.environ.get("DJANGO_SETTINGS_MODULE"), "bid_server.settings.test")
@@ -119,7 +135,7 @@ class WorkspaceBrowserTest(LiveServerTestCase):
             self.fail(label)
 
         def visible(element):
-            return f"!document.getElementById('{element}').hidden"
+            return f"document.getElementById('{element}') && !document.getElementById('{element}').hidden"
 
         def fill(element, value):
             js("document.getElementById(arguments[0]).value=arguments[1];", element, value)
@@ -132,6 +148,17 @@ class WorkspaceBrowserTest(LiveServerTestCase):
             fill("username", username)
             fill("password", password)
             submit("loginForm")
+
+        # Preflight HTTP before browser navigation.
+        with opener.open(self.live_server_url + "/workspace", timeout=10) as page:
+            self.assertEqual(page.status, 200)
+            self.assertIn(b'id="loginForm"', page.read())
+            self.assertIn("script-src-attr 'none'", page.headers["Content-Security-Policy"])
+        from urllib.error import HTTPError
+        for prefix in ("__test_static__", "__test_media__"):
+            with self.assertRaises(HTTPError) as denied:
+                opener.open(self.live_server_url + "/" + prefix + "/manage.py", timeout=5)
+            self.assertEqual(denied.exception.code, 404)
 
         call("POST", base + "/url", {"url": self.live_server_url + "/workspace"})
         login(old_password)
@@ -151,6 +178,10 @@ class WorkspaceBrowserTest(LiveServerTestCase):
         js("document.querySelector('.notice-title-btn').click()")
         wait_for("document.querySelector('#dTitle').textContent === " + json.dumps(title), "Notice detail unavailable")
         js("document.getElementById('logoutBtn').click()")
+        wait_for("document.getElementById('authStatus').textContent === '로그아웃되었습니다.'",
+                 "Logout did not complete")
         wait_for(visible("loginForm"), "Logout did not restore login form")
+        call("POST", base + "/refresh", {})
+        wait_for(visible("loginForm"), "Logged-out session was not cleared on reload")
         self.assertTrue(js("return document.getElementById('businessContent').hidden"))
         self.assertEqual(js("return document.getElementById('noticeTableBody').textContent"), "")
