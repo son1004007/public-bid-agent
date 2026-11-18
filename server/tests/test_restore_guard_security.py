@@ -46,7 +46,7 @@ class RestoreGuardSecurityTests(SimpleTestCase):
                 "USER": "synthetic", "PASSWORD": "synthetic",
             }), patch("scripts.restore_rehearsal.psycopg.connect", return_value=conn):
                 with self.assertRaisesRegex(RuntimeError, "duplicate_database"):
-                    run_rehearsal(bundle, rehearsal_db_name="sm03_test_guard_rehearsal")
+                    run_rehearsal(bundle, rehearsal_db_name="sm03_test_guard_rehearsal", trusted_dump_sha256=digest)
             self.assertEqual(cursor.execute.call_count, 1)
             statement = str(cursor.execute.call_args.args[0])
             self.assertIn("CREATE DATABASE", statement)
@@ -126,3 +126,43 @@ class RestoreGuardSecurityTests(SimpleTestCase):
                     with self.assertRaisesRegex(ValueError, "table_counts"):
                         run_rehearsal(bundle)
                     connect.assert_not_called()
+
+    def test_restore_requires_independent_dump_digest_before_connecting(self):
+        from scripts.restore_rehearsal import run_rehearsal
+        from scripts.backup_system import sha256_file
+        with tempfile.TemporaryDirectory() as temp:
+            bundle = Path(temp)
+            dump = bundle / "db_dump.sql"
+            dump.write_bytes(b"-- synthetic fixture")
+            digest = sha256_file(dump)
+            tables = ("accounts_user", "procurement_notice", "procurement_noticeversion",
+                      "procurement_document", "procurement_documentversion",
+                      "procurement_proposal", "procurement_proposalrevision", "procurement_proposalsection",
+                      "jobs_job", "jobs_jobattempt")
+            (bundle / "manifest.json").write_text(json.dumps({
+                "backup_id": "synthetic", "database": {
+                    "dump_file": dump.name, "dump_sha256": digest,
+                    "table_counts": dict.fromkeys(tables, 0),
+                }, "storage": {"files": []}
+            }), encoding="utf-8")
+            with patch("scripts.restore_rehearsal.psycopg.connect") as connect:
+                for expected in (None, "0" * 64):
+                    with self.assertRaisesRegex(ValueError, "Trusted dump SHA-256"):
+                        run_rehearsal(bundle, trusted_dump_sha256=expected)
+                connect.assert_not_called()
+
+    def test_backup_rejects_overlapping_and_symlinked_storage(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            storage = root / "storage"
+            storage.mkdir()
+            with self.assertRaisesRegex(ValueError, "overlapping"):
+                create_backup(storage / "backup", storage_dir=storage)
+            source = root / "private.txt"
+            source.write_bytes(b"synthetic private content")
+            try:
+                (storage / "file.txt").symlink_to(source)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlink unsupported")
+            with self.assertRaisesRegex(ValueError, "unsafe link"):
+                create_backup(root / "backup", storage_dir=storage)
