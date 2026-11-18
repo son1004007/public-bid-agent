@@ -9,12 +9,13 @@ $secretFile = Join-Path $secretDir "django_secret_key.txt"
 $dbConfig = Join-Path $env:LOCALAPPDATA "PublicBidAgent\sm03-postgres\connection.private.json"
 if (-not (Test-Path -LiteralPath $py)) { throw "Isolated Python venv missing" }
 if (-not (Test-Path -LiteralPath $dbConfig)) { throw "PostgreSQL private settings missing" }
-if (-not (Test-Path -LiteralPath $secretFile)) {
-    New-Item -ItemType Directory -Force -Path $secretDir | Out-Null
-    $key = & $py -c "import secrets; print(secrets.token_urlsafe(64))"
-    if ($LASTEXITCODE -ne 0 -or $key.Length -lt 40) { throw "Secret generation failed" }
-    [System.IO.File]::WriteAllText($secretFile, $key)
+if (-not (Test-Path -LiteralPath $secretFile -PathType Leaf)) {
+    throw "Private signing key missing; provision the key in the protected local directory first"
 }
+if (Test-Path Env:BID_LOCAL_SECRET_KEY) { throw "Plaintext signing key environment is not permitted" }
+# Validate settings before launching. No migration, account generation, or directory creation.
+& $py (Join-Path $repo "server\manage.py") check --settings=bid_server.settings.local
+if ($LASTEXITCODE -ne 0) { throw "Local settings validation failed" }
 Write-Host "Loopback-only workspace at http://127.0.0.1:8000/workspace"
-& $py (Join-Path $repo "server\manage.py") runserver --noreload "127.0.0.1:8000"
+& $py (Join-Path $repo "server\manage.py") runserver --settings=bid_server.settings.local --noreload "127.0.0.1:8000"
 exit $LASTEXITCODE
