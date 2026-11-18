@@ -39,6 +39,7 @@ from .proposal_service import (
     ProposalService, ProposalAccessError, owned_proposals,
     RevisionConflictError, PayloadTooLargeError,
 )
+from .parser import ParserError
 from .generator import ProposalExportService
 from .artifact_storage import ArtifactStorageError, read_verified_artifact
 from .extractor_service import (
@@ -419,7 +420,8 @@ class DocumentExtractAPIView(APIView):
         # No synthetic fallback: only explicitly supplied source bytes may be parsed.
         # This endpoint currently accepts plain-text payloads only; binary document
         # formats require a separately validated upload/storage contract.
-        if request.content_type not in ("text/plain", "application/octet-stream"):
+        if (request.content_type != "text/plain"
+                or doc_version.media_type.split(";")[0].strip().lower() != "text/plain"):
             return Response(
                 {"error": "UNSUPPORTED_MEDIA_TYPE"},
                 status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -454,6 +456,8 @@ class DocumentExtractAPIView(APIView):
                 file_name=doc_version.document.logical_key + ".txt",
                 actor_user=request.user,
             )
+        except ParserError:
+            return Response({"error": "DOCUMENT_FORMAT_INVALID"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         except DocumentAccessError:
             return Response({"error": "DOCUMENT_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
         except DocumentSourceMismatchError:
