@@ -172,14 +172,18 @@ class ExportArtifactSerializer(serializers.ModelSerializer):
             "file_name",
             "sha256",
             "size_bytes",
-            "storage_path",
             "created_at",
         ]
 
 
 class ProposalRevisionSerializer(serializers.ModelSerializer):
     sections = ProposalSectionSerializer(many=True, read_only=True)
-    export_artifacts = ExportArtifactSerializer(many=True, read_only=True)
+    export_artifacts = serializers.SerializerMethodField()
+
+    def get_export_artifacts(self, obj):
+        # Legacy path-only rows are not verified saved artifacts.
+        rows = obj.export_artifacts.filter(storage_path__startswith="bid-export-")
+        return ExportArtifactSerializer(rows, many=True).data
     author_username = serializers.CharField(source="author.username", read_only=True)
 
     class Meta:
