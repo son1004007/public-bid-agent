@@ -24,6 +24,7 @@
       --nav-text: #c2cdd8;
     }
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     body {
       margin: 0;
       background: var(--bg);
@@ -358,8 +359,8 @@
     </nav>
 
     <div class="sidefoot">
-      <div class="badge-online">PostgreSQL 17 정상</div>
-      <div>실공고 4,286건 적재됨</div>
+      <div id="connectionStatus">연결 미확인</div>
+      <div id="collectionStatus">수집 상태 미확인</div>
       <div style="font-size: 10px; margin-top: 4px; color: #586e84;">동기화 버전: SM06-LIVE</div>
     </div>
   </aside>
@@ -371,34 +372,38 @@
         입찰 분석 워크스페이스 / <strong id="crumbTitle">사업 기회 요약</strong>
       </div>
       <div class="user-pill">
-        <span class="avatar">김</span>
-        <span><b>김총괄 이사</b> (director)</span>
-        <button class="btn-sm" onclick="alert('인증 세션이 정상 유지되고 있습니다.')">인증 상태</button>
+        <span class="avatar">ID</span>
+        <span id="sessionUser">미인증</span><button id="logoutBtn" class="btn-sm" hidden>로그아웃</button>
       </div>
     </header>
 
-    <main class="content">
+    <section id="authPanel" style="padding:24px; max-width:480px">
+ <form id="loginForm"><h2>로그인</h2><label>계정 <input id="username" autocomplete="username" required maxlength="150"></label><br><label>비밀번호 <input id="password" type="password" autocomplete="current-password" required maxlength="128"></label><br><button class="primary" type="submit">로그인</button></form>
+ <form id="passwordForm" hidden><h2>최초 비밀번호 변경</h2><label>현재 비밀번호 <input id="currentPassword" type="password" autocomplete="current-password" required maxlength="128"></label><br><label>새 비밀번호 <input id="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label><br><button type="submit" class="primary">변경 후 재로그인</button></form>
+ <p id="authStatus" role="status">인증 확인 중</p>
+</section>
+<main class="content" id="businessContent" hidden>
       <!-- 1. Metrics Row -->
       <div class="metrics-grid">
         <div class="metric-card" onclick="setCategoryFilter('AI')">
           <small>🌟 AI / LLM 특화 사업</small>
-          <b id="mAi">92</b>
+          <b id="mAi">-</b>
           <div class="desc">생성형 AI, SLLM, 에이전트 등</div>
         </div>
         <div class="metric-card" onclick="setStatusFilter('open', true)">
           <small>⏰ 72시간 내 마감 임박</small>
-          <b id="mUrgent" style="color: var(--red);">19</b>
+          <b id="mUrgent" style="color: var(--red);">-</b>
           <div class="desc">D-0 ~ D-2 긴급 조치 대상</div>
         </div>
         <div class="metric-card" onclick="setSort('budget')">
           <small>💰 3억 이상 대형 사업</small>
-          <b id="mMajor">76</b>
+          <b id="mMajor">-</b>
           <div class="desc">대형 정보화·플랫폼 구축 사업</div>
         </div>
         <div class="metric-card" onclick="resetFilters()">
           <small>📦 조달청 총 수집 공고</small>
-          <b id="mTotal">4,286</b>
-          <div class="desc">최근 7일 나라장터 실시간 DB</div>
+          <b id="mTotal">-</b>
+          <div class="desc">DB에 등록된 공고 수</div>
         </div>
       </div>
 
@@ -434,7 +439,7 @@
       <!-- 3. Notice Table Card -->
       <div class="table-card">
         <div class="table-head">
-          <h3>공고 목록 (<span id="resultCount">0</span>건)</h3>
+          <h3>공고 목록 (<span id="resultCount">-</span>건)</h3>
           <small id="syncStatus">조회 중...</small>
         </div>
 
@@ -495,7 +500,7 @@
     </div>
 
     <div style="margin-top: auto; border-top: 1px solid var(--line); padding-top: 18px; display: flex; gap: 10px;">
-      <a id="dG2bLink" href="#" target="_blank" class="primary button" style="flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; color: #fff; background: var(--accent); font-weight: 600;">
+      <a id="dG2bLink" hidden target="_blank" rel="noopener noreferrer" class="primary button" style="flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; color: #fff; background: var(--accent); font-weight: 600;">
         나라장터 공식 상세페이지 열기 ↗
       </a>
       <button onclick="closeDrawer()" style="padding: 10px 18px;">닫기</button>
@@ -506,7 +511,6 @@
 <script>
 let currentCategory = '';
 let currentSort = 'deadline';
-let csrfToken = '';
 
 // Calculate D-Day string and badge class
 function getDDay(deadlineStr) {
@@ -531,45 +535,152 @@ function formatBudget(val) {
   return `${val.toLocaleString()}원`;
 }
 
-// 1. Initial Authentication & CSRF
+// Authentication: never submit a fixed account, cache a password, or retry a write.
+let fullAccess = false;
+let authEpoch = null;
+let generation = 0;
+let listSeq = 0;
+let detailSeq = 0;
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function allowedSourceUrl(raw) {
+  if (typeof raw !== 'string' || !raw || /[\s\\]/.test(raw)) return '';
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'https:' || u.username || u.password || u.port || u.search || u.hash ||
+        !(u.hostname === 'g2b.go.kr' || u.hostname.endsWith('.g2b.go.kr'))) return '';
+    return u.href;
+  } catch (_) { return ''; }
+}
+
+function clearBusiness() {
+  generation++; listSeq++; detailSeq++;
+  fullAccess = false;
+  document.getElementById('businessContent').hidden = true;
+  document.getElementById('noticeTableBody').replaceChildren();
+  document.getElementById('resultCount').textContent = '-';
+  for (const id of ['mTotal','mAi','mUrgent','mMajor']) document.getElementById(id).textContent = '-';
+  document.getElementById('collectionStatus').textContent = '수집 상태 미확인';
+  document.getElementById('connectionStatus').textContent = '연결 미확인';
+  closeDrawer();
+  for (const id of ['dTitle','dNoticeNo','dBuyer','dBudget','dDeadline','dCategories','dSourceUrl','dDocuments']) document.getElementById(id).textContent = '-';
+  const link = document.getElementById('dG2bLink');
+  link.removeAttribute('href'); link.hidden = true;
+}
+
+function showSession(data, message = '') {
+  clearBusiness();
+  authEpoch = data?.auth_epoch ?? null;
+  fullAccess = data?.access === 'FULL';
+  const limited = data?.access === 'PASSWORD_CHANGE_REQUIRED';
+  document.getElementById('sessionUser').textContent = data?.user?.display_name ?? '미인증';
+  document.getElementById('logoutBtn').hidden = !data;
+  document.getElementById('authPanel').hidden = fullAccess;
+  document.getElementById('loginForm').hidden = limited;
+  document.getElementById('passwordForm').hidden = !limited;
+  document.getElementById('authStatus').textContent = message || (limited ? '비밀번호를 변경해야 합니다.' : '계정 인증이 필요합니다.');
+  document.getElementById('businessContent').hidden = !fullAccess;
+}
+
+async function requestApi(path, options = {}) {
+  return fetch(path, {...options, credentials:'same-origin', cache:'no-store', redirect:'error'});
+}
+
+async function readBusiness(path) {
+  if (!fullAccess) throw new Error('AUTH_REQUIRED');
+  const stamp = generation;
+  const res = await requestApi(path);
+  if (stamp !== generation) throw new Error('STALE');
+  if (res.status === 401 || res.status === 403) {
+    showSession(null, '세션이 만료되었거나 접근이 제한되었습니다. 다시 인증하십시오.');
+    throw new Error('AUTH_REQUIRED');
+  }
+  if (!res.ok) throw new Error('REQUEST_FAILED');
+  const body = await res.json();
+  if (stamp !== generation) throw new Error('STALE');
+  return body;
+}
+
+async function postAuth(route, payload) {
+  const csrfRes = await requestApi('/api/v1/auth/csrf');
+  if (!csrfRes.ok) throw new Error('CSRF_FAILED');
+  const body = await csrfRes.json();
+  return requestApi('/api/v1/auth/' + route, {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':body.data.csrf_token},
+    body:JSON.stringify(payload)
+  });
+}
+
 async function initAuth() {
   try {
-    const csrfRes = await fetch('/api/v1/auth/csrf');
-    const csrfData = await csrfRes.json();
-    csrfToken = csrfData.data.csrf_token;
+    const res = await requestApi('/api/v1/auth/session');
+    if (!res.ok) { showSession(null); return; }
+    showSession((await res.json()).data);
+    if (fullAccess) { await loadDashboard(); await loadNotices(); }
+  } catch (_) { showSession(null, '인증 확인 실패'); }
+}
 
-    // Check session
-    const sessRes = await fetch('/api/v1/auth/session');
-    if (sessRes.status === 401) {
-      // Auto-login with director for seamless local testing
-      await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken
-        },
-        body: JSON.stringify({ username: 'director', password: 'Password1234!@#$' })
-      });
+let authBusy = false;
+async function submitAuth(event, route, payload) {
+  event.preventDefault();
+  if (authBusy) return;
+  authBusy = true;
+  const button = event.target.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+    const res = await postAuth(route, payload);
+    if (!res.ok) {
+      document.getElementById('authStatus').textContent = res.status === 429 ? '인증 요청 제한. 잠시 후 다시 시도하십시오.' : '인증 또는 비밀번호 변경 실패';
+      return;
     }
-  } catch (err) {
-    console.warn('Auth init note:', err);
+    if (route === 'change-password') showSession(null, '변경 완료. 다시 로그인하십시오.');
+    else {
+      showSession((await res.json()).data);
+      if (fullAccess) { await loadDashboard(); await loadNotices(); }
+    }
+  } catch (_) { document.getElementById('authStatus').textContent = '요청 결과를 확인할 수 없습니다. 자동 재시도하지 않습니다.'; }
+  finally {
+    for (const id of ['password','currentPassword','newPassword']) document.getElementById(id).value = '';
+    button.disabled = false; authBusy = false;
   }
 }
+
+document.getElementById('loginForm').addEventListener('submit', event => submitAuth(event, 'login', {
+  username:document.getElementById('username').value, password:document.getElementById('password').value
+}));
+document.getElementById('passwordForm').addEventListener('submit', event => submitAuth(event, 'change-password', {
+  current_password:document.getElementById('currentPassword').value, new_password:document.getElementById('newPassword').value, expected_auth_epoch:authEpoch
+}));
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  if (authBusy) return;
+  authBusy = true;
+  showSession(null, '로그아웃 확인 중');
+  try {
+    const res = await postAuth('logout', {});
+    showSession(null, res.ok ? '로그아웃되었습니다.' : '로그아웃 요청 결과 미확인');
+  } catch (_) { showSession(null, '로그아웃 요청 결과 미확인'); }
+  finally { authBusy = false; }
+});
 
 // 2. Load Dashboard Statistics
 async function loadDashboard() {
   try {
-    const res = await fetch('/api/v1/dashboard');
-    if (!res.ok) return;
-    const body = await res.json();
+    if (!fullAccess) return;
+    const body = await readBusiness('/api/v1/dashboard');
     const data = body.data;
 
     document.getElementById('mTotal').textContent = data.counts.total_notices.toLocaleString();
     document.getElementById('mAi').textContent = data.counts.ai_candidates.toLocaleString();
     document.getElementById('mUrgent').textContent = data.counts.urgent_deadline_3d.toLocaleString();
-    document.getElementById('syncStatus').textContent = `동기화: ${data.collection_health.status} (${data.counts.total_notices.toLocaleString()}건)`;
+    document.getElementById('mMajor').textContent = (data.counts.major_candidates ?? '-').toLocaleString();
+    document.getElementById('connectionStatus').textContent = '공고 API 응답 확인';
+    document.getElementById('collectionStatus').textContent = '실시간 수집 상태 미확인';
+    document.getElementById('syncStatus').textContent = data.collection_health.last_sync_at ? '최근 등록 관측: ' + data.collection_health.last_sync_at : '수집 이력 미확인';
   } catch (err) {
-    console.error('Dashboard load error:', err);
+    if (fullAccess) document.getElementById('connectionStatus').textContent = '공고 API 조회 실패';
   }
 }
 
@@ -601,6 +712,8 @@ function toggleAiTargetPreset(btn) {
 }
 
 async function loadNotices() {
+  if (!fullAccess) return;
+  const seq = ++listSeq;
   const q = document.getElementById('searchInput').value.trim();
   const status = document.getElementById('statusSelect').value;
   const sort = document.getElementById('sortSelect').value;
@@ -623,9 +736,8 @@ async function loadNotices() {
   params.set('limit', '50');
 
   try {
-    const res = await fetch(`/api/v1/notices?${params.toString()}`);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const body = await res.json();
+    const body = await readBusiness(`/api/v1/notices?${params.toString()}`);
+    if (seq !== listSeq || !fullAccess) return;
     const items = body.data;
     const total = body.page ? body.page.total : items.length;
 
@@ -638,32 +750,43 @@ async function loadNotices() {
 
     tbody.innerHTML = items.map(n => {
       const dday = getDDay(n.deadline_at);
-      const cats = (n.categories || []).map(c => `<span class="badge badge-cat">${c}</span>`).join('');
+      const cats = (n.categories || []).map(c => `<span class="badge badge-cat">${escapeHtml(c)}</span>`).join('');
       const bg = formatBudget(n.budget_amount);
       const dl = n.deadline_at ? n.deadline_at.replace('T', ' ').substring(0, 16) : '미확인';
 
       return `<tr>
         <td><span class="badge ${dday.badge}">${dday.str}</span></td>
         <td>
-          <button class="notice-title-btn" onclick="openNoticeDetail('${n.id}')">${n.title}</button>
-          <div class="notice-sub">${n.buyer} | 번호: ${n.notice_number}</div>
+          <button class="notice-title-btn" data-notice-id="${escapeHtml(n.id)}">${escapeHtml(n.title)}</button>
+          <div class="notice-sub">${escapeHtml(n.buyer)} | 번호: ${escapeHtml(n.notice_number)}</div>
         </td>
         <td>${cats || '<span style="color:#aaa;">-</span>'}</td>
-        <td style="font-weight: 600; font-variant-numeric: tabular-nums;">${bg}</td>
-        <td style="font-size: 12px; color: #4a5568;">${dl}</td>
+        <td style="font-weight: 600; font-variant-numeric: tabular-nums;">${escapeHtml(bg)}</td>
+        <td style="font-size: 12px; color: #4a5568;">${escapeHtml(dl)}</td>
         <td>
-          <button class="btn-sm" onclick="openNoticeDetail('${n.id}')">상세 보기</button>
+          <button class="btn-sm" data-notice-id="${escapeHtml(n.id)}">상세 보기</button>
         </td>
       </tr>`;
     }).join('');
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--red);">공고 목록을 불러오지 못했습니다: ${err.message}</td></tr>`;
+    if (seq !== listSeq || !fullAccess) return;
+    tbody.innerHTML = '<tr><td colspan="6">공고 목록을 불러오지 못했습니다.</td></tr>';
   }
 }
 
 // 4. Open Detail Drawer
+document.getElementById('noticeTableBody').addEventListener('click', event => {
+  const button = event.target.closest('[data-notice-id]');
+  if (button) openNoticeDetail(button.dataset.noticeId);
+});
+
 async function openNoticeDetail(noticeId) {
+  if (!fullAccess || !/^[0-9a-f-]{36}$/i.test(noticeId)) return;
+  const seq = ++detailSeq;
+  const link = document.getElementById('dG2bLink');
+  link.hidden = true; link.removeAttribute('href');
+  document.getElementById('dSourceUrl').textContent = '-';
   const drawer = document.getElementById('drawerOverlay');
   drawer.classList.add('open');
 
@@ -675,9 +798,8 @@ async function openNoticeDetail(noticeId) {
   document.getElementById('dDocuments').innerHTML = '<div class="loading-spinner"></div> 첨부문서 확인 중...';
 
   try {
-    const res = await fetch(`/api/v1/notices/${noticeId}`);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const body = await res.json();
+    const body = await readBusiness(`/api/v1/notices/${encodeURIComponent(noticeId)}`);
+    if (seq !== detailSeq || !fullAccess) return;
     const data = body.data;
 
     document.getElementById('dTitle').textContent = data.title;
@@ -690,15 +812,15 @@ async function openNoticeDetail(noticeId) {
     document.getElementById('dBadge').textContent = dday.str;
     document.getElementById('dDeadline').textContent = data.deadline_at ? data.deadline_at.replace('T', ' ').substring(0, 19) : (data.deadline_raw || '미확인');
 
-    document.getElementById('dCategories').innerHTML = (data.categories || []).map(c => `<span class="badge badge-cat">${c}</span>`).join(' ') || '일반';
+    document.getElementById('dCategories').innerHTML = (data.categories || []).map(c => `<span class="badge badge-cat">${escapeHtml(c)}</span>`).join(' ') || '일반';
 
-    const g2bUrl = data.source_url || `https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=${data.notice_number}&bidPbancOrd=000`;
-    document.getElementById('dSourceUrl').innerHTML = `<a href="${g2bUrl}" target="_blank" style="color:var(--accent);">원문 공고 확인 ↗</a>`;
-    document.getElementById('dG2bLink').href = g2bUrl;
+    const g2bUrl = allowedSourceUrl(data.source_url);
+    document.getElementById('dSourceUrl').textContent = g2bUrl ? '승인된 공개 링크' : '공개 링크 미확인';
+    if (g2bUrl) { link.href = g2bUrl; link.hidden = false; }
 
     const docs = data.documents || [];
     if (!docs.length) {
-      document.getElementById('dDocuments').innerHTML = '<div style="font-size:12px; color:var(--muted);">등록된 첨부 문서가 없습니다.</div>';
+      document.getElementById('dDocuments').innerHTML = '<div style="font-size:12px; color:var(--muted);">조회 가능한 첨부 문서가 없습니다.</div>';
     } else {
       document.getElementById('dDocuments').innerHTML = docs.map(d => {
         const v = (d.versions && d.versions[0]) || {};
@@ -706,20 +828,22 @@ async function openNoticeDetail(noticeId) {
         return `<div class="doc-item">
           <span class="doc-icon">📄</span>
           <div class="doc-meta">
-            <b>${d.logical_key}</b>
-            <small>${v.media_type || '문서 파일'} ${sz ? '• ' + sz : ''} • SHA: ${v.sha256 ? v.sha256.substring(0,8) : '-'}</small>
+            <b>${escapeHtml(d.logical_key)}</b>
+            <small>${escapeHtml(v.media_type || '문서 파일')} ${escapeHtml(sz ? '• ' + sz : '')} • SHA: ${escapeHtml(v.sha256 ? v.sha256.substring(0,8) : '-')}</small>
           </div>
-          ${v.source_url ? `<a href="${v.source_url}" target="_blank" class="btn-sm" style="text-decoration:none; color:var(--accent);">다운로드</a>` : ''}
+          ${allowedSourceUrl(v.source_url) ? `<a href="${escapeHtml(allowedSourceUrl(v.source_url))}" target="_blank" rel="noopener noreferrer" class="btn-sm">공개 출처</a>` : ''}
         </div>`;
       }).join('');
     }
 
   } catch (err) {
-    document.getElementById('dTitle').textContent = '상세 정보 조회 실패: ' + err.message;
+    if (seq !== detailSeq || !fullAccess) return;
+    document.getElementById('dTitle').textContent = '상세 정보 조회 실패';
   }
 }
 
 function closeDrawer() {
+  detailSeq++;
   document.getElementById('drawerOverlay').classList.remove('open');
 }
 
@@ -775,22 +899,21 @@ function resetFilters() {
 // Nav clicks
 document.querySelectorAll('.nav button').forEach(b => {
   b.addEventListener('click', () => {
+    if (!fullAccess) return;
     document.querySelectorAll('.nav button').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     const v = b.dataset.view;
     if (v === 'ai-focus') setCategoryFilter('AI');
     else if (v === 'urgent') setStatusFilter('open', true);
     else if (v === 'home' || v === 'notices') resetFilters();
-    else if (v === 'operations') alert('G2B 공식 연동: 정상 온라인\n적재 공고: 4,286건\n수집 주기: 1일 자동 예약');
-    else if (v === 'jobs') window.open('/api/v1/jobs', '_blank');
+    else if (v === 'operations') alert('실시간 수집 연동은 아직 검증되지 않았습니다.');
+    else if (v === 'jobs') window.open('/api/v1/jobs', '_blank', 'noopener,noreferrer');
   });
 });
 
 // Init on page load
 window.addEventListener('DOMContentLoaded', async () => {
   await initAuth();
-  await loadDashboard();
-  await loadNotices();
 });
 </script>
 
