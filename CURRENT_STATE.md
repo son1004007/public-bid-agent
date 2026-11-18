@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 security follow-up (IMPLEMENTED_UNVERIFIED)
+
+- Prior document service source-binding SHA 6b107f86 and worker DB fencing SHA f1e7950b: each all four CI workflow families SUCCESS. This is not independent review or deployment approval.
+- Proposal scope candidate b26fdea3: nullable explicit owner_user field/migration 0004, owner-filtered HTTP list/detail/revision/download and worker generation/export; ownerless legacy workspaces stay inaccessible, no automatic backfill or administrator exception. One workspace per notice retained until approved shared-workspace model; no permission expansion.
+- New tests cover non-owner/ownerless HTTP and cross-owner worker writes, existing owner positive cases. Same-source CI pending; migration on production NOT RUN, independent review NOT RUN. Document access/classification, persisted export bytes, actual provider provenance, source resolver, real concurrency evidence, full security review and bounded runtime deployment remain open. No company or operational data modified.
+- Details: [PR #5](https://github.com/son1004007/public-bid-agent/pull/5).
+
 ## 2026-11-17 사업부 집계 원가·공동 사업 검토 (DESIGN_UPDATED / IMPLEMENTATION_PENDING)
 
 - [사업부 집계 원가·공동 검토 설계](docs/server-migration/09-aggregate-cost-and-shared-review.md)을 신규 설계 정본으로 작성하고 인증, UI, DB/API, 인수 조건과 작업 원장에 연결했다. 개인 급여/단가 미수집·사업부 합계만 입력·공통 사업 수익성 조회·업무 결정 권한 분리 방향이다.
