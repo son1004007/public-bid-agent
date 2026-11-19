@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — durable legacy JSON baseline
+
+- [x] New protected evidence-only directory created; verified directory/file ACL entries limited to current user, SYSTEM and Administrators.
+- [x] Stored source-bound manifest for 8 designated JSON paths (4 present, 4 absent); independent reread of current bytes matched all 4 stored hashes. Preserve this file locally, never commit actual digest or private path; compare before/after an approved release.
+- [ ] Actual service private-media path still absent: existing app and LocalAppData parents have other delete/create rights. Require explicit safe alternate root / approved parent remediation and verify ACL before use. Do not change existing ACLs or conflate evidence directory and media.
+- [ ] Full coordinated PostgreSQL/RFP backup and recovery, credential applicability, fresh-context independent review, actual Windows browser and rollback. Main merge/release remains NO_GO.
+
 ## 2026-11-19 PR #5 checkpoint — protected-data preflight
 
 - [x] Exact-head 7cfbd3ff CI 4/4 passed.
