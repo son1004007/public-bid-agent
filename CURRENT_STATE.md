@@ -1,3 +1,7 @@
+## 2026-11-19 public HWPX bounded text fallback candidate
+
+Measured actual five originals: max section 2,972,951 bytes; max total XML nodes 73,300, depth 23, cells 5,000. Added operator-only fallback with separate per-section 4 MiB, total section XML 12 MiB, 100k total nodes, 12k text blocks, 2 Mi characters, existing ZIP/DTD/depth/input guards unchanged. Explicit text-only warning; no structured table/footnote preservation claim. Existing default API parser unchanged. Candidate tests and real retry pending. PDF/HWP dependency not present on server image; separate work.
+
 ## 2026-11-19 NAS RFP initial real evidence — PARTIAL
 
 - Official metadata re-query: 890 service API rows, 331 candidate named attachments matching 123 current candidate notices, 126 HWPX, 122 PDF, 77 HWP, 6 others. Selected five HWPX RFP/statement files of distinct current notices; downloaded 5/5 (4,011,682 bytes), official HTTPS endpoint and exact public identity/sequence parameters incl empty fileType. First probe rejected missing fifth query key before downloads, corrected after observing API. No external AI, no secrets in output. Selection and download were operator one-shot runtime scripts, not a durable automated RFP collector.

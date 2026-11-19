@@ -1,3 +1,7 @@
+## 2026-11-19 parser candidate
+
+- [ ] Verify bounded HWPX text-only fallback on actual four failed originals, preserve original runs/current identity and ACL; PDF/HWP separately. No release approval.
+
 ## 2026-11-19 RFP actual first slice
 
 - [x] Live metadata probe 331 attachments/123 notices, five HWPX downloads, private originals/DB hash verification 5/5; one parsed, four limit failures, five replay unchanged; real rule evidence from one notice. RFP screen cutover and separate HTTPS anonymous boundary verified; 40 tests PASS, 1 skip; CI Sprint 1 CI 44509836275: success; Development harness 44509836163: success; Server foundation CI 44509836296: success; Windows synthetic local acceptance 44509836243: success.

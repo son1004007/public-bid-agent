@@ -42,13 +42,13 @@ def _check_zip(z):
         raise ParserError("Unsupported archive structure or size.")
 
 
-def _read_xml(z, name):
+def _read_xml(z, name, *, max_bytes=MAX_XML_BYTES, max_nodes=MAX_XML_NODES):
     info = z.getinfo(name)
-    if info.file_size > MAX_XML_BYTES:
+    if info.file_size > max_bytes:
         raise ParserError("XML size exceeds parser limit.")
     with z.open(info) as stream:
-        data = stream.read(MAX_XML_BYTES + 1)
-    if len(data) != info.file_size or len(data) > MAX_XML_BYTES:
+        data = stream.read(max_bytes + 1)
+    if len(data) != info.file_size or len(data) > max_bytes:
         raise ParserError("XML size exceeds parser limit.")
     # Only UTF-8 XML is accepted at this boundary. Reject alternate encodings
     # and DTD/entity declarations before handing data to ElementTree.
@@ -71,7 +71,7 @@ def _read_xml(z, name):
                     root = node
                 depth += 1
                 count += 1
-                if depth > MAX_XML_DEPTH or count > MAX_XML_NODES:
+                if depth > MAX_XML_DEPTH or count > max_nodes:
                     raise ParserError("XML structure exceeds parser limit.")
             else:
                 depth -= 1
@@ -433,6 +433,77 @@ def parse_plain(raw_bytes: bytes) -> Dict[str, Any]:
         "footnotes": [],
         "warnings": [],
     }
+
+
+# Operator-only fallback: measured real public RFPs; no relaxation for ordinary upload.
+MAX_RFP_XML_BYTES = 4 * 1024 * 1024
+MAX_RFP_TOTAL_XML_BYTES = 12 * 1024 * 1024
+MAX_RFP_NODES = 100000
+MAX_RFP_PARAGRAPHS = 12000
+MAX_RFP_TEXT = 2 * 1024 * 1024
+
+
+def parse_public_hwpx_text(raw_bytes):
+    """Bounded paragraph-text extraction for large public HWPX, without layout claims.
+
+    Collect each text node once, including table-cell paragraphs; nested paragraphs
+    are separate blocks. No inferred table grid, page number or footnote anchors.
+    """
+    _check_input(raw_bytes)
+    blocks, parts = [], []
+    count, chars = 0, 0
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw_bytes)) as z:
+            _check_zip(z)
+            names = sorted((n for n in z.namelist() if re.fullmatch(r"Contents/section\d+\.xml", n, re.I)),
+                           key=lambda n: int(re.search(r"section(\d+)\.xml", n, re.I).group(1)))
+            if not names or len(names) > 32 or sum(z.getinfo(n).file_size for n in names) > MAX_RFP_TOTAL_XML_BYTES:
+                raise ParserError("Public RFP section budget exceeded.")
+            for s_idx, name in enumerate(names):
+                root = _read_xml(z, name, max_bytes=MAX_RFP_XML_BYTES, max_nodes=MAX_RFP_NODES-count)
+                if _local_tag(root) != "sec":
+                    raise ParserError("Invalid HWPX section.")
+                # Explicit stack with enter/exit events: linear traversal, bounded by XML depth.
+                stack = [(root, False)]
+                paragraphs = []
+                ordinal = 0
+                while stack:
+                    elem, leaving = stack.pop()
+                    tag = _local_tag(elem)
+                    if not leaving:
+                        count += 1
+                        if count > MAX_RFP_NODES:
+                            raise ParserError("Public RFP node budget exceeded.")
+                        if tag == "p":
+                            ordinal += 1
+                            paragraphs.append([ordinal, []])
+                        if tag == "t" and elem.text:
+                            if not paragraphs:
+                                raise ParserError("Text outside paragraph requires review.")
+                            chars += len(elem.text)
+                            if chars > MAX_RFP_TEXT:
+                                raise ParserError("Public RFP text budget exceeded.")
+                            paragraphs[-1][1].append(elem.text)
+                        stack.append((elem, True))
+                        stack.extend((child, False) for child in reversed(list(elem)))
+                    elif tag == "p":
+                        index, segments = paragraphs.pop()
+                        text = "".join(segments).strip()
+                        if text:
+                            if len(blocks) >= MAX_RFP_PARAGRAPHS:
+                                raise ParserError("Public RFP paragraph budget exceeded.")
+                            blocks.append({"block_id": f"sec{s_idx}_p{index}", "kind":"text",
+                                           "text":text,"locator":{"section":s_idx,"p_index":index}})
+            blocks.sort(key=lambda b:(b["locator"]["section"],b["locator"]["p_index"]))
+            parts = [b["text"] for b in blocks]
+    except (ET.ParseError, UnicodeError, zipfile.BadZipFile, RuntimeError, ValueError, OSError) as exc:
+        if isinstance(exc, ParserError):
+            raise
+        raise ParserError("Invalid public HWPX content.") from None
+    if not blocks:
+        raise ParserError("Empty public RFP text.")
+    return {"format":"HWPX","full_text":"\n".join(parts),"blocks":blocks,"tables":[],"footnotes":[],
+            "warnings":["PUBLIC_RFP_TEXT_ONLY_TABLE_LAYOUT_AND_FOOTNOTE_LINKS_UNVERIFIED"]}
 
 
 def parse_document_bytes(file_name: str, raw_bytes: bytes) -> Dict[str, Any]:

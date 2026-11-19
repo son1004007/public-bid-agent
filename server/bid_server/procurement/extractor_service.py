@@ -29,7 +29,7 @@ from .models import (
     ChunkCategory,
     ChunkPath,
 )
-from .parser import parse_document_bytes, ParserError
+from .parser import parse_document_bytes, parse_public_hwpx_text, ParserError
 
 
 class DocumentAccessError(ValueError):
@@ -80,7 +80,7 @@ class ExtractionService:
         raw_bytes: bytes,
         file_name: Optional[str] = None,
         job_attempt_id: Optional[Any] = None,
-        *, actor_user=None,
+        *, actor_user=None, public_hwpx_text_only=False,
     ) -> ExtractionRun:
         """단일 문서 버전을 파싱하고 모든 계층 구조를 단일 트랜잭션으로 저장한다."""
         size = len(raw_bytes)
@@ -106,7 +106,12 @@ class ExtractionService:
         fname = file_name or f"document.{ext}"
         if fname.lower().rsplit(".", 1)[-1] != ext:
             raise ParserError("Document format mismatch.")
-        parsed = parse_document_bytes(fname, raw_bytes)
+        if public_hwpx_text_only:
+            if actor_user is not None or ext != "hwpx":
+                raise ParserError("Public RFP fallback is internal HWPX only.")
+            parsed = parse_public_hwpx_text(raw_bytes)
+        else:
+            parsed = parse_document_bytes(fname, raw_bytes)
         if parsed["format"] != expected_format:
             raise ParserError("Document format mismatch.")
 
@@ -128,7 +133,7 @@ class ExtractionService:
             # 1. ExtractionRun 생성
             run = ExtractionRun.objects.create(
                 document_version=document_version,
-                extractor_version="1.0.0-def03",
+                extractor_version="1.1.0-public-hwpx-text" if public_hwpx_text_only else "1.0.0-def03",
                 job_attempt_id=job_attempt_id,
                 state=ExtractionState.PARSED,
                 coverage={
