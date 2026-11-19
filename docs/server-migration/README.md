@@ -25,6 +25,7 @@
 | 13 | [전사 역량·부서 협업 및 전체 아키텍처](12-enterprise-capability-hybrid-rag.md) | 법인과 부서, 지원 요청/가용성, 정량·정성 및 비용 시나리오 |
 | 14 | [GPT·Claude·Gemini 연동 후보](13-multi-llm-provider-routing.md) | LLM 공급자 교체 구조, 과금·사내 반출 승인, 검증 순서 |
 | 15 | [공개 입찰 MCP 연결·검증](14-bid-mcp-interface.md) | 공개 공고/승인 RFP 읽기 도구·stdio 구현과 인증된 원격 연결 조건 |
+| 16 | [모델 실행 MCP·구독 CLI·Gemini 4 조사](15-mcp-provider-executor-subscription-policy.md) | 서버→MCP→모델 요청·JSON 저장, 개인 구독 약관 및 기업 운영 경계 |
 
 ## 다른 AI에게 전달할 짧은 시작 지시
 
