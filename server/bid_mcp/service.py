@@ -8,7 +8,8 @@
 핵심 불변조건: source=G2B_OFFICIAL_API, 현재 차수 일치, 10건 이하, 원문/개인자료 미노출.
 관련: docs/server-migration/14-bid-mcp-interface.md, procurement/models.py.
 """
-from .scope import PUBLIC_SOURCE, require_enabled, validate_limit, validate_notice_number, validate_query
+from .scope import (PUBLIC_SOURCE, approved_public_rfp_enabled, require_enabled,
+                    validate_limit, validate_notice_number, validate_query)
 
 
 def _public_queryset():
@@ -69,7 +70,7 @@ def search_public_rfp_passages(notice_number: str, query: str, limit: int = 5) -
     limit = validate_limit(limit)
     if not _public_queryset().filter(notice_number=notice_number).exists():
         return {"status": "NOT_FOUND", "notice_number": notice_number}
-    if not __import__("bid_mcp.scope", fromlist=["approved_public_rfp_enabled"]).approved_public_rfp_enabled():
+    if not approved_public_rfp_enabled():
         return {"status": "NOT_ENABLED", "reason": "PUBLIC_RFP_REVIEW_REQUIRED", "items": []}
     from django.db.models import F, OuterRef, Subquery
     from bid_server.procurement.models import Chunk, ExtractionRun
