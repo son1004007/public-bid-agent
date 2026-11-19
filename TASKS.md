@@ -4,6 +4,8 @@
 
 조직 범위/협업/비용 최신 상세: [12 전사 역량·부서 협업 설계](docs/server-migration/12-enterprise-capability-hybrid-rag.md). 기존 HBR 순서 유지.
 
+2026-11-20 MCP 격리 검증 증거: [hosted Actions 44636741407](https://github.com/son1004007/public-bid-agent/actions/runs/44636741407)에서 입력/권한 6건 + 합성 Django DB 3건 + SDK 메모리 프로토콜 3 도구 스모크 PASS. **실운영 IDC 연결/원격 모델 호출은 NOT_RUN**. 다음 게이트: 회사 승인된 격리 서비스 계정 및 읽기 전용 DB, 안전한 authenticated HTTPS transport/등록, 최종 실제 연결 E2E.
+
 2026-11-20 MCP 도구 연결 구현 후보: [14 공개 입찰 MCP 서버 및 검증 계약](docs/server-migration/14-bid-mcp-interface.md). HBR-04/06 연결점 앞에 공개 공고/승인 공개 RFP 읽기 전용 stdio MCP를 구현하고 SDK 프로토콜 검증을 추가한다. **원격 GPT/Claude/Gemini 등록·data1 운영 배포·비공개 회사자료 접근은 미완료/차단**. 기존 13의 LLM 공급자 API 연결과 MCP 도구 노출은 별도 기능이며 신규 HBR 번호는 만들지 않는다.
 
 2026-11-20 다중 LLM 연동 **후보**: GPT·Claude·Gemini를 제품에서 향후 선택할 수 있도록 [13 Provider Router 설계](docs/server-migration/13-multi-llm-provider-routing.md)를 HBR-04(서버 단일 provider E2E), HBR-06(선택/상태 UI), HBR-08(회사 자료별 provider 승인)에 연결한다. 공급자 사용/비용/실자료 외부 전송 **미승인**. HBR-01/02 로컬 검색 우선, OFF 기본값, Gemini/AGY 자동 위임 금지, 새 HBR 번호 추가 없음.
