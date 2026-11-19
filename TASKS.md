@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — explicit DB backup selection
+
+- [x] Remove backup/restore Python implicit DB config fallback; shared strict local loader and new tests. Server foundation CI passed on 010accd5.
+- [x] Notebook local DB listener/config preflight; dedicated media empty.
+- [ ] Actual DB identity/read-only catalog probe BLOCKED (job_01M7S2BHTF00KNHT01NPYR8QMJ TIMEOUT_TERMINATION_UNCONFIRMED); reconcile and split bounded commands. Actual operational backup NOT RUN. Establish full RFP/data roots, quiescence and approved private destination; trusted isolated recovery.
+- [ ] Verify remaining same-head CI, credential applicability, independent review and release rollback. Main merge/deployment NO_GO.
+
 ## 2026-11-19 PR #5 checkpoint — backup/restore rehearsal
 
 - [x] Explicit CLI backup config, output and storage scope; reject omission/mismatch with selected service media. Combined inventory and temporary storage recovery with regressions.
