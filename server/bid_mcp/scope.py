@@ -23,10 +23,10 @@ def require_enabled() -> None:
 
 
 def validate_query(query: str) -> str:
-    if not isinstance(query, str):
+    if not isinstance(query, str) or any(ord(ch) < 32 or ord(ch) == 127 for ch in query):
         raise ValueError("INVALID_QUERY")
     query = query.strip()
-    if not 2 <= len(query) <= _MAX_QUERY or any(ord(ch) < 32 or ord(ch) == 127 for ch in query):
+    if not 2 <= len(query) <= _MAX_QUERY:
         raise ValueError("INVALID_QUERY")
     return query
 
