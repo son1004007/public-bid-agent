@@ -1,3 +1,8 @@
+## 2026-11-19 NAS PostgreSQL — live verification
+
+- [x] Dedicated PostgreSQL 16.15 persistent DB, source backup, exact typed-field migration and live cutover; 850 notices / 1,697 versions / 847 official links / 3,621 serialized objects, existing account preserved, sessions excluded. Independent-client HTTPS shell/health and anonymous 401 PASS. Archive export/decode PASS, real restore pending.
+- [ ] Next P0: restart-safe app/relay, persistent collection credential/config and controlled restart; restore rehearsal, backup policy; then bounded official data refresh and RFP. Existing schedules remain paused; no production approval or claim of actual NAS reboot.
+
 ## 2026-11-19 NAS official URL — verified preview
 
 - [x] b272f27 4/4 CI and NAS 35 tests; re-query existing 847 exact metadata matches and 847 allowed public links; clone import/cutover, separate-client HTTPS shell and 401 verified. Existing DB/old app preserved. Manual authenticated link-click verification remains pending. Preview banner distinguishes synthetic cost.
