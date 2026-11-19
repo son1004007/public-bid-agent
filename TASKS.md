@@ -1,3 +1,11 @@
+## 2026-11-19 PR #5 checkpoint — portable browser and containment tooling
+
+- [x] Bounded legacy RFP original-file inventory: zero matching original-document extensions in known tree; extracted cache only is backed up. Binary elsewhere / coordinated snapshot remains unknown.
+- [x] Portable Windows/Linux real Chrome synthetic gate passes on 2622212e; enforce dedicated test settings before setup.
+- [x] Interactive local operator rotation/disable command added and synthetic SQLite/PostgreSQL tests PASS. Operator procedure documented in server/README.md.
+- [ ] Central private user action #26 OPEN; administrator remediation/session revocation and safe cutover evidence required; do not apply test credentials or run reset on real users without the authorized operator.
+- [ ] Complete exact-head CI, fresh-context independent review (REVIEW_DEBT), actual notebook ChromeDriver availability and synthetic browser acceptance, approved full recovery scope and rollback. No main merge or live release while gated.
+
 ## 2026-11-19 PR #5 checkpoint — current DB parity and RFP cache backup
 
 - [x] Previous b34fb62f CI 4/4; actual current-source vs restored row count/content fingerprint 11/11 matches. Not source archive-time snapshot parity.
