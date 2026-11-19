@@ -116,3 +116,22 @@ python server/manage.py makemigrations --check --dry-run --settings=bid_server.s
 ```
 
 실제 PostgreSQL 잠금 검증은 저장소 밖 `SM03_TEST_DB_CONFIG_FILE`에 HOST=127.0.0.1, PORT, NAME=sm03_*와 USER/PASSWORD를 담아 격리 cluster를 지정하고 `--settings=bid_server.settings.test_postgres`로 실행한다. 암호를 명령줄에 직접 넣거나 파일을 Git에 추가하지 않는다. runner는 test_sm03_* DB를 생성/삭제한다. 실제 운영 DB를 지정하지 않는다. SQLite skip 결과는 PG 잠금 통과가 아니다.
+
+
+## Authorized local account containment
+
+Use a reviewed clean checkout and approved local configuration (including the explicit protected media root described above). From a trusted interactive terminal with the existing server virtual environment, a local administrator can run:
+
+```powershell
+python server/manage.py contain_account --rotate --settings=bid_server.settings.local
+# Or, when retirement of the selected account is explicitly approved:
+python server/manage.py contain_account --disable --settings=bid_server.settings.local
+```
+
+The operator selects exactly one existing username and explicitly confirms the operation. Rotation prompts for a new unique temporary password twice without echo, applies the password policy, expires the temporary password after 24 hours, and requires the user to change it on the next legitimate login. It does not activate inactive accounts, grant roles or clear lockouts. Disable makes the account inactive and its password unusable. Both operations atomically advance the authentication epoch and record a local operator event (no HTTP actor). This revokes old sessions on the next authenticated request; the command does not delete unrelated session rows. No password may be passed as a CLI argument, environment variable, chat message or repository content. Non-interactive execution is rejected.
+
+Do not use a page or artifact known to contain obsolete automatic-login material to perform rotation. The administrator must separately ensure old UI/artifacts cannot replay that material and confirm credential/session remediation through approved procedures. A compatible reviewed deployment and independent release review remain separate gates. Do not run this command against operational accounts for testing.
+
+## Portable browser acceptance
+
+The opt-in synthetic SQLite browser test runs on Linux and Windows with a compatible installed Chrome and ChromeDriver. It fails before creating the live fixture if the settings are not the dedicated test settings. On a local workstation, use absolute trusted binary paths via `BID_CHROME_BINARY` and `BID_CHROMEDRIVER_BINARY` when needed. Hosted runners may supply `CHROMEWEBDRIVER`. Do not install or download an unverified binary or reuse a real browser profile. Official driver selection: https://developer.chrome.com/docs/chromedriver/downloads/version-selection.
