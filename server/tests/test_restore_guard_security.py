@@ -151,6 +151,28 @@ class RestoreGuardSecurityTests(SimpleTestCase):
                         run_rehearsal(bundle, trusted_dump_sha256=expected)
                 connect.assert_not_called()
 
+    def test_backup_restore_require_explicit_configuration_and_reject_remote_hosts(self):
+        from scripts.backup_system import load_db_config as backup_config
+        from scripts.restore_rehearsal import load_db_config as restore_config
+        from django.core.exceptions import ImproperlyConfigured
+        import os
+        with tempfile.TemporaryDirectory() as temp:
+            cfg = Path(temp) / "db.json"
+            data = {"HOST": "127.0.0.1", "PORT": 5432, "NAME": "sm03_fixture",
+                    "USER": "synthetic", "PASSWORD": "fixture-only"}
+            cfg.write_text(json.dumps(data), encoding="utf-8")
+            if os.name != "nt":
+                cfg.chmod(0o600)
+            for load in (backup_config, restore_config):
+                with patch.dict(os.environ, {"SM03_TEST_DB_CONFIG_FILE": str(cfg)}):
+                    with self.assertRaisesRegex(ValueError, "Explicit private database configuration"):
+                        load()
+                self.assertEqual(load(cfg), data)
+            cfg.write_text(json.dumps({**data, "HOST": "remote.invalid"}), encoding="utf-8")
+            for load in (backup_config, restore_config):
+                with self.assertRaises(ImproperlyConfigured):
+                    load(cfg)
+
     def test_configured_media_cannot_be_silently_omitted_or_replaced(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
