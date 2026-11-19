@@ -1,3 +1,8 @@
+## 2026-11-19 NAS regular collection — latest results
+
+- [x] Candidate 525d8c7 one-shot official API + PostgreSQL incremental ingestion validated on NAS. 879 actual notices (32 new), 1,732 versions, 879 official links; replay no writes. 7 focused tests and 3/4 CI PASS; legacy Chrome startup timeout retry pending. Existing scheduler remains disabled.
+- [ ] New NAS Gateway schedule 6-hour cadence, previous 24-hour overlap: created pending user confirmation. First scheduled execution not verified. Reboot auto-start explicitly deferred. Next functional task: actual RFP download/extraction/evidence analysis. Independent review/release NO_GO unchanged.
+
 ## 2026-11-19 latest MVP priority
 
 - [ ] NAS periodic official G2B refresh: isolated collector/DB writer, real run/replay, new schedule only after approval; 6-hour candidate, 24-hour overlap. Reboot auto-start explicitly deferred by owner (do not treat as complete). Real RFP next.
