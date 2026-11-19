@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — actual notebook browser
+
+- [x] Prior 89253db7 and fixed browser-test 7dba0209 exact-head CI 4/4 PASS.
+- [x] Actual notebook Chrome 158 CDP synthetic workspace acceptance at b5a732dd PASS; existing checkout/listener preserved, zero matching test processes. No driver installation.
+- [ ] Latest test-only file-lock fix rerun on notebook, if needed for exact release binding; isolated fetch timed out; candidate remains prior clean SHA. Fixed hosted Windows acceptance PASS.
+- [ ] Central private user action #26 OPEN; authorized actual credential/session remediation and old UI containment. Fresh-context independent review (REVIEW_DEBT), complete approved backup scope and release rollback. Main merge/deployment still NO_GO.
+
 ## 2026-11-19 PR #5 checkpoint — portable browser and containment tooling
 
 - [x] Bounded legacy RFP original-file inventory: zero matching original-document extensions in known tree; extracted cache only is backed up. Binary elsewhere / coordinated snapshot remains unknown.
