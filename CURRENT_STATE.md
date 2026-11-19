@@ -1,3 +1,7 @@
+## 2026-11-19 MVP-05 — initial pilot provisioning candidate
+
+- Exact 4cfe86f server foundation PostgreSQL/Windows/Ubuntu jobs PASS (135413489171/135413489503/135413489413); b0983db 4/4 PASS. Added operator-only aggregate plan validator/provisioner with explicit apply, trusted external digest, private file, mandatory existing eligible users, initial membership only, new version for basis changes, no raw individual salary fields, fail-closed scope and revision check. Synthetic tests added; exact new SHA CI pending. No actual data, policy, accounts, server access or deployment. Plan digest/approval record must remain in approved private operator ledger; membership modification/revocation and organizational policy require authorized procedure. Independent review REVIEW_DEBT and release NO_GO.
+
 ## 2026-11-19 MVP-05 — read-only pilot preflight candidate
 
 - Exact b0983db PostgreSQL and Ubuntu foundation jobs PASS (135411423660/135411423828); Windows foundation was in progress at observation. Prior c5b35d9 exact 4/4 PASS incl synthetic recovery. No independent reviewer available in this chat; REVIEW_DEBT and RELEASE NO_GO unchanged.

@@ -63,6 +63,8 @@ P0 보안 보완부터 시작하되 실제 관리자 조치·운영 승인·독�
 
 - b0983db PostgreSQL/Ubuntu regression PASS 관측. 시범 운영자용 읽기 전용 pilot_preflight, 합성 테스트, [운영 인계](docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md) 추가. 정확 신규 SHA CI 대기, 실제 환경 미접속·독립 검수 REVIEW_DEBT 유지.
 
+- 4cfe86f 사전점검 foundation 3 jobs PASS. `pilot_provision` 최초 사업부 지정/기존 계정 연결과 원가 신규 revision 발급 후보 구현(기본 검증만, 실제 적용 별도 승인). 신규 SHA CI, 독립검수, 비공개 조치, 실제 정책/설치/rollback 승인 남음.
+
 ### 실행 원칙 및 다음 재개 지점
 
 - 다음: MVP-05 최신 SHA 통합 복구 CI 확인 및 실패 수정 → 독립 최종 검수 → 정책/실자료/운영 승인 게이트. 이미 성공한 DB 개별 복원 및 브라우저 기록은 해당 SHA/범위에서 재사용한다. 통합 복원·릴리스 롤백은 별도이며 새 SHA에서 과거 CI를 재사용해 통과라 주장하지 않는다. 검수는 논리적 단위로 수행하고 불필요한 반복 조사/완벽주의를 피한다.

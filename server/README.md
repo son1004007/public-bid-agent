@@ -1,3 +1,5 @@
+> **2026-11-19 pilot provisioning candidate:** operator-only `pilot_provision` validates private, independently hashed aggregate plans; dry-run by default; explicit apply creates initial scope for existing accounts or appends a new cost basis revision without modifying existing membership. No actual company values/roles or deployment applied. See pilot operations handoff.
+
 > **2026-11-19 pilot preflight candidate:** `pilot_preflight` reports fixed non-sensitive readiness statuses; production read-only mode requires separate target approval. No config generation, service start, membership provisioning, data import, or release authorization. See [pilot operations handoff](../docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md).
 
 ## MVP-05 recovery manifest v2 (candidate)

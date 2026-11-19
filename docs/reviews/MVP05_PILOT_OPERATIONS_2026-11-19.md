@@ -27,3 +27,12 @@ python server/manage.py pilot_preflight --approved-read-only --settings=bid_serv
 - Django 5.2 공식 배포 체크리스트: https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/ . runserver는 운영용 아님. 실제 WSGI/ASGI 및 ingress 설정은 대상 환경에 맞춰 승인·검증한다. Proxy 헤더 신뢰는 실제 ingress가 외부 헤더를 삭제/덮어쓴다는 증거 없이 설정하지 않는다.
 - preflight의 CHECKS_PASS는 일부 설정/권한/현재 데이터 존재만 검사한 상태이며 TLS 실제 연결, 경로 ACL 전체, 회사 정책 적합성·공식 RFP 진위·CI/독립 검수·백업/롤백 승인 증거를 대체하지 않는다. production 설정만 허용, PostgreSQL read-only transaction, no write. --synthetic은 Django test DB에 한정한다.
 - 기존 사용자 조치 및 독립 검수 미완료. 실제 회사 대상/접속·정책이 승인되지 않았으므로 실제 설치·환경 변경·원가 입력은 금지. 현재 상태 RELEASE NO_GO.
+
+
+## 최초 업무 구성 발급 (후보)
+승인된 운영자가 기존 계정 UUID와 사업부 UUID, 권한, 단일 기간 집계값을 비공개 JSON에 준비한다. 파일은 Git 밖 정규 파일(Unix 0600, Windows 승인 ACL), 독립 승인 원장의 SHA-256을 입력한다. 최상위 키는 department_id, expected_revision, members, basis. members 각 항목은 user_id, can_manage_cost, can_decide. basis는 period_start, period_end, valid_until, labor_total_krw, allocation_mm, available_mm, headcount, minimum_headcount, rate_rounding_krw, capacity_rounding_mm, approved_by_id. MM은 Decimal 문자열, 금액/인원은 정수, 날짜 YYYY-MM-DD. 실제 값과 승인 원장은 공개 Git에 기록하지 않는다.
+
+```sh
+python server/manage.py pilot_provision --plan /private/approved-plan.json --trusted-plan-sha256 APPROVED_SHA256 --settings=bid_server.settings.base
+```
+기본은 검증만 한다. 실제 승인·독립 검수·환경 확인 후 운영자가 --apply 추가 및 대화형 확인으로 최초 발급한다. expected_revision=0은 신규 사업부만 허용; 이후 동일 membership과 정확한 최신 revision을 제시하면 이전 기준을 보존하고 새 기준을 등록한다. 기존 사용자 생성/비밀번호 변경/업무 권한 변경은 이 명령의 범위 밖이다. 승인 기록·원가 구성/배부방식·적용 시각은 회사 지정 비공개 원장에 보존해야 한다. 최소 인원·반올림 값은 정책 입력이며 코드가 회사 정책을 인증하지 않는다. 시범 운영 승인 전 실행하지 않는다.
