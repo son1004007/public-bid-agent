@@ -1,3 +1,5 @@
+> **MCP 방향 구분 (2026-11-20):** 이 문서의 `search_public_notices` 등은 **AI 실행기가 입찰 데이터에 접근하는 MCP data tools**이다. 사용자가 별도로 요청한 **입찰 서버가 AI 실행기를 호출하는 provider MCP**는 [15 별도 조사·설계](15-mcp-provider-executor-subscription-policy.md)에 기록한다. 양방향 모두 MCP일 수 있으나 서버/클라이언트 역할과 인증 경계는 다르다. 이 파일의 구현을 모델 제공자 연결 완료로 주장하지 않는다.
+
 # 14. 공개 입찰 MCP 연결 — 단계별 구현과 검증
 
 - 기준일: 2026-11-20 KST
