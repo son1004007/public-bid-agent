@@ -81,6 +81,11 @@ def create_backup(
     storage_dir: Path | None = None,
 ) -> Path:
     repo_root = Path(__file__).resolve().parents[1]
+    # Explicit storage selection must not diverge from the local service contract.
+    selected = os.environ.get("BID_LOCAL_PRIVATE_MEDIA_ROOT")
+    if selected is not None:
+        if not selected or storage_dir is None or storage_dir != Path(selected):
+            raise ValueError("Backup must explicitly include the selected private media root")
     output_dir = output_dir.resolve()
     if output_dir.is_relative_to(repo_root) or repo_root.is_relative_to(output_dir):
         raise ValueError("Backup output must be outside the Git working tree")
@@ -96,7 +101,8 @@ def create_backup(
         for directory, dirs, files in os.walk(storage_dir, followlinks=False):
             for name in dirs + files:
                 entry = Path(directory) / name
-                if entry.is_symlink() or not entry.resolve().is_relative_to(storage_dir):
+                if (entry.is_symlink() or getattr(entry.lstat(), "st_file_attributes", 0) & 1024
+                        or not entry.resolve().is_relative_to(storage_dir)):
                     raise ValueError("Storage contains an unsafe link")
                 if not (entry.is_dir() or entry.is_file()):
                     raise ValueError("Storage contains a nonregular entry")
@@ -116,7 +122,8 @@ def create_backup(
     # open until pg_dump exits. This ensures row counts and dump share one MVCC view.
     import psycopg
     dump_file = bundle_dir / "db_dump.sql"
-    env = os.environ.copy()
+    env = {k: v for k, v in os.environ.items() if not k.upper().startswith("PG")}
+    env["PGCONNECT_TIMEOUT"] = "5"
     env["PGPASSWORD"] = cfg["PASSWORD"]
     conn = psycopg.connect(
         host=cfg["HOST"], port=cfg["PORT"], dbname=cfg["NAME"],
@@ -221,9 +228,11 @@ def create_backup(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A16 Automated System Backup Tool")
-    parser.add_argument("--output-dir", default=str(Path(os.environ.get("LOCALAPPDATA", str(Path.home()))) / "PublicBidAgent" / "backups"), help="Output outside Git tree")
-    parser.add_argument("--config", default=None, help="Path to connection.private.json")
-    parser.add_argument("--storage-dir", default=None, help="Path to storage/artifacts directory")
+    parser.add_argument("--output-dir", required=True, help="Preapproved private output outside Git tree")
+    parser.add_argument("--config", required=True, help="Explicit private connection configuration")
+    scope = parser.add_mutually_exclusive_group(required=True)
+    scope.add_argument("--storage-dir", help="Explicit private artifact storage directory")
+    scope.add_argument("--db-only", action="store_true", help="Explicit DB-only partial backup; not a release backup")
     args = parser.parse_args()
 
     out = Path(args.output_dir)
