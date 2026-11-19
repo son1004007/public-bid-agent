@@ -1,3 +1,9 @@
+## 2026-11-19 MVP-02 — 상세검토 후보/근거 패널 (IMPLEMENTED_UNVERIFIED)
+
+- MVP-00 670c846 CI 4/4 PASS. MVP-01 77af24f server foundation/sprint/harness PASS, Windows 진행중 관측. 실제 API·독립 검수·릴리스 별도.
+- 기존 RFP 추출 Chunk, document scope, notice detail and workspace reused. Metadata candidate list excludes cancelled/corrected/unknown-deadline; current notice review checks official link and document scope, latest document and run, source SHA/size, locator; bounded excerpts only. Read-only, no external I/O, no fabricated human/legal/technical determination. Missing or stale RFP => HOLD. Approval and actual ground truth not obtained; accuracy NOT_EVALUATED.
+- Added synthetic read-only evidence binding and hold/filter tests. New head CI NOT RUN at authoring, independent review REVIEW_DEBT. Existing operational environment and data untouched. Next MVP-03 after exact-head CI checks.
+
 ## 2026-11-19 MVP-01 — 명시적 공고 수입→검색/상세 후보 (IMPLEMENTED_UNVERIFIED)
 
 - 기존 CLI, importer, API, workspace 재사용. 과거 동일 해시를 재수입해도 현재 포인터·첨부 이력을 되돌리지 않고, 낮은 숫자 공식 차수 및 새 공식 차수 근거 없는 취소 해제 거부. 날짜만 확인 시 DATE_ONLY 유지, 진행중/임박/주요 및 D-Day 필터에서 제외하고 미확인 화면 상태 추가. 기존 시간대 저장값은 이번 변경에서 수정하지 않았다. 전체 최신성·원문 진위·미확인 차수 판정은 아직 인증하지 않는다.

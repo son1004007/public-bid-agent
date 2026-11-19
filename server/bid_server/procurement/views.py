@@ -44,6 +44,7 @@ from .proposal_service import (
 from .parser import ParserError
 from .generator import ProposalExportService
 from .artifact_storage import ArtifactStorageError, read_verified_artifact
+from .review_service import review_projection
 from .extractor_service import (
     ExtractionService, DocumentSourceMismatchError, DocumentAccessError, scoped_document_versions,
 )
@@ -152,7 +153,23 @@ class NoticeListAPIView(APIView):
             qs = qs.filter(current_version__budget_amount__lte=int(budget_max_str))
 
         # 6. 정렬
-        if sort == "deadline":
+        if sort == "review":
+            # Metadata-only screening; the detail review still requires RFP and human checks.
+            qs = qs.filter(
+                source="G2B_OFFICIAL_API",
+                current_version__notice_id=F("id"),
+                current_version__cancellation=False, current_version__correction=False,
+                current_version__deadline_status=DeadlineStatus.PARSED,
+                current_version__deadline_at__gt=now,
+            )
+            categories = Q()
+            for category in ("AI", "DATA", "SW", "SECURITY"):
+                if connection.vendor == "sqlite":
+                    categories |= Q(current_version__department_categories__icontains=f'"{category}"')
+                else:
+                    categories |= Q(current_version__department_categories__contains=[category])
+            qs = qs.filter(categories).order_by("current_version__deadline_at", "id")
+        elif sort == "deadline":
             qs = qs.order_by(
                 F("current_version__deadline_at").asc(nulls_last=True),
                 "-created_at",
@@ -193,7 +210,9 @@ class NoticeDetailAPIView(APIView):
             id=notice_id,
         )
         serializer = NoticeDetailSerializer(notice)
-        return Response(serializer.data)
+        data = dict(serializer.data)
+        data["review"] = review_projection(notice, request.user)
+        return Response(data)
 
 
 class NoticeVersionsAPIView(APIView):

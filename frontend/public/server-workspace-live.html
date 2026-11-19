@@ -432,6 +432,7 @@
           <option value="deadline">마감일 임박순 (D-Day)</option>
           <option value="budget">예산 높은순</option>
           <option value="newest">최신 등록순</option>
+          <option value="review">상세검토 후보 (마감순)</option>
         </select>
 
         <button class="primary" id="searchBtn">검색</button>
@@ -501,6 +502,10 @@
       </div>
     </div>
 
+    <section style="border-top: 1px solid var(--line); padding-top: 12px; margin-bottom: 16px;">
+      <h3 style="font-size:14px;">사업 적합성 검토 · RFP 근거</h3>
+      <div id="dReview" aria-live="polite">-</div>
+    </section>
     <div style="margin-top: auto; border-top: 1px solid var(--line); padding-top: 18px; display: flex; gap: 10px;">
       <a id="dG2bLink" hidden target="_blank" rel="noopener noreferrer" class="primary button" style="flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; color: #fff; background: var(--accent); font-weight: 600;">
         나라장터 공식 상세페이지 열기 ↗
@@ -575,7 +580,7 @@ function clearBusiness() {
   document.getElementById('collectionStatus').textContent = '수집 상태 미확인';
   document.getElementById('connectionStatus').textContent = '연결 미확인';
   closeDrawer();
-  for (const id of ['dTitle','dNoticeNo','dBuyer','dBudget','dDeadline','dCategories','dSourceUrl','dDocuments']) document.getElementById(id).textContent = '-';
+  for (const id of ['dTitle','dNoticeNo','dBuyer','dBudget','dDeadline','dCategories','dSourceUrl','dDocuments','dReview']) document.getElementById(id).textContent = '-';
   const link = document.getElementById('dG2bLink');
   link.removeAttribute('href'); link.hidden = true;
 }
@@ -803,6 +808,40 @@ document.getElementById('noticeTableBody').addEventListener('click', event => {
   if (button) openNoticeDetail(button.dataset.noticeId);
 });
 
+function renderReview(review) {
+  const target = document.getElementById('dReview');
+  target.replaceChildren();
+  const add = (tag, value) => {
+    const node = document.createElement(tag);
+    node.textContent = value;
+    target.appendChild(node);
+  };
+  const reasons = {
+    CANCELLED:'취소 공고', CLOSED:'마감 공고', DEADLINE_UNVERIFIED:'마감 시각 미확인',
+    CORRECTION_REVIEW_REQUIRED:'정정 공고 원문 재검토 필요',
+    OFFICIAL_SOURCE_UNVERIFIED:'공식 출처 확인 필요', CATEGORY_REVIEW_REQUIRED:'분야 확인 필요',
+    CURRENT_VERSION_UNVERIFIED:'최신 차수 확인 필요', RFP_EVIDENCE_UNAVAILABLE:'RFP 근거 미확보: 공식 원문 직접 검토 필요',
+    EXTRACTED_CANDIDATES:'추출 근거 후보 발견: 담당자 검토 필요'
+  };
+  add('p', (review?.state === 'DETAIL_REVIEW_REQUIRED' ? '상세 검토 필요' : '보류') + ' · ' + (reasons[review?.reason] || '근거 미확인'));
+  add('p', '정확도 미평가 · 입찰 자격, 기술·인력 충족 여부 미확정' + (review?.truncated ? ' · 일부 근거만 표시' : ''));
+  for (const check of review?.checks || []) {
+    add('h4', check.label + ' — 미검증');
+    if (!check.evidence.length) add('p', '공식 원문 및 회사 증빙 수동 확인 필요');
+    for (const item of check.evidence) {
+      add('p', item.excerpt);
+      add('small', '문서 v' + item.document_version_seq + ' · SHA ' + item.source_sha256.slice(0,12)
+        + ' · 구절 #' + item.ordinal + ' · 위치 ' + (Object.keys(item.locator).length ? JSON.stringify(item.locator) : '미확인'));
+      const url = allowedSourceUrl(item.source_url);
+      if (url) {
+        const link = document.createElement('a');
+        link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        link.textContent = ' 공식 원문 확인'; target.appendChild(link);
+      }
+    }
+  }
+}
+
 async function openNoticeDetail(noticeId) {
   if (!fullAccess || !/^[0-9a-f-]{36}$/i.test(noticeId)) return;
   const seq = ++detailSeq;
@@ -818,6 +857,7 @@ async function openNoticeDetail(noticeId) {
   document.getElementById('dDeadline').textContent = '-';
   document.getElementById('dCategories').textContent = '-';
   document.getElementById('dDocuments').innerHTML = '<div class="loading-spinner"></div> 첨부문서 확인 중...';
+  document.getElementById('dReview').textContent = '검토 근거 확인 중...';
 
   try {
     const body = await readBusiness(`/api/v1/notices/${encodeURIComponent(noticeId)}`);
@@ -840,6 +880,7 @@ async function openNoticeDetail(noticeId) {
     document.getElementById('dSourceUrl').textContent = g2bUrl ? '허용된 공개 출처 링크' : '공개 링크 미확인';
     if (g2bUrl) { link.href = g2bUrl; link.hidden = false; }
 
+    renderReview(data.review);
     const docs = data.documents || [];
     if (!docs.length) {
       document.getElementById('dDocuments').innerHTML = '<div style="font-size:12px; color:var(--muted);">조회 가능한 첨부 문서가 없습니다.</div>';
@@ -861,6 +902,7 @@ async function openNoticeDetail(noticeId) {
   } catch (err) {
     if (seq !== detailSeq || !fullAccess) return;
     document.getElementById('dTitle').textContent = '상세 정보 조회 실패';
+    document.getElementById('dReview').textContent = '검토 근거 조회 실패';
   }
 }
 

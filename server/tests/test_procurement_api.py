@@ -378,3 +378,53 @@ class ProcurementAPITests(TestCase):
             counts = self.client.get("/api/v1/dashboard", secure=True).json()["data"]["counts"]
             self.assertEqual(counts["open_notices"], 0)
             self.assertEqual(counts["urgent_deadline_3d"], 0)
+
+    def test_review_projection_binds_only_current_visible_source_excerpts(self):
+        import hashlib
+        from bid_server.procurement.extractor_service import ExtractionService
+        from bid_server.procurement.models import DocumentFreshness, ExtractionRun, ExtractionState
+
+        raw = "입찰 참가자격은 공고 원문 확인이 필요하다.\nJava 기반 시스템 구축\n투입 인력 5 M/M".encode("utf-8")
+        doc = Document.objects.create(notice=self.notice_ai, logical_key="유효 합성 RFP")
+        version = DocumentVersion.objects.create(
+            document=doc, notice_version=self.nv_ai_v1, version_seq=1,
+            owner_user=self.user, sha256=hashlib.sha256(raw).hexdigest(), size_bytes=len(raw),
+            source_url="https://g2b.go.kr/synthetic-rfp", media_type="text/plain",
+            freshness=DocumentFreshness.CURRENT,
+        )
+        run = ExtractionService.extract_and_persist(version, raw, actor_user=self.user)
+        url = f"/api/v1/notices/{self.notice_ai.pk}"
+        review = self.client.get(url, secure=True).json()["data"]["review"]
+        self.assertEqual(review["state"], "DETAIL_REVIEW_REQUIRED")
+        self.assertEqual(review["notice_version_id"], str(self.nv_ai_v1.pk))
+        self.assertEqual(review["evaluation"], "NOT_EVALUATED")
+        evidence = [item for check in review["checks"] for item in check["evidence"]]
+        self.assertGreaterEqual(len(evidence), 3)
+        self.assertTrue(all(item["document_version_id"] == str(version.pk) and
+                            item["extraction_run_id"] == str(run.pk) and
+                            item["verification"] == "UNVERIFIED" for item in evidence))
+        self.assertTrue(all(check["state"] == "UNVERIFIED" for check in review["checks"]))
+        # A failed newer run must not revive old candidate evidence.
+        ExtractionRun.objects.create(document_version=version, extractor_version="synthetic", state=ExtractionState.FAILED)
+        self.assertEqual(self.client.get(url, secure=True).json()["data"]["review"]["reason"], "RFP_EVIDENCE_UNAVAILABLE")
+        # Inaccessible and stale data remain unavailable.
+        DocumentVersion.objects.filter(pk=version.pk).update(owner_user=None)
+        self.assertEqual(self.client.get(url, secure=True).json()["data"]["review"]["state"], "HOLD")
+
+    def test_review_sort_screening_and_hold_states(self):
+        result = self.client.get("/api/v1/notices?sort=review", secure=True).json()["data"]
+        self.assertEqual([row["id"] for row in result], [str(self.notice_data.pk), str(self.notice_ai.pk)])
+        initial = self.client.get(f"/api/v1/notices/{self.notice_ai.pk}", secure=True).json()["data"]["review"]
+        self.assertEqual(initial["reason"], "RFP_EVIDENCE_UNAVAILABLE")
+        for fields, reason in [
+            ({"correction": True}, "CORRECTION_REVIEW_REQUIRED"),
+            ({"correction": False, "cancellation": True}, "CANCELLED"),
+            ({"cancellation": False, "deadline_status": DeadlineStatus.DATE_ONLY}, "DEADLINE_UNVERIFIED"),
+        ]:
+            NoticeVersion.objects.filter(pk=self.nv_ai_v1.pk).update(**fields)
+            review = self.client.get(f"/api/v1/notices/{self.notice_ai.pk}", secure=True).json()["data"]["review"]
+            self.assertEqual(review["state"], "HOLD")
+            self.assertEqual(review["reason"], reason)
+            self.assertFalse(any(check["evidence"] for check in review["checks"]))
+            self.assertNotIn(str(self.notice_ai.pk), [row["id"] for row in
+                self.client.get("/api/v1/notices?sort=review", secure=True).json()["data"]])
