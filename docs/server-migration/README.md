@@ -24,6 +24,7 @@
 | 12 | [사업 담당자 이해용 설명](11-hybrid-rag-business-guide.md) | 도식·가상 업무 예시 |
 | 13 | [전사 역량·부서 협업 및 전체 아키텍처](12-enterprise-capability-hybrid-rag.md) | 법인과 부서, 지원 요청/가용성, 정량·정성 및 비용 시나리오 |
 | 14 | [GPT·Claude·Gemini 연동 후보](13-multi-llm-provider-routing.md) | LLM 공급자 교체 구조, 과금·사내 반출 승인, 검증 순서 |
+| 15 | [공개 입찰 MCP 연결·검증](14-bid-mcp-interface.md) | 공개 공고/승인 RFP 읽기 도구·stdio 구현과 인증된 원격 연결 조건 |
 
 ## 다른 AI에게 전달할 짧은 시작 지시
 
