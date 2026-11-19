@@ -29,3 +29,5 @@
 - NAS isolated synthetic candidate 4853ab2 runs locally with focused 24 tests PASS and anonymous access denied. Tailnet HTTPS route authorization denied; no remote browser/login evidence. Production gate unchanged.
 
 - Owner registered isolated NAS preview tailnet route. Independent Windows client HTTPS health/workspace 200 and anonymous notice access 401; existing routes unchanged. Authenticated acceptance and reboot persistence remain open, no production release.
+
+- Owner-authorized NAS G2B live call/import: 892 returned rows / 847 logical latest real notice records, 847 idempotent replay, synthetic records preserved; local workspace response passed. Real link projection blocked by current filter, real RFP/authenticated UI/persistent DB/reboot remain open. Synthetic cost inputs not approved company values. No production release.

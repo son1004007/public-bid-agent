@@ -1,3 +1,9 @@
+## 2026-11-19 G2B key and first NAS import — latest results
+
+- [x] Secure key delivery and actual official API collection on NAS (892 rows, 847 latest logical notices; 18:05 KST).
+- [x] Isolated DB dry-run, import, repeat/duplicate guard PASS (847 real + 3 synthetic; 622 future exact noncancelled/noncorrected, 233 AI/DATA/SW tags). Workspace shell 200, actual logged-in list acceptance pending.
+- [ ] P0 next: approved public official URL handling (0 displayed links), make demo basis/real-data distinction explicit, verify authenticated list and data quality. PostgreSQL durable storage and collector deployment/reboot; real RFP; authorized refresh. No production release or scheduler reactivation.
+
 ## 2026-11-19 G2B key reuse — current blocker
 
 - [ ] Existing notebook API key reuse authorized for personal NAS only; direct SSH authentication unavailable. Secure Gateway file secret registration required, then apply to isolated collector (no plaintext chat/log/Git), actual API query and DB/UI parity. No schedule reactivation or production release. Prior snapshot export success unconfirmed.
