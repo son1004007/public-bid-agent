@@ -1,3 +1,9 @@
+## 2026-11-20 사용자 의도 명확화 — AI Gateway가 MCP로 모델 실행기를 연결
+
+사용자는 `AI Gateway / Provider Router`가 각 AI에 **직접 API 호출뿐만 아니라 MCP 기반 실행 도구로 분석을 요청하고 JSON 결과를 저장**하는 비용 절감 구조를 희망한다. Codex/Claude Code/Google 구독 CLI·웹 직접 사용의 가능성과 정책을 먼저 확인하고 구현 경로를 선택한다. 이는 개인 구독 계정/세션을 회사 공용 Gateway에 우회 연결하도록 승인한 지시가 아니다. 기존 `AI -> 데이터 MCP`(문서 14)와 **`입찰 서버 -> MCP -> 모델 실행`**을 분리한다.
+
+2026-11-20 공식 조사에서 Google AI Pro는 과거 Gemini CLI가 아니라 Antigravity CLI를 지원하고 Gemini 4 Neon/Argon/Hydrogen(조건부) 모델을 제공함을 확인했다. 다만 Google 소비자 정책은 `agy`를 제3자 앱/에이전트로 래핑하는 것을 허용하지 않으며, Anthropic도 개인 Pro/Max 인증정보로 다른 사용자 대신 요청 라우팅을 금지한다. 따라서 회사 공용 MCP executor는 업체가 허용한 기업용/유료 API 또는 별도 승인 경로에만 연결한다. [근거·설계·검증 할 일](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). 모델 실제 요청/사내자료 전송/배포는 미승인.
+
 ## 2026-11-20 사용자 방향 — 전사 역량과 부서 간 협업을 입찰 검토에 반영
 
 사용자는 사업부의 정량·정성 역량과 자체 역량 부족 시 다른 부서 활용을 설계에 포함하여 GitHub에 정리하도록 요청했다. [12 전사 역량·부서 협업 설계](docs/server-migration/12-enterprise-capability-hybrid-rag.md)가 조직 범위/협업/비용 상세 정본이다. 전사 공통 법인 자격 및 실적과 실제 수행 부서 기여, 역량 존재와 지원 가능/승인을 분리한다. 자체/사내/외부/혼합 후보를 가용성과 비용·위험으로 비교하는 설계안이다. 실자료·권한 변경·실제 지원 요청/인력 배정·공동수급 허용·원가 배부 기준·외부 AI 사용·배포·입찰 승인으로 해석하지 않는다.
