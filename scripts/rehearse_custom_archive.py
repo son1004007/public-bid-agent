@@ -81,19 +81,15 @@ def rehearse(root, work, archive, manifest, binaries, port):
     logpath = work / ("managed-" + token + ".private.log")
     with logpath.open("xb") as log:
         try:
-            server = subprocess.Popen([str(checked_path(binaries / "postgres.exe")), "-D", str(data),
-                                       "-p", str(port), "-h", "127.0.0.1",
-                                       "-c", "max_connections=8", "-c", "shared_buffers=32MB"],
-                                      env=env, cwd=work, stdin=subprocess.DEVNULL,
+            # pg_ctl on Windows drops administrative privileges for postgres.
+            # Send launcher output to a real file, not an inherited capture pipe.
+            server = subprocess.Popen([str(checked_path(binaries / "pg_ctl.exe")), "start",
+                                       "-D", str(data), "-l", str(work / ("postgres-" + token + ".private.log")),
+                                       "-o", f"-p {port} -h 127.0.0.1 -c max_connections=8 -c shared_buffers=32MB",
+                                       "-w", "-t", "10"], env=env, cwd=work, stdin=subprocess.DEVNULL,
                                       stdout=log, stderr=subprocess.STDOUT)
-            for _ in range(20):
-                require(server.poll() is None, "SERVER_EXITED")
-                if pg("pg_isready", ["-q", "-h", "127.0.0.1", "-p", str(port), "-t", "1"],
-                      timeout=3).returncode == 0:
-                    break
-                time.sleep(.25)
-            else:
-                raise RuntimeError("START_NOT_READY")
+            server.wait(timeout=15)
+            require(server.returncode == 0 and (data / "postmaster.pid").is_file(), "PG_CTL_START_FAILED")
             phase = "identity"
             actual = sql(ADMIN, "postgres", admin, "SELECT current_setting('data_directory');")
             require(Path(actual).resolve() == data, "WRONG_CLUSTER")
@@ -136,14 +132,15 @@ def rehearse(root, work, archive, manifest, binaries, port):
             print("RECOVERY_FAILED_STAGE=" + phase, flush=True)
         finally:
             if server is not None:
-                if server.poll() is None:
-                    try:
+                try:
+                    if server.poll() is None:
+                        server.wait(timeout=10)
+                    if (data / "postmaster.pid").exists():
                         result = pg("pg_ctl", ["stop", "-D", str(data), "-m", "fast", "-w", "-t", "10"], timeout=15)
-                        server.wait(timeout=5)
                         require(result.returncode == 0, "STOP_FAILED")
-                    except Exception:
-                        print("SHUTDOWN_NOT_CONFIRMED", flush=True)
-                stopped = server.poll() is not None and not (data / "postmaster.pid").exists()
+                    stopped = server.poll() is not None and not (data / "postmaster.pid").exists()
+                except Exception:
+                    print("SHUTDOWN_NOT_CONFIRMED", flush=True)
     # The archive-time source row digests were not captured; no source parity claim.
     print(json.dumps({"restoreVerified": success, "clusterStopped": stopped,
                       "sourceSnapshotParity": "NOT_VERIFIED"}), flush=True)
