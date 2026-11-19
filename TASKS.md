@@ -1,3 +1,7 @@
+## 2026-11-19 G2B key reuse — current blocker
+
+- [ ] Existing notebook API key reuse authorized for personal NAS only; direct SSH authentication unavailable. Secure Gateway file secret registration required, then apply to isolated collector (no plaintext chat/log/Git), actual API query and DB/UI parity. No schedule reactivation or production release. Prior snapshot export success unconfirmed.
+
 ## 2026-11-19 최신 우선순위 — 실제 데이터 검증 우선
 
 사용자 피드백: 합성 공고만 표시되는 NAS 환경에서는 실사업 검토가 불가능하다. MVP 기능 검증보다 **실제 나라장터 API 수집 → NAS DB 적재 → 목록·마감·원문 링크 조회**를 먼저 완료한다. 기존 Windows API 수집 결과는 공개 공고 메타데이터만 별도 스냅샷으로 전달하며 기존 원장/사람 판단/비밀/개인정보는 이전하지 않는다. 기존 예약은 재활성화하지 않는다. 다음은 영속 PostgreSQL 및 승인된 서버 수집 경로, RFP 원문, 실제 데이터 기반 업무 기능 검증 순서. 소스와 차수, KST 마감 정합성, 데이터 건수 일치를 확인하고 실제 API와 합성 데이터를 구분한다. 운영 릴리스 게이트는 유지한다.

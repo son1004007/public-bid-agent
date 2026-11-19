@@ -1,3 +1,7 @@
+## 2026-11-19 NAS G2B credential migration — USER ACTION REQUIRED
+
+- Owner explicitly requested reuse of the previous notebook G2B API credential on personal NAS. Existing Windows collector is operational (865 records in prior read-only probe), but credential storage uses Windows user-specific DPAPI. NAS official endpoint TLS reachable (unauthenticated HTTP 401); dedicated temporary collector-private directory verified mode 0700. Direct notebook-to-NAS SSH with strict known-host checking and existing identity failed authentication; no SSH authorization changes or plaintext credential retrieval. Gateway has no corresponding named secret; secure file-value registration requested. Actual key copy/registration and authenticated NAS API are NOT DONE. No value, credential digest, private path or setup token in this public repo. Next: owner secure value registration, safe file delivery, bounded API collection and DB/UI ingestion; retain network-isolated app and schedule pause. Prior isolated snapshot export job did not produce confirmed success; do not treat as imported.
+
 ## 2026-11-19 NAS MVP — real public procurement data first
 
 - Owner pointed out the deployed synthetic-only preview is insufficient for practical business validation. Priority is actual official API public notice ingestion into the isolated NAS candidate, followed by public RFP evidence; defer further synthetic-only polishing. Keep the existing company/credential/private data and release boundaries intact. No schedule reactivation.
