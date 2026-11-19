@@ -1,6 +1,7 @@
 """Interactive, authorized local operator containment; never an HTTP endpoint."""
 import getpass
 import sys
+import warnings
 from uuid import uuid4
 
 from django.contrib.auth.hashers import check_password
@@ -32,8 +33,14 @@ class Command(BaseCommand):
             raise CommandError("Operation cancelled")
         new = None
         if options["rotate"]:
-            new = getpass.getpass("New temporary password: ")
-            if new != getpass.getpass("Repeat temporary password: "):
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", getpass.GetPassWarning)
+                try:
+                    new = getpass.getpass("New temporary password: ")
+                    repeated = getpass.getpass("Repeat temporary password: ")
+                except (getpass.GetPassWarning, EOFError, OSError):
+                    raise CommandError("Secure password entry unavailable") from None
+            if new != repeated:
                 raise CommandError("Passwords do not match")
             if not 12 <= len(new) <= 128:
                 raise CommandError("Password does not satisfy policy")
