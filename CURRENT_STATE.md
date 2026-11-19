@@ -1,3 +1,9 @@
+## 2026-11-20 MCP isolated CI verification (no remote deployment)
+
+- Exact commit `4662851b3c8b342114fab0f8f6bcb094b21ccbe3` on the security draft branch: [MCP hosted CI run 44636741407](https://github.com/son1004007/public-bid-agent/actions/runs/44636741407) **PASS**. Python 3.12 scope validation **6 tests PASS**, Django test-settings synthetic in-memory SQLite current/public/approved RFP scope **3 tests PASS**, official MCP Python SDK 2.3.0 in-memory `tools/list` and `tools/call` **PASS** for 3 tools and disabled-default guard. Tests use no company data/production DB/external LLM.
+- Initial smoke failure exposed SDK response representation as text content, not structured_content; corrected and rerun PASS. Earlier failures remain historical and are not counted as final.
+- `CONNECTED` still **NO** for data1/ChatGPT/Claude/Gemini: no server install, authenticated HTTPS MCP transport, third-party registration, or actual DB-backed production invocation. Running existing IDC workloads untouched.
+
 ## 2026-11-20 Public-only MCP stdio source candidate
 
 - User requested MCP connection following GPT/Claude/Gemini discussion. Added `server/bid_mcp` with official SDK 2.3.0 stdio tools for public G2B notice metadata, separately gated public RFP excerpts, strict source/latest/owner/approved scope and OFF-by-default flags; standalone mock protocol and input unit test plus ephemeral hosted CI workflow. See [14 MCP contract](docs/server-migration/14-bid-mcp-interface.md), DOC_INDEX and TASKS. Source-only candidate. CI result must be observed independently; actual DB-backed read, data1 deployment, HTTPS+OAuth, model-client registration and external company data are NOT_RUN/NOT_CONNECTED. Existing public branch PR #5 and security remediation gates remain. No agent/model invoked.
