@@ -1,3 +1,7 @@
+## 2026-11-19 NAS preview — owner screen access confirmed
+
+- Owner reported successful access and screen confirmation. This is user-reported UI reachability, not authenticated business-flow acceptance or UX approval. Next: first login/password change (if not already done), synthetic notice/RFP, cost calculation, shared opinion/decision and reopen; then separate durable data/reboot verification. No runtime or release-policy change in this documentation update. Production release remains NO_GO.
+
 ## 2026-11-19 NAS synthetic preview — TAILNET_HTTPS_REACHABLE
 
 - Owner executed authorized dedicated Tailscale Serve route command. Both isolated preview containers remained running; from the Windows notebook (separate tailnet device), HTTPS health 200, login shell 200 with expected login form, anonymous notices 401 confirmed. NAS-side self-connection timed out before independent client check; not a service failure from verified client. Existing Serve routes preserved and new route tailnet-only (no Funnel). Owner can now try synthetic preview; actual authenticated user flow and reboot durability not yet verified. No real data, production release, independent review, or schedules enabled. Private endpoint and temporary credential stay outside repository. App image continues to use 4853ab2.
