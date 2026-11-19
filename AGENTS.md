@@ -1,3 +1,5 @@
+> **2026-11-20 Hybrid RAG MVP 우선:** [기술 설계](docs/server-migration/10-hybrid-rag-bid-decision.md) · [사업 담당자용 설명](docs/server-migration/11-hybrid-rag-business-guide.md) · [TASKS.md HBR-00~08](TASKS.md). 기존 실제 RFP를 사용한 검색/판단 수직 슬라이스, 사업부 RAG + SQL 정형 조회/손익 계산을 우선. 기존 보안·승인·독립 검수 유지. 상태는 CURRENT_STATE.md 참조.
+
 > **2026-11-19 최신 MVP-FIRST:** [TASKS.md 최상단 실행 우선순위](TASKS.md)를 다음 작업 정본으로 적용한다. 기존 카드/설계의 세부 요구와 검증 근거는 보존하되 공고→RFP 근거→집계 손익→공동 판단 흐름을 먼저 구현한다. 필수 보안·독립 검수·운영 승인 게이트는 유지하고 미해결 운영 조치와 비릴리스 합성 개발은 분리한다.
 
 > 문서 탐색: [DOC_INDEX.md](DOC_INDEX.md). 최신 상태는 CURRENT_STATE.md, 작업 순서는 TASKS.md를 확인합니다.

@@ -1,3 +1,7 @@
+## 2026-11-20 Hybrid RAG direction and plan
+
+- User requested explicit Hybrid RAG design + work plan and discoverability. Draft technical and business overview with Mermaid diagrams, data/authorization/evidence/decision contracts; HBR-00~08 in TASKS; older parser-first ordering superseded. No application code, pgvector installation, embeddings, model calls, real company data, schedule, or runtime changes in this turn. Existing live evidence from previous entry retained. Independent pre/final review pending (REVIEW_DEBT, draft PR #5; no production release). Existing central account-remediation issue remains open. HBR-01 next, bounded non-release work only; provider/actual business data approval distinct. See DOC_INDEX for navigation.
+
 ## 2026-11-19 NAS HWPX parser recovery — real text extraction 5/5
 
 - Actual five downloaded HWPX: max section 2,972,951 bytes, max nodes 73,300, max depth 23, max cells 5,000. New operator-only bounded text fallback db1ed40: 4 MiB/section, 12 MiB cumulative XML, 100k nodes, 12k nonempty paragraphs, 2 Mi characters; unchanged existing archive/input/depth/DTD guards and ordinary upload limits. Explicit text-only warning, not table grid/footnote/page fidelity. No package added. NAS read-only isolated parser probe 5/5 (17,601–114,535 chars; 0.11–0.82 s per document on that probe). 40 NAS tests passed, 1 skipped; exact CI 4/4 success (44514969787, 44514969864, 44514969694, 44514969657).

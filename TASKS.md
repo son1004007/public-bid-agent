@@ -1,3 +1,21 @@
+## 2026-11-20 최신 우선순위 — Hybrid RAG 입찰 의사결정 MVP
+
+사용자 요청으로 기존 RAG 설계를 구체화하고 실행 순서를 재조정한다. [기술 설계](docs/server-migration/10-hybrid-rag-bid-decision.md) · [사업 담당자 안내](docs/server-migration/11-hybrid-rag-business-guide.md). 아래 HBR 작업이 이전 파서 우선 계획보다 우선. 기존 데이터·권한·이력 보존, 독립 검수/운영 승인/회사자료 반출 제한 유지. **설계/계획 게시 단계; 구현 완료 아님.** 이전 파서/부서 비교(BID-07)/수익성 카드와 연계하며 중복 원장을 만들지 않는다. 작업 하나씩 실제 증거와 함께 완료.
+
+| ID | 우선 | 작업/의존 | 완료 기준 | 상태 |
+|---|---|---|---|---|
+| HBR-00 | P0 | Hybrid RAG 설계, 데이터·판정·권한 계약 및 업무 시안(이 문서) | 상위 설계/목차 연결, 독립 사전검토 및 지적 해소 별도 | 초안 게시 / REVIEW_DEBT |
+| HBR-01 | P0 | 격리 DB pgvector 설치 가능성/호환·백업 복구 검증; 한국어 임베딩 로컬 후보 및 라이선스/벤치, provider 승인 게이트 | 기존 전용 DB/서비스 불변, 별도 테스트 DB 벡터 insert/query, 버전·차원·리소스 확인, 승인 없는 외부 호출 없음 | 대기 |
+| HBR-02 | P0 | 기존 RFP 5개 청크를 검색 친화적으로 재구성/멱등 임베딩; 출처/ACL/버전 기록; lexical·dense·RRF baseline | 실제 모델 벡터와 SQL 쿼리, 문서별 coverage와 사람이 정한 근거 표본 비교, 정정/권한/중복 방지 | 대기 |
+| HBR-03 | P0 | 업무용 실적/역량 등록·승인 + 부서 전용 RAG, 자격 SQL 팩트; HBR-01/02 병행 가능 | 합성 프로필로 두 corpus 분리·실적 근거 retrieval; 미확인 UNKNOWN, 개인급여/비공개 실제 자료 외부전송 금지 | 대기 |
+| HBR-04 | P0 | 요건 추출 및 RFP↔사업부 증빙 비교 LLM worker (HBR-02/03, 승인 모델) | 실제 공개 RFP + 합성 프로필로 실행, 문서 인용 ID·상충·필수조건/누락 테스트, 실제 AI/disabled 분리 | 대기 |
+| HBR-05 | P0 | 월별/역할별 안전한 가용 MM 및 기존 집계 원가 연결, 비용 시나리오/판정 엔진 (HBR-03/04; 계산은 별도 구현 가능) | legal hard gate, 부족 기술·인력 보완 시나리오, SQL/Decimal 손익 검증, missing/expired/이중계상·재식별 방지, 점수/수주확률 발명 금지 | 대기 |
+| HBR-06 | P0 | 공고 상세·추천 우선순위·분석 상태/근거·조건부 보완안 UI 및 담당자 승인; HBR-04/05 | 기존 화면과 공동 검토 재사용, 실제 공개+합성 명시, 5건 E2E, 권한/정정/후보 보류/해당 SHA CI 및 독립 검수 | 대기 |
+| HBR-07 | P1 | 실제 PDF/HWP/HWPX 등 최소 추출·RFP 수집/재시도 자동화 및 coverage 표시 | 공식 원문/차수/해시 결속, 형식별 실제 표본, OCR/표 누락 PARTIAL, 백로그/증분/중복/용량 제한; 자동 실행은 승인 후 | 대기 |
+| HBR-08 | P1 | 승인된 실제 사업부 자료·AI 이용 조건·안전 공유·복구·업무 전문가 기준 검수, 제한 시범 | 승인된 실제 자료 검증·실제 검색/판단 품질·비용·운영 복구·동일 SHA CI/독립 GO, 열린 보안 조치 및 승인 충족 | 차단: 회사자료/모델/운영 승인·독립 검수 |
+
+다음 실행 카드 **HBR-01** (사전 설계 검토를 별도 요청 가능한 안전한 문맥에서 수행; 불가 시 REVIEW_DEBT 유지, 비릴리스/합성·격리 범위만 작업). pgvector/모델 선택은 가정이 아닌 실측 기반. 문서 형식 확장은 핵심 end-to-end 검증 후, 필수 누락 발견 시 필요한 최소 보완만 앞당긴다. 새 예약 활성화/재부팅 자동 기동은 선행 작업 아님.
+
 ## 2026-11-19 HWPX real recovery
 
 - [x] db1ed40 bounded operator-only fallback; 4/4 real failed specimens recovered, overall 5/5 parsed, 14,594 current chunks, all five rule projections have evidence candidates. Original hashes and four failure runs preserved; replay no pending work. 40 NAS tests PASS/1 skip; exact 4/4 CI PASS. No structural fidelity claim for four text-only documents.

@@ -1,3 +1,5 @@
+> **2026-11-20 Hybrid RAG 우선 구현 설계:** [10 Hybrid RAG 입찰 판단](server-migration/10-hybrid-rag-bid-decision.md)에서 기존 RAG 목표를 상세화한다. 기존 Django/DRF/PostgreSQL/원가 및 근거 계약 유지. 설계 초안, 구현 및 모델 승인은 별도.
+
 > **2026-11-17 집계 원가/공동 검토 최신 서버 요구:** [09 집계 원가 및 공통 조회](server-migration/09-aggregate-cost-and-shared-review.md). 직원별 급여/인건비 미수집, 사업부 총액 및 집계 MM 기반 산정, 승인 사용자 공통 분석 결과, 수정/최종 결정 권한 분리를 적용한다. 서버 전환에서는 과거 역할별 단가/개인별 원가 설계보다 이 요구가 우선하며 기존 로컬 구현/자료는 보존한다. 구현은 별도 검증 대상이다.
 
 > **2026-11-14 서버 전환 목표 설계:** [최신 목차](server-migration/README.md). SSO 제외·DB 계정/최초 암호 변경 강제. 현재 로컬 구현과 미래 서버 설계를 구분하며 이번 변경은 문서뿐이다.

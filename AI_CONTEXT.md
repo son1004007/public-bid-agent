@@ -1,3 +1,5 @@
+> **2026-11-20 Hybrid RAG MVP 우선:** [기술 설계](docs/server-migration/10-hybrid-rag-bid-decision.md) · [사업 담당자용 설명](docs/server-migration/11-hybrid-rag-business-guide.md) · [TASKS.md HBR-00~08](TASKS.md). 기존 실제 RFP를 사용한 검색/판단 수직 슬라이스, 사업부 RAG + SQL 정형 조회/손익 계산을 우선. 기존 보안·승인·독립 검수 유지. 상태는 CURRENT_STATE.md 참조.
+
 > **2026-11-17 사업부 집계 원가·공동 사업 검토:** [사업부 집계 원가·공동 검토 설계](docs/server-migration/09-aggregate-cost-and-shared-review.md)을 서버 전환의 최신 요구로 적용한다. 개인별 급여·인건비 및 급여 원장을 수집/저장하지 않고 사업부 총인건비와 집계 MM만으로 원가를 산정한다. 승인된 사업부 사용자 모두 동일한 안전한 분석 결과를 조회하며, 기준정보 변경과 최종 참여 결정은 업무 권한으로 제한한다. 개인 작업/비밀/증빙 원본 접근권한은 완화하지 않는다. 설계 반영이며 구현·배포 승인은 별도다.
 
 > **2026-11-14 최신 서버 전환 설계:** [서버 전환 설계 목차](docs/server-migration/README.md)부터 읽는다. React/TypeScript + Django/DRF + PostgreSQL, 서버 작업 워커/일정, DB 계정·최초 비밀번호 변경 강제, SSO 제외. 조직 정책은 공개 Git 밖의 승인된 연결 설정에서 원본을 읽고 적용한다. **설계 문서만 작성됨(NOT_IMPLEMENTED)**; 과거 로컬 전용/SSO 목표 문구보다 이번 결정을 우선하되 기존 운영·데이터·작업은 보존한다.
