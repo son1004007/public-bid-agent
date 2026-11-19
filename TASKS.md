@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — actual archive recovery
+
+- [x] Exact a488cdd6 CI 4/4; actual archive hash/ACL/TOC preflight and full offline pg_restore SQL decoding PASS.
+- [x] Private independent SCRAM-authenticated PostgreSQL 17 recovery cluster initialized on notebook; no recovery PID/listener at final observation, existing 8000 listener present.
+- [ ] Actual SQL execution/restore BLOCKED: combined remote command and separate startup timed out, managed runner save timed out (no runner found). Review/implement short-launch managed runner; verify exact separate target, least-privilege restore, source/restore parity, FK/rollback and stop. Private scratch generation/credential still present, never publish or overwrite. Offline decode is not full restore.
+- [ ] RFP backup and coordinated release recovery scope; historical credential applicability, independent review, actual browser/rollback, main merge/deploy remain gated.
+
 ## 2026-11-19 PR #5 checkpoint — actual PostgreSQL backup
 
 - [x] Exact previous head 8ee65210 CI 4/4 pass; bounded native psql read-only connection succeeds, 11/11 expected tables, no export artifact references at observation.
