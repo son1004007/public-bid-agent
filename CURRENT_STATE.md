@@ -1,3 +1,8 @@
+## 2026-11-19 NAS MVP — real public procurement data first
+
+- Owner pointed out the deployed synthetic-only preview is insufficient for practical business validation. Priority is actual official API public notice ingestion into the isolated NAS candidate, followed by public RFP evidence; defer further synthetic-only polishing. Keep the existing company/credential/private data and release boundaries intact. No schedule reactivation.
+- Legacy Windows data confirmed 4,286 stored notices, last collection SUCCESS 2026-11-15 05:10:19 UTC. Existing scheduled collection Disabled; legacy HTTP unavailable. One-time read-only official API invocation through previously configured collector on Windows exact 0df2f58: 865/865 records, 24 h window ending 2026-11-19 17:18 KST, DRY_RUN success (Gateway job job_01M7SE4CJN00AYMEMGC2D60EY8). No existing data write, no key transfer. Newly isolated snapshot export started separately; actual NAS import not yet evidenced. Candidate NAS app has no API collector and is network-none with ephemeral SQLite. Need bounded public-only snapshot/import first, then durable PostgreSQL and dedicated approved API collection/refresh, RFP, authenticated real-data acceptance. Existing preview and release NO_GO maintained.
+
 ## 2026-11-19 NAS preview — owner screen access confirmed
 
 - Owner reported successful access and screen confirmation. This is user-reported UI reachability, not authenticated business-flow acceptance or UX approval. Next: first login/password change (if not already done), synthetic notice/RFP, cost calculation, shared opinion/decision and reopen; then separate durable data/reboot verification. No runtime or release-policy change in this documentation update. Production release remains NO_GO.
