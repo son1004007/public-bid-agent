@@ -1,3 +1,8 @@
+## 2026-11-19 RFP actual first slice
+
+- [x] Live metadata probe 331 attachments/123 notices, five HWPX downloads, private originals/DB hash verification 5/5; one parsed, four limit failures, five replay unchanged; real rule evidence from one notice. RFP screen cutover and separate HTTPS anonymous boundary verified; 40 tests PASS, 1 skip; CI Sprint 1 CI 44509836275: success; Development harness 44509836163: success; Server foundation CI 44509836296: success; Windows synthetic local acceptance 44509836243: success.
+- [ ] RFP collection is still one-shot, not automated. Next: reproducible bounded discovery/download runner, safely improve HWPX extraction on actual failed files, add PDF/HWP and visible parse status, authenticated browser validation. Keep regular notice schedule pending until owner confirms; reboot auto-start deferred. No independent GO or production release.
+
 ## 2026-11-19 RFP first public slice
 
 - [x] Actual official attachment metadata probe and five HWPX downloads (one parsed, four parser-limit failures).
