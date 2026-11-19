@@ -51,8 +51,20 @@ async function main() {
   }
   try {
     const active=path.join(profile,'DevToolsActivePort');
-    await waitFor(()=>fs.existsSync(active),'Chrome debugging endpoint unavailable',18000);
-    const [port,endpoint]=fs.readFileSync(active,'utf8').trim().split(/\r?\n/);
+    let address;
+    await waitFor(()=>{
+      try {
+        const values=fs.readFileSync(active,'utf8').trim().split(/\r?\n/);
+        if(values.length!==2 || !/^\d{1,5}$/.test(values[0]) ||
+           !/^\/devtools\/browser\/[a-f0-9-]+$/i.test(values[1])) return false;
+        address=values;
+        return true;
+      } catch(error) {
+        if(['ENOENT','EBUSY','EACCES','EPERM'].includes(error.code))return false;
+        throw error;
+      }
+    },'Chrome debugging endpoint unavailable',18000);
+    const [port,endpoint]=address;
     assert(/^\d{1,5}$/.test(port) && Number(port)>0 && Number(port)<=65535);
     assert(/^\/devtools\/browser\/[a-f0-9-]+$/i.test(endpoint));
     ws=new WebSocket('ws://127.0.0.1:'+port+endpoint);
@@ -134,7 +146,7 @@ async function main() {
     if(fatal)throw fatal;
     console.log('CDP_WORKSPACE_ACCEPTANCE_PASS');
   } catch(error) {
-    console.error('CDP_WORKSPACE_FAILED_STAGE='+stage+'; '+error.message);
+    console.error('CDP_WORKSPACE_FAILED_STAGE='+stage+'; '+(error.code || error.message));
     process.exitCode=1;
   } finally {
     clearTimeout(watchdog);
