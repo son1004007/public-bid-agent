@@ -37,10 +37,18 @@ class BackupRestoreA16Tests(TestCase):
         self.assertEqual(cfg["HOST"], "127.0.0.1")
         self.assertTrue(cfg["NAME"].startswith("sm03_"))
 
-        # 1. 백업 생성
+        # The CI fixture is a separately provisioned ephemeral PostgreSQL DB.
+        # Include a nonempty synthetic RFP-like artifact rather than testing DB-only.
+        storage = self.output_dir / "synthetic-source-media"
+        storage.mkdir()
+        document = storage / "fixture" / "rfp.txt"
+        document.parent.mkdir()
+        payload = b"Synthetic recovery fixture - no operational content"
+        document.write_bytes(payload)
         bundle_dir = create_backup(
-            output_dir=self.output_dir,
+            output_dir=self.output_dir / "backup-output",
             config_path=cfg_path,
+            storage_dir=storage,
         )
         self.assertTrue(bundle_dir.exists())
         manifest_path = bundle_dir / "manifest.json"
@@ -52,6 +60,9 @@ class BackupRestoreA16Tests(TestCase):
         self.assertEqual(manifest["manifest_version"], "1.0")
         self.assertTrue(manifest["database"]["dump_size_bytes"] > 0)
         self.assertEqual(len(manifest["database"]["dump_sha256"]), 64)
+        self.assertEqual(manifest["coverage"], "DB_AND_STORAGE")
+        self.assertEqual(manifest["storage"]["files_count"], 1)
+        self.assertEqual((bundle_dir / "storage" / "fixture" / "rfp.txt").read_bytes(), payload)
 
         # 2. 복구 리허설 실행
         report = run_rehearsal(
@@ -65,6 +76,9 @@ class BackupRestoreA16Tests(TestCase):
         self.assertEqual(report["status"], "SUCCESS")
         self.assertEqual(report["rpo_status"], "DB_COUNT_PARITY_ONLY")
         self.assertEqual(report["new_write_verification"], "PASS")
+        self.assertEqual(report["storage_recovery_verification"], "PASS")
+        self.assertEqual(document.read_bytes(), payload)
+        self.assertFalse(list(bundle_dir.glob("storage-rehearsal-*")))
         self.assertEqual(len(report["fk_integrity_errors"]), 0)
         self.assertEqual(len(report["storage_integrity_errors"]), 0)
         self.assertTrue(report["rto_seconds"] < 30.0)
