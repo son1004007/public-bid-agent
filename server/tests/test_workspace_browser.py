@@ -12,6 +12,8 @@ import subprocess
 import tempfile
 import time
 from datetime import timedelta
+from decimal import Decimal
+import hashlib
 from unittest import skipUnless
 from urllib.request import Request, build_opener, ProxyHandler
 
@@ -19,7 +21,9 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import LiveServerTestCase, override_settings
 from django.utils import timezone
-from bid_server.procurement.models import Notice, NoticeVersion, DeadlineStatus
+from bid_server.procurement.models import (Notice, NoticeVersion, DeadlineStatus, Document, DocumentVersion,
+    CostDepartment, CostMembership, DepartmentCostBasis, DocumentFreshness, SharedBidReviewEvent)
+from bid_server.procurement.extractor_service import ExtractionService
 
 
 @skipUnless(os.environ.get("BID_WORKSPACE_BROWSER") == "1", "Explicit synthetic browser test required")
@@ -51,17 +55,30 @@ class WorkspaceBrowserTest(LiveServerTestCase):
         username = "browser-synthetic"
         old_password = "Synthetic!Initial39Blue"
         new_password = "Changed!Independent74Green"
-        get_user_model().objects.create_user(username=username, password=old_password)
+        user = get_user_model().objects.create_user(username=username, password=old_password)
+        department = CostDepartment.objects.create(active=True)
+        CostMembership.objects.create(department=department,user=user,active=True,can_manage_cost=True,can_decide=True)
+        today = timezone.localdate()
+        DepartmentCostBasis.objects.create(department=department, revision=1,
+            period_start=today-timedelta(days=1),period_end=today+timedelta(days=30),valid_until=today+timedelta(days=10),
+            labor_total_krw=60100000,allocation_mm=Decimal('12'),available_mm=Decimal('8.75'),headcount=12,
+            minimum_headcount=10,rate_rounding_krw=1000000,capacity_rounding_mm=2,approved_by=user,approved=True,current=True)
         title = '<img src=x onerror="alert(1)"> Synthetic notice'
-        notice = Notice.objects.create(source="SYNTHETIC_FIXTURE", notice_number="BROWSER-001")
+        notice = Notice.objects.create(source="G2B_OFFICIAL_API", notice_number="BROWSER-001")
         version = NoticeVersion.objects.create(
             notice=notice, version_seq=1, observed_at=timezone.now(), title=title,
             buyer="Synthetic buyer", deadline_at=timezone.now() + timedelta(days=5),
             deadline_status=DeadlineStatus.PARSED, budget_amount=300000000,
-            department_categories=["AI"], source_payload_digest="fixture",
+            department_categories=["AI"], source_payload_digest="fixture", source_url="https://g2b.go.kr/synthetic-browser-notice",
         )
         notice.current_version = version
         notice.save()
+        raw = "입찰 참가자격 확인\nJava 기반 시스템 구축\n투입 인력 5 M/M".encode("utf-8")
+        doc = Document.objects.create(notice=notice, logical_key="Synthetic RFP")
+        dv = DocumentVersion.objects.create(document=doc,notice_version=version,version_seq=1,
+            owner_user=user,sha256=hashlib.sha256(raw).hexdigest(),size_bytes=len(raw),media_type="text/plain",
+            freshness=DocumentFreshness.CURRENT,source_url="https://g2b.go.kr/synthetic-browser-rfp")
+        ExtractionService.extract_and_persist(dv,raw)
 
         opener = build_opener(ProxyHandler({}))
         # Preflight HTTP before browser navigation.
@@ -91,7 +108,9 @@ class WorkspaceBrowserTest(LiveServerTestCase):
             node = shutil.which("node")
             self.assertTrue(node and Path(node).is_absolute(), "Installed Node.js 22+ required")
             runner = Path(__file__).resolve().parents[2] / "scripts" / "test_workspace_cdp.cjs"
-            subprocess.run([node, str(runner), chrome, self.live_server_url], check=True, timeout=95)
+            subprocess.run([node, str(runner), chrome, self.live_server_url], check=True, timeout=150)
+            self.assertEqual(list(SharedBidReviewEvent.objects.order_by('revision').values_list('kind',flat=True)), ['ESTIMATE','OPINION','DECISION'])
+            self.assertEqual(SharedBidReviewEvent.objects.get(kind='DECISION').payload['decision'],'BID')
             return
 
         driver = os.environ.get("BID_CHROMEDRIVER_BINARY") or shutil.which("chromedriver")
@@ -206,6 +225,8 @@ class WorkspaceBrowserTest(LiveServerTestCase):
         self.assertEqual(js("return document.querySelectorAll('#noticeTableBody img').length"), 0)
         js("document.querySelector('.notice-title-btn').click()")
         wait_for("document.querySelector('#dTitle').textContent === " + json.dumps(title), "Notice detail unavailable")
+        wait_for("document.querySelector('#dShared button') && document.querySelector('#dCost form')", "Detail business panels unavailable")
+        self.assertIn('Java 기반 시스템 구축', js("return document.getElementById('dReview').textContent"))
         js("document.getElementById('logoutBtn').click()")
         wait_for("document.getElementById('authStatus').textContent === '로그아웃되었습니다.'",
                  "Logout did not complete")

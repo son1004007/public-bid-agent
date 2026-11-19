@@ -1,3 +1,5 @@
+> **2026-11-19 MVP-05 candidate:** extended real Chrome synthetic acceptance to RFP, projected cost, publication, opinion, decision and reopening; explicit 1440/390 viewport checks. Detail reads are sequential and tests await loaded panels before logout. Exact SHA CI required; no production deployment.
+
 > **2026-11-19 MVP-04 후보:** 동일 승인 사업부 정형 의견·공유 견적·참여/보류/미참여 결정과 차수별 append-only 이력 연결. 별도 업무 권한·CSRF·기대 revision, 현재 기준 검증, 과거 기준 금액 비노출. 실제 입찰 제출·회사 자료/정책 확정·배포 없음. 검증은 CURRENT_STATE.md와 CI 확인.
 
 > **2026-11-19 MVP-02/03 frontend test:** synthetic workspace DOM fixture supports text-node construction and verifies hostile RFP excerpts remain text, cost view clears on drawer close; previous mock lacked createElement. Latest CI must be checked.

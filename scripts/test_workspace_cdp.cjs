@@ -24,7 +24,7 @@ async function main() {
     child.once('exit', resolve);
     child.once('error', () => { fatal = Error('Chrome launch failed'); resolve(); });
   });
-  const watchdog = setTimeout(() => { fatal = Error('CDP overall timeout'); child.kill(); ws?.close(); }, 80000);
+  const watchdog = setTimeout(() => { fatal = Error('CDP overall timeout'); child.kill(); ws?.close(); }, 135000);
   function failPending() {
     for (const entry of pending.values()) {
       clearTimeout(entry.timer); entry.reject(Error('CDP connection closed'));
@@ -137,6 +137,33 @@ async function main() {
     assert.equal(await js("document.querySelectorAll('#noticeTableBody img').length"),0);
     stage='detail';await click('.notice-title-btn');
     await wait("document.querySelector('#dTitle').textContent === "+JSON.stringify(title),'Notice detail unavailable');
+    stage='mvp panels';
+    await wait("document.querySelector('#dShared button') && document.querySelector('#dCost form')",'MVP business panels unavailable');
+    assert((await js("document.getElementById('dReview').textContent")).includes('Java 기반 시스템 구축'));
+    const findButton = text => "Array.from(document.querySelectorAll('#dShared button')).find(b=>b.textContent==="+JSON.stringify(text)+")";
+    for(const size of [1440,390]) {
+      await cmd('Emulation.setDeviceMetricsOverride',{width:size,height:900,deviceScaleFactor:1,mobile:false});
+      assert.equal(await js("window.innerWidth"),size);
+      assert(await js("document.querySelector('#dCost form').getBoundingClientRect().width>0 && document.querySelector('#dShared').getBoundingClientRect().width>0"));
+    }
+    stage='cost calculation';
+    const assumptions={required_mm:'5',revenue_krw:'50000000',external_krw:'1000000',direct_krw:'1000000',overhead_krw:'0',reserve_krw:'0'};
+    for(const [key,value] of Object.entries(assumptions)) {
+      await js("document.querySelector('#dCost input[name="+key+"]').value="+JSON.stringify(value));
+    }
+    await click('#dCost form button[type=submit]');
+    await wait("document.getElementById('dCost').textContent.includes('46.00%') && !document.getElementById('publishCostEstimate').hidden",'Cost result unavailable');
+    stage='publish estimate';await click('#publishCostEstimate');
+    await wait("document.getElementById('dCost').textContent.includes('공동 견적 게시 완료') && document.getElementById('dShared').textContent.includes('23000000원')",'Estimate publication unavailable');
+    stage='opinion';await js(findButton('공동 의견 등록')+".click()");
+    await wait("document.getElementById('dShared').textContent.includes('v2 · 검토 필요')",'Opinion history unavailable');
+    stage='decision';
+    await js("document.querySelectorAll('#dShared input[type=checkbox]').forEach(x=>x.checked=true); true");
+    await js(findButton('참여 결정 (입찰 제출 아님)')+".click()");
+    await wait("document.getElementById('dShared').textContent.includes('현재 판단: 참여') && document.getElementById('dShared').textContent.includes('v3 · 참여')",'Decision unavailable');
+    stage='reopen';await click('[data-close-drawer]');await click('.notice-title-btn');
+    await wait("document.getElementById('dShared').textContent.includes('현재 판단: 참여') && document.getElementById('dShared').textContent.includes('23000000원')",'Decision not retained');
+    console.log('MVP_BROWSER_FLOW_PASS_1440_390');
     stage='logout';await click('#logoutBtn');
     await wait("document.getElementById('authStatus').textContent === '로그아웃되었습니다.'",'Logout incomplete');
     await wait(visible('loginForm'),'Logout login form');

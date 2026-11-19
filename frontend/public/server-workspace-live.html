@@ -888,7 +888,7 @@ async function loadSharedReview(noticeId, seq) {
     const status = add('p','');
     let busy = false;
     const button = (label, kind, makePayload) => {
-      const btn = add('button',label); btn.type='button';
+      const btn = add('button',label); btn.type='button'; btn.dataset.reviewKind=kind;
       btn.addEventListener('click',async()=>{
         if (busy || !fullAccess || seq !== detailSeq) return;
         busy=true; btn.disabled=true;
@@ -906,7 +906,7 @@ async function loadSharedReview(noticeId, seq) {
       if (context.can_bid) {
         const checks = {};
         for (const [key,label] of Object.entries({official_rfp:'공식 RFP 확인',qualification:'필수 참가자격 확인',technology:'기술 수행 가능 확인',staffing:'인력·공수 확인',cost:'공유 견적 확인'})) {
-          const item=add('label',label+' '); const input=document.createElement('input'); input.type='checkbox'; item.append(input); checks[key]=input;
+          const item=add('label',label+' '); const input=document.createElement('input'); input.name=key; input.type='checkbox'; item.append(input); checks[key]=input;
         }
         button('참여 결정 (입찰 제출 아님)','DECISION',()=>({decision:'BID',reason:'READY',attestations:Object.keys(checks).filter(k=>checks[k].checked),estimate_revision:context.current_estimate.revision}));
       }
@@ -941,7 +941,7 @@ async function loadCostScenario(noticeId, seq) {
       const label = document.createElement('label');
       label.textContent = title + ' ';
       const input = document.createElement('input');
-      input.type = 'text'; input.inputMode = 'decimal'; input.required = true; input.maxLength = 13;
+      input.type = 'text'; input.name = key; input.inputMode = 'decimal'; input.required = true; input.maxLength = 13;
       input.autocomplete = 'off';
       label.append(input); form.append(label, document.createElement('br'));
       fields[key] = input;
@@ -950,23 +950,25 @@ async function loadCostScenario(noticeId, seq) {
     button.type = 'submit'; button.textContent = '예상 손익 계산';
     const output = document.createElement('p');
     form.append(button); target.append(form, output);
-    const publish = document.createElement('button'); publish.type='button'; publish.hidden=true; publish.textContent='이 계산 결과를 공동 견적으로 게시'; target.append(publish);
-    let calculated = null;
-    form.addEventListener('input',()=>{ calculated=null; publish.hidden=true; });
+    const publish = document.createElement('button'); publish.id='publishCostEstimate'; publish.type='button'; publish.hidden=true; publish.textContent='이 계산 결과를 공동 견적으로 게시'; target.append(publish);
+    let calculated = null, inputRevision = 0;
+    form.addEventListener('input',()=>{ inputRevision++; calculated=null; publish.hidden=true; });
     publish.addEventListener('click',async()=>{
       if (!calculated || seq !== detailSeq || !fullAccess) return;
+      const snapshot = calculated;
       publish.disabled=true;
       try {
         const response=await readBusiness('/api/v1/notices/'+encodeURIComponent(noticeId)+'/shared-review');
-        if (seq !== detailSeq || !fullAccess || !calculated) return;
+        if (seq !== detailSeq || !fullAccess || calculated !== snapshot) return;
         const ctx=response.data;
-        if (!ctx?.can_publish_estimate || !await sharedEvent(noticeId,seq,ctx,'ESTIMATE',calculated)) output.textContent='공유 견적 게시 실패 또는 변경 충돌';
+        if (!ctx?.can_publish_estimate || !await sharedEvent(noticeId,seq,ctx,'ESTIMATE',snapshot)) output.textContent='공유 견적 게시 실패 또는 변경 충돌';
         else { output.textContent='공동 견적 게시 완료 (확정 투찰가 아님)'; calculated=null; publish.hidden=true; }
       } catch (_) { if (seq===detailSeq && fullAccess) output.textContent='공유 견적 게시 실패'; }
       finally { publish.disabled=false; }
     });
     form.addEventListener('submit', async event => {
       event.preventDefault(); calculated=null; publish.hidden=true; button.disabled = true; output.textContent = '계산 중...';
+      const submittedRevision = inputRevision;
       try {
         const csrf = await requestApi('/api/v1/auth/csrf');
         if (!csrf.ok || seq !== detailSeq || !fullAccess) return;
@@ -980,6 +982,7 @@ async function loadCostScenario(noticeId, seq) {
         if (!res.ok) { output.textContent = '입력 또는 기준 검증 실패. 상세 화면을 다시 열어 확인하십시오.'; return; }
         const data = (await res.json()).data;
         if (seq !== detailSeq || !fullAccess) return;
+        if (submittedRevision !== inputRevision) { output.textContent = '입력값 변경: 다시 계산 필요'; return; }
         calculated = Object.freeze({...payload});
         const permission=await readBusiness('/api/v1/notices/'+encodeURIComponent(noticeId)+'/shared-review');
         if (seq !== detailSeq || !fullAccess) return;
@@ -1034,8 +1037,6 @@ async function openNoticeDetail(noticeId) {
     if (g2bUrl) { link.href = g2bUrl; link.hidden = false; }
 
     renderReview(data.review);
-    void loadCostScenario(noticeId, seq);
-    void loadSharedReview(noticeId, seq);
     const docs = data.documents || [];
     if (!docs.length) {
       document.getElementById('dDocuments').innerHTML = '<div style="font-size:12px; color:var(--muted);">조회 가능한 첨부 문서가 없습니다.</div>';
@@ -1053,10 +1054,15 @@ async function openNoticeDetail(noticeId) {
         </div>`;
       }).join('');
     }
+    await loadCostScenario(noticeId, seq);
+    if (seq !== detailSeq || !fullAccess) return;
+    await loadSharedReview(noticeId, seq);
 
   } catch (err) {
     if (seq !== detailSeq || !fullAccess) return;
     document.getElementById('dTitle').textContent = '상세 정보 조회 실패';
+    document.getElementById('dCost').textContent = '-';
+    document.getElementById('dShared').textContent = '-';
     document.getElementById('dReview').textContent = '검토 근거 조회 실패';
   }
 }
