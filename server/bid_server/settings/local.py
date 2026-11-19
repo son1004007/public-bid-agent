@@ -1,7 +1,7 @@
 """Local loopback staging only; no fallback DB, secret or remote host."""
 import os
 from pathlib import Path
-from bid_server.config import invalid, load_local_database, private_path, secret_file, REPOSITORY_ROOT
+from bid_server.config import invalid, load_local_database, load_local_media_root, secret_file
 from .common import *  # noqa: F403
 
 # Keep credentials outside Git. Do not inherit a plaintext signing key.
@@ -32,9 +32,6 @@ DATABASES = {
     }
 }
 
-# No directory creation at import; export fails closed if storage is absent.
-PRIVATE_MEDIA_ROOT = private_path(
-    {"PRIVATE_MEDIA_ROOT": str(root / "local-media")}, "PRIVATE_MEDIA_ROOT",
-)
-if REPOSITORY_ROOT.is_relative_to(PRIVATE_MEDIA_ROOT):
-    raise invalid("PRIVATE_MEDIA_ROOT")
+# No fallback to the legacy application parent or evidence directory.
+# The launcher validates the Windows ACL before starting the service.
+PRIVATE_MEDIA_ROOT = load_local_media_root(os.environ, root)
