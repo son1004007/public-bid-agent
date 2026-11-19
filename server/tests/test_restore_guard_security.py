@@ -151,6 +151,47 @@ class RestoreGuardSecurityTests(SimpleTestCase):
                         run_rehearsal(bundle, trusted_dump_sha256=expected)
                 connect.assert_not_called()
 
+    def test_configured_media_cannot_be_silently_omitted_or_replaced(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            with patch.dict("os.environ", {"BID_LOCAL_PRIVATE_MEDIA_ROOT": str(root / "selected")}):
+                with patch("scripts.backup_system.load_db_config") as config:
+                    for storage in (None, root / "other"):
+                        with self.assertRaisesRegex(ValueError, "selected private media root"):
+                            create_backup(root / "backup", storage_dir=storage)
+                    config.assert_not_called()
+
+    def test_combined_backup_inventory_rejects_missing_or_unlisted_files(self):
+        from scripts.restore_rehearsal import run_rehearsal
+        from scripts.backup_system import sha256_file
+        tables = ("accounts_user", "procurement_notice", "procurement_noticeversion",
+                  "procurement_document", "procurement_documentversion", "procurement_proposal",
+                  "procurement_proposalrevision", "procurement_proposalsection", "jobs_job", "jobs_jobattempt")
+        with tempfile.TemporaryDirectory() as temp:
+            bundle = Path(temp)
+            dump = bundle / "db_dump.sql"
+            dump.write_bytes(b"-- synthetic fixture")
+            digest = sha256_file(dump)
+            storage = bundle / "storage"
+            storage.mkdir()
+            member = storage / "fixture.txt"
+            member.write_bytes(b"fixture")
+            row = {"relative_path": member.name, "sha256": sha256_file(member), "size_bytes": 7}
+            manifest = {"backup_id": "synthetic", "coverage": "DB_AND_STORAGE", "database": {
+                "dump_file": dump.name, "dump_sha256": digest, "table_counts": dict.fromkeys(tables, 0),
+            }, "storage": {"files": [row], "files_count": 1}}
+            (bundle / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            with patch("scripts.restore_rehearsal.psycopg.connect") as connect:
+                extra = storage / "unlisted.txt"
+                extra.write_bytes(b"unlisted")
+                with self.assertRaisesRegex(ValueError, "Storage inventory mismatch"):
+                    run_rehearsal(bundle, trusted_dump_sha256=digest)
+                extra.unlink()
+                member.unlink()
+                with self.assertRaisesRegex(ValueError, "Storage verification errors"):
+                    run_rehearsal(bundle, trusted_dump_sha256=digest)
+                connect.assert_not_called()
+
     def test_backup_rejects_overlapping_and_symlinked_storage(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
