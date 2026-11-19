@@ -13,6 +13,7 @@
 | [사업부 집계 원가·공동 검토](docs/server-migration/09-aggregate-cost-and-shared-review.md) | 최신 업무 요구 및 승인 경계 |
 | [Hybrid RAG 기술 설계](docs/server-migration/10-hybrid-rag-bid-decision.md) | 검색·SQL·판정·데이터/권한·검증 계약 |
 | [전사 역량·부서 협업 및 전체 도식](docs/server-migration/12-enterprise-capability-hybrid-rag.md) | 법인/부서 모델, SQL+RAG, 지원 승인·가용성·시나리오 손익 |
+| [GPT·Claude·Gemini 연동 후보](docs/server-migration/13-multi-llm-provider-routing.md) | 업체 중립 라우터·승인/비용/데이터 경계, 실제 연동 미구현 |
 | [사업 담당자 안내](docs/server-migration/11-hybrid-rag-business-guide.md) | 쉬운 업무 흐름 및 가상 예시 |
 | [서버 실행·검증 안내](server/README.md) | 격리 환경과 설정 계약 |
 | [MVP-05 시범 운영 인계](docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md) | 실제 승인·환경 점검·운영자 명령 |
