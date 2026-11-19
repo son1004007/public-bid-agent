@@ -3,7 +3,8 @@
 경계: 민감 시스템 내부 키나 원시 비밀번호는 노출하지 않는다.
 관련: docs/server-migration/18-screen-api-contract.md §31-35.
 """
-from urllib.parse import urlsplit, urlunsplit
+import re
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from rest_framework import serializers
 from .models import (
     Notice,
@@ -40,6 +41,47 @@ def public_source_url(value):
         return urlunsplit(("https", parts.netloc, parts.path, "", ""))
     except ValueError:
         return ""
+
+
+def public_notice_url(value, notice_number, source_revision):
+    """Allow only the observed G2B notice detail route with its matching public identity.
+    Other query parameters, arbitrary paths and credential-bearing URLs stay blocked.
+    """
+    plain = public_source_url(value)
+    if plain:
+        return plain
+    if not isinstance(value, str) or len(value) > 1000 or any(ord(c) < 33 or c == "\\" for c in value):
+        return ""
+    try:
+        p = urlsplit(value)
+        if (p.scheme != "https" or p.hostname != "www.g2b.go.kr" or p.port not in (None, 443)
+                or p.username is not None or p.password is not None or p.fragment
+                or p.path != "/link/PNPE027_01/single/"):
+            return ""
+        # Strict ASCII query syntax; no percent-encoded keys/values, duplicate keys, or credentials.
+        if not re.fullmatch(r"[A-Za-z0-9_=-]+&[A-Za-z0-9_=-]+", p.query):
+            return ""
+        pairs = parse_qsl(p.query, keep_blank_values=True, strict_parsing=True, max_num_fields=2)
+        params = dict(pairs)
+        if len(pairs) != 2 or set(params) != {"bidPbancNo", "bidPbancOrd"}:
+            return ""
+        no, order = params["bidPbancNo"], params["bidPbancOrd"]
+        revision = str(source_revision) if source_revision is not None else ""
+        if (not re.fullmatch(r"[A-Za-z0-9-]{4,32}", no) or no != notice_number
+                or not re.fullmatch(r"[0-9]{1,5}", order) or not re.fullmatch(r"[0-9]{1,5}", revision)
+                or int(order) != int(revision)):
+            return ""
+        return urlunsplit(("https", "www.g2b.go.kr", p.path,
+                           urlencode({"bidPbancNo": no, "bidPbancOrd": order}), ""))
+    except (ValueError, TypeError):
+        return ""
+
+
+def notice_source_url(notice):
+    version = notice.current_version
+    if version is None or version.notice_id != notice.pk:
+        return ""
+    return public_notice_url(version.source_url, notice.notice_number, version.source_revision)
 
 
 class DocumentVersionSerializer(serializers.ModelSerializer):
@@ -89,7 +131,7 @@ class NoticeSummarySerializer(serializers.ModelSerializer):
     source_url = serializers.SerializerMethodField()
 
     def get_source_url(self, obj):
-        return public_source_url(obj.current_version.source_url) if obj.current_version else ""
+        return notice_source_url(obj)
     document_count = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -135,7 +177,7 @@ class NoticeDetailSerializer(serializers.ModelSerializer):
     source_url = serializers.SerializerMethodField()
 
     def get_source_url(self, obj):
-        return public_source_url(obj.current_version.source_url) if obj.current_version else ""
+        return notice_source_url(obj)
     documents = DocumentSerializer(many=True, read_only=True)
     total_versions = serializers.IntegerField(read_only=True)
 

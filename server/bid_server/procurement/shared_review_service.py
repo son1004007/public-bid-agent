@@ -11,7 +11,7 @@ from bid_server.accounts.models import User
 from bid_server.core.permissions import ClosedUntilAuthentication
 from .cost_service import _basis, _eligible_notice, calculate, CostUnavailable, FIELDS
 from .models import CostDepartment, CostMembership, Notice, SharedBidReviewEvent
-from .serializers import public_source_url
+from .serializers import notice_source_url
 
 OPINIONS = {"REVIEW", "QUALIFICATION_RISK", "TECHNICAL_RISK", "STAFFING_RISK", "COST_RISK", "SUPPORT", "OPPOSE"}
 DECISIONS = {"BID", "HOLD", "NO_BID"}
@@ -84,7 +84,7 @@ def _safe_event(event, basis):
 
 
 def _active(notice):
-    return _eligible_notice(notice) and notice.source == "G2B_OFFICIAL_API" and bool(public_source_url(notice.current_version.source_url))
+    return _eligible_notice(notice) and notice.source == "G2B_OFFICIAL_API" and bool(notice_source_url(notice))
 
 
 class SharedReviewAPIView(APIView):

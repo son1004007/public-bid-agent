@@ -104,3 +104,14 @@ test('cost scenario requires approved scoped basis and invalidates result on clo
   assert.equal(x.get('dCost').textContent,'');
   assert.equal(x.get('dCost').children.length,0);
 });
+
+
+test('only matching public G2B notice detail parameters are permitted',()=>{
+  const x=setup(()=>response(401,{}));
+  const url="https://www.g2b.go.kr/link/PNPE027_01/single/?bidPbancNo=R26BK00000001&bidPbancOrd=001";
+  const check=(u,n='R26BK00000001')=>x.run('allowedNoticeUrl('+JSON.stringify(u)+','+JSON.stringify(n)+')');
+  assert.equal(check(url),url);
+  for(const bad of [url+'&ServiceKey=fixture',url.replace('001','%30%30%31'),url+'&bidPbancOrd=002',url.replace('www.g2b.go.kr','other.g2b.go.kr'),url.replace('/single/','/redirect/'),url.replace('https:','http:'),url+'#fragment']) assert.equal(check(bad),'');
+  assert.equal(check(url,'R26BK00000002'),'');
+  assert.equal(x.run('allowedSourceUrl('+JSON.stringify(url)+')'),'');
+});

@@ -571,6 +571,22 @@ function allowedSourceUrl(raw) {
   } catch (_) { return ''; }
 }
 
+function allowedNoticeUrl(raw, noticeNumber) {
+  const plain = allowedSourceUrl(raw);
+  if (plain) return plain;
+  if (typeof raw !== 'string' || typeof noticeNumber !== 'string' || !raw || /[\s\\]/.test(raw)) return '';
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'https:' || u.hostname !== 'www.g2b.go.kr' || u.username || u.password || u.port || u.hash
+        || u.pathname !== '/link/PNPE027_01/single/' || !/^\?[A-Za-z0-9_=-]+&[A-Za-z0-9_=-]+$/.test(u.search)) return '';
+    const p = u.searchParams;
+    if ([...p.keys()].length !== 2 || p.getAll('bidPbancNo').length !== 1 || p.getAll('bidPbancOrd').length !== 1) return '';
+    const no = p.get('bidPbancNo'), ord = p.get('bidPbancOrd');
+    if (!/^[A-Za-z0-9-]{4,32}$/.test(no) || no !== noticeNumber || !/^[0-9]{1,5}$/.test(ord)) return '';
+    return u.href;
+  } catch (_) { return ''; }
+}
+
 function clearBusiness() {
   generation++; listSeq++; detailSeq++;
   fullAccess = false;
@@ -1032,7 +1048,7 @@ async function openNoticeDetail(noticeId) {
 
     document.getElementById('dCategories').innerHTML = (data.categories || []).map(c => `<span class="badge badge-cat">${escapeHtml(c)}</span>`).join(' ') || '일반';
 
-    const g2bUrl = allowedSourceUrl(data.source_url);
+    const g2bUrl = allowedNoticeUrl(data.source_url, data.notice_number);
     document.getElementById('dSourceUrl').textContent = g2bUrl ? '허용된 공개 출처 링크' : '공개 링크 미확인';
     if (g2bUrl) { link.href = g2bUrl; link.hidden = false; }
 

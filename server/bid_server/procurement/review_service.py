@@ -8,7 +8,7 @@ from .extractor_service import scoped_document_versions
 from .models import (
     Chunk, DeadlineStatus, DocumentFreshness, DocumentVersion, ExtractionRun, ExtractionState,
 )
-from .serializers import public_source_url
+from .serializers import public_source_url, notice_source_url
 
 # Candidate signals only; existing legacy taxonomy is broader and independently evaluated.
 CHECKS = (
@@ -56,7 +56,7 @@ def review_projection(notice, actor, *, now=None):
     if version.correction:
         result["reason"] = "CORRECTION_REVIEW_REQUIRED"
         return result
-    if notice.source != "G2B_OFFICIAL_API" or not public_source_url(version.source_url):
+    if notice.source != "G2B_OFFICIAL_API" or not notice_source_url(notice):
         result["reason"] = "OFFICIAL_SOURCE_UNVERIFIED"
         return result
     if not isinstance(version.department_categories, list) or not any(

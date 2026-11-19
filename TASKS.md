@@ -1,3 +1,7 @@
+## 2026-11-19 official notice URL correction
+
+- [ ] Narrow official notice-link projection candidate (fixed provider path, two matching public identifiers) and browser allowlist; CI and actual source URL re-collection/backfill, NAS runtime validation pending. Existing document URL restriction unchanged.
+
 ## 2026-11-19 G2B key and first NAS import — latest results
 
 - [x] Secure key delivery and actual official API collection on NAS (892 rows, 847 latest logical notices; 18:05 KST).
