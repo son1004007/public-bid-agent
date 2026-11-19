@@ -1,3 +1,8 @@
+## 2026-11-19 MVP-05 — read-only pilot preflight candidate
+
+- Exact b0983db PostgreSQL and Ubuntu foundation jobs PASS (135411423660/135411423828); Windows foundation was in progress at observation. Prior c5b35d9 exact 4/4 PASS incl synthetic recovery. No independent reviewer available in this chat; REVIEW_DEBT and RELEASE NO_GO unchanged.
+- Added guarded pilot_preflight management command (synthetic or explicitly authorized production read-only). Reports only fixed statuses for migration, current explicit business membership/basis/notice presence and production transport config, runtime DB role, media root/policy pointer; no provisioning or writes. Production config/target remains unapproved and unexecuted; new SHA CI pending. Added operator handoff and test cases. Next exact-head CI, independent review, private user action, actual approved pilot environment/provisioning/rollback. No actual runtime change.
+
 ## 2026-11-19 MVP-05 — synthetic recovery PASS; targeted author security hardening
 
 - Exact c5b35d9 Server foundation PostgreSQL job 135409832456 completed SUCCESS; 222 tests, 2 skipped, two restore SUCCESS markers and `MVP_DB_STORAGE_RESTORE_CONTENT_PASS`. Windows/Ubuntu foundation jobs also SUCCESS. No operational backup/restore or release rollback. Earlier 19f14e0 4/4 CI PASS including Chrome 1440/390.

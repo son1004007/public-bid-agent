@@ -1,3 +1,5 @@
+> **2026-11-19 pilot preflight candidate:** `pilot_preflight` reports fixed non-sensitive readiness statuses; production read-only mode requires separate target approval. No config generation, service start, membership provisioning, data import, or release authorization. See [pilot operations handoff](docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md).
+
 > **2026-11-19 MVP-05 권한/기준 검수 후보:** 원가 승인자 활성·강제 암호 변경·잠금 상태와 현재 승인 membership 검증, 기존 공유 견적을 현재 승인된 가공 기준으로 재계산·대조하여 불일치 시 금액 숨김 및 재결정 요구. 합성 검증만; 실제 조직 정책·독립 검수·운영 릴리스 미완료.
 
 > **2026-11-19 MVP-05 recovery candidate:** backup manifest v2 extends parity inventory to current domain/session tables and content fingerprints for the four MVP cost/review tables. V2 restore requires separately trusted manifest + dump digests. Legacy v1 restore remains partial; use the pinned compatible pre-upgrade backup script for old schemas. No operational backup or restore performed by this change.

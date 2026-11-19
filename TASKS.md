@@ -61,6 +61,8 @@ P0 보안 보완부터 시작하되 실제 관리자 조치·운영 승인·독�
 
 - c5b35d9 PostgreSQL 222 tests(2 skip), MVP DB+file nonempty content restore PASS (135409832456). 자체 보안 검토에서 승인자 계정 상태와 공유 견적 기준 변경 시 검증 보완, 회귀 추가. 독립 검수가 아니며 실제 운영 설정/복구·rollback 승인 미완료.
 
+- b0983db PostgreSQL/Ubuntu regression PASS 관측. 시범 운영자용 읽기 전용 pilot_preflight, 합성 테스트, [운영 인계](docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md) 추가. 정확 신규 SHA CI 대기, 실제 환경 미접속·독립 검수 REVIEW_DEBT 유지.
+
 ### 실행 원칙 및 다음 재개 지점
 
 - 다음: MVP-05 최신 SHA 통합 복구 CI 확인 및 실패 수정 → 독립 최종 검수 → 정책/실자료/운영 승인 게이트. 이미 성공한 DB 개별 복원 및 브라우저 기록은 해당 SHA/범위에서 재사용한다. 통합 복원·릴리스 롤백은 별도이며 새 SHA에서 과거 CI를 재사용해 통과라 주장하지 않는다. 검수는 논리적 단위로 수행하고 불필요한 반복 조사/완벽주의를 피한다.

@@ -1,3 +1,5 @@
+> **2026-11-19 pilot preflight candidate:** `pilot_preflight` reports fixed non-sensitive readiness statuses; production read-only mode requires separate target approval. No config generation, service start, membership provisioning, data import, or release authorization. See [pilot operations handoff](../docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md).
+
 ## MVP-05 recovery manifest v2 (candidate)
 
 Current migrated schema only: `scripts/backup_system.py` generates manifest v2 with domain/session counts and four MVP table fingerprints. `scripts/restore_rehearsal.py` requires `--trusted-dump-sha256` and `--trusted-manifest-sha256` for v2. Never accept hashes solely from untrusted bundle; approved out-of-band record required. Old-schema pre-upgrade backup uses the pinned compatible version; v1 rehearsal is explicitly legacy partial. Quiescence, original file inventory, ACL/ownership, isolation and approved rollback are still operator gates. Do not run against production merely because CI passed.

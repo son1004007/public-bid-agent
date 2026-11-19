@@ -23,3 +23,5 @@
 - V2 recovery candidate must prove nonempty MVP table content, current selected table counts, verified storage copy and rolled-back synthetic write. The uploaded dump/manifest hashes must be from a trusted private record. Not a release rollback or live coordinated snapshot. Legacy v1 has limited coverage; prior schema backup uses pinned compatible scripts, not v2.
 
 - c5b35d9 actual hosted PostgreSQL nonempty MVP DB+file restore/content test PASS (135409832456); count/fingerprint and recovery only, not operational cutover rollback. Targeted author review candidate hardens stale cost publication and approver eligibility; new SHA verification pending. Independent review remains outstanding.
+
+- Read-only pilot preflight and [operations handoff](MVP05_PILOT_OPERATIONS_2026-11-19.md) added as candidate. Production target not authorized, no deployment/reviewer GO. CHECKS_PASS is not release approval.

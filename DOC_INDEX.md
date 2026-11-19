@@ -12,6 +12,7 @@
 | [서버 전환 설계 목차](docs/server-migration/README.md) | 서버 전환 상세 설계 |
 | [사업부 집계 원가·공동 검토](docs/server-migration/09-aggregate-cost-and-shared-review.md) | 최신 업무 요구 및 승인 경계 |
 | [서버 실행·검증 안내](server/README.md) | 격리 환경과 설정 계약 |
+| [MVP-05 시범 운영 인계](docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md) | 실제 승인·환경 점검·운영자 명령 |
 | [MVP-05 시범 배포 게이트](docs/reviews/MVP05_PILOT_GATE_2026-11-19.md) | 통합 인수 및 실제 배포 승인·복구 기준 |
 | [운영·배포](docs/04-operation-and-deployment.md) | 운영 데이터 보존 및 배포 절차 |
 | [PR #5 집중 보안 검토](docs/reviews/PR5_SECURITY_SEMANTIC_2026-11-17.md) | 발견 사항과 수정 이력 |
