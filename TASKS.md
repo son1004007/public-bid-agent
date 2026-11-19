@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — backup/restore rehearsal
+
+- [x] Explicit CLI backup config, output and storage scope; reject omission/mismatch with selected service media. Combined inventory and temporary storage recovery with regressions.
+- [x] a9c19adb actual hosted PostgreSQL 17.12 synthetic DB+file restore PASS, count/FK/new write rollback evidence in 135345699852. Notebook tool versions confirmed; retained legacy baseline 4 present/4 absent matched.
+- [ ] Remaining exact-head CI if incomplete at observation; actual operational DB/RFP backup scope and coordinated trusted isolated recovery; review legacy Python config fallback and manifest/artifact-reference completeness. Do not use actual source as a rehearsal target or publish private data.
+- [ ] Credential incident applicability/remediation, fresh-context independent review, notebook browser and release rollback. Main merge/deploy remains NO_GO.
+
 ## 2026-11-19 PR #5 checkpoint — private service media
 
 - [x] Dedicated separate preprovisioned media root, strict local config and launcher ACL preflight; exact app candidate 6ee0b8de CI 4/4 PASS.
