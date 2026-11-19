@@ -1,3 +1,8 @@
+## 2026-11-19 MVP-05 — synthetic recovery PASS; targeted author security hardening
+
+- Exact c5b35d9 Server foundation PostgreSQL job 135409832456 completed SUCCESS; 222 tests, 2 skipped, two restore SUCCESS markers and `MVP_DB_STORAGE_RESTORE_CONTENT_PASS`. Windows/Ubuntu foundation jobs also SUCCESS. No operational backup/restore or release rollback. Earlier 19f14e0 4/4 CI PASS including Chrome 1440/390.
+- Targeted same-context author review: cost approval previously depended on membership alone, and shared estimate only checked basis ID (could retain figures if basis was modified in place). Candidate checks current approver account and explicit membership under lock, locks actor on read, recomputes published estimate from current coarse basis and rejects stale/invalid snapshots for display and BID. Added revocation and projection drift regression. Provisioning/approval policy, immutable administered revisions and cross-account in-flight lifecycle coordination still require review. New exact SHA tests pending; not independent review. REVIEW_DEBT / RELEASE NO_GO remains; no production modifications.
+
 ## 2026-11-19 MVP-05 — browser verified; recovery scope extension candidate
 
 - Exact 19f14e0 Server foundation PASS (44479393940), Windows job 135407660216: 220 tests (7 skipped), `MVP_BROWSER_FLOW_PASS_1440_390`, `CDP_WORKSPACE_ACCEPTANCE_PASS`; Ubuntu and PostgreSQL jobs PASS. Harness PASS (44479394029); Windows local and Sprint1 were still running when checked. This is synthetic browser proof, not company deployment.

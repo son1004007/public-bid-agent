@@ -64,3 +64,26 @@ class SharedReviewTests(AggregateCostTests):
         self.assertEqual(self.event(self.approver_client,"DECISION",0,{"decision":"HOLD","reason":"EVIDENCE_PENDING","attestations":[],"estimate_revision":0}).status_code,201)
         self.assertEqual(self.review(self.client)["current_decision"]["payload"]["decision"],"HOLD")
         self.assertEqual(self.client.post(self.shared,{"kind":"OPINION"},format="json",secure=True).status_code,403)
+
+    def test_changed_basis_projection_invalidates_previously_published_estimate(self):
+        self.assertEqual(self.event(self.approver_client,"ESTIMATE",0,self.payload).status_code,201)
+        decision = {"decision":"BID","reason":"READY","attestations":["official_rfp","qualification","technology","staffing","cost"],"estimate_revision":1}
+        self.assertEqual(self.event(self.approver_client,"DECISION",1,decision).status_code,201)
+        DepartmentCostBasis.objects.filter(pk=self.basis.pk).update(labor_total_krw=72100000)
+        result = self.review(self.client)
+        self.assertEqual(result["current_estimate"]["payload"],{"state":"BASIS_REVIEW_REQUIRED"})
+        self.assertEqual(result["current_decision"]["payload"]["state"],"REVIEW_REQUIRED")
+        self.assertFalse(self.review(self.approver_client)["can_bid"])
+        self.assertEqual(self.event(self.approver_client,"DECISION",2,decision).status_code,409)
+        self.assertEqual(SharedBidReviewEvent.objects.count(),2)
+        self.assertNotIn("23000000",str(result))
+        self.assertNotIn("72100000",str(result))
+
+    def test_approval_revoked_hides_financial_history(self):
+        self.assertEqual(self.event(self.approver_client,"ESTIMATE",0,self.payload).status_code,201)
+        self.approver.is_active=False
+        self.approver.save(update_fields=["is_active"])
+        result=self.review(self.client)
+        self.assertEqual(result["current_estimate"]["payload"],{"state":"BASIS_REVIEW_REQUIRED"})
+        self.assertFalse(result["can_publish_estimate"])
+        self.assertNotIn("23000000",str(result))

@@ -49,10 +49,30 @@ def _current_basis(actor):
         return None
 
 
+def _verified_estimate(event, basis):
+    """Recompute with the currently visible, approved coarse basis, never expose a stale snapshot."""
+    if event is None or basis is None or event.basis_id != basis.pk or event.kind != "ESTIMATE":
+        return None
+    try:
+        record = event.payload
+        assumptions = record["assumptions"]
+        if not isinstance(assumptions, dict) or set(assumptions) != FIELDS - {"basis_id", "notice_version_id"}:
+            return None
+        payload = {**assumptions, "basis_id": str(basis.pk), "notice_version_id": str(event.notice_version_id)}
+        result = calculate(basis, payload)
+        if result != record["result"]:
+            return None
+        # Serialize only freshly recomputed published values and validated assumptions.
+        return {"assumptions": {key: str(value) for key, value in assumptions.items()},
+                "result": result, "state": "PUBLISHED_ESTIMATE_NOT_FINAL_BID"}
+    except (KeyError, TypeError, ValueError, InvalidOperation, CostUnavailable):
+        return None
+
+
 def _safe_event(event, basis):
     payload = event.payload
     if event.kind == "ESTIMATE":
-        payload = payload if basis is not None and event.basis_id == basis.pk else {"state": "BASIS_REVIEW_REQUIRED"}
+        payload = _verified_estimate(event, basis) or {"state": "BASIS_REVIEW_REQUIRED"}
     elif event.kind == "DECISION":
         payload = {k: payload[k] for k in ("decision", "reason", "attestations", "estimate_revision") if k in payload}
         if payload.get("decision") == "BID" and (basis is None or event.basis_id != basis.pk):
@@ -83,15 +103,18 @@ class SharedReviewAPIView(APIView):
                 decision = events.filter(kind="DECISION").order_by("-revision").first()
                 estimate = events.filter(kind="ESTIMATE").order_by("-revision").first()
                 active = _active(notice)
+                verified = _verified_estimate(estimate, basis)
                 current_decision = _safe_event(decision, basis) if decision else None
                 if current_decision and current_decision["payload"].get("decision") == "BID" and (
-                    not active or estimate is None or decision.payload.get("estimate_revision") != estimate.revision
+                    not active or estimate is None or verified is None
+                    or verified["result"]["capacity"] != "WITHIN_PUBLISHED_CAPACITY"
+                    or decision.payload.get("estimate_revision") != estimate.revision
                 ):
-                    current_decision["payload"]["state"] = "REVIEW_REQUIRED"
+                    current_decision["payload"].setdefault("state", "REVIEW_REQUIRED")
                 return Response({"state": "READY", "notice_version_id": str(notice.current_version_id),
                     "revision": history[0].revision if history else 0, "can_decide": member.can_decide,
                     "can_publish_estimate": member.can_manage_cost and basis is not None and active,
-                    "can_bid": member.can_decide and active and basis is not None and estimate is not None and estimate.basis_id == basis.pk,
+                    "can_bid": member.can_decide and active and verified is not None and verified["result"]["capacity"] == "WITHIN_PUBLISHED_CAPACITY",
                     "current_decision": current_decision,
                     "current_estimate": _safe_event(estimate, basis) if estimate else None,
                     "history": [_safe_event(event, basis) for event in history]})
@@ -150,9 +173,10 @@ class SharedReviewAPIView(APIView):
                         raise ValueError()
                     estimate = events.filter(kind="ESTIMATE").order_by("-revision").first()
                     if decision == "BID":
-                        if (not _active(notice) or basis is None or estimate is None or estimate.basis_id != basis.pk
+                        verified = _verified_estimate(estimate, basis)
+                        if (not _active(notice) or verified is None
                             or estimate.revision != estimate_revision or set(attestations) != ATTESTATIONS
-                            or reason != "READY" or estimate.payload.get("result", {}).get("capacity") != "WITHIN_PUBLISHED_CAPACITY"):
+                            or reason != "READY" or verified["result"]["capacity"] != "WITHIN_PUBLISHED_CAPACITY"):
                             return Response({"error": "DECISION_PREREQUISITES_UNVERIFIED"}, status=409)
                         event_basis = basis
                     elif reason == "READY" or attestations or estimate_revision != 0:

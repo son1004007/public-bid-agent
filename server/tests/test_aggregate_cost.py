@@ -81,3 +81,11 @@ class AggregateCostTests(TestCase):
     def test_cancelled_notice_blocks_new_scenario(self):
         NoticeVersion.objects.filter(pk=self.version.pk).update(cancellation=True)
         self.assertEqual(self.post(self.payload).status_code,409)
+
+    def test_disabled_or_unqualified_basis_approver_fails_closed(self):
+        for changes in ({"is_active": False}, {"is_active": True, "must_change_password": True}):
+            for key, value in changes.items():
+                setattr(self.approver, key, value)
+            self.approver.save(update_fields=list(changes))
+            self.assertEqual(self.client.get(self.url, secure=True).json()["data"]["state"], "UNVERIFIED")
+            self.assertEqual(self.post(self.payload).status_code, 409)

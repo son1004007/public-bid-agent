@@ -35,32 +35,39 @@ def _number(value, *, money=False):
 
 
 def _basis(actor):
-    # Caller holds the account lock for POST; all lookup decisions are DB-backed.
-    if not User.objects.filter(pk=actor.pk, auth_epoch=actor.auth_epoch, is_active=True,
+    # Resolve the original request epoch under the same account lock for read and write.
+    if User.objects.select_for_update().filter(pk=actor.pk, auth_epoch=actor.auth_epoch, is_active=True,
                                 must_change_password=False).filter(
         Q(locked_until__isnull=True) | Q(locked_until__lte=timezone.now())
-    ).exists():
+    ).first() is None:
         raise CostUnavailable()
     memberships = list(CostMembership.objects.filter(
         user_id=actor.pk, active=True, department__active=True,
     ).values_list("department_id", flat=True)[:2])
     if len(memberships) != 1:
         raise CostUnavailable()
-    if not CostDepartment.objects.select_for_update().filter(pk=memberships[0], active=True).exists():
+    if CostDepartment.objects.select_for_update().filter(pk=memberships[0], active=True).first() is None:
         raise CostUnavailable()
-    if not CostMembership.objects.select_for_update().filter(
+    if CostMembership.objects.select_for_update().filter(
         department_id=memberships[0], user_id=actor.pk, active=True
-    ).exists():
+    ).first() is None:
         raise CostUnavailable()
     today = timezone.localdate()
     basis = DepartmentCostBasis.objects.select_for_update().filter(
         department_id=memberships[0], current=True, approved=True,
         valid_until__gte=today, period_start__lte=today, period_end__gte=today,
     ).first()
-    if (basis is None or basis.headcount < basis.minimum_headcount
-            or not CostMembership.objects.filter(department_id=memberships[0], user_id=basis.approved_by_id,
-                                                  can_manage_cost=True, active=True).exists()):
+    if basis is None or basis.headcount < basis.minimum_headcount:
         raise CostUnavailable()
+    # No new approval may be inferred from system role. The current approver
+    # must still have an active account and explicit cost membership.
+    if CostMembership.objects.select_for_update(of=("self",)).filter(
+        department_id=memberships[0], user_id=basis.approved_by_id,
+        can_manage_cost=True, active=True, user__is_active=True,
+        user__must_change_password=False,
+    ).filter(Q(user__locked_until__isnull=True) | Q(user__locked_until__lte=timezone.now())).first() is None:
+        raise CostUnavailable()
+    _published(basis)
     return basis
 
 
@@ -114,11 +121,10 @@ class CostScenarioAPIView(APIView):
     permission_classes = [ClosedUntilAuthentication]
 
     def get(self, request, notice_id):
-        notice = _notice(notice_id)
         try:
             with transaction.atomic():
                 basis = _basis(request.user)
-                _published(basis)
+                notice = get_object_or_404(Notice.objects.select_for_update(), pk=notice_id)
                 if not _eligible_notice(notice):
                     raise CostUnavailable()
                 return Response({"state": "READY", "basis_id": str(basis.pk), "basis_revision": basis.revision,

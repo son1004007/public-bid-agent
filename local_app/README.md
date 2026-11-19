@@ -1,3 +1,5 @@
+> **2026-11-19 MVP-05 권한/기준 검수 후보:** 원가 승인자 활성·강제 암호 변경·잠금 상태와 현재 승인 membership 검증, 기존 공유 견적을 현재 승인된 가공 기준으로 재계산·대조하여 불일치 시 금액 숨김 및 재결정 요구. 합성 검증만; 실제 조직 정책·독립 검수·운영 릴리스 미완료.
+
 > **2026-11-19 MVP-05 recovery candidate:** backup manifest v2 extends parity inventory to current domain/session tables and content fingerprints for the four MVP cost/review tables. V2 restore requires separately trusted manifest + dump digests. Legacy v1 restore remains partial; use the pinned compatible pre-upgrade backup script for old schemas. No operational backup or restore performed by this change.
 
 > **2026-11-19 MVP-05 candidate:** extended real Chrome synthetic acceptance to RFP, projected cost, publication, opinion, decision and reopening; explicit 1440/390 viewport checks. Detail reads are sequential and tests await loaded panels before logout. Exact SHA CI required; no production deployment.
