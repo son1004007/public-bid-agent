@@ -16,3 +16,8 @@
 - 기존 중앙 비공개 사용자 조치 미해결. 실제 계정/원가/운영 데이터 변경 금지.
 - 조직별 구성원/승인권한 부여와 기준 등록 절차 및 데이터 검증은 승인 전 미실행; 정책 불명확하면 fail closed.
 - 독립 reviewer 미확보 REVIEW_DEBT. 본 문서는 개발/시범 준비용이며 승인·실제 배포 증거가 아니다.
+
+
+## 2026-11-19 추가 검증
+- 19f14e0 exact hosted Chrome CDP full business flow PASS at 1440/390; PostgreSQL and Ubuntu foundation PASS. Windows synthetic local/Sprint1 not final at observation.
+- V2 recovery candidate must prove nonempty MVP table content, current selected table counts, verified storage copy and rolled-back synthetic write. The uploaded dump/manifest hashes must be from a trusted private record. Not a release rollback or live coordinated snapshot. Legacy v1 has limited coverage; prior schema backup uses pinned compatible scripts, not v2.

@@ -1,3 +1,8 @@
+## 2026-11-19 MVP-05 — browser verified; recovery scope extension candidate
+
+- Exact 19f14e0 Server foundation PASS (44479393940), Windows job 135407660216: 220 tests (7 skipped), `MVP_BROWSER_FLOW_PASS_1440_390`, `CDP_WORKSPACE_ACCEPTANCE_PASS`; Ubuntu and PostgreSQL jobs PASS. Harness PASS (44479394029); Windows local and Sprint1 were still running when checked. This is synthetic browser proof, not company deployment.
+- Backup manifest v2 adds current domain/session count parity and exact four MVP table content SHA-256 fingerprints in exported snapshot; restore checks before post-restore write. Trusted manifest digest required separately from dump digest. Legacy v1 explicitly partial and compatible old-schema backup must use pinned prior tool. Nonempty isolated PostgreSQL Django test DB and file rehearsal added; CI not yet observed for this change. Production coordinated backup/restore and release rollback, source/policy approval and independent review remain blocked. RELEASE NO_GO / REVIEW_DEBT.
+
 ## 2026-11-19 MVP-05 — integrated browser acceptance candidate (RELEASE NO_GO)
 
 - b37faa6 server foundation PostgreSQL and Ubuntu jobs PASS; Windows driver-free CDP failed logout with TransactionManagementError (job 135405606098). Concurrent in-memory SQLite requests are suspected, not proven. Django 5.2 LiveServerTestCase warns about shared in-memory connections: https://docs.djangoproject.com/en/5.2/topics/testing/tools/#liveservertestcase . Sequential detail loads and explicit UI completion wait added without changing auth policy. Cost publication rejects edited stale scenario snapshots.

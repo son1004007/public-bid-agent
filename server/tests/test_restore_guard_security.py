@@ -229,3 +229,21 @@ class RestoreGuardSecurityTests(SimpleTestCase):
                 self.skipTest("symlink unsupported")
             with self.assertRaisesRegex(ValueError, "unsafe link"):
                 create_backup(root / "backup", storage_dir=storage)
+
+
+    def test_v2_requires_trusted_manifest_and_complete_mvp_scope(self):
+        from scripts.restore_rehearsal import run_rehearsal
+        from scripts.backup_system import sha256_file, LEGACY_TABLES, MVP_FINGERPRINT_TABLES
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            path = base / "manifest.json"
+            path.write_text(json.dumps({"manifest_version": "2.0", "database": {
+                "table_counts": dict.fromkeys(LEGACY_TABLES, 0),
+                "mvp_fingerprints": dict.fromkeys(MVP_FINGERPRINT_TABLES, "0"*64),
+            }}), encoding="utf-8")
+            with patch("scripts.restore_rehearsal.psycopg.connect") as connect:
+                with self.assertRaisesRegex(ValueError, "Trusted manifest SHA-256"):
+                    run_rehearsal(base)
+                with self.assertRaisesRegex(ValueError, "table_counts"):
+                    run_rehearsal(base, trusted_manifest_sha256=sha256_file(path))
+                connect.assert_not_called()

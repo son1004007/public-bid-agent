@@ -47,20 +47,46 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+# Version 1 remains inspectable for legacy rehearsals but is not an MVP release baseline.
+LEGACY_TABLES = (
+    "accounts_user", "procurement_notice", "procurement_noticeversion",
+    "procurement_document", "procurement_documentversion", "procurement_proposal",
+    "procurement_proposalrevision", "procurement_proposalsection", "jobs_job", "jobs_jobattempt",
+)
+MVP_FINGERPRINT_TABLES = (
+    "procurement_costdepartment", "procurement_costmembership",
+    "procurement_departmentcostbasis", "procurement_sharedbidreviewevent",
+)
+MVP_TABLES = LEGACY_TABLES + MVP_FINGERPRINT_TABLES + (
+    "procurement_extractionrun", "procurement_documentstructure", "procurement_documentblock",
+    "procurement_tableblock", "procurement_tablecell", "procurement_footnoteblock",
+    "procurement_chunk", "procurement_legacyidentity", "procurement_requirementmapping",
+    "procurement_evidencereference", "procurement_exportartifact",
+    "jobs_outbox", "jobs_automationpolicy", "jobs_automationpolicyversion",
+    "accounts_authevent", "accounts_loginbucket", "django_session",
+)
+
+
+def get_mvp_fingerprints(conn):
+    """Hash ordered JSONB rows, not user data in logs. Same PostgreSQL cluster/format."""
+    from psycopg import sql
+    result = {}
+    with conn.cursor() as cur:
+        cur.execute("SET LOCAL TIME ZONE 'UTC'")
+        for table in MVP_FINGERPRINT_TABLES:
+            digest = hashlib.sha256()
+            cur.execute(sql.SQL("SELECT to_jsonb(t)::text FROM {} AS t ORDER BY id").format(sql.Identifier(table)))
+            while rows := cur.fetchmany(1000):
+                for (row,) in rows:
+                    digest.update(row.encode("utf-8"))
+                    digest.update(b"\n")
+            result[table] = digest.hexdigest()
+    return result
+
+
 def get_table_counts(conn) -> dict:
-    """Count source tables in the same exported PostgreSQL snapshot as pg_dump."""
-    tables = [
-        "accounts_user",
-        "procurement_notice",
-        "procurement_noticeversion",
-        "procurement_document",
-        "procurement_documentversion",
-        "procurement_proposal",
-        "procurement_proposalrevision",
-        "procurement_proposalsection",
-        "jobs_job",
-        "jobs_jobattempt",
-    ]
+    """Count selected domain/session tables in the same exported snapshot as pg_dump."""
+    tables = MVP_TABLES
     counts = {}
     with conn.cursor() as cur:
         for tbl in tables:
@@ -133,6 +159,7 @@ def create_backup(
             snapshot_id = cur.fetchone()[0]
         print("[*] Counting source rows in exported snapshot...")
         table_counts = get_table_counts(conn)
+        mvp_fingerprints = get_mvp_fingerprints(conn)
         dump_cmd = [
             pg_dump,
             "-h", str(cfg["HOST"]),
@@ -190,7 +217,7 @@ def create_backup(
 
     # 4. Manifest generation
     manifest_data = {
-        "manifest_version": "1.0",
+        "manifest_version": "2.0",
         "backup_id": backup_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "database": {
@@ -202,6 +229,7 @@ def create_backup(
             "dump_size_bytes": dump_size,
             "dump_duration_seconds": round(dump_duration, 3),
             "table_counts": table_counts,
+            "mvp_fingerprints": mvp_fingerprints,
         },
         "coverage": "DB_AND_STORAGE" if storage_dir and storage_dir.exists() else "DB_ONLY",
         "storage": {

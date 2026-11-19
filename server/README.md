@@ -1,3 +1,7 @@
+## MVP-05 recovery manifest v2 (candidate)
+
+Current migrated schema only: `scripts/backup_system.py` generates manifest v2 with domain/session counts and four MVP table fingerprints. `scripts/restore_rehearsal.py` requires `--trusted-dump-sha256` and `--trusted-manifest-sha256` for v2. Never accept hashes solely from untrusted bundle; approved out-of-band record required. Old-schema pre-upgrade backup uses the pinned compatible version; v1 rehearsal is explicitly legacy partial. Quiescence, original file inventory, ACL/ownership, isolation and approved rollback are still operator gates. Do not run against production merely because CI passed.
+
 ## MVP-04 shared review (candidate)
 
 GET/POST `/api/v1/notices/<notice_id>/shared-review` requires exactly one approved active department membership. Explicit `can_manage_cost` publishes the server-calculated shared scenario; `can_decide` controls human decisions independently. Event revisions serialize under scope/notice locks; no free-text/attachments/raw aggregate input. BID is an internal decision, not bid submission. Migration 0008 is candidate. Actual company policy, provisioning, historical access and release checks pending. Do not apply to production before approval.

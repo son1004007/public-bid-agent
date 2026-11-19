@@ -21,6 +21,11 @@ from pathlib import Path
 import psycopg
 from psycopg import sql
 
+if __package__:
+    from .backup_system import LEGACY_TABLES, MVP_TABLES, MVP_FINGERPRINT_TABLES, get_mvp_fingerprints
+else:
+    from backup_system import LEGACY_TABLES, MVP_TABLES, MVP_FINGERPRINT_TABLES, get_mvp_fingerprints
+
 REHEARSAL_DB_PATTERN = re.compile(r"^sm03_(?:test_)?[a-z0-9_]*rehearsal(?:_[a-z0-9]+)?$")
 
 def validate_rehearsal_target(name: str, config: dict) -> None:
@@ -67,6 +72,7 @@ def run_rehearsal(
     config_path: Path | None = None,
     keep_db: bool = False,
     *, trusted_dump_sha256: str | None = None,
+    trusted_manifest_sha256: str | None = None,
 ) -> dict:
     # Fail closed before touching any PostgreSQL database.
     t_start = time.perf_counter()
@@ -74,8 +80,13 @@ def run_rehearsal(
     if not manifest_file.exists():
         raise FileNotFoundError(f"Manifest not found in {bundle_dir}")
 
-    with open(manifest_file, "r", encoding="utf-8") as f:
-        manifest = json.load(f)
+    manifest_bytes = manifest_file.read_bytes()
+    manifest = json.loads(manifest_bytes)
+    version = manifest.get("manifest_version", "1.0")
+    if version not in ("1.0", "2.0"):
+        raise ValueError("Unsupported manifest version")
+    if version == "2.0" and hashlib.sha256(manifest_bytes).hexdigest() != trusted_manifest_sha256:
+        raise ValueError("Trusted manifest SHA-256 required from an independent record")
 
     backup_id = manifest.get("backup_id", "unknown")
     db_meta = manifest["database"]
@@ -83,12 +94,14 @@ def run_rehearsal(
 
     # Fail closed before creating any database: an empty/partial manifest would
     # otherwise make all([]) report success and silently skip missing tables.
-    required_tables = {
-        "accounts_user", "procurement_notice", "procurement_noticeversion",
-        "procurement_document", "procurement_documentversion",
-        "procurement_proposal", "procurement_proposalrevision",
-        "procurement_proposalsection", "jobs_job", "jobs_jobattempt",
-    }
+    required_tables = set(MVP_TABLES if version == "2.0" else LEGACY_TABLES)
+    fingerprints = db_meta.get("mvp_fingerprints")
+    if version == "2.0" and (
+        not isinstance(fingerprints, dict) or set(fingerprints) != set(MVP_FINGERPRINT_TABLES)
+        or any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value)
+               for value in fingerprints.values())
+    ):
+        raise ValueError("MVP fingerprint inventory incomplete")
     table_counts = db_meta.get("table_counts")
     if (not isinstance(table_counts, dict)
             or set(table_counts) != required_tables
@@ -259,6 +272,7 @@ def run_rehearsal(
         table_parities = {}
         fk_errors = []
         new_write_ok = False
+        mvp_content_match = None
     
         try:
             with restored_conn.cursor() as cur:
@@ -286,6 +300,9 @@ def run_rehearsal(
                             "error": str(e),
                         }
     
+                if version == "2.0":
+                    mvp_content_match = get_mvp_fingerprints(restored_conn) == fingerprints
+
                 # B. Foreign Key Integrity Checks
                 fk_queries = [
                     (
@@ -370,7 +387,7 @@ def run_rehearsal(
 
     # Parity success criteria: all tables matched
     parity_all_matched = all(p["matched"] for p in table_parities.values())
-    rehearsal_success = parity_all_matched and (len(fk_errors) == 0) and new_write_ok
+    rehearsal_success = parity_all_matched and (len(fk_errors) == 0) and new_write_ok and mvp_content_match is not False
 
     report = {
         "rehearsal_id": f"rehearsal_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
@@ -380,6 +397,8 @@ def run_rehearsal(
         "total_duration_seconds": total_duration,
         "rpo_status": "DB_COUNT_PARITY_ONLY" if parity_all_matched else "DB_COUNT_MISMATCH",
         "storage_scope": manifest.get("coverage", "LEGACY_UNVERIFIED"),
+        "verification_scope": "MVP_V2" if version == "2.0" else "LEGACY_PARTIAL",
+        "mvp_content_verification": "NOT_INCLUDED" if mvp_content_match is None else ("PASS" if mvp_content_match else "FAIL"),
         "storage_recovery_verification": storage_recovery,
         "table_parities": table_parities,
         "fk_integrity_errors": fk_errors,
@@ -411,6 +430,7 @@ if __name__ == "__main__":
     parser.add_argument("--rehearsal-db", default="sm03_restore_rehearsal", help="Rehearsal database name")
     parser.add_argument("--config", required=True, help="Explicit isolated private connection configuration")
     parser.add_argument("--trusted-dump-sha256", required=True, help="SHA-256 from independently approved private backup record")
+    parser.add_argument("--trusted-manifest-sha256", help="Required for v2 from independently approved private record")
     parser.add_argument("--keep-db", action="store_true", help="Keep rehearsal DB without dropping")
     args = parser.parse_args()
 
@@ -423,6 +443,7 @@ if __name__ == "__main__":
         config_path=cfg_p,
         keep_db=args.keep_db,
         trusted_dump_sha256=args.trusted_dump_sha256,
+        trusted_manifest_sha256=args.trusted_manifest_sha256,
     )
     # A parity/FK/write failure returns a FAILED report without raising. Propagate
     # it as a nonzero process exit so CI and automation cannot mark it successful.

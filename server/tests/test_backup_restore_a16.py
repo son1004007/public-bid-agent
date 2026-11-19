@@ -57,7 +57,7 @@ class BackupRestoreA16Tests(TestCase):
         with open(manifest_path, "r", encoding="utf-8") as f:
             manifest = json.load(f)
 
-        self.assertEqual(manifest["manifest_version"], "1.0")
+        self.assertEqual(manifest["manifest_version"], "2.0")
         self.assertTrue(manifest["database"]["dump_size_bytes"] > 0)
         self.assertEqual(len(manifest["database"]["dump_sha256"]), 64)
         self.assertEqual(manifest["coverage"], "DB_AND_STORAGE")
@@ -71,9 +71,12 @@ class BackupRestoreA16Tests(TestCase):
             config_path=cfg_path,
             keep_db=False,
             trusted_dump_sha256=sha256_file(bundle_dir / "db_dump.sql"),
+            trusted_manifest_sha256=sha256_file(manifest_path),
         )
 
         self.assertEqual(report["status"], "SUCCESS")
+        self.assertEqual(report["verification_scope"], "MVP_V2")
+        self.assertEqual(report["mvp_content_verification"], "PASS")
         self.assertEqual(report["rpo_status"], "DB_COUNT_PARITY_ONLY")
         self.assertEqual(report["new_write_verification"], "PASS")
         self.assertEqual(report["storage_recovery_verification"], "PASS")
@@ -182,6 +185,7 @@ class BackupRestoreA16Tests(TestCase):
             patch.object(backup_system, "load_db_config", return_value=cfg),
             patch("psycopg.connect", return_value=conn),
             patch.object(backup_system, "get_table_counts", side_effect=fake_counts),
+            patch.object(backup_system, "get_mvp_fingerprints", return_value={}),
             patch.object(backup_system.subprocess, "run", side_effect=fake_dump),
         ):
             bundle = backup_system.create_backup(output_dir=self.output_dir)
