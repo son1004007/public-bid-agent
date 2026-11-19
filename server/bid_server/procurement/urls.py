@@ -1,6 +1,7 @@
 """조달 공고 URL 라우팅 계약."""
 from django.urls import path
 from .cost_service import CostScenarioAPIView
+from .shared_review_service import SharedReviewAPIView
 from .views import (
     NoticeListAPIView,
     NoticeDetailAPIView,
@@ -21,6 +22,7 @@ urlpatterns = [
     path("notices/<uuid:notice_id>", NoticeDetailAPIView.as_view(), name="notice-detail"),
     path("notices/<uuid:notice_id>/versions", NoticeVersionsAPIView.as_view(), name="notice-versions"),
     path("notices/<uuid:notice_id>/cost-scenario", CostScenarioAPIView.as_view(), name="notice-cost-scenario"),
+    path("notices/<uuid:notice_id>/shared-review", SharedReviewAPIView.as_view(), name="shared-review"),
     path("proposals", ProposalListAPIView.as_view(), name="proposal-list"),
     path("proposals/<uuid:pk>", ProposalDetailAPIView.as_view(), name="proposal-detail"),
     path("proposals/<uuid:pk>/revisions", ProposalRevisionCreateAPIView.as_view(), name="proposal-revisions"),

@@ -1,3 +1,7 @@
+## MVP-04 shared review (candidate)
+
+GET/POST `/api/v1/notices/<notice_id>/shared-review` requires exactly one approved active department membership. Explicit `can_manage_cost` publishes the server-calculated shared scenario; `can_decide` controls human decisions independently. Event revisions serialize under scope/notice locks; no free-text/attachments/raw aggregate input. BID is an internal decision, not bid submission. Migration 0008 is candidate. Actual company policy, provisioning, historical access and release checks pending. Do not apply to production before approval.
+
 ## MVP-03 aggregate cost scenario (candidate)
 
 GET/POST `/api/v1/notices/<notice_id>/cost-scenario` is session-scoped. No raw aggregate HTTP input, no historical basis access. A single active explicit CostMembership and designated approver with current approved basis are required; defaults deny. Migration 0007 is candidate only. Do not provision live values until organization approves the aggregate policy, period/allocation and rounding, memberships and operator workflow. Scenario amounts are VAT-exclusive and include all entered cost assumptions; not a stored approved estimate. No real production migration was run.

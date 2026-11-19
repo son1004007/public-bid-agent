@@ -1,3 +1,8 @@
+## 2026-11-19 MVP-04 — 공동 검토 및 결정 후보 (IMPLEMENTED_UNVERIFIED)
+
+- Department-scoped append-only review ledger/migration 0008; independent can_decide permission and cost publication permission, current notice and expected event revision. Structured opinion and reason only; BID requires explicit five human attestations, active official notice and current published estimate within capacity. No actual bid submission. Current estimate uses coarse approved cost basis only; old basis amounts hidden. Existing document ownership unchanged. UI includes separate publication click and role-gated decision controls, current revision history (50 events). Prior notice versions retained in DB; historical-view UI and actual operational approval/provisioning pending.
+- Added synthetic scope/cross-department/revocation/conflict/decision and shared estimate tests. Previous 9b696e8 foundation and harness success observed, other CI pending; new SHA CI and migration checks pending. Independent REVIEW_DEBT and release NO_GO remain. No company data/actual account/production changes. Next MVP-05 integration and remaining release prerequisites.
+
 ## 2026-11-19 MVP-02/03 frontend regression follow-up
 
 - Exact cac2ec8 CI 3/4 PASS; Sprint 1 frontend job 135399739371 failed synthetic workspace security test because mock DOM did not implement createElement/appendChild used by RFP panel. Extended mock and explicit hostile evidence/cost closure assertions. Actual browser acceptance on cac2ec8 passed server foundation. New SHA validation pending; no relaxation of security assertions. No production changes.

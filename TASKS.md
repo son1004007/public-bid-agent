@@ -49,6 +49,10 @@ P0 보안 보완부터 시작하되 실제 관리자 조치·운영 승인·독�
 
 - MVP-02 Sprint 1 frontend mock regression identified (135399739371); mock DOM + hostile RFP/cost close regression updated. Verify exact new SHA before marking complete.
 
+### 2026-11-19 MVP-04 진행 기록
+
+- 사업부 공동 검토 event + 별도 결정 권한, 정형 의견, 지정 원가 승인자의 공유 견적 게시, 지정 결정자의 명시 5개 확인 및 참여/보류/미참여, revision 및 최신 기준 검증. IMPLEMENTED_UNVERIFIED; 실제 조직 정책/기준 발급 및 이전 공고 차수 이력 조회, 독립 검수 및 CI 남음. 다음 MVP-05 통합 인수, 남은 MVP 차단 확인 및 승인 범위 점검.
+
 ### 실행 원칙 및 다음 재개 지점
 
 - 다음: MVP-00 문서 추출 권한 수명 회귀 보완 → 검증 → MVP-01. 이미 성공한 DB 개별 복원 및 브라우저 기록은 해당 SHA/범위에서 재사용한다. 통합 복원·릴리스 롤백은 별도이며 새 SHA에서 과거 CI를 재사용해 통과라 주장하지 않는다. 검수는 논리적 단위로 수행하고 불필요한 반복 조사/완벽주의를 피한다.

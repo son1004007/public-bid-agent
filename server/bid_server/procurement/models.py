@@ -543,6 +543,7 @@ class CostMembership(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     active = models.BooleanField(default=False)
     can_manage_cost = models.BooleanField(default=False)
+    can_decide = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
@@ -582,4 +583,24 @@ class DepartmentCostBasis(models.Model):
                 labor_total_krw__gt=0, headcount__gte=1, minimum_headcount__gte=2,
                 rate_rounding_krw__gt=0, capacity_rounding_mm__gt=0,
                 period_end__gte=models.F("period_start")), name="cost_basis_valid_values"),
+        ]
+
+
+class SharedBidReviewEvent(models.Model):
+    """Append-only department review ledger; no raw aggregate or arbitrary text."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    department = models.ForeignKey(CostDepartment, on_delete=models.PROTECT)
+    notice_version = models.ForeignKey(NoticeVersion, on_delete=models.PROTECT)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    revision = models.PositiveIntegerField()
+    kind = models.CharField(max_length=20)
+    payload = models.JSONField(default=dict)
+    basis = models.ForeignKey(DepartmentCostBasis, null=True, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["department", "notice_version", "revision"], name="shared_review_revision_unique"),
+            models.CheckConstraint(condition=models.Q(revision__gte=1, kind__in=["OPINION", "ESTIMATE", "DECISION"]),
+                                   name="shared_review_event_valid"),
         ]

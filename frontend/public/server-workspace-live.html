@@ -507,6 +507,8 @@
       <div id="dReview" aria-live="polite">-</div>
       <h3>예상 사업 손익 (VAT 제외)</h3>
       <div id="dCost" aria-live="polite">원가 기준 확인 필요</div>
+      <h3>사업부 공동 검토 및 참여 결정</h3>
+      <div id="dShared" aria-live="polite">공동 검토 권한 확인 필요</div>
     </section>
     <div style="margin-top: auto; border-top: 1px solid var(--line); padding-top: 18px; display: flex; gap: 10px;">
       <a id="dG2bLink" hidden target="_blank" rel="noopener noreferrer" class="primary button" style="flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; color: #fff; background: var(--accent); font-weight: 600;">
@@ -582,7 +584,7 @@ function clearBusiness() {
   document.getElementById('collectionStatus').textContent = '수집 상태 미확인';
   document.getElementById('connectionStatus').textContent = '연결 미확인';
   closeDrawer();
-  for (const id of ['dTitle','dNoticeNo','dBuyer','dBudget','dDeadline','dCategories','dSourceUrl','dDocuments','dReview','dCost']) document.getElementById(id).textContent = '-';
+  for (const id of ['dTitle','dNoticeNo','dBuyer','dBudget','dDeadline','dCategories','dSourceUrl','dDocuments','dReview','dCost','dShared']) document.getElementById(id).textContent = '-';
   const link = document.getElementById('dG2bLink');
   link.removeAttribute('href'); link.hidden = true;
 }
@@ -844,6 +846,79 @@ function renderReview(review) {
   }
 }
 
+async function sharedEvent(noticeId, seq, context, kind, payload) {
+  if (!fullAccess || seq !== detailSeq) return false;
+  const csrf = await requestApi('/api/v1/auth/csrf');
+  if (!csrf.ok || seq !== detailSeq || !fullAccess) return false;
+  const token = (await csrf.json()).data.csrf_token;
+  if (seq !== detailSeq || !fullAccess) return false;
+  const res = await requestApi('/api/v1/notices/' + encodeURIComponent(noticeId) + '/shared-review', {
+    method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':token},
+    body:JSON.stringify({kind,notice_version_id:context.notice_version_id,expected_revision:context.revision,payload})
+  });
+  if (seq !== detailSeq || !fullAccess) return false;
+  if (res.status === 401) { showSession(null,'세션 재인증 필요'); return false; }
+  if (!res.ok) return false;
+  await loadSharedReview(noticeId, seq);
+  return true;
+}
+
+async function loadSharedReview(noticeId, seq) {
+  const target = document.getElementById('dShared');
+  try {
+    const body = await readBusiness('/api/v1/notices/' + encodeURIComponent(noticeId) + '/shared-review');
+    if (seq !== detailSeq || !fullAccess) return;
+    const context = body.data;
+    target.replaceChildren();
+    if (context?.state !== 'READY') { target.textContent = '승인된 사업부 공동 검토 권한 없음'; return; }
+    const add = (tag, value) => { const n = document.createElement(tag); n.textContent = value; target.append(n); return n; };
+    const labels = {REVIEW:'검토 필요',QUALIFICATION_RISK:'참가자격 확인 필요',TECHNICAL_RISK:'기술 검토 필요',STAFFING_RISK:'인력 검토 필요',COST_RISK:'원가 검토 필요',SUPPORT:'참여 의견',OPPOSE:'미참여 의견',BID:'참여',HOLD:'보류',NO_BID:'미참여',READY:'검토 완료',EVIDENCE_PENDING:'근거 미확인',STRATEGY:'사업 전략'};
+    const current = context.current_decision?.payload;
+    add('p', '현재 판단: ' + (current ? (labels[current.decision] || '미확인') + (current.state ? ' · 재검토 필요' : '') : '미결정'));
+    const estimate = context.current_estimate?.payload;
+    if (estimate?.result) add('p','공유 추정 손익: ' + estimate.result.profit_krw + '원 / ' + estimate.result.margin_percent + '% · 미확정 투찰가');
+    else add('p','현재 승인 기준의 공유 견적 없음');
+    const selector = (options) => {
+      const select = document.createElement('select');
+      for (const key of options) {
+        const option=document.createElement('option'); option.value=key; option.textContent=labels[key] || key; select.append(option);
+      }
+      target.append(select); return select;
+    };
+    const status = add('p','');
+    let busy = false;
+    const button = (label, kind, makePayload) => {
+      const btn = add('button',label); btn.type='button';
+      btn.addEventListener('click',async()=>{
+        if (busy || !fullAccess || seq !== detailSeq) return;
+        busy=true; btn.disabled=true;
+        try {
+          if (!await sharedEvent(noticeId,seq,context,kind,makePayload())) status.textContent='저장 실패 또는 변경 충돌. 상세 화면을 다시 확인하십시오.';
+        } catch (_) { status.textContent='저장 실패'; }
+        finally { busy=false; btn.disabled=false; }
+      });
+    };
+    const opinion = selector(['REVIEW','QUALIFICATION_RISK','TECHNICAL_RISK','STAFFING_RISK','COST_RISK','SUPPORT','OPPOSE']);
+    button('공동 의견 등록','OPINION',()=>({opinion:opinion.value}));
+    if (context.can_decide) {
+      const reason = selector(['EVIDENCE_PENDING','QUALIFICATION_RISK','TECHNICAL_RISK','STAFFING_RISK','COST_RISK','STRATEGY']);
+      for (const decision of ['HOLD','NO_BID']) button(labels[decision]+' 결정','DECISION',()=>({decision,reason:reason.value,attestations:[],estimate_revision:0}));
+      if (context.can_bid) {
+        const checks = {};
+        for (const [key,label] of Object.entries({official_rfp:'공식 RFP 확인',qualification:'필수 참가자격 확인',technology:'기술 수행 가능 확인',staffing:'인력·공수 확인',cost:'공유 견적 확인'})) {
+          const item=add('label',label+' '); const input=document.createElement('input'); input.type='checkbox'; item.append(input); checks[key]=input;
+        }
+        button('참여 결정 (입찰 제출 아님)','DECISION',()=>({decision:'BID',reason:'READY',attestations:Object.keys(checks).filter(k=>checks[k].checked),estimate_revision:context.current_estimate.revision}));
+      }
+    }
+    for (const event of context.history || []) {
+      const p=event.payload || {};
+      const summary=p.opinion ? labels[p.opinion] : p.decision ? labels[p.decision] : '공유 견적';
+      add('p','v'+event.revision+' · '+summary+' · '+event.created_at+' · 작성자 '+event.actor_id);
+    }
+  } catch (_) { if (seq === detailSeq && fullAccess) target.textContent='공동 검토 조회 실패'; }
+}
+
 async function loadCostScenario(noticeId, seq) {
   const target = document.getElementById('dCost');
   const path = '/api/v1/notices/' + encodeURIComponent(noticeId) + '/cost-scenario';
@@ -875,8 +950,23 @@ async function loadCostScenario(noticeId, seq) {
     button.type = 'submit'; button.textContent = '예상 손익 계산';
     const output = document.createElement('p');
     form.append(button); target.append(form, output);
+    const publish = document.createElement('button'); publish.type='button'; publish.hidden=true; publish.textContent='이 계산 결과를 공동 견적으로 게시'; target.append(publish);
+    let calculated = null;
+    form.addEventListener('input',()=>{ calculated=null; publish.hidden=true; });
+    publish.addEventListener('click',async()=>{
+      if (!calculated || seq !== detailSeq || !fullAccess) return;
+      publish.disabled=true;
+      try {
+        const response=await readBusiness('/api/v1/notices/'+encodeURIComponent(noticeId)+'/shared-review');
+        if (seq !== detailSeq || !fullAccess || !calculated) return;
+        const ctx=response.data;
+        if (!ctx?.can_publish_estimate || !await sharedEvent(noticeId,seq,ctx,'ESTIMATE',calculated)) output.textContent='공유 견적 게시 실패 또는 변경 충돌';
+        else { output.textContent='공동 견적 게시 완료 (확정 투찰가 아님)'; calculated=null; publish.hidden=true; }
+      } catch (_) { if (seq===detailSeq && fullAccess) output.textContent='공유 견적 게시 실패'; }
+      finally { publish.disabled=false; }
+    });
     form.addEventListener('submit', async event => {
-      event.preventDefault(); button.disabled = true; output.textContent = '계산 중...';
+      event.preventDefault(); calculated=null; publish.hidden=true; button.disabled = true; output.textContent = '계산 중...';
       try {
         const csrf = await requestApi('/api/v1/auth/csrf');
         if (!csrf.ok || seq !== detailSeq || !fullAccess) return;
@@ -890,6 +980,10 @@ async function loadCostScenario(noticeId, seq) {
         if (!res.ok) { output.textContent = '입력 또는 기준 검증 실패. 상세 화면을 다시 열어 확인하십시오.'; return; }
         const data = (await res.json()).data;
         if (seq !== detailSeq || !fullAccess) return;
+        calculated = Object.freeze({...payload});
+        const permission=await readBusiness('/api/v1/notices/'+encodeURIComponent(noticeId)+'/shared-review');
+        if (seq !== detailSeq || !fullAccess) return;
+        publish.hidden = !permission.data?.can_publish_estimate || !calculated;
         output.textContent = '추정 인건비 ' + data.labor_krw + '원 / 총원가 ' + data.total_cost_krw + '원 / 예상 이익 ' + data.profit_krw + '원 / 이익률 ' + data.margin_percent + '% · ' + (data.capacity === 'REVIEW_REQUIRED' ? '가용 공수 검토 필요' : '공개 기준 공수 이내') + ' · 미승인 시뮬레이션';
       } catch (_) { if (seq === detailSeq && fullAccess) output.textContent = '계산 실패'; }
       finally { button.disabled = false; }
@@ -916,6 +1010,7 @@ async function openNoticeDetail(noticeId) {
   document.getElementById('dDocuments').innerHTML = '<div class="loading-spinner"></div> 첨부문서 확인 중...';
   document.getElementById('dReview').textContent = '검토 근거 확인 중...';
   document.getElementById('dCost').textContent = '원가 기준 확인 중...';
+  document.getElementById('dShared').textContent = '공동 검토 확인 중...';
 
   try {
     const body = await readBusiness(`/api/v1/notices/${encodeURIComponent(noticeId)}`);
@@ -940,6 +1035,7 @@ async function openNoticeDetail(noticeId) {
 
     renderReview(data.review);
     void loadCostScenario(noticeId, seq);
+    void loadSharedReview(noticeId, seq);
     const docs = data.documents || [];
     if (!docs.length) {
       document.getElementById('dDocuments').innerHTML = '<div style="font-size:12px; color:var(--muted);">조회 가능한 첨부 문서가 없습니다.</div>';
@@ -968,6 +1064,7 @@ async function openNoticeDetail(noticeId) {
 function closeDrawer() {
   detailSeq++;
   document.getElementById('dCost').replaceChildren();
+  document.getElementById('dShared').replaceChildren();
   document.getElementById('drawerOverlay').classList.remove('open');
 }
 

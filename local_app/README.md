@@ -1,3 +1,5 @@
+> **2026-11-19 MVP-04 후보:** 동일 승인 사업부 정형 의견·공유 견적·참여/보류/미참여 결정과 차수별 append-only 이력 연결. 별도 업무 권한·CSRF·기대 revision, 현재 기준 검증, 과거 기준 금액 비노출. 실제 입찰 제출·회사 자료/정책 확정·배포 없음. 검증은 CURRENT_STATE.md와 CI 확인.
+
 > **2026-11-19 MVP-02/03 frontend test:** synthetic workspace DOM fixture supports text-node construction and verifies hostile RFP excerpts remain text, cost view clears on drawer close; previous mock lacked createElement. Latest CI must be checked.
 
 > **2026-11-19 MVP-03 후보:** 사업부 집계 기준 DB 모델 및 승인된 가공 기준 기반 손익 시뮬레이션(공고 상세) 추가. 개인 급여 입력/API 없음. 운영 기준 발급·정식 승인/검수 저장은 아직 연결하지 않으며 승인된 명시적 사업부 구성원·현재 기준 없으면 계산 차단. 실자료 입력/운영 배포 미실행.
