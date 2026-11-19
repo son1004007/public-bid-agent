@@ -1,3 +1,7 @@
+## 2026-11-20 Multi-LLM Provider Router proposal only
+
+- User asked how GPT connects to proposed data1 bid server and noted Claude/Gemini might also be needed. Added [13 provider-neutral design](docs/server-migration/13-multi-llm-provider-routing.md) and HBR-04/06/08 cross references: server-side API adapters, OFF by default, explicit company/vendor approval and budget, provider-independent evidence/schema checks. DESIGN_PROPOSAL only. No API keys, provider login, code changes, live inference, runtime deployment, real company data, or test/CI execution in this change. Existing global prohibition on automatic AGY/Gemini delegation unchanged.
+
 ## 2026-11-20 Enterprise capability and cross-department Hybrid RAG design
 
 - Extended existing HBR design for legal-entity facts, department contributions, quantitative SQL and qualitative evidence, permission-scoped cross-department capability search, capacity pool/support approval and alternative scenarios; separate enterprise cost and lead-department allocation. New indexed doc 12 and updated overview/tasks. Design proposal only; no real company data, models, application code, database or runtime changes. Separate AI review NOT_RUN_OPTIONAL under latest global CONTROL; self-check links and document consistency, no test/CI or deployment claim. Prior review debt solely from absence of independent AI does not block personal development, actual defects/approval gates remain. Existing open account-remediation action unchanged. HBR-01 remains next.
