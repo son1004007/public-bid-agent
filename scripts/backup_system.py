@@ -28,18 +28,15 @@ def get_pg_bin_path() -> Path:
 
 
 def load_db_config(config_path: Path | None = None) -> dict:
-    if config_path is not None:
-        with open(config_path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    env_cfg = os.environ.get("SM03_TEST_DB_CONFIG_FILE")
-    if env_cfg:
-        with open(env_cfg, "r", encoding="utf-8") as f:
-            return json.load(f)
-    default_cfg = Path(os.environ.get("LOCALAPPDATA", "")) / "PublicBidAgent" / "sm03-postgres" / "connection.private.json"
-    if default_cfg.exists():
-        with open(default_cfg, "r", encoding="utf-8") as f:
-            return json.load(f)
-    raise RuntimeError("PostgreSQL connection configuration file not found.")
+    """Require explicit private local database configuration, never a fallback."""
+    if config_path is None:
+        raise ValueError("Explicit private database configuration required")
+    # Reuse the application configuration contract without importing settings.
+    server = str(Path(__file__).resolve().parents[1] / "server")
+    if server not in sys.path:
+        sys.path.insert(0, server)
+    from bid_server.config import load_local_database
+    return load_local_database(config_path)
 
 
 def sha256_file(path: Path) -> str:
@@ -127,7 +124,7 @@ def create_backup(
     env["PGPASSWORD"] = cfg["PASSWORD"]
     conn = psycopg.connect(
         host=cfg["HOST"], port=cfg["PORT"], dbname=cfg["NAME"],
-        user=cfg["USER"], password=cfg["PASSWORD"],
+        user=cfg["USER"], password=cfg["PASSWORD"], connect_timeout=5, sslmode="disable",
     )
     try:
         with conn.cursor() as cur:
