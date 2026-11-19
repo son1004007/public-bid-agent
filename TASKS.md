@@ -1,3 +1,9 @@
+## 2026-11-19 PR #5 checkpoint — isolated notebook HTTP verified
+
+- [x] Exact 0b4589fd: four CI workflows pass after one unchanged-source Windows Chrome startup retry; portable HTTP Windows/Linux and Ubuntu Chrome steps confirmed.
+- [x] Actual notebook isolated source checkout, dependency check, Django check, portable HTTP (1), proposal regression (16) PASS; original checkout/status count and loopback listener observed unchanged.
+- [ ] Full protected-data baseline / actual approved storage roots and ACL, credential incident applicability/remediation, independent fresh-context review, actual Windows browser and rollback. Combined remote command timed out; use bounded individual commands, do not terminate unrelated processes. Main merge/deployment NO_GO pending gates.
+
 ## 2026-11-19 PR #5 checkpoint — notebook timeout and portable HTTP
 
 - [x] Exact 78fa5904: four CI workflows passed; actual Chrome test log confirmed; 188 foundation tests (5 skipped).
