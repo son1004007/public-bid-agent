@@ -87,6 +87,13 @@ class WorkspaceBrowserTest(LiveServerTestCase):
         if os.name != "nt":
             print(subprocess.check_output([chrome, "--version"], text=True, timeout=10).strip(), flush=True)
 
+        if os.environ.get("BID_WORKSPACE_CDP") == "1":
+            node = shutil.which("node")
+            self.assertTrue(node and Path(node).is_absolute(), "Installed Node.js 22+ required")
+            runner = Path(__file__).resolve().parents[2] / "scripts" / "test_workspace_cdp.cjs"
+            subprocess.run([node, str(runner), chrome, self.live_server_url], check=True, timeout=95)
+            return
+
         driver = os.environ.get("BID_CHROMEDRIVER_BINARY") or shutil.which("chromedriver")
         if not driver:
             name = "chromedriver.exe" if os.name == "nt" else "chromedriver"
