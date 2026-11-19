@@ -41,6 +41,18 @@ jobs:
         timeout-minutes: 5
         run: python server/manage.py test tests.test_workspace_browser --settings=bid_server.settings.test --verbosity 2
 
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: runner.os == 'Windows'
+        with:
+          node-version: '22'
+      - name: Driver-free Chrome DevTools workspace acceptance (synthetic only)
+        if: runner.os == 'Windows'
+        env:
+          BID_WORKSPACE_BROWSER: '1'
+          BID_WORKSPACE_CDP: '1'
+        timeout-minutes: 3
+        run: python server/manage.py test tests.test_workspace_browser --settings=bid_server.settings.test --verbosity 2
+
   postgres-authentication:
     runs-on: ubuntu-latest
     services:
