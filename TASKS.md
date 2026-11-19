@@ -1,3 +1,7 @@
+## 2026-11-19 latest MVP priority
+
+- [ ] NAS periodic official G2B refresh: isolated collector/DB writer, real run/replay, new schedule only after approval; 6-hour candidate, 24-hour overlap. Reboot auto-start explicitly deferred by owner (do not treat as complete). Real RFP next.
+
 ## 2026-11-19 NAS PostgreSQL — live verification
 
 - [x] Dedicated PostgreSQL 16.15 persistent DB, source backup, exact typed-field migration and live cutover; 850 notices / 1,697 versions / 847 official links / 3,621 serialized objects, existing account preserved, sessions excluded. Independent-client HTTPS shell/health and anonymous 401 PASS. Archive export/decode PASS, real restore pending.

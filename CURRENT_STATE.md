@@ -1,3 +1,7 @@
+## 2026-11-19 NAS periodic collection candidate
+
+- Owner deferred NAS reboot auto-start; next priority is new dedicated NAS G2B refresh. Candidate adds one-shot official 24 h collection and PostgreSQL snapshot ingestion (explicit apply, atomic, lock, stale revision/cancellation guards, same-order conflict hold, public-only metadata). Existing Windows/other schedules unchanged. Six-hour cadence proposed for NAS preview with 24 h overlap, separate user confirmation for new Gateway schedule. Tests and real run pending; independent review debt/release NO_GO remain.
+
 ## 2026-11-19 NAS preview — dedicated PostgreSQL live cutover PASS
 
 - Dedicated PostgreSQL 16.15 isolated Docker data, socket, app, admin, backup and private-media volumes provisioned; network none, TCP not listening/published, SCRAM-SHA-256; separate application DB role with no cluster administrative privileges. Persistent private secret files, no secret contents in Git. The existing NAS DB and services were not modified.
