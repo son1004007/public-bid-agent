@@ -1,3 +1,5 @@
+> **2026-11-20 MCP 공개 도구 소스 후보:** [14 MCP 연결 계약](docs/server-migration/14-bid-mcp-interface.md). Django 조달 DB에서 공개 공식 공고 메타데이터만 조회하는 stdio MCP 및 기본 차단·테스트 소스 후보. data1 배포, HTTP·OAuth, 회사 비공개 자료, GPT/Claude/Gemini 앱 연결은 미완료. 개인·조직 데이터 보안과 전역 AGY/Gemini 자동 위임 중지 유지.
+
 > **2026-11-20 다중 LLM 연동 후보:** [13 GPT·Claude·Gemini Provider Router 제안](docs/server-migration/13-multi-llm-provider-routing.md) 및 TASKS.md HBR-04/06/08 참고. 세 공급자 모두 미래 지원 후보이지 현재 연동/승인/외부 데이터 전송을 의미하지 않는다. 기본 OFF, 로컬 검색 먼저, 회사 데이터 반출 정책 및 전역 AGY/Gemini 자동 위임 금지 유지.
 
 > **2026-11-20 전사 역량 및 부서 협업 확장:** [12 전사 역량·협업 Hybrid RAG 설계](docs/server-migration/12-enterprise-capability-hybrid-rag.md)를 HBR 최신 상세로 적용한다. 법인 자격/실적과 주관·지원 부서 역량/가용성을 분리, 정량 SQL + 정성 RAG, 자체/사내/외부/혼합 시나리오 및 전사·주관 손익 비교. 기존 자료 승인/개인 원가 금지/업무권한 유지. 개인 프로젝트 독립 AI 리뷰는 최신 CONTROL에 따라 선택; 필수 자체 검증·실제 결함·회사/운영 승인 유지.
