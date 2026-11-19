@@ -25,3 +25,5 @@
 - c5b35d9 actual hosted PostgreSQL nonempty MVP DB+file restore/content test PASS (135409832456); count/fingerprint and recovery only, not operational cutover rollback. Targeted author review candidate hardens stale cost publication and approver eligibility; new SHA verification pending. Independent review remains outstanding.
 
 - Read-only pilot preflight and [operations handoff](MVP05_PILOT_OPERATIONS_2026-11-19.md) added as candidate. Production target not authorized, no deployment/reviewer GO. CHECKS_PASS is not release approval.
+
+- NAS isolated synthetic candidate 4853ab2 runs locally with focused 24 tests PASS and anonymous access denied. Tailnet HTTPS route authorization denied; no remote browser/login evidence. Production gate unchanged.

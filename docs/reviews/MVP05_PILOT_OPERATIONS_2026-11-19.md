@@ -36,3 +36,7 @@ python server/manage.py pilot_preflight --approved-read-only --settings=bid_serv
 python server/manage.py pilot_provision --plan /private/approved-plan.json --trusted-plan-sha256 APPROVED_SHA256 --settings=bid_server.settings.base
 ```
 기본은 검증만 한다. 실제 승인·독립 검수·환경 확인 후 운영자가 --apply 추가 및 대화형 확인으로 최초 발급한다. expected_revision=0은 신규 사업부만 허용; 이후 동일 membership과 정확한 최신 revision을 제시하면 이전 기준을 보존하고 새 기준을 등록한다. 기존 사용자 생성/비밀번호 변경/업무 권한 변경은 이 명령의 범위 밖이다. 승인 기록·원가 구성/배부방식·적용 시각은 회사 지정 비공개 원장에 보존해야 한다. 최소 인원·반올림 값은 정책 입력이며 코드가 회사 정책을 인증하지 않는다. 시범 운영 승인 전 실행하지 않는다.
+
+
+## NAS 합성 검증용 미리보기 결과
+- 사용자 요청에 따라 4853ab2 후보를 실제 NAS에 별도 합성 인스턴스로 설치했다. 운영 DB·회사 데이터·기존 서비스를 사용하지 않는다. 로컬 화면/health 및 인증 없는 공고 차단 확인. HTTPS 경로 추가는 권한 거부, 현행 설정 불변. 별도 경로 승인 및 실제 인증 검증 전 접속 가능하다고 판정하지 않는다. 임시 실행 환경은 재부팅 후 지속성을 검증하지 않았다. 상세 서버 위치·계정·비밀번호는 공개 Git에 기록하지 않는다.
