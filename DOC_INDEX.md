@@ -15,6 +15,7 @@
 | [전사 역량·부서 협업 및 전체 도식](docs/server-migration/12-enterprise-capability-hybrid-rag.md) | 법인/부서 모델, SQL+RAG, 지원 승인·가용성·시나리오 손익 |
 | [GPT·Claude·Gemini 연동 후보](docs/server-migration/13-multi-llm-provider-routing.md) | 업체 중립 라우터·승인/비용/데이터 경계, 실제 연동 미구현 |
 | [공개 입찰 MCP 연결·검증](docs/server-migration/14-bid-mcp-interface.md) | 읽기 전용 MCP 도구 구현·테스트·원격 연결 미완료 게이트 |
+| [MCP 모델 실행·구독 CLI 적격성](docs/server-migration/15-mcp-provider-executor-subscription-policy.md) | 최신 사용자 방향, Gemini 4·구독 약관 확인, 서버→MCP→모델 실행 제안 |
 | [사업 담당자 안내](docs/server-migration/11-hybrid-rag-business-guide.md) | 쉬운 업무 흐름 및 가상 예시 |
 | [서버 실행·검증 안내](server/README.md) | 격리 환경과 설정 계약 |
 | [MVP-05 시범 운영 인계](docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md) | 실제 승인·환경 점검·운영자 명령 |
