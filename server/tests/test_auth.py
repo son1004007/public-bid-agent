@@ -53,6 +53,75 @@ class AuthenticationTests(TestCase):
         self.user.save()
         self.assertEqual(self.login().status_code, 200)
 
+    def contain(self, mode, answers, passwords=()):
+        from io import StringIO
+        from django.core.management import call_command
+        output = StringIO()
+        with patch("sys.stdin.isatty", return_value=True), patch("sys.stderr.isatty", return_value=True), \
+                patch("builtins.input", side_effect=answers), patch("getpass.getpass", side_effect=passwords):
+            call_command("contain_account", mode, stdout=output)
+        self.assertNotIn(OLD, output.getvalue())
+        self.assertNotIn(NEW, output.getvalue())
+
+    def test_operator_rotation_revokes_old_sessions_and_requires_new_password_change(self):
+        self.full()
+        other = self.client_for()
+        self.assertEqual(self.login(other).status_code, 200)
+        self.user.refresh_from_db()
+        epoch = self.user.auth_epoch
+        self.contain("--rotate", [self.user.username, "ROTATE"], [NEW, NEW])
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.auth_epoch, epoch + 1)
+        self.assertTrue(self.user.must_change_password)
+        self.assertTrue(self.user.check_password(NEW))
+        self.assertFalse(self.user.check_password(OLD))
+        self.assertIsNotNone(self.user.password_changed_at)
+        self.assertGreater(self.user.temporary_expires_at, timezone.now())
+        for client in (self.client, other):
+            self.assertEqual(client.get("/api/v1/auth/session", secure=True).status_code, 401)
+        self.assertEqual(self.login(password=OLD).status_code, 401)
+        response = self.login(password=NEW)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["data"]["access"], "PASSWORD_CHANGE_REQUIRED")
+        self.assertTrue(AuthEvent.objects.filter(kind="operator_password_reset", actor=None).exists())
+
+    def test_operator_disable_revokes_session_and_cannot_enable_by_rotation(self):
+        from django.core.management.base import CommandError
+        self.full()
+        other = User.objects.create_user(username="unrelated-fixture", password=OLD)
+        self.user.refresh_from_db()
+        epoch = self.user.auth_epoch
+        self.contain("--disable", [self.user.username, "DISABLE"])
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+        self.assertFalse(self.user.has_usable_password())
+        self.assertEqual(self.user.auth_epoch, epoch + 1)
+        self.assertEqual(self.client.get("/api/v1/auth/session", secure=True).status_code, 401)
+        with self.assertRaises(CommandError):
+            self.contain("--rotate", [self.user.username, "ROTATE"], [NEW, NEW])
+        self.user.refresh_from_db()
+        other.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+        self.assertTrue(other.is_active)
+        self.assertTrue(other.check_password(OLD))
+
+    def test_operator_command_cancel_reuse_and_noninteractive_fail_closed(self):
+        from django.core.management import call_command
+        from django.core.management.base import CommandError
+        original = self.user.auth_epoch
+        with patch("sys.stdin.isatty", return_value=False), self.assertRaises(CommandError):
+            call_command("contain_account", "--disable")
+        for answers, passwords in (([self.user.username, "CANCEL"], []),
+                                   ([self.user.username, "ROTATE"], [OLD, OLD]),
+                                   ([self.user.username, "ROTATE"], [NEW, OLD])):
+            with self.subTest(answers=answers), self.assertRaises(CommandError):
+                self.contain("--rotate", answers, passwords)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.auth_epoch, original)
+        self.assertTrue(self.user.check_password(OLD))
+        self.assertTrue(self.user.is_active)
+        self.assertFalse(AuthEvent.objects.filter(kind__startswith="operator_").exists())
+
     def test_defaults_first_migration_and_hash(self):
         self.assertTrue(self.user.must_change_password)
         self.assertEqual(self.user.role, "lead")
