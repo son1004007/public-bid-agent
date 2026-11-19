@@ -36,7 +36,6 @@ jobs:
         run: python server/manage.py test tests.test_workspace_http --settings=bid_server.settings.test --verbosity 2
 
       - name: Real Chrome workspace HTTP acceptance (synthetic only)
-        if: runner.os == 'Linux'
         env:
           BID_WORKSPACE_BROWSER: '1'
         timeout-minutes: 5
