@@ -13,6 +13,9 @@ import re
 import subprocess
 import sys
 import time
+import tempfile
+import shutil
+import stat
 from datetime import datetime, timezone
 from pathlib import Path
 import psycopg
@@ -147,6 +150,55 @@ def run_rehearsal(
             or trusted_dump_sha256 != actual_dump_sha256):
         raise ValueError("Trusted dump SHA-256 required from an independent record")
 
+    # A coordinated bundle must enumerate every regular member and prove
+    # that a fresh, separate recovery directory can actually receive the bytes.
+    storage_recovery = "NOT_INCLUDED"
+    if manifest.get("coverage") == "DB_AND_STORAGE":
+        entries = storage_meta.get("files")
+        if (not isinstance(entries, list) or storage_meta.get("files_count") != len(entries)
+                or not bundle_storage_dir.is_dir() or (bundle_root / "storage").is_symlink()):
+            raise ValueError("Storage inventory incomplete")
+        expected = {}
+        for row in entries:
+            name = row["relative_path"]
+            member = Path(name)
+            if (member.is_absolute() or "\\" in name or ".." in member.parts
+                    or member.as_posix() != name or name.casefold() in expected
+                    or type(row.get("size_bytes")) is not int or row["size_bytes"] < 0
+                    or not re.fullmatch(r"[0-9a-f]{64}", row["sha256"])):
+                raise ValueError("Invalid storage inventory")
+            expected[name.casefold()] = row
+        observed = set()
+        for directory, dirs, files in os.walk(bundle_storage_dir, followlinks=False):
+            for name in dirs + files:
+                path = Path(directory) / name
+                meta = path.lstat()
+                if (stat.S_ISLNK(meta.st_mode) or getattr(meta, "st_file_attributes", 0) & 1024
+                        or not (stat.S_ISREG(meta.st_mode) or stat.S_ISDIR(meta.st_mode))):
+                    raise ValueError("Unsafe storage entry")
+                if stat.S_ISREG(meta.st_mode):
+                    rel = path.relative_to(bundle_storage_dir).as_posix()
+                    row = expected.get(rel.casefold())
+                    if (row is None or row["relative_path"] != rel or rel.casefold() in observed
+                            or meta.st_size != row["size_bytes"]):
+                        raise ValueError("Storage inventory mismatch")
+                    observed.add(rel.casefold())
+        if observed != set(expected):
+            raise ValueError("Storage inventory mismatch")
+        # This is a copy rehearsal, not restoration to a service's live media root.
+        # The bundle parent must be provisioned and protected by the operator.
+        with tempfile.TemporaryDirectory(prefix="storage-rehearsal-", dir=bundle_root) as temp:
+            destination = Path(temp)
+            for row in entries:
+                source = bundle_storage_dir / row["relative_path"]
+                target = destination / row["relative_path"]
+                target.parent.mkdir(parents=True, exist_ok=True)
+                with source.open("rb") as src, target.open("xb") as dst:
+                    shutil.copyfileobj(src, dst, length=65536)
+                if target.stat().st_size != row["size_bytes"] or sha256_file(target) != row["sha256"]:
+                    raise ValueError("Restored storage integrity mismatch")
+        storage_recovery = "PASS"
+
     # 2. Re-create Clean Target Rehearsal DB
     cfg = load_db_config(config_path)
     validate_rehearsal_target(rehearsal_db_name, cfg)
@@ -174,7 +226,8 @@ def run_rehearsal(
     # must not bypass cleanup or leave a partial database available for reuse.
     try:
         # 3. Restore Dump via psql
-        env = os.environ.copy()
+        env = {k: v for k, v in os.environ.items() if not k.upper().startswith("PG")}
+        env["PGCONNECT_TIMEOUT"] = "5"
         env["PGPASSWORD"] = cfg["PASSWORD"]
     
         restore_cmd = [
@@ -329,7 +382,8 @@ def run_rehearsal(
         "rto_seconds": rto_seconds,
         "total_duration_seconds": total_duration,
         "rpo_status": "DB_COUNT_PARITY_ONLY" if parity_all_matched else "DB_COUNT_MISMATCH",
-        "storage_scope": "INCLUDED" if storage_meta.get("files") else "EMPTY_OR_NOT_INCLUDED",
+        "storage_scope": manifest.get("coverage", "LEGACY_UNVERIFIED"),
+        "storage_recovery_verification": storage_recovery,
         "table_parities": table_parities,
         "fk_integrity_errors": fk_errors,
         "storage_integrity_errors": storage_verification_errors,
@@ -338,7 +392,8 @@ def run_rehearsal(
     }
 
     report_path = bundle_dir / "rehearsal_report.json"
-    report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    with report_path.open("x", encoding="utf-8") as stream:
+        json.dump(report, stream, indent=2, ensure_ascii=False)
 
     print(f"\n==========================================")
     print(f" Restore Rehearsal Summary: {report['status']}")
@@ -357,7 +412,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A16 Automated Restore Rehearsal Tool")
     parser.add_argument("bundle_dir", help="Path to backup bundle directory")
     parser.add_argument("--rehearsal-db", default="sm03_restore_rehearsal", help="Rehearsal database name")
-    parser.add_argument("--config", default=None, help="Path to connection.private.json")
+    parser.add_argument("--config", required=True, help="Explicit isolated private connection configuration")
     parser.add_argument("--trusted-dump-sha256", required=True, help="SHA-256 from independently approved private backup record")
     parser.add_argument("--keep-db", action="store_true", help="Keep rehearsal DB without dropping")
     args = parser.parse_args()
