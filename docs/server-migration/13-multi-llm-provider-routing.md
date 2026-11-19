@@ -1,3 +1,5 @@
+> **2026-11-20 최신 사용자 요구 정정:** [15 MCP Provider Executor·구독 CLI 조사](15-mcp-provider-executor-subscription-policy.md)가 모델 실행 방법의 최신 설계이다. 아래의 OpenAI/Anthropic/Google 직접 API 3개 노드는 이제 **기업용/허용 공급자 fallback 또는 선택적인 하위 adapter**이며 API-only 강제 방향이 아니다. 사용자는 Gateway가 **MCP client**로 모델 실행 MCP server를 호출하여 JSON을 수집·저장하기 원한다. 공식 구독 사용 조건을 충족하지 못한 개인 CLI 래핑은 금지한다. 기존 기본 OFF/권한/모델 호출 미승인 상태 유지.
+
 # 13. Multi-LLM Provider 연동 후보 — GPT / Claude / Gemini
 
 - 작성일: 2026-11-20 KST
