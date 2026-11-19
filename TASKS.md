@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — private service media
+
+- [x] Dedicated separate preprovisioned media root, strict local config and launcher ACL preflight; exact app candidate 6ee0b8de CI 4/4 PASS.
+- [x] Actual notebook root created and protected, launcher ValidateOnly PASS, synthetic store/read/digest rejection and ACL cleanup PASS. Existing service still unchanged.
+- [ ] Confirm backup uses explicitly selected media root; approved coordinated PostgreSQL/RFP backup, trusted isolated recovery/rollback and retained legacy baseline comparison. Do not copy operational data outside approved private storage.
+- [ ] Credential incident applicability/remediation, independent fresh-context review and actual notebook browser. Main merge/deploy remains NO_GO.
+
 ## 2026-11-19 PR #5 checkpoint — durable legacy JSON baseline
 
 - [x] New protected evidence-only directory created; verified directory/file ACL entries limited to current user, SYSTEM and Administrators.
