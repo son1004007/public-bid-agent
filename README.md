@@ -1,3 +1,5 @@
+> 문서 탐색: [DOC_INDEX.md](DOC_INDEX.md). 최신 상태는 CURRENT_STATE.md, 작업 순서는 TASKS.md를 확인합니다.
+
 > **2026-11-14 최신 서버 전환 설계:** [서버 전환 설계 목차](docs/server-migration/README.md)부터 읽는다. React/TypeScript + Django/DRF + PostgreSQL, 서버 작업 워커/일정, DB 계정·최초 비밀번호 변경 강제, SSO 제외. 조직 정책은 공개 Git 밖의 승인된 연결 설정에서 원본을 읽고 적용한다. **설계 문서만 작성됨(NOT_IMPLEMENTED)**; 과거 로컬 전용/SSO 목표 문구보다 이번 결정을 우선하되 기존 운영·데이터·작업은 보존한다.
 
 > H02 감사 테스트는 기존 개발 의존성 `packaging>=26,<27`을 재사용합니다. 큐 실행기 자체는 표준 라이브러리이며 감사 검사는 분리된 개발 Python에서 실행합니다.
