@@ -1,4 +1,5 @@
 # Loopback-only staging; not a production deployment.
+param([switch]$ValidateOnly)
 $ErrorActionPreference = "Stop"
 $repo = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $py = Join-Path $env:LOCALAPPDATA "PublicBidAgent\sm02-venv\Scripts\python.exe"
@@ -48,6 +49,10 @@ if (-not $acl.AreAccessRulesProtected -or $acl.GetOwner([Security.Principal.Secu
 # Validate settings before launching. No migration, account generation, or directory creation.
 & $py (Join-Path $repo "server\manage.py") check --settings=bid_server.settings.local
 if ($LASTEXITCODE -ne 0) { throw "Local settings validation failed" }
+if ($ValidateOnly) {
+    Write-Host "PRIVATE_MEDIA_PREFLIGHT_PASS"
+    exit 0
+}
 Write-Host "Loopback-only workspace at http://127.0.0.1:8000/workspace"
 & $py (Join-Path $repo "server\manage.py") runserver --settings=bid_server.settings.local --noreload "127.0.0.1:8000"
 exit $LASTEXITCODE
