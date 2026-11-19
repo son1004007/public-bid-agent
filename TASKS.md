@@ -1,3 +1,5 @@
+> **2026-11-20 AI Gateway 최신 의도/조사 (P0 설계):** 사용자는 **입찰 서버 → MCP client → Provider Executor → 승인된 모델 실행 → JSON 저장**을 희망한다. [15 모델 실행 MCP·구독 약관 조사](docs/server-migration/15-mcp-provider-executor-subscription-policy.md)가 13 API-only 설계보다 우선한다. 기존 14의 공고 조회 MCP(모델→데이터)와 분리한다. Google AI Pro 개인 계정은 구 `gemini` CLI 미지원(2026-06-18 이후); Gemini 4 Neon/Argon/Hydrogen은 Antigravity에서 제공되지만 개인 `agy`의 **타사 서비스 래핑은 Google 공식 FAQ상 미지원**, Claude Code 개인 구독의 타 사용자 라우팅도 금지. **무단 구독 자동화/회사 실자료 업로드/외부 호출 금지**. 다음: HBR-04의 모델 provider MCP typed contract 및 mock JSON+DB 검증, 기업용/허용 공급자 계약 확인 후만 실제 호출. 기존 HBR-01/02 우선 유지.
+
 ## 2026-11-20 최신 우선순위 — Hybrid RAG 입찰 의사결정 MVP
 
 사용자 요청으로 기존 RAG 설계를 구체화하고 실행 순서를 재조정한다. [기술 설계](docs/server-migration/10-hybrid-rag-bid-decision.md) · [사업 담당자 안내](docs/server-migration/11-hybrid-rag-business-guide.md). 아래 HBR 작업이 이전 파서 우선 계획보다 우선. 기존 데이터·권한·이력 보존, 필수 자체 검증·운영 승인·회사자료 반출 제한 유지(독립 AI 검토는 선택). **설계/계획 게시 단계; 구현 완료 아님.** 이전 파서/부서 비교(BID-07)/수익성 카드와 연계하며 중복 원장을 만들지 않는다. 작업 하나씩 실제 증거와 함께 완료.
