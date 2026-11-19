@@ -4,6 +4,8 @@
 
 조직 범위/협업/비용 최신 상세: [12 전사 역량·부서 협업 설계](docs/server-migration/12-enterprise-capability-hybrid-rag.md). 기존 HBR 순서 유지.
 
+2026-11-20 다중 LLM 연동 **후보**: GPT·Claude·Gemini를 제품에서 향후 선택할 수 있도록 [13 Provider Router 설계](docs/server-migration/13-multi-llm-provider-routing.md)를 HBR-04(서버 단일 provider E2E), HBR-06(선택/상태 UI), HBR-08(회사 자료별 provider 승인)에 연결한다. 공급자 사용/비용/실자료 외부 전송 **미승인**. HBR-01/02 로컬 검색 우선, OFF 기본값, Gemini/AGY 자동 위임 금지, 새 HBR 번호 추가 없음.
+
 | ID | 우선 | 작업/의존 | 완료 기준 | 상태 |
 |---|---|---|---|---|
 | HBR-00 | P0 | Hybrid RAG 설계, 데이터·판정·권한 계약 및 업무 시안(이 문서) | 상위 설계/목차 연결, 문서·계약 자체 검토, 선택적 독립 AI 검토 | 초안 게시 / NOT_RUN_OPTIONAL |
