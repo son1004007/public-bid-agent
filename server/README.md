@@ -1,3 +1,7 @@
+## MVP-03 aggregate cost scenario (candidate)
+
+GET/POST `/api/v1/notices/<notice_id>/cost-scenario` is session-scoped. No raw aggregate HTTP input, no historical basis access. A single active explicit CostMembership and designated approver with current approved basis are required; defaults deny. Migration 0007 is candidate only. Do not provision live values until organization approves the aggregate policy, period/allocation and rounding, memberships and operator workflow. Scenario amounts are VAT-exclusive and include all entered cost assumptions; not a stored approved estimate. No real production migration was run.
+
 ## 2026-11-19 security review: local launcher and recovery contract (candidate)
 
 - Windows loopback staging uses `scripts/start_web_service.ps1`. Preprovision the existing private signing-key file and DB JSON outside Git with restrictive ACLs. The launcher no longer generates keys implicitly, accepts no plaintext `BID_LOCAL_SECRET_KEY`, and validates settings before binding 127.0.0.1:8000. DB JSON must contain exactly HOST, PORT, NAME, USER, PASSWORD; host must be a numeric loopback, not a remote endpoint. Actual local DB name, Windows ACL and listener must be checked before deployment.

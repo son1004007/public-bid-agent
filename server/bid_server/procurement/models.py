@@ -530,3 +530,56 @@ class ExportArtifact(models.Model):
 
     def __str__(self):
         return f"{self.format} Artifact: {self.file_name} ({self.size_bytes:,} bytes)"
+
+
+class CostDepartment(models.Model):
+    """Explicit business scope; no access inferred from system roles."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    active = models.BooleanField(default=False)
+
+
+class CostMembership(models.Model):
+    department = models.ForeignKey(CostDepartment, on_delete=models.PROTECT)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    active = models.BooleanField(default=False)
+    can_manage_cost = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["department", "user"], name="cost_member_unique"),
+        ]
+
+
+class DepartmentCostBasis(models.Model):
+    """Private aggregate basis, versioned per department; never serialized directly.
+
+    Only a policy-approved fixed-period projection is eligible for simulation.
+    No HTTP write route exists for raw aggregates or publication approval.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    department = models.ForeignKey(CostDepartment, on_delete=models.PROTECT)
+    revision = models.PositiveIntegerField()
+    period_start = models.DateField()
+    period_end = models.DateField()
+    valid_until = models.DateField()
+    labor_total_krw = models.PositiveBigIntegerField()
+    allocation_mm = models.DecimalField(max_digits=12, decimal_places=2)
+    available_mm = models.DecimalField(max_digits=12, decimal_places=2)
+    headcount = models.PositiveIntegerField()
+    minimum_headcount = models.PositiveIntegerField()
+    rate_rounding_krw = models.PositiveIntegerField()
+    capacity_rounding_mm = models.PositiveIntegerField()
+    approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    approved = models.BooleanField(default=False)
+    current = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["department", "revision"], name="cost_basis_revision_unique"),
+            models.UniqueConstraint(fields=["department"], condition=models.Q(current=True), name="cost_basis_one_current"),
+            models.CheckConstraint(condition=models.Q(revision__gte=1, allocation_mm__gt=0,
+                available_mm__gte=0, available_mm__lte=models.F("allocation_mm"),
+                labor_total_krw__gt=0, headcount__gte=1, minimum_headcount__gte=2,
+                rate_rounding_krw__gt=0, capacity_rounding_mm__gt=0,
+                period_end__gte=models.F("period_start")), name="cost_basis_valid_values"),
+        ]

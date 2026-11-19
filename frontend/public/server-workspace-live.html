@@ -505,6 +505,8 @@
     <section style="border-top: 1px solid var(--line); padding-top: 12px; margin-bottom: 16px;">
       <h3 style="font-size:14px;">사업 적합성 검토 · RFP 근거</h3>
       <div id="dReview" aria-live="polite">-</div>
+      <h3>예상 사업 손익 (VAT 제외)</h3>
+      <div id="dCost" aria-live="polite">원가 기준 확인 필요</div>
     </section>
     <div style="margin-top: auto; border-top: 1px solid var(--line); padding-top: 18px; display: flex; gap: 10px;">
       <a id="dG2bLink" hidden target="_blank" rel="noopener noreferrer" class="primary button" style="flex: 1; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; color: #fff; background: var(--accent); font-weight: 600;">
@@ -580,7 +582,7 @@ function clearBusiness() {
   document.getElementById('collectionStatus').textContent = '수집 상태 미확인';
   document.getElementById('connectionStatus').textContent = '연결 미확인';
   closeDrawer();
-  for (const id of ['dTitle','dNoticeNo','dBuyer','dBudget','dDeadline','dCategories','dSourceUrl','dDocuments','dReview']) document.getElementById(id).textContent = '-';
+  for (const id of ['dTitle','dNoticeNo','dBuyer','dBudget','dDeadline','dCategories','dSourceUrl','dDocuments','dReview','dCost']) document.getElementById(id).textContent = '-';
   const link = document.getElementById('dG2bLink');
   link.removeAttribute('href'); link.hidden = true;
 }
@@ -842,6 +844,61 @@ function renderReview(review) {
   }
 }
 
+async function loadCostScenario(noticeId, seq) {
+  const target = document.getElementById('dCost');
+  const path = '/api/v1/notices/' + encodeURIComponent(noticeId) + '/cost-scenario';
+  try {
+    const body = await readBusiness(path);
+    if (seq !== detailSeq || !fullAccess) return;
+    const basis = body.data;
+    if (basis?.state !== 'READY') {
+      target.textContent = '승인된 사업부 원가 기준 없음 또는 검토 필요';
+      return;
+    }
+    target.replaceChildren();
+    const note = document.createElement('p');
+    note.textContent = '기준 v' + basis.basis_revision + ' · ' + basis.period_start + ' ~ ' + basis.period_end + ' · 이 기간 전체에 대한 가정만 입력';
+    target.append(note);
+    const form = document.createElement('form');
+    const labels = {required_mm:'사업 필요 MM',revenue_krw:'예상 공급가액(원, VAT 제외)',external_krw:'외주비(원)',direct_krw:'직접경비·인프라(원)',overhead_krw:'미포함 간접비(원)',reserve_krw:'위험 충당금(원)'};
+    const fields = {};
+    for (const [key, title] of Object.entries(labels)) {
+      const label = document.createElement('label');
+      label.textContent = title + ' ';
+      const input = document.createElement('input');
+      input.type = 'text'; input.inputMode = 'decimal'; input.required = true; input.maxLength = 13;
+      input.autocomplete = 'off';
+      label.append(input); form.append(label, document.createElement('br'));
+      fields[key] = input;
+    }
+    const button = document.createElement('button');
+    button.type = 'submit'; button.textContent = '예상 손익 계산';
+    const output = document.createElement('p');
+    form.append(button); target.append(form, output);
+    form.addEventListener('submit', async event => {
+      event.preventDefault(); button.disabled = true; output.textContent = '계산 중...';
+      try {
+        const csrf = await requestApi('/api/v1/auth/csrf');
+        if (!csrf.ok || seq !== detailSeq || !fullAccess) return;
+        const token = (await csrf.json()).data.csrf_token;
+        if (seq !== detailSeq || !fullAccess) return;
+        const payload = {basis_id:basis.basis_id, notice_version_id:basis.notice_version_id};
+        for (const [key,input] of Object.entries(fields)) payload[key] = input.value.trim();
+        const res = await requestApi(path, {method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':token},body:JSON.stringify(payload)});
+        if (seq !== detailSeq || !fullAccess) return;
+        if (res.status === 401 || res.status === 403) { showSession(null, '세션 재인증 필요'); return; }
+        if (!res.ok) { output.textContent = '입력 또는 기준 검증 실패. 상세 화면을 다시 열어 확인하십시오.'; return; }
+        const data = (await res.json()).data;
+        if (seq !== detailSeq || !fullAccess) return;
+        output.textContent = '추정 인건비 ' + data.labor_krw + '원 / 총원가 ' + data.total_cost_krw + '원 / 예상 이익 ' + data.profit_krw + '원 / 이익률 ' + data.margin_percent + '% · ' + (data.capacity === 'REVIEW_REQUIRED' ? '가용 공수 검토 필요' : '공개 기준 공수 이내') + ' · 미승인 시뮬레이션';
+      } catch (_) { if (seq === detailSeq && fullAccess) output.textContent = '계산 실패'; }
+      finally { button.disabled = false; }
+    });
+  } catch (_) {
+    if (seq === detailSeq && fullAccess) target.textContent = '원가 조회 실패';
+  }
+}
+
 async function openNoticeDetail(noticeId) {
   if (!fullAccess || !/^[0-9a-f-]{36}$/i.test(noticeId)) return;
   const seq = ++detailSeq;
@@ -858,6 +915,7 @@ async function openNoticeDetail(noticeId) {
   document.getElementById('dCategories').textContent = '-';
   document.getElementById('dDocuments').innerHTML = '<div class="loading-spinner"></div> 첨부문서 확인 중...';
   document.getElementById('dReview').textContent = '검토 근거 확인 중...';
+  document.getElementById('dCost').textContent = '원가 기준 확인 중...';
 
   try {
     const body = await readBusiness(`/api/v1/notices/${encodeURIComponent(noticeId)}`);
@@ -881,6 +939,7 @@ async function openNoticeDetail(noticeId) {
     if (g2bUrl) { link.href = g2bUrl; link.hidden = false; }
 
     renderReview(data.review);
+    void loadCostScenario(noticeId, seq);
     const docs = data.documents || [];
     if (!docs.length) {
       document.getElementById('dDocuments').innerHTML = '<div style="font-size:12px; color:var(--muted);">조회 가능한 첨부 문서가 없습니다.</div>';
@@ -908,6 +967,7 @@ async function openNoticeDetail(noticeId) {
 
 function closeDrawer() {
   detailSeq++;
+  document.getElementById('dCost').replaceChildren();
   document.getElementById('drawerOverlay').classList.remove('open');
 }
 

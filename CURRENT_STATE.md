@@ -1,3 +1,8 @@
+## 2026-11-19 MVP-03 — 집계 원가 시뮬레이션 후보 (IMPLEMENTED_UNVERIFIED)
+
+- Explicit CostDepartment/CostMembership and versioned DepartmentCostBasis, private raw aggregate only, no HTTP administration/write route. Active single department + current approved valid basis + size policy + designated approver required. Derived costs use rounded published rate, capacity uses coarse floor; no raw aggregate or prior versions in response. Scenario is not saved or approved. Policy, actual provisioning, scope and stored shared estimate/approval flow remain pending. No company data, accounts, or production migration/deployment.
+- New synthetic calculation/auth/missing/expired/conflict cases; exact-head CI/migration verification pending, independent REVIEW_DEBT, RELEASE NO_GO. Prior MVP-02 server foundation 3 jobs PASS. Next MVP-04 after CI.
+
 ## 2026-11-19 MVP-02 — 상세검토 후보/근거 패널 (IMPLEMENTED_UNVERIFIED)
 
 - MVP-00 670c846 CI 4/4 PASS. MVP-01 77af24f server foundation/sprint/harness PASS, Windows 진행중 관측. 실제 API·독립 검수·릴리스 별도.
