@@ -1,3 +1,8 @@
+## 2026-11-19 HWPX real recovery
+
+- [x] db1ed40 bounded operator-only fallback; 4/4 real failed specimens recovered, overall 5/5 parsed, 14,594 current chunks, all five rule projections have evidence candidates. Original hashes and four failure runs preserved; replay no pending work. 40 NAS tests PASS/1 skip; exact 4/4 CI PASS. No structural fidelity claim for four text-only documents.
+- [ ] Next functional priority: bounded PDF and HWP parsing with dependency/license/format checks and real specimens; reproducible RFP batch, coverage/failure badge, authenticated browser acceptance. Current web version unchanged; new parser worker used one-shot. Independent review/release NO_GO remains.
+
 ## 2026-11-19 parser candidate
 
 - [ ] Verify bounded HWPX text-only fallback on actual four failed originals, preserve original runs/current identity and ACL; PDF/HWP separately. No release approval.
