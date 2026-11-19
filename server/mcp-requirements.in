@@ -1,0 +1,3 @@
+# Isolated optional MCP process (not part of production Django base requirements).
+# Resolve and hash-lock all transitive dependencies before deployment.
+mcp==2.3.0
