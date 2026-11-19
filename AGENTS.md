@@ -1,3 +1,5 @@
+> **2026-11-20 AI Gateway 최신 설계 지시:** [15 모델 실행용 MCP·CLI 구독 조사](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). 사용자 요구는 **Bid server→MCP client→Provider executor→JSON 저장**이며 기존 [14 공개 공고 MCP](docs/server-migration/14-bid-mcp-interface.md)는 반대 방향이다. 개인 Google AI Pro `agy` 타사 래핑/타 사용자를 위한 Claude 개인 구독 중계 금지; API-only 구조를 유일한 답으로 취급하지 않되 허가된 기업용 연결 전 모델 호출 OFF. 원격 자동화/운영/회사 자료 업로드 승인 없음.
+
 > **2026-11-20 MCP 공개 도구 소스 후보:** [14 MCP 연결 계약](docs/server-migration/14-bid-mcp-interface.md). Django 조달 DB에서 공개 공식 공고 메타데이터만 조회하는 stdio MCP 및 기본 차단·테스트 소스 후보. data1 배포, HTTP·OAuth, 회사 비공개 자료, GPT/Claude/Gemini 앱 연결은 미완료. 개인·조직 데이터 보안과 전역 AGY/Gemini 자동 위임 중지 유지.
 
 > **2026-11-20 다중 LLM 연동 후보:** [13 GPT·Claude·Gemini Provider Router 제안](docs/server-migration/13-multi-llm-provider-routing.md) 및 TASKS.md HBR-04/06/08 참고. 세 공급자 모두 미래 지원 후보이지 현재 연동/승인/외부 데이터 전송을 의미하지 않는다. 기본 OFF, 로컬 검색 먼저, 회사 데이터 반출 정책 및 전역 AGY/Gemini 자동 위임 금지 유지.
