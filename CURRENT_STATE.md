@@ -1,3 +1,7 @@
+## 2026-11-19 MVP-02/03 frontend regression follow-up
+
+- Exact cac2ec8 CI 3/4 PASS; Sprint 1 frontend job 135399739371 failed synthetic workspace security test because mock DOM did not implement createElement/appendChild used by RFP panel. Extended mock and explicit hostile evidence/cost closure assertions. Actual browser acceptance on cac2ec8 passed server foundation. New SHA validation pending; no relaxation of security assertions. No production changes.
+
 ## 2026-11-19 MVP-03 — 집계 원가 시뮬레이션 후보 (IMPLEMENTED_UNVERIFIED)
 
 - Explicit CostDepartment/CostMembership and versioned DepartmentCostBasis, private raw aggregate only, no HTTP administration/write route. Active single department + current approved valid basis + size policy + designated approver required. Derived costs use rounded published rate, capacity uses coarse floor; no raw aggregate or prior versions in response. Scenario is not saved or approved. Policy, actual provisioning, scope and stored shared estimate/approval flow remain pending. No company data, accounts, or production migration/deployment.

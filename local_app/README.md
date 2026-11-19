@@ -1,3 +1,5 @@
+> **2026-11-19 MVP-02/03 frontend test:** synthetic workspace DOM fixture supports text-node construction and verifies hostile RFP excerpts remain text, cost view clears on drawer close; previous mock lacked createElement. Latest CI must be checked.
+
 > **2026-11-19 MVP-03 후보:** 사업부 집계 기준 DB 모델 및 승인된 가공 기준 기반 손익 시뮬레이션(공고 상세) 추가. 개인 급여 입력/API 없음. 운영 기준 발급·정식 승인/검수 저장은 아직 연결하지 않으며 승인된 명시적 사업부 구성원·현재 기준 없으면 계산 차단. 실자료 입력/운영 배포 미실행.
 
 > **2026-11-19 MVP-02 후보:** 서버 workspace의 상세검토 후보(마감순) 및 상세 RFP 근거 패널 추가. 최신 공고/문서 차수와 접근권한, 추출 실행/구절/SHA/위치를 결속한 미검증 규칙 후보만 반환. 원문 미확보·취소·정정·마감 미확인은 보류, 공식 원문 수동 확인 우선. 회사 적격·수익성·실제 정확도는 미평가. 실자료/배포 미실행.

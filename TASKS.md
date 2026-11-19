@@ -47,6 +47,8 @@ P0 보안 보완부터 시작하되 실제 관리자 조치·운영 승인·독�
 - 집계 원가 기준/사업부 명시 membership 모델·migration, 승인 가공 단가/가용량으로 VAT 제외 공급가액 및 MM/비용 가정의 결정적 Decimal 계산과 상세 화면 연결. 실제 정책 승인·기준 작성/승인 운영 명령, 원가 구성/기간 배부 방식 확정, 저장된 승인 견적/공유 및 감사는 MVP-04 연결 필요. 실제 원가 미입력, 기본 차단. 합성 테스트 추가·새 SHA CI 대기. RELEASE NO_GO / REVIEW_DEBT.
 - 다음: 정확 SHA CI 및 migration 검사 → MVP-04 공동 검토/권한/의사결정. 실자료/공개 규모·가공 단위는 승인 전 보류.
 
+- MVP-02 Sprint 1 frontend mock regression identified (135399739371); mock DOM + hostile RFP/cost close regression updated. Verify exact new SHA before marking complete.
+
 ### 실행 원칙 및 다음 재개 지점
 
 - 다음: MVP-00 문서 추출 권한 수명 회귀 보완 → 검증 → MVP-01. 이미 성공한 DB 개별 복원 및 브라우저 기록은 해당 SHA/범위에서 재사용한다. 통합 복원·릴리스 롤백은 별도이며 새 SHA에서 과거 CI를 재사용해 통과라 주장하지 않는다. 검수는 논리적 단위로 수행하고 불필요한 반복 조사/완벽주의를 피한다.
