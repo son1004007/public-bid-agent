@@ -1,7 +1,7 @@
 """Opt-in real Chrome + loopback Django HTTP acceptance using only synthetic data.
 
 No new Python dependencies, private configuration, real account or database.
-ChromeDriver is provided by the GitHub-hosted Ubuntu test image.
+ChromeDriver is provided by the hosted runner or an explicitly selected local binary.
 """
 import json
 import os
@@ -29,6 +29,9 @@ class WorkspaceBrowserTest(LiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
+        if (os.environ.get("DJANGO_SETTINGS_MODULE") != "bid_server.settings.test"
+                or settings.DATABASES["default"]["ENGINE"] != "django.db.backends.sqlite3"):
+            raise RuntimeError("Synthetic SQLite settings required")
         # LiveServerTestCase wraps the app in static/media WSGI handlers.
         # Use isolated empty roots, never the working directory or private files.
         root = Path(cls.enterClassContext(tempfile.TemporaryDirectory()))
@@ -72,16 +75,28 @@ class WorkspaceBrowserTest(LiveServerTestCase):
                 opener.open(self.live_server_url + "/" + prefix + "/manage.py", timeout=5)
             self.assertEqual(denied.exception.code, 404)
 
-        chrome = shutil.which("google-chrome") or shutil.which("chromium")
-        self.assertTrue(chrome, "Installed Chrome binary is required")
-        print(subprocess.check_output([chrome, "--version"], text=True, timeout=10).strip(), flush=True)
+        chrome = os.environ.get("BID_CHROME_BINARY")
+        if not chrome and os.name == "nt":
+            candidate = Path(os.environ.get("ProgramFiles", "")) / "Google/Chrome/Application/chrome.exe"
+            chrome = str(candidate) if candidate.is_absolute() and candidate.is_file() else None
+        elif not chrome:
+            chrome = shutil.which("google-chrome") or shutil.which("chromium")
+        self.assertTrue(chrome and Path(chrome).is_absolute() and Path(chrome).is_file(),
+                        "Installed Chrome binary is required")
+        # Windows Chrome can open a window instead of returning --version.
+        if os.name != "nt":
+            print(subprocess.check_output([chrome, "--version"], text=True, timeout=10).strip(), flush=True)
 
-        driver = shutil.which("chromedriver")
+        driver = os.environ.get("BID_CHROMEDRIVER_BINARY") or shutil.which("chromedriver")
         if not driver:
-            candidate = Path(os.environ.get("CHROMEWEBDRIVER", "/nonexistent")) / "chromedriver"
-            if candidate.is_file():
-                driver = str(candidate)
-        self.assertTrue(driver, "ChromeDriver is required for the browser gate")
+            name = "chromedriver.exe" if os.name == "nt" else "chromedriver"
+            directory = os.environ.get("CHROMEWEBDRIVER")
+            if directory:
+                candidate = Path(directory) / name
+                if candidate.is_absolute() and candidate.is_file():
+                    driver = str(candidate)
+        self.assertTrue(driver and Path(driver).is_absolute() and Path(driver).is_file(),
+                        "Compatible installed ChromeDriver is required for the browser gate")
         print(subprocess.check_output([driver, "--version"], text=True, timeout=10).strip(), flush=True)
         profile = self.enterContext(tempfile.TemporaryDirectory())
         with socket.socket() as sock:
@@ -131,6 +146,7 @@ class WorkspaceBrowserTest(LiveServerTestCase):
             "timeouts": {"pageLoad": 15000, "script": 10000, "implicit": 0},
         }}}, timeout=65)
         base = "/session/" + session["sessionId"]
+        print("Chrome session version: " + str(session.get("capabilities", {}).get("browserVersion", "unreported")), flush=True)
 
         def stop_browser():
             try:
