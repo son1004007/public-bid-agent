@@ -5,7 +5,8 @@
 import hashlib
 import io
 import zipfile
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase, skipUnlessDBFeature
+from unittest.mock import patch
 from django.utils import timezone
 from bid_server.procurement.models import (
     Notice,
@@ -415,6 +416,59 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
             )
         self.assertFalse(ExtractionRun.objects.exists())
 
+    def _assert_no_extraction(self):
+        from bid_server.procurement.models import ExtractionRun, DocumentStructure, Chunk
+        self.assertFalse(ExtractionRun.objects.exists())
+        self.assertFalse(DocumentStructure.objects.exists())
+        self.assertFalse(Chunk.objects.exists())
+
+    def _assert_mid_parse_denied(self, change):
+        def parse_then_change(filename, raw):
+            result = parse_document_bytes(filename, raw)
+            change()
+            return result
+        with patch("bid_server.procurement.extractor_service.parse_document_bytes", side_effect=parse_then_change):
+            res = self.client.post(
+                self.url, data=self.valid_payload, content_type="text/plain", secure=True,
+                HTTP_X_CSRFTOKEN=self.csrf_token, HTTP_ORIGIN="https://testserver",
+            )
+        self.assertEqual(res.status_code, 404)
+        self._assert_no_extraction()
+
+    def test_epoch_revoked_during_parse_rejects_write(self):
+        def revoke():
+            current = type(self.user).objects.get(pk=self.user.pk)
+            current.auth_epoch += 1
+            current.save(update_fields=["auth_epoch"])
+        self._assert_mid_parse_denied(revoke)
+
+    def test_account_disabled_during_parse_rejects_write(self):
+        def disable():
+            current = type(self.user).objects.get(pk=self.user.pk)
+            current.is_active = False
+            current.save(update_fields=["is_active"])
+        self._assert_mid_parse_denied(disable)
+
+    def test_owner_removed_during_parse_rejects_write(self):
+        self._assert_mid_parse_denied(
+            lambda: DocumentVersion.objects.filter(pk=self.version.pk).update(owner_user=None)
+        )
+
+    def test_stale_actor_cannot_read_or_begin_parse(self):
+        from bid_server.procurement.extractor_service import DocumentAccessError, scoped_document_versions
+        visible = scoped_document_versions(self.user)
+        current = type(self.user).objects.get(pk=self.user.pk)
+        current.auth_epoch += 1
+        current.save(update_fields=["auth_epoch"])
+        self.assertFalse(visible.exists())
+        with patch("bid_server.procurement.extractor_service.parse_document_bytes") as parser:
+            with self.assertRaises(DocumentAccessError):
+                ExtractionService.extract_and_persist(
+                    self.version, self.valid_payload, "rfp.txt", actor_user=self.user,
+                )
+            parser.assert_not_called()
+        self._assert_no_extraction()
+
     def test_http_rejects_registered_binary_and_invalid_text(self):
         from bid_server.procurement.models import ExtractionRun, DocumentStructure
         for payload, media, sent_media, expected in (
@@ -433,3 +487,63 @@ class DocumentExtractHTTPIntegrityTests(TestCase):
                 self.assertEqual(res.status_code, expected)
                 self.assertFalse(ExtractionRun.objects.exists())
                 self.assertFalse(DocumentStructure.objects.exists())
+
+class ExtractionPostgresConcurrencyTests(TransactionTestCase):
+    """Separate DB connections; a committed revocation must win over later persistence."""
+
+    @skipUnlessDBFeature("has_select_for_update")
+    def test_revocation_committed_while_parser_runs(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Event
+        from django.db import connections
+        from bid_server.accounts.models import User
+        from bid_server.procurement.extractor_service import DocumentAccessError
+        from bid_server.procurement.models import ExtractionRun, DocumentStructure, Chunk
+
+        user = User.objects.create_user(
+            username="synthetic-extraction-race", password="SyntheticTestPassword123!",
+            must_change_password=False,
+        )
+        notice = Notice.objects.create(source="G2B_OFFICIAL_API", notice_number="SYNTH-EXTRACT-RACE")
+        nv = NoticeVersion.objects.create(
+            notice=notice, version_seq=1, observed_at=timezone.now(),
+            title="Synthetic", buyer="Synthetic", source_payload_digest="f" * 64,
+        )
+        doc = Document.objects.create(notice=notice, logical_key="synthetic-rfp")
+        raw = b"Synthetic document requirements."
+        version = DocumentVersion.objects.create(
+            document=doc, notice_version=nv, version_seq=1, owner_user=user,
+            sha256=hashlib.sha256(raw).hexdigest(), size_bytes=len(raw), media_type="text/plain",
+        )
+        parsed, resume = Event(), Event()
+
+        def paused_parser(filename, payload):
+            result = parse_document_bytes(filename, payload)
+            parsed.set()
+            if not resume.wait(10):
+                raise AssertionError("test synchronization timeout")
+            return result
+
+        def extraction():
+            try:
+                actor = User.objects.get(pk=user.pk)
+                ExtractionService.extract_and_persist(version, raw, "rfp.txt", actor_user=actor)
+            finally:
+                connections.close_all()
+
+        with patch("bid_server.procurement.extractor_service.parse_document_bytes", side_effect=paused_parser):
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(extraction)
+                try:
+                    self.assertTrue(parsed.wait(10))
+                    current = User.objects.get(pk=user.pk)
+                    current.auth_epoch += 1
+                    current.save(update_fields=["auth_epoch"])
+                finally:
+                    resume.set()
+                with self.assertRaises(DocumentAccessError):
+                    future.result(timeout=15)
+
+        self.assertFalse(ExtractionRun.objects.exists())
+        self.assertFalse(DocumentStructure.objects.exists())
+        self.assertFalse(Chunk.objects.exists())

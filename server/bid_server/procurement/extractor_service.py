@@ -4,12 +4,17 @@
       TableBlock, TableCell, FootnoteBlock, Chunk를 원자적으로 영속화한다.
 불변조건: DB에 등록된 원본 SHA-256/크기와 일치하는 바이트만 파싱 및 저장한다.
 호출자가 넘긴 모델 메타데이터를 신뢰하지 않으며, 불일치 시 전체 영속화 없이 실패한다.
+권한: 요청의 auth_epoch와 최신 활성·잠금·강제변경 상태를 DB에서 대조한다.
+저장: PostgreSQL에서 사용자 행을 먼저 잠근 뒤 문서 버전 행을 잠그고 권한을 재확인한다.
+파싱 중 보안 변경이 먼저 커밋되면 저장하지 않는다. 저장이 먼저 잠금을 획득하면 변경은 저장 종료 후 진행된다.
+actor_user=None은 인가된 내부 호출 전용이며 HTTP 경로는 반드시 요청 사용자를 전달한다.
 관련: docs/server-migration/17-domain-and-postgresql-contract.md §16, 27-html-defects-and-stop-verification.md.
 """
 import hashlib
 from typing import Optional, Dict, Any
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import Exists, F, Q
+from bid_server.accounts.models import User
 from django.utils import timezone
 from .models import (
     DocumentVersion,
@@ -31,25 +36,30 @@ class DocumentAccessError(ValueError):
     """Document version is not in the actor's authorized scope."""
 
 
-def _eligible_actor(actor):
-    return bool(getattr(actor, "is_authenticated", False)
-                and actor.is_active and not actor.must_change_password)
+def _eligible_actor_rows(actor):
+    """Use the request epoch, never refresh it to authorize an old request."""
+    epoch = getattr(actor, "auth_epoch", None)
+    if not getattr(actor, "is_authenticated", False) or type(epoch) is not int:
+        return User.objects.none()
+    return User.objects.filter(
+        pk=actor.pk, auth_epoch=epoch, is_active=True, must_change_password=False,
+    ).filter(Q(locked_until__isnull=True) | Q(locked_until__lte=timezone.now()))
 
 
 def scoped_document_versions(actor, *, write=False):
     qs = DocumentVersion.objects.filter(
         notice_version__notice_id=F("document__notice_id"),
     )
-    if not _eligible_actor(actor):
+    if not getattr(actor, "is_authenticated", False):
         return qs.none()
     scope = Q(owner_user_id=actor.pk)
     if not write:
         scope |= Q(shared_read_approved=True)
-    return qs.filter(scope)
+    return qs.filter(scope).filter(Exists(_eligible_actor_rows(actor)))
 
 
 def _assert_document_access(version, actor):
-    if (not _eligible_actor(actor) or version.owner_user_id != actor.pk
+    if (version.owner_user_id != actor.pk
             or version.notice_version.notice_id != version.document.notice_id):
         raise DocumentAccessError("Document access denied.")
 
@@ -78,6 +88,8 @@ class ExtractionService:
         # 호출자가 수정한 in-memory 모델 대신 DB에 저장된 원본 정보를 검증한다.
         document_version = DocumentVersion.objects.get(pk=document_version.pk)
         if actor_user is not None:
+            if not _eligible_actor_rows(actor_user).exists():
+                raise DocumentAccessError("Document access denied.")
             _assert_document_access(document_version, actor_user)
         _assert_source_matches(document_version, size, digest)
         allowed = {
@@ -99,6 +111,11 @@ class ExtractionService:
             raise ParserError("Document format mismatch.")
 
         with transaction.atomic():
+            # 사용자 행을 문서보다 먼저 잠가 보안 변경 및 저장을 직렬화한다.
+            # exists()가 아닌 실제 행 조회로 잠금을 획득하고 commit까지 유지한다.
+            if actor_user is not None:
+                if _eligible_actor_rows(actor_user).select_for_update().first() is None:
+                    raise DocumentAccessError("Document access denied.")
             # 파싱 중 원본 메타데이터가 변경되었더라도 잘못된 결속을 저장하지 않는다.
             document_version = DocumentVersion.objects.select_for_update().get(
                 pk=document_version.pk,

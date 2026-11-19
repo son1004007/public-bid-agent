@@ -1,3 +1,5 @@
+> **2026-11-19 MVP-00 후보:** Django 문서 추출은 요청 epoch와 최신 DB 계정 상태를 대조하고 쓰기 트랜잭션에서 사용자·문서 행을 순서대로 잠근다. 파싱 중 선행 커밋된 권한 철회는 저장 거부. 합성 회귀/독립 검수 상태는 CURRENT_STATE.md와 정확 SHA CI 확인. 기존 local_app 동작 및 실제 운영 배포는 변경하지 않는다.
+
 > 문서 탐색: [DOC_INDEX.md](DOC_INDEX.md). 최신 상태는 CURRENT_STATE.md, 작업 순서는 TASKS.md를 확인합니다.
 
 > **2026-11-14 최신 서버 전환 설계:** [서버 전환 설계 목차](docs/server-migration/README.md)부터 읽는다. React/TypeScript + Django/DRF + PostgreSQL, 서버 작업 워커/일정, DB 계정·최초 비밀번호 변경 강제, SSO 제외. 조직 정책은 공개 Git 밖의 승인된 연결 설정에서 원본을 읽고 적용한다. **설계 문서만 작성됨(NOT_IMPLEMENTED)**; 과거 로컬 전용/SSO 목표 문구보다 이번 결정을 우선하되 기존 운영·데이터·작업은 보존한다.

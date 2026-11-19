@@ -1,3 +1,9 @@
+## 2026-11-19 MVP-00 — 권한 수명 회귀 보완 후보 (IMPLEMENTED_UNVERIFIED)
+
+- 문서 범위 조회/추출에서 요청 auth_epoch·DB 활성/잠금/강제변경 상태 대조. 저장 트랜잭션은 계정 행→문서 버전 행 순서로 잠금, 소유권/원본 결속을 재검증한다. PostgreSQL 잠금 계약: https://docs.djangoproject.com/en/5.2/ref/models/querysets/#select-for-update ; SQLite는 행 잠금을 보증하지 않는다.
+- 합성 회귀 추가: 파싱 중 epoch 폐기·계정 비활성화·문서 소유권 제거, 오래된 actor의 조회/파싱 거부, 별도 DB 연결 PostgreSQL 동시성 시나리오. 코드 게시 시점 테스트/정확 SHA CI 및 독립 검수 NOT RUN/REVIEW_DEBT. 기존 내부 신뢰 호출 계약 유지. 실제 계정/운영자료·서비스 변경 없음. 릴리스 NO_GO.
+- 다음: 동일 SHA CI 결과 확인·실패 수정, MVP-01 공고 수집/조회 최소 흐름 개발. 기존 운영 차단은 별도 유지.
+
 ## 2026-11-19 PR #5 actual notebook Chrome workspace acceptance PASS (release NO_GO)
 
 - Previous head 89253db7 CI 4/4 PASS; earlier 2622212e legacy Windows failure rerun succeeded, intermittent startup cause not proved fixed. Notebook Chrome 158.0.8127.18 and Node 22.14.0 available, compatible driver not found on PATH/configured/cache paths (job_01M7S7KGQA00QD604R7XPJYHJ5). Added opt-in synthetic CDP test using fresh profile, Chrome loopback ephemeral debugging endpoint, no ChromeDriver download, no sandbox bypass. Official references https://developer.chrome.com/docs/automation-and-testing/debug-headless and https://developer.chrome.com/docs/chromedriver/downloads/version-selection.
