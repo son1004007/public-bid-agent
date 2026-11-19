@@ -1,7 +1,9 @@
+> **2026-11-20 조직 범위 확장:** [12 전사 역량·부서 협업 설계](12-enterprise-capability-hybrid-rag.md)가 조직 모델·검색 범위·공유 자원·지원 상태·시나리오 손익의 최신 상세 정본이다. 아래 기본 계약은 유지하되 사업부 corpus는 해당 법인 공통 및 승인된 타 부서 요약까지 권한 검증 후 검색한다. 비용은 전사 경제성과 주관 부서 손익을 분리한다. 지원 승인 없이는 가용 확정 금지.
+
 # 10. Hybrid RAG 입찰 의사결정 지원 — 기술 설계
 
 - 기준일: 2026-11-20 KST
-- 상태: DESIGN_DRAFT / REVIEW_DEBT / NOT_IMPLEMENTED (기존 기능은 CURRENT_STATE가 정본)
+- 상태: DESIGN_DRAFT / NOT_IMPLEMENTED (독립 AI 리뷰 NOT_RUN_OPTIONAL) (기존 기능은 CURRENT_STATE가 정본)
 - 사용자 방향: 사업부 실적·역량까지 RAG로 검색하고 원가·가용 인력을 SQL로 조회하여 입찰 판단을 지원한다. 문서 구조 복원보다 실제 판단 기능을 우선한다.
 - 업무용 쉬운 설명: [11 사업 담당자 안내](11-hybrid-rag-business-guide.md)
 - 실행 정본: [TASKS](../../TASKS.md) · [DECISIONS](../../DECISIONS.md) · [CURRENT_STATE](../../CURRENT_STATE.md)

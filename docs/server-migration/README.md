@@ -20,9 +20,9 @@
 | 8 | [Codex 스킬 선정·독립 검수](07-codex-skills-and-review.md) | 어떤 스킬을 선별하고 다른 Codex가 어떻게 검수하는가? |
 | 9 | [현재 화면·설계 완성도·UI 후보](08-current-screens-and-ui-references.md) | 지금 있는 기능과 남은 설계, 화면 개선에 참고할 저장소는 무엇인가? |
 | 10 | [사업부 집계 원가·공동 사업 검토](09-aggregate-cost-and-shared-review.md) | 개인 급여 미수집, 집계 원가 계산과 전 사용자 공유 범위, 역할별 변경·결정 권한은 무엇인가? |
-
 | 11 | [Hybrid RAG 입찰 판단 설계](10-hybrid-rag-bid-decision.md) | 실제 RFP와 사업부 증빙 검색 + SQL 사실·손익·판정 계약 |
 | 12 | [사업 담당자 이해용 설명](11-hybrid-rag-business-guide.md) | 도식·가상 업무 예시 |
+| 13 | [전사 역량·부서 협업 및 전체 아키텍처](12-enterprise-capability-hybrid-rag.md) | 법인과 부서, 지원 요청/가용성, 정량·정성 및 비용 시나리오 |
 
 ## 다른 AI에게 전달할 짧은 시작 지시
 

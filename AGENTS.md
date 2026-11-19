@@ -1,3 +1,5 @@
+> **2026-11-20 전사 역량 및 부서 협업 확장:** [12 전사 역량·협업 Hybrid RAG 설계](docs/server-migration/12-enterprise-capability-hybrid-rag.md)를 HBR 최신 상세로 적용한다. 법인 자격/실적과 주관·지원 부서 역량/가용성을 분리, 정량 SQL + 정성 RAG, 자체/사내/외부/혼합 시나리오 및 전사·주관 손익 비교. 기존 자료 승인/개인 원가 금지/업무권한 유지. 개인 프로젝트 독립 AI 리뷰는 최신 CONTROL에 따라 선택; 필수 자체 검증·실제 결함·회사/운영 승인 유지.
+
 > **2026-11-20 Hybrid RAG MVP 우선:** [기술 설계](docs/server-migration/10-hybrid-rag-bid-decision.md) · [사업 담당자용 설명](docs/server-migration/11-hybrid-rag-business-guide.md) · [TASKS.md HBR-00~08](TASKS.md). 기존 실제 RFP를 사용한 검색/판단 수직 슬라이스, 사업부 RAG + SQL 정형 조회/손익 계산을 우선. 기존 보안·승인·독립 검수 유지. 상태는 CURRENT_STATE.md 참조.
 
 > **2026-11-19 최신 MVP-FIRST:** [TASKS.md 최상단 실행 우선순위](TASKS.md)를 다음 작업 정본으로 적용한다. 기존 카드/설계의 세부 요구와 검증 근거는 보존하되 공고→RFP 근거→집계 손익→공동 판단 흐름을 먼저 구현한다. 필수 보안·독립 검수·운영 승인 게이트는 유지하고 미해결 운영 조치와 비릴리스 합성 개발은 분리한다.
