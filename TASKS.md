@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — current DB parity and RFP cache backup
+
+- [x] Previous b34fb62f CI 4/4; actual current-source vs restored row count/content fingerprint 11/11 matches. Not source archive-time snapshot parity.
+- [x] Actual persisted RFP extracted-cache scope 124 files copied privately; source/copy SHA-256 match, manifest/ACL recheck and internal chunk contract 124/124 PASS. No original binary claim.
+- [ ] Establish original PDF/HWP binary availability and authoritative legacy backup scope; do not copy unrelated stage/backup directories. Coordinated snapshot and full recovery remain distinct. No external transfers.
+- [ ] Historical credential applicability/remediation, fresh-context independent review, actual notebook browser/rollback and private rehearsal cleanup plan. Main merge/deploy NO_GO.
+
 ## 2026-11-19 PR #5 checkpoint — actual archive restore PASS
 
 - [x] Exact 0654f315 CI 4/4; versioned recovery runner uses Windows pg_ctl restricted-token launch, separate private loopback cluster.
