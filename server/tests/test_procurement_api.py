@@ -319,3 +319,62 @@ class ProcurementAPITests(TestCase):
         self.assertEqual(res.json()["data"]["source_url"], "https://g2b.go.kr/test-ai")
         self.nv_ai_v1.refresh_from_db()
         self.assertEqual(self.nv_ai_v1.extra_data["final"]["private"], "SENSITIVE_FIXTURE")
+
+    def test_manual_snapshot_import_to_authenticated_search_and_cancel(self):
+        import json
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from io import StringIO
+        from django.core.management import call_command
+
+        item = {
+            "id": "SYNTH-MVP-01", "bid_no": "SYNTH-MVP-01", "bid_order": "00",
+            "source_type": "SYNTHETIC_FIXTURE",
+            "title": "MVP-01 AI 데이터 플랫폼", "buyer": "합성 기관",
+            "source_url": "https://g2b.go.kr/synthetic-mvp-01",
+            "end": (timezone.now() + timedelta(days=10)).strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "notices.json"
+            path.write_text(json.dumps([item], ensure_ascii=False), encoding="utf-8")
+            original = path.read_bytes()
+            call_command("import_legacy_notices", file=str(path), dry_run=True, stdout=StringIO())
+            self.assertFalse(Notice.objects.filter(notice_number=item["id"]).exists())
+            call_command("import_legacy_notices", file=str(path), stdout=StringIO())
+            call_command("import_legacy_notices", file=str(path), stdout=StringIO())
+            self.assertEqual(path.read_bytes(), original)
+            rows = self.client.get("/api/v1/notices?q=SYNTH-MVP-01&field=AI&status=open", secure=True).json()["data"]
+            self.assertEqual(len(rows), 1)
+            self.assertIn("DATA", rows[0]["categories"])
+            self.assertEqual(rows[0]["source_url"], item["source_url"])
+            notice_id = rows[0]["id"]
+            detail = self.client.get(f"/api/v1/notices/{notice_id}", secure=True).json()["data"]
+            self.assertEqual(detail["total_versions"], 1)
+            cancelled = {**item, "bid_order": "01", "cancellation": True}
+            path.write_text(json.dumps([cancelled], ensure_ascii=False), encoding="utf-8")
+            call_command("import_legacy_notices", file=str(path), stdout=StringIO())
+            path.write_bytes(original)
+            call_command("import_legacy_notices", file=str(path), stdout=StringIO())
+
+        opened = self.client.get("/api/v1/notices?q=SYNTH-MVP-01&status=open", secure=True).json()["data"]
+        self.assertEqual(opened, [])
+        rows = self.client.get("/api/v1/notices?q=SYNTH-MVP-01&status=cancelled", secure=True).json()["data"]
+        self.assertEqual(len(rows), 1)
+        history = self.client.get(f"/api/v1/notices/{notice_id}/versions", secure=True).json()["data"]
+        self.assertEqual(len(history), 2)
+        self.assertTrue(history[0]["cancellation"])
+
+    def test_date_only_and_exact_deadline_status(self):
+        from unittest.mock import patch
+        instant = timezone.now()
+        self.nv_ai_v1.deadline_status = DeadlineStatus.DATE_ONLY
+        self.nv_ai_v1.save(update_fields=["deadline_status"])
+        self.nv_data_v1.deadline_at = instant
+        self.nv_data_v1.save(update_fields=["deadline_at"])
+        with patch("bid_server.procurement.views.timezone.now", return_value=instant):
+            self.assertEqual(self.client.get("/api/v1/notices?status=open", secure=True).json()["page"]["total"], 0)
+            self.assertEqual(self.client.get("/api/v1/notices?status=unknown", secure=True).json()["page"]["total"], 1)
+            self.assertEqual(self.client.get("/api/v1/notices?status=closed", secure=True).json()["page"]["total"], 2)
+            counts = self.client.get("/api/v1/dashboard", secure=True).json()["data"]["counts"]
+            self.assertEqual(counts["open_notices"], 0)
+            self.assertEqual(counts["urgent_deadline_3d"], 0)

@@ -425,6 +425,7 @@
           <option value="open" selected>진행 중 (Open)</option>
           <option value="closed">마감 완료</option>
           <option value="cancelled">취소 이력</option>
+          <option value="unknown">마감 미확인</option>
         </select>
 
         <select id="sortSelect" class="filter-select" >
@@ -514,8 +515,10 @@ let currentCategory = '';
 let currentSort = 'deadline';
 
 // Calculate D-Day string and badge class
-function getDDay(deadlineStr, cancelled = false) {
+function getDDay(deadlineStr, cancelled = false, deadlineStatus = '') {
   if (cancelled) return { str: "취소", badge: "badge-cat" };
+  if (deadlineStatus === 'DATE_ONLY') return { str: '시각 미확인', badge: 'badge-cat' };
+  if (!['PARSED', 'EXPIRED'].includes(deadlineStatus)) return { str: '미정', badge: 'badge-cat' };
   if (!deadlineStr) return { str: '미정', badge: 'badge-cat' };
   const end = new Date(deadlineStr);
   if (!Number.isFinite(end.getTime())) return {str:"미정", badge:"badge-cat"};
@@ -765,10 +768,10 @@ async function loadNotices(keepPage = false) {
     }
 
     tbody.innerHTML = items.map(n => {
-      const dday = getDDay(n.deadline_at, n.cancellation);
+      const dday = getDDay(n.deadline_at, n.cancellation, n.deadline_status);
       const cats = (n.categories || []).map(c => `<span class="badge badge-cat">${escapeHtml(c)}</span>`).join('');
       const bg = formatBudget(n.budget_amount);
-      const dl = n.deadline_at ? n.deadline_at.replace('T', ' ').substring(0, 16) : '미확인';
+      const dl = n.deadline_status === 'DATE_ONLY' ? '날짜만 확인 (시각 미확인)' : (n.deadline_at ? n.deadline_at.replace('T', ' ').substring(0, 16) : '미확인');
 
       return `<tr>
         <td><span class="badge ${dday.badge}">${dday.str}</span></td>
@@ -826,10 +829,10 @@ async function openNoticeDetail(noticeId) {
     document.getElementById('dBuyer').textContent = data.buyer;
     document.getElementById('dBudget').textContent = formatBudget(data.budget_amount);
 
-    const dday = getDDay(data.deadline_at, data.cancellation);
+    const dday = getDDay(data.deadline_at, data.cancellation, data.deadline_status);
     document.getElementById('dBadge').className = `badge ${dday.badge}`;
     document.getElementById('dBadge').textContent = dday.str;
-    document.getElementById('dDeadline').textContent = data.deadline_at ? data.deadline_at.replace('T', ' ').substring(0, 19) : (data.deadline_raw || '미확인');
+    document.getElementById('dDeadline').textContent = data.deadline_status === 'DATE_ONLY' ? (data.deadline_raw || '날짜만 확인') + ' (시각 미확인)' : (data.deadline_at ? data.deadline_at.replace('T', ' ').substring(0, 19) : (data.deadline_raw || '미확인'));
 
     document.getElementById('dCategories').innerHTML = (data.categories || []).map(c => `<span class="badge badge-cat">${escapeHtml(c)}</span>`).join(' ') || '일반';
 

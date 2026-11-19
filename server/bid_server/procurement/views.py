@@ -20,6 +20,7 @@ from bid_server.core.responses import PageResponse
 from .models import (
     Notice,
     NoticeVersion,
+    DeadlineStatus,
     Document,
     DocumentVersion,
     Proposal,
@@ -102,19 +103,28 @@ class NoticeListAPIView(APIView):
             else:
                 qs = qs.filter(current_version__department_categories__contains=[field])
 
-        # 4. 상태 필터 (open, closed, cancelled)
+        # DATE_ONLY does not establish a time; never advertise it as open.
+        known_deadline = Q(current_version__deadline_status__in=[
+            DeadlineStatus.PARSED, DeadlineStatus.EXPIRED,
+        ], current_version__deadline_at__isnull=False)
+
+        # 4. 상태 필터 (open, closed, cancelled, unknown)
         if status_filter == "open":
             qs = qs.filter(
+                known_deadline,
                 current_version__cancellation=False,
-                current_version__deadline_at__gte=now,
+                current_version__deadline_status=DeadlineStatus.PARSED,
+                current_version__deadline_at__gt=now,
             )
         elif status_filter in ("closed", "expired"):
             qs = qs.filter(
-                current_version__cancellation=False,
-                current_version__deadline_at__lt=now,
+                known_deadline, current_version__cancellation=False,
+                current_version__deadline_at__lte=now,
             )
         elif status_filter == "cancelled":
             qs = qs.filter(current_version__cancellation=True)
+        elif status_filter == "unknown":
+            qs = qs.filter(current_version__cancellation=False).exclude(known_deadline)
 
         # 5. 마감일 범위 필터
         if deadline_from:
@@ -129,7 +139,9 @@ class NoticeListAPIView(APIView):
         ).strip()
         if days_left_min_str.isdigit():
             min_deadline = now + timedelta(days=int(days_left_min_str))
-            qs = qs.filter(current_version__deadline_at__gte=min_deadline)
+            qs = qs.filter(known_deadline, current_version__deadline_status=DeadlineStatus.PARSED,
+                           current_version__cancellation=False, current_version__deadline_at__gt=now,
+                           current_version__deadline_at__gte=min_deadline)
 
         # 5-2. 배정예산 범위 필터 (원 단위)
         budget_min_str = request.query_params.get("budget_min", "").strip()
@@ -204,7 +216,8 @@ class DashboardAPIView(APIView):
         total_notices = Notice.objects.count()
         open_notices = Notice.objects.filter(
             current_version__cancellation=False,
-            current_version__deadline_at__gte=now,
+            current_version__deadline_status=DeadlineStatus.PARSED,
+            current_version__deadline_at__gt=now,
         ).count()
         cancelled_notices = Notice.objects.filter(
             current_version__cancellation=True
@@ -239,7 +252,8 @@ class DashboardAPIView(APIView):
 
         urgent_count = Notice.objects.filter(
             current_version__cancellation=False,
-            current_version__deadline_at__gte=now,
+            current_version__deadline_status=DeadlineStatus.PARSED,
+            current_version__deadline_at__gt=now,
             current_version__deadline_at__lte=urgent_window,
         ).count()
 
@@ -259,7 +273,8 @@ class DashboardAPIView(APIView):
                 "urgent_deadline_3d": urgent_count,
                 "major_candidates": Notice.objects.filter(
                     current_version__cancellation=False,
-                    current_version__deadline_at__gte=now,
+                    current_version__deadline_status=DeadlineStatus.PARSED,
+                    current_version__deadline_at__gt=now,
                     current_version__budget_amount__gte=300000000,
                 ).count(),
             },

@@ -1,3 +1,8 @@
+## 2026-11-19 MVP-01 — 명시적 공고 수입→검색/상세 후보 (IMPLEMENTED_UNVERIFIED)
+
+- 기존 CLI, importer, API, workspace 재사용. 과거 동일 해시를 재수입해도 현재 포인터·첨부 이력을 되돌리지 않고, 낮은 숫자 공식 차수 및 새 공식 차수 근거 없는 취소 해제 거부. 날짜만 확인 시 DATE_ONLY 유지, 진행중/임박/주요 및 D-Day 필터에서 제외하고 미확인 화면 상태 추가. 기존 시간대 저장값은 이번 변경에서 수정하지 않았다. 전체 최신성·원문 진위·미확인 차수 판정은 아직 인증하지 않는다.
+- 합성 CLI dry-run/실행/중복 및 원본 불변, 인증 검색·분류/공식 링크/상세, 취소 및 과거 snapshot 재수입 E2E, 낮은 차수와 마감 미확인·정각 회귀 추가. 새 SHA CI/독립 검수 미완료; 기존 670c846 server foundation 및 development harness PASS 관측(44475843483/44475843497); 나머지 workflow 아직 실행중으로 관측. 실 API/운영 자료·계정·서버 변경 없음. RELEASE NO_GO / REVIEW_DEBT 유지.
+
 ## 2026-11-19 MVP-00 — 권한 수명 회귀 보완 후보 (IMPLEMENTED_UNVERIFIED)
 
 - 문서 범위 조회/추출에서 요청 auth_epoch·DB 활성/잠금/강제변경 상태 대조. 저장 트랜잭션은 계정 행→문서 버전 행 순서로 잠금, 소유권/원본 결속을 재검증한다. PostgreSQL 잠금 계약: https://docs.djangoproject.com/en/5.2/ref/models/querysets/#select-for-update ; SQLite는 행 잠금을 보증하지 않는다.

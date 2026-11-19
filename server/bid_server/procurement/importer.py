@@ -90,7 +90,7 @@ def parse_deadline(deadline_raw: str | None) -> tuple[datetime | None, str]:
         return None, DeadlineStatus.AMBIGUOUS
 
     # 기한 경과 여부 점검
-    if dt < timezone.now():
+    if status == DeadlineStatus.PARSED and dt <= timezone.now():
         status = DeadlineStatus.EXPIRED
 
     return dt, status
@@ -226,6 +226,26 @@ class LegacyNoticeImporter:
         )
         if created_notice:
             results["created_notices"] += 1
+
+        # Replaying a historical payload cannot restore an old current pointer.
+        historical = notice.versions.filter(source_payload_digest=digest).order_by("-version_seq").first()
+        if historical is not None:
+            results["idempotent_skipped"] += 1
+            return historical
+
+        current = notice.current_version
+        if current is not None:
+            if current.notice_id != notice.pk:
+                raise ValueError("Invalid current notice version.")
+            previous_revision = current.source_revision or ""
+            new_revision = source_revision or ""
+            ordered_revisions = previous_revision.isdecimal() and new_revision.isdecimal()
+            if ordered_revisions and int(new_revision) < int(previous_revision):
+                raise ValueError("Older official notice revision.")
+            if current.cancellation and not cancellation:
+                # No implicit resurrection from an unversioned or same-order replay.
+                if not ordered_revisions or int(new_revision) <= int(previous_revision):
+                    raise ValueError("Cancelled notice requires a newer official revision.")
 
         # 3. 새로운 version_seq 결정 (단조 증가, 과거 버전 보존 A05)
         last_version = notice.versions.order_by("-version_seq").first()

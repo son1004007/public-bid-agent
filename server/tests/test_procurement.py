@@ -377,6 +377,16 @@ class AcceptanceA15LegacyMigrationIdempotencyTests(TestCase):
         self.assertTrue(notice.current_version.correction)
         self.assertIn("예산 증액 정정", notice.current_version.title)
 
+    def test_unseen_lower_revision_cannot_overwrite_cancelled_current(self):
+        importer = LegacyNoticeImporter()
+        base = {"id": "synthetic-revision", "bid_order": "02", "title": "취소", "cancellation": True}
+        importer.import_notices([base])
+        with self.assertRaises(ValueError):
+            importer.import_notices([{**base, "bid_order": "01", "title": "Older", "cancellation": False}])
+        notice = Notice.objects.get(notice_number=base["id"])
+        self.assertTrue(notice.current_version.cancellation)
+        self.assertEqual(notice.versions.count(), 1)
+
     def test_cli_management_command(self):
         """import_legacy_notices CLI 관리 명령 정상 동작 및 파일 예외 검증."""
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
