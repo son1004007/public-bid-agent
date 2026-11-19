@@ -107,6 +107,36 @@ def load_local_database(path: Path) -> dict:
         raise invalid("LOCAL_DATABASE_FILE") from None
 
 
+def load_local_media_root(env: Mapping[str, str], app_root: Path) -> Path:
+    """The Windows loopback launcher must select a dedicated, precreated root.
+
+    Filesystem ACL validation belongs to the launcher/operator. Do not resolve
+    away a junction, symlink or other reparse point in the configured path.
+    """
+    key = "BID_LOCAL_PRIVATE_MEDIA_ROOT"
+    try:
+        profile = Path(required(env, "USERPROFILE"))
+        raw = Path(required(env, key))
+        if not profile.is_absolute() or raw != profile / "PublicBidAgent-private-media":
+            raise invalid(key)
+        for component in (raw, *raw.parents):
+            meta = component.lstat()
+            if (stat.S_ISLNK(meta.st_mode) or not stat.S_ISDIR(meta.st_mode)
+                    or getattr(meta, "st_file_attributes", 0)
+                    & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 1024)):
+                raise invalid(key)
+        media = private_path(env, key)
+        app = app_root.resolve()
+        if (media.is_relative_to(app) or app.is_relative_to(media)
+                or REPOSITORY_ROOT.is_relative_to(media)):
+            raise invalid(key)
+        if os.name != "nt" and media.stat().st_mode & 0o077:
+            raise invalid(key)
+        return media
+    except (OSError, ValueError, RuntimeError):
+        raise invalid(key) from None
+
+
 def valid_host(value: str) -> bool:
     if value.startswith("[") and value.endswith("]"):
         try:
