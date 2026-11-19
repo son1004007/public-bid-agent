@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — actual archive restore PASS
+
+- [x] Exact 0654f315 CI 4/4; versioned recovery runner uses Windows pg_ctl restricted-token launch, separate private loopback cluster.
+- [x] Actual same-device archive restore succeeded, 11 selected tables fingerprinted, FK validation and write rollback passed, isolated cluster stopped; independent status probe confirms no recovery listener and existing service remains.
+- [ ] Original archive-time row parity NOT_VERIFIED; current-source comparison timed out with termination unconfirmed. Reconcile before retry; new coordinated backup should capture source fingerprints at the same snapshot. Retain private scratch safely until specific cleanup.
+- [ ] Legacy RFP corpus/complete backup scope, credential applicability/remediation, fresh-context independent review, actual browser and release rollback. Main merge/deploy NO_GO.
+
 ## 2026-11-19 PR #5 checkpoint — actual archive recovery
 
 - [x] Exact a488cdd6 CI 4/4; actual archive hash/ACL/TOC preflight and full offline pg_restore SQL decoding PASS.
