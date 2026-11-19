@@ -1,3 +1,8 @@
+## 2026-11-19 NAS official URL — verified preview
+
+- [x] b272f27 4/4 CI and NAS 35 tests; re-query existing 847 exact metadata matches and 847 allowed public links; clone import/cutover, separate-client HTTPS shell and 401 verified. Existing DB/old app preserved. Manual authenticated link-click verification remains pending. Preview banner distinguishes synthetic cost.
+- [ ] Next: durable isolated PostgreSQL migration and backups (retain notice versions, user accounts/decisions; no changes to existing DBs), restart-safe deployment and approved bounded collection refresh. Then RFP evidence collection. No automatic schedules enabled or production approval.
+
 ## 2026-11-19 official notice URL correction
 
 - [ ] Narrow official notice-link projection candidate (fixed provider path, two matching public identifiers) and browser allowlist; CI and actual source URL re-collection/backfill, NAS runtime validation pending. Existing document URL restriction unchanged.

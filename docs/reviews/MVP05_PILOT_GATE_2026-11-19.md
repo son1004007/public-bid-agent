@@ -31,3 +31,5 @@
 - Owner registered isolated NAS preview tailnet route. Independent Windows client HTTPS health/workspace 200 and anonymous notice access 401; existing routes unchanged. Authenticated acceptance and reboot persistence remain open, no production release.
 
 - Owner-authorized NAS G2B live call/import: 892 returned rows / 847 logical latest real notice records, 847 idempotent replay, synthetic records preserved; local workspace response passed. Real link projection blocked by current filter, real RFP/authenticated UI/persistent DB/reboot remain open. Synthetic cost inputs not approved company values. No production release.
+
+- b272f27 4/4 CI + NAS 35 tests. Official links recollected/matched 847/847; isolated clone enrichment and relay switch verified, old DB state preserved, separate Windows HTTPS updated shell 200 and anonymous 401. Runtime banner labels simulated cost/decisions. No authenticated manual click verification, durable PostgreSQL, real RFP, independent review, or production release.
