@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — actual PostgreSQL backup
+
+- [x] Exact previous head 8ee65210 CI 4/4 pass; bounded native psql read-only connection succeeds, 11/11 expected tables, no export artifact references at observation.
+- [x] Protected same-device backup-only directory created; actual DB-only custom archive created, 11 table-data entries in archive TOC, stable SHA-256, persisted private manifest independently reread and verified. Legacy baseline and existing checkout/listener observed unchanged.
+- [ ] Actual restore NOT RUN; isolated trusted cluster and source parity/rollback needed (custom archive uses pg_restore, not existing plain SQL rehearsal entrypoint). No overwrite, no live-target recovery. Map full legacy RFP corpus and coordinated backup boundary. DB_ONLY does not satisfy full release backup gate.
+- [ ] Credential applicability/remediation; fresh-context independent review; actual browser acceptance and release rollback. Main merge/deploy NO_GO.
+
 ## 2026-11-19 PR #5 checkpoint — explicit DB backup selection
 
 - [x] Remove backup/restore Python implicit DB config fallback; shared strict local loader and new tests. Server foundation CI passed on 010accd5.
