@@ -27,3 +27,5 @@
 - Read-only pilot preflight and [operations handoff](MVP05_PILOT_OPERATIONS_2026-11-19.md) added as candidate. Production target not authorized, no deployment/reviewer GO. CHECKS_PASS is not release approval.
 
 - NAS isolated synthetic candidate 4853ab2 runs locally with focused 24 tests PASS and anonymous access denied. Tailnet HTTPS route authorization denied; no remote browser/login evidence. Production gate unchanged.
+
+- Owner registered isolated NAS preview tailnet route. Independent Windows client HTTPS health/workspace 200 and anonymous notice access 401; existing routes unchanged. Authenticated acceptance and reboot persistence remain open, no production release.

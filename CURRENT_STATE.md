@@ -1,3 +1,7 @@
+## 2026-11-19 NAS synthetic preview — TAILNET_HTTPS_REACHABLE
+
+- Owner executed authorized dedicated Tailscale Serve route command. Both isolated preview containers remained running; from the Windows notebook (separate tailnet device), HTTPS health 200, login shell 200 with expected login form, anonymous notices 401 confirmed. NAS-side self-connection timed out before independent client check; not a service failure from verified client. Existing Serve routes preserved and new route tailnet-only (no Funnel). Owner can now try synthetic preview; actual authenticated user flow and reboot durability not yet verified. No real data, production release, independent review, or schedules enabled. Private endpoint and temporary credential stay outside repository. App image continues to use 4853ab2.
+
 ## 2026-11-19 NAS isolated synthetic preview — LOCAL_RUNNING, remote access BLOCKED
 
 - User requested NAS preview. Exact app candidate 4853ab2 hosted CI 4/4 PASS. Built pinned Python 3.12 image on NAS with both hash-locked requirement files and pip check. DSM Docker CPU CFS quota and PID cgroup unsupported; used core pinning, memory limit, per-user nproc ulimit. Actual 24 focused aggregate/shared-review/preflight/provision tests PASS in a network-none read-only container. No NAS-wide settings changed.
