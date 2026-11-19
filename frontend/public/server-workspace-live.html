@@ -587,6 +587,25 @@ function allowedNoticeUrl(raw, noticeNumber) {
   } catch (_) { return ''; }
 }
 
+function allowedAttachmentUrl(raw, noticeNumber) {
+  const plain = allowedSourceUrl(raw);
+  if (plain) return plain;
+  if (typeof raw !== 'string' || typeof noticeNumber !== 'string' || !raw || /[\s\\]/.test(raw)) return '';
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'https:' || u.hostname !== 'www.g2b.go.kr' || u.username || u.password || u.port || u.hash ||
+        u.pathname !== '/pn/pnp/pnpe/UntyAtchFile/downloadFile.do' ||
+        !/^\?[A-Za-z0-9_=-]+(?:&[A-Za-z0-9_=-]+){4}$/.test(u.search)) return '';
+    const p = u.searchParams;
+    const keys = ['bidPbancNo', 'bidPbancOrd', 'fileSeq', 'prcmBsneSeCd', 'fileType'];
+    if ([...p.keys()].length !== 5 || keys.some(k=>p.getAll(k).length!==1)) return '';
+    if (p.get('bidPbancNo')!==noticeNumber || !/^[A-Za-z0-9-]{4,32}$/.test(noticeNumber) ||
+        !/^[0-9]{1,5}$/.test(p.get('bidPbancOrd')) || !/^[1-9][0-9]{0,3}$/.test(p.get('fileSeq')) ||
+        !['03','05'].includes(p.get('prcmBsneSeCd')) || p.get('fileType')!=='') return '';
+    return u.href;
+  } catch (_) { return ''; }
+}
+
 function clearBusiness() {
   generation++; listSeq++; detailSeq++;
   fullAccess = false;
@@ -828,7 +847,7 @@ document.getElementById('noticeTableBody').addEventListener('click', event => {
   if (button) openNoticeDetail(button.dataset.noticeId);
 });
 
-function renderReview(review) {
+function renderReview(review, noticeNumber) {
   const target = document.getElementById('dReview');
   target.replaceChildren();
   const add = (tag, value) => {
@@ -852,7 +871,7 @@ function renderReview(review) {
       add('p', item.excerpt);
       add('small', '문서 v' + item.document_version_seq + ' · SHA ' + item.source_sha256.slice(0,12)
         + ' · 구절 #' + item.ordinal + ' · 위치 ' + (Object.keys(item.locator).length ? JSON.stringify(item.locator) : '미확인'));
-      const url = allowedSourceUrl(item.source_url);
+      const url = allowedAttachmentUrl(item.source_url, noticeNumber);
       if (url) {
         const link = document.createElement('a');
         link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
@@ -1052,7 +1071,7 @@ async function openNoticeDetail(noticeId) {
     document.getElementById('dSourceUrl').textContent = g2bUrl ? '허용된 공개 출처 링크' : '공개 링크 미확인';
     if (g2bUrl) { link.href = g2bUrl; link.hidden = false; }
 
-    renderReview(data.review);
+    renderReview(data.review, data.notice_number);
     const docs = data.documents || [];
     if (!docs.length) {
       document.getElementById('dDocuments').innerHTML = '<div style="font-size:12px; color:var(--muted);">조회 가능한 첨부 문서가 없습니다.</div>';
@@ -1066,7 +1085,7 @@ async function openNoticeDetail(noticeId) {
             <b>${escapeHtml(d.logical_key)}</b>
             <small>${escapeHtml(v.media_type || '문서 파일')} ${escapeHtml(sz ? '• ' + sz : '')} • SHA: ${escapeHtml(v.sha256 ? v.sha256.substring(0,8) : '-')}</small>
           </div>
-          ${allowedSourceUrl(v.source_url) ? `<a href="${escapeHtml(allowedSourceUrl(v.source_url))}" target="_blank" rel="noopener noreferrer" class="btn-sm">공개 출처</a>` : ''}
+          ${allowedAttachmentUrl(v.source_url, data.notice_number) ? `<a href="${escapeHtml(allowedAttachmentUrl(v.source_url, data.notice_number))}" target="_blank" rel="noopener noreferrer" class="btn-sm">공개 출처</a>` : ''}
         </div>`;
       }).join('');
     }

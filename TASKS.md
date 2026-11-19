@@ -1,3 +1,8 @@
+## 2026-11-19 RFP first public slice
+
+- [x] Actual official attachment metadata probe and five HWPX downloads (one parsed, four parser-limit failures).
+- [ ] Candidate identity-bound source URL, private raw storage and extraction status import, NAS UI evidence and regression tests. Next address actual HWPX parser limit failures and PDF/HWP support; no unbounded parsing.
+
 ## 2026-11-19 NAS regular collection — latest results
 
 - [x] Candidate 525d8c7 one-shot official API + PostgreSQL incremental ingestion validated on NAS. 879 actual notices (32 new), 1,732 versions, 879 official links; replay no writes. 7 focused tests and 3/4 CI PASS; legacy Chrome startup timeout retry pending. Existing scheduler remains disabled.

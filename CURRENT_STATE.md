@@ -1,3 +1,7 @@
+## 2026-11-19 RFP first actual public document slice
+
+- Live NAS probe: 890 official rows; current 123 candidate notices, 331 named attachments (126 HWPX, 122 PDF, 77 HWP, 6 others). Observed exact official downloader path and five public query keys, including blank fileType; 03/05 business codes. Downloaded 5 HWPX files from distinct matching current notices (4,011,682 bytes), one parser PASS 22,675 characters, 4 limited (two XML size, two XML structure). No parser limits relaxed. Candidate narrow attachment-link projection and explicit operator-only importer; no shared ACL grant. Tests, DB import and UI deployment pending, PDF/HWP unsupported. No external AI, schedule/reboot changes or production release.
+
 ## 2026-11-19 NAS official periodic refresh — live one-shot PASS, schedule pending confirmation
 
 - Owner deferred reboot auto-start and advanced to real data refresh. Exact candidate 525d8c7 NAS 7 focused tests PASS; server foundation, development harness, Sprint 1 CI PASS; Windows legacy Chrome synthetic local acceptance timed out at Browser.getVersion (135476627420), failed job rerun requested, final rerun not verified at this observation. Independent review debt remains. No main merge or production release.

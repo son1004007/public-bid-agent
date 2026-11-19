@@ -84,11 +84,51 @@ def notice_source_url(notice):
     return public_notice_url(version.source_url, notice.notice_number, version.source_revision)
 
 
+def public_attachment_url(value, notice_number, source_revision):
+    """공식 첨부 다운로드 경로와 공고번호/차수 결속만 허용한다."""
+    if not isinstance(value, str) or len(value) > 1000 or any(ord(c) < 33 or c == "\\" for c in value):
+        return ""
+    try:
+        p = urlsplit(value)
+        if (p.scheme != "https" or p.hostname != "www.g2b.go.kr" or p.port not in (None, 443)
+                or p.username is not None or p.password is not None or p.fragment
+                or p.path != "/pn/pnp/pnpe/UntyAtchFile/downloadFile.do"
+                or not re.fullmatch(r"[A-Za-z0-9_=-]+(?:&[A-Za-z0-9_=-]+){4}", p.query)):
+            return ""
+        pairs = parse_qsl(p.query, keep_blank_values=True, strict_parsing=True, max_num_fields=5)
+        fields = dict(pairs)
+        if len(pairs) != 5 or set(fields) != {"bidPbancNo", "bidPbancOrd", "fileSeq", "prcmBsneSeCd", "fileType"}:
+            return ""
+        no, order = fields["bidPbancNo"], fields["bidPbancOrd"]
+        rev = str(source_revision) if source_revision is not None else ""
+        if (not re.fullmatch(r"[A-Za-z0-9-]{4,32}", no) or no != notice_number
+                or not re.fullmatch(r"[0-9]{1,5}", order) or not re.fullmatch(r"[0-9]{1,5}", rev)
+                or int(order) != int(rev) or fields["fileType"] != ""
+                or not re.fullmatch(r"[1-9][0-9]{0,3}", fields["fileSeq"])
+                or fields["prcmBsneSeCd"] not in ("03", "05")):
+            return ""
+        return urlunsplit(("https", "www.g2b.go.kr", p.path, urlencode({
+            key: fields[key] for key in ("bidPbancNo", "bidPbancOrd", "fileSeq", "prcmBsneSeCd", "fileType")
+        }), ""))
+    except (ValueError, TypeError):
+        return ""
+
+
+def document_source_url(version):
+    if version.notice_version.notice_id != version.document.notice_id:
+        return ""
+    return public_source_url(version.source_url) or (
+        public_attachment_url(version.source_url, version.document.notice.notice_number,
+                              version.notice_version.source_revision)
+        if version.document.notice.source == "G2B_OFFICIAL_API" else ""
+    )
+
+
 class DocumentVersionSerializer(serializers.ModelSerializer):
     source_url = serializers.SerializerMethodField()
 
     def get_source_url(self, obj):
-        return public_source_url(obj.source_url)
+        return document_source_url(obj)
 
     class Meta:
         model = DocumentVersion

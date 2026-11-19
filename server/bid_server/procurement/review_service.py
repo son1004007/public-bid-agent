@@ -8,7 +8,7 @@ from .extractor_service import scoped_document_versions
 from .models import (
     Chunk, DeadlineStatus, DocumentFreshness, DocumentVersion, ExtractionRun, ExtractionState,
 )
-from .serializers import public_source_url, notice_source_url
+from .serializers import document_source_url, notice_source_url
 
 # Candidate signals only; existing legacy taxonomy is broader and independently evaluated.
 CHECKS = (
@@ -73,7 +73,7 @@ def review_projection(notice, actor, *, now=None):
     result["truncated"] = len(documents) > MAX_DOCUMENTS
     # Only the latest run may contribute; a later failed run must not resurrect old excerpts.
     eligible = [d for d in documents[:MAX_DOCUMENTS]
-                if re.fullmatch(r"[0-9a-fA-F]{64}", d.sha256 or "") and public_source_url(d.source_url)]
+                if re.fullmatch(r"[0-9a-fA-F]{64}", d.sha256 or "") and document_source_url(d)]
     remaining = MAX_CHUNKS
     for doc in eligible:
         run = ExtractionRun.objects.filter(document_version=doc).order_by("-created_at", "-pk").first()
@@ -101,7 +101,7 @@ def review_projection(notice, actor, *, now=None):
                            if k in LOCATOR_KEYS and type(val) is int and 0 <= val <= 1000000}
                 check["evidence"].append({
                     "document_version_id": str(doc.pk), "document_version_seq": doc.version_seq,
-                    "source_sha256": doc.sha256, "source_url": public_source_url(doc.source_url),
+                    "source_sha256": doc.sha256, "source_url": document_source_url(doc),
                     "extraction_run_id": str(run.pk), "chunk_id": str(chunk.pk),
                     "ordinal": chunk.ordinal, "locator": locator, "excerpt": excerpt,
                     "verification": "UNVERIFIED",

@@ -1,3 +1,5 @@
+> Public RFP preview: operator-only `import_public_rfp` imports bounded predownloaded HWPX with explicit owner and current-version validation; raw stored privately by SHA-256, parse failures recorded, no shared approval. Exact official attachment query allowlist. See CURRENT_STATE.md.
+
 > NAS preview collection: `scripts/collect_g2b_public.py` reads the API key via stdin and outputs bounded public metadata; `refresh_g2b_snapshot --expected-db-name NAME` reads JSON on stdin, defaults to dry-run, and accepts `--apply` only for the approved PostgreSQL target. No company data or credentials in snapshots. Older revisions and same-order conflicts cannot overwrite reviewed current data. See current state before running; schedules and production release are separate.
 
 > **2026-11-19 pilot provisioning candidate:** operator-only `pilot_provision` validates private, independently hashed aggregate plans; dry-run by default; explicit apply creates initial scope for existing accounts or appends a new cost basis revision without modifying existing membership. No actual company values/roles or deployment applied. See pilot operations handoff.
