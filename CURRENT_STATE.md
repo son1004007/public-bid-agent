@@ -1,3 +1,8 @@
+## 2026-11-20 Provider-MCP subscription research / no runtime change
+
+- User clarified direction: bid server's AI Gateway as **MCP client** to model-executor MCP servers, returns/stores validated JSON; existing public data MCP is the **reverse** direction. [Official-source-first findings](docs/server-migration/15-mcp-provider-executor-subscription-policy.md): Gemini CLI individual Pro OAuth discontinued 2026-06-18; paid Pro Antigravity offers Gemini 4 Neon, Argon, Hydrogen (conditions), and partner Claude models. Google FAQ explicitly disallows third-party app wrapping of consumer `agy` headless; Anthropic disallows routing personal Claude plan credentials for other users. API/enterprise or separately licensed execution required for shared company Gateway. This is research/architecture only, no new provider MCP execution, personal CLI invocation, credentials, external model calls, data1 deploy, company data transfer or CI/test claimed.
+- Existing MCP 3-tool synthetic tests retain last verified evidence; no change to runtime/data code. HBR-04 future provider MCP mock contract is now a planned P0 design step; HBR-01/02 baseline dependency unchanged.
+
 ## 2026-11-20 MCP isolated CI verification (no remote deployment)
 
 - Exact commit `4662851b3c8b342114fab0f8f6bcb094b21ccbe3` on the security draft branch: [MCP hosted CI run 44636741407](https://github.com/son1004007/public-bid-agent/actions/runs/44636741407) **PASS**. Python 3.12 scope validation **6 tests PASS**, Django test-settings synthetic in-memory SQLite current/public/approved RFP scope **3 tests PASS**, official MCP Python SDK 2.3.0 in-memory `tools/list` and `tools/call` **PASS** for 3 tools and disabled-default guard. Tests use no company data/production DB/external LLM.
