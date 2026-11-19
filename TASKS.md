@@ -1,3 +1,10 @@
+## 2026-11-19 PR #5 checkpoint — protected-data preflight
+
+- [x] Exact-head 7cfbd3ff CI 4/4 passed.
+- [x] Documented legacy JSON root discovered; four known present files pass two consecutive local SHA-256 reads. Preliminary broad-SID ACL checks on data files/key/config and actual local Django system check passed.
+- [ ] Durable private baseline BLOCKED: prior manifest job timeout/termination unconfirmed, zero matching files found; proposed parent has 4 unexpected allow ACEs under strict allowlist. Verify isolated evidence directory with restrictive ACL, capture baseline without publishing hashes, identify additional legacy and PostgreSQL/RFP roots and coordinate backup/rollback. No claim full operational data integrity.
+- [ ] Private media root absent; verify approved provisioning and ACL; resolve credential incident applicability; fresh-context independent review and actual notebook browser/rollback. Main merge and existing localhost release remain gated.
+
 ## 2026-11-19 PR #5 checkpoint — isolated notebook HTTP verified
 
 - [x] Exact 0b4589fd: four CI workflows pass after one unchanged-source Windows Chrome startup retry; portable HTTP Windows/Linux and Ubuntu Chrome steps confirmed.
