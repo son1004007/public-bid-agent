@@ -8,7 +8,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from django.core.exceptions import ImproperlyConfigured
-from bid_server.config import REPOSITORY_ROOT, load_config, secret_file, load_local_database
+from bid_server.config import REPOSITORY_ROOT, load_config, secret_file, load_local_database, load_local_media_root
 
 
 class ConfigurationTests(TestCase):
@@ -96,6 +96,45 @@ class ConfigurationTests(TestCase):
             for value in ["relative/path", str(REPOSITORY_ROOT / "fixture-secret")]:
                 with self.subTest(key=key):
                     self.reject({**self.env, key: value})
+
+    def test_local_media_root_requires_separate_explicit_existing_directory(self):
+        profile = self.root.resolve()
+        app = profile / "app"
+        media = profile / "PublicBidAgent-private-media"
+        app.mkdir()
+        env = {"USERPROFILE": str(profile), "BID_LOCAL_PRIVATE_MEDIA_ROOT": str(media)}
+        with self.assertRaises(ImproperlyConfigured):
+            load_local_media_root(env, app)
+        self.assertFalse(media.exists())
+        media.mkdir(mode=0o700)
+        self.assertEqual(load_local_media_root(env, app), media)
+        for bad in ({}, {"USERPROFILE": str(profile)}, {**env, "BID_LOCAL_PRIVATE_MEDIA_ROOT": ""},
+                    {**env, "BID_LOCAL_PRIVATE_MEDIA_ROOT": str(app)},
+                    {**env, "BID_LOCAL_PRIVATE_MEDIA_ROOT": str(profile)},
+                    {**env, "BID_LOCAL_PRIVATE_MEDIA_ROOT": "relative"},
+                    {**env, "BID_LOCAL_PRIVATE_MEDIA_ROOT": str(profile / "release-evidence")}):
+            with self.subTest(keys=list(bad)):
+                with self.assertRaises(ImproperlyConfigured):
+                    load_local_media_root(bad, app)
+        with self.assertRaises(ImproperlyConfigured):
+            load_local_media_root(env, media / "nested-app")
+        if os.name != "nt":
+            media.chmod(0o755)
+            with self.assertRaises(ImproperlyConfigured):
+                load_local_media_root(env, app)
+
+    def test_local_media_root_rejects_linked_directory(self):
+        profile = self.root.resolve()
+        media = profile / "PublicBidAgent-private-media"
+        other = profile / "other"
+        other.mkdir(mode=0o700)
+        try:
+            media.symlink_to(other, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("Symlink creation not permitted")
+        with self.assertRaises(ImproperlyConfigured):
+            load_local_media_root({"USERPROFILE": str(profile), "BID_LOCAL_PRIVATE_MEDIA_ROOT": str(media)},
+                                  profile / "app")
 
     def test_local_database_rejects_remote_hosts_arbitrary_options_and_missing_files(self):
         import json
