@@ -6,6 +6,7 @@
 - 공식 조달청 02 조회 오퍼레이션의 개별 공고번호/차수 응답(JSON **전체 원본 바이트**)과 지정 G2B HWPX의 **실제 HTTP 응답 바이트**를 별도로 수집한다.
 - 소스: [official_g2b_capture.py](../../../server/ai_gateway_core/official_g2b_capture.py). 공식 고정 HTTPS hostname+path, 번호·차수 결속, 정확히 1건의 공식 공고, 중복 JSON key/HTTP 리다이렉트/프록시/압축/8MiB 초과 거부. 두 SHA-256 개별 산출. 임의 타 호스트·첨부 파라미터·인증정보 포함 URL은 차단.
 - 운영자용 [capture_official_g2b.py](../../../scripts/capture_official_g2b.py): **수동 실행**. 원본은 CLI stdout/GitHub에 출력하지 않는다. --apply가 없으면 조회·해시만, 있으면 기존 비공개 root의 0700 하위 디렉터리에 0600 원본+manifest 보관. O_EXCL·동일 바이트 재실행 멱등·불일치 차단. 서비스키는 G2B_SERVICE_KEY 환경변수로만 읽고 인자·결과·manifest에 포함하지 않는다.
+- **플랫폼 권한 제한:** 비공개 원본 저장은 POSIX 0700/0600을 검증한 Linux/Unix에 한정. Windows는 NTFS ACL 정책 검증 미구현이므로 STORAGE_PLATFORM_UNVERIFIED로 거부. Windows CI에서는 네트워크 검증/저장 거부를 테스트하고 POSIX 보관 재실행 테스트는 건너뛴다.
 - **DB·분석 불변:** NoticeVersion, DocumentVersion, ExtractionRun, PublicRfpAttestation, AnalysisRun, AI Gateway Job, 정기 수집 및 공급자 실행은 수정하지 않는다. UNATTESTED_RAW_CAPTURE는 승인/운영 E2E 통과가 아니다.
 
 ## 운영자 수동 절차 (격리된 승인 환경에서만)
@@ -27,7 +28,7 @@
 
 ## 합성 보안 검증
 
-- [test_ai_gateway_official_capture.py](../../../server/tests/test_ai_gateway_official_capture.py): 실제 공고와 무관한 synthetic HTTP 6건. 공고번호/차수 불일치, 중복 JSON 키, 위조 호스트·첨부 URL, 잘못된 ZIP·압축 응답, 보관 재실행·변조·repo 내부 저장 거부.
+- [test_ai_gateway_official_capture.py](../../../server/tests/test_ai_gateway_official_capture.py): 실제 공고와 무관한 synthetic HTTP 6건(Windows는 POSIX 저장 긍정 1건 skip). 공고번호/차수 불일치, 중복 JSON 키, 위조 호스트·첨부 URL, 잘못된 ZIP·압축 응답, 보관 재실행·변조·repo 내부 저장 거부.
 - [AI Gateway core workflow](../../../.github/workflows/ai-gateway-core.yml)에서 해당 테스트 실행. GitHub CI·실제 API·NAS 운영 결과는 최신 Actions/CURRENT_STATE를 별도 확인한다.
 
 [상위 AGW 인덱스](README.md) · [기존 AGW-05 무결성 검사](AGW-05-PUBLIC-PROVENANCE-2026-11-20.md) · [TASKS.md](../../../TASKS.md)
