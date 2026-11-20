@@ -1,3 +1,11 @@
+## 2026-11-21 P0-02 실 NAS 인수 — 격리 PG/복구 PASS, 운영 실자료 read-only PASS
+
+> **2026-11-21 P0-02 실 NAS 격리 DB/복구 인수:** [격리 PostgreSQL migration·복구·실원본 대조](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md#6-2026-11-21-격리-db-배포복구-및-실원본-검증). 작업 브랜치 e2756f38의 별도 임시 checkout + 네트워크 차단 PostgreSQL 16.15 tmpfs 환경에서 신규 0004 테이블/불변 트리거 설치, 합성 SourceLink 1건 INSERT, 독립 DB 백업·복구 및 rollback/reapply 모두 **PASS**. 실제 공식 원본과 기존 운영 DB는 정확한 최신 검증 함수로 **읽기 전용 PASS**. **운영 DB migration/실원본 INSERT는 NOT_APPLIED**, 격리 DB로 실제 raw 바이트 INSERT는 도구 안전검사에서 차단되어 **NOT_RUN**. 임시 컨테이너·checkout 폐기, 기존 NAS 앱 running. 직원 승인/AI 반출/회사 배포 및 PR #5 release 차단 유지.
+
+- **경계:** 합성 SourceLink 1건은 별도 임시 DB에서만 생성 및 복원 후 폐기. 실제 공식 notice/HWPX와 운영 DB에 최신 코드 검증 함수를 적용하여 통과했으나 실원본을 격리 DB에 INSERT하는 통합 요청은 도구 안전 검사로 NOT_RUN. 운영 DB의 새 0004 테이블/마이그레이션 부재를 직접 재확인. 실제 NAS 앱 running, 기존 DB/원본/사용자/예약 변경 없음.
+
+---
+
 ## 2026-11-21 P0-03 새 코드 SHA CI 확정 (문서 HEAD와 분리)
 
 - > **2026-11-21 P0-03 최신 정확 코드 CI 확인:** SHA `80ef1409750de4c8672f877802249d7ece64d6dc` [core 94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818921068), [Django Windows/Linux/PostgreSQL 각각 437 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818921064) (migration --check PASS). 기존 P0-03 synthetic test의 예외 catch를 구체화한 최신 코드까지 검증됨. NAS 실원본 5/5 read-only preview 14,743 chunks/단축 표 셀 149/1800 초과 0·원본·DB 무변경 (Gateway job_01M7XD0K8Z00PV044MDX3RXN6K). 운영 DB 재추출/업무 승인/모델 반출은 수행하지 않음.

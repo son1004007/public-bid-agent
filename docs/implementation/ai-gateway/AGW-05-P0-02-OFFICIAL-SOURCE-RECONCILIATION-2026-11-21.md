@@ -1,7 +1,7 @@
 # AGW-05 / P0-02 — 공식 raw 응답과 기존 DB 정규화 digest 불변 결속
 
 - 기준일: 2026-11-21 KST. 소유: [TASKS 최상단 P0-02](../../../TASKS.md) / [P0-01 실측](AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md).
-- 상태: CODE_IMPLEMENTED / SYNTHETIC_CODE_CI_PASS_SHA_7fe897c4 / NAS_REAL_SOURCE_READ_ONLY_PASS / EXISTING_NAS_DB_MIGRATION_NOT_RUN / REAL_LINK_NOT_APPLIED.
+- 상태: CODE_IMPLEMENTED / SYNTHETIC_CODE_CI_PASS_SHA_7fe897c4 / NAS_REAL_SOURCE_READ_ONLY_PASS / ISOLATED_PG_MIGRATE_RESTORE_PASS / EXISTING_NAS_DB_MIGRATION_NOT_RUN / REAL_LINK_NOT_APPLIED.
 
 ## 1. 원인 / 설계
 
@@ -38,3 +38,32 @@
 - 다음 P0-03: 표/각주 누락 PARTIAL, source locator·offset 유지한 UTF-8 1800byte 이하 Chunk 분할, coverage.complete 허위 승인 금지.
 - P0-04 BLOCKER: 기존 public_source.py는 raw 응답 digest를 NoticeVersion canonical digest와 직접 대조해 실공고를 승인할 수 없습니다. P0-04에서 OfficialSourceLink 재검증과 staff 명시 승인으로 변경하기 전 PUBLIC packet/provider egress는 OFF입니다.
 - 운영 release/회사 data1/모델 자동 실행/AGY 위임/기존 예약은 승인 전 OFF. PR #5 미병합 유지.
+
+
+## 6. 2026-11-21 격리 DB 배포·복구 및 실원본 검증
+
+**인수:** ISOLATED_DB_MIGRATION_RESTORE_PASS / LIVE_SOURCE_READ_ONLY_VALIDATION_PASS / REAL_BYTES_TO_ISOLATED_DB_INSERT_NOT_RUN / LIVE_DB_MIGRATION_NOT_APPLIED.
+
+### 격리 PostgreSQL 테스트
+
+- 기존 NAS 앱 이미지에는 최신 ai_gateway migration 파일이 포함되어 있지 않음을 확인. 현재 서비스·DB는 변경하지 않음.
+- GitHub 작업 브랜치 SHA e2756f38301cf3202e16b3d22a08dce41f8bd015를 독립 NAS /tmp에 임시 checkout, Docker bind readonly. PostgreSQL 16.15-alpine 컨테이너는 network none, 포트 publish 없음, 비승격 UID 70, cap-drop ALL, 데이터 및 임시 백업 모두 tmpfs.
+- 신규 최신 Django 프로젝트 check/makemigrations check/migrate → OfficialSourceLink table과 PostgreSQL immutability trigger 각각 1 PASS. Gateway job_01M7XJ1ECR00SEP952P7F6KWW2.
+- 격리 DB의 *합성* notice/version/doc/staff/OfficialSourceLink 1건 INSERT, PublicRfpAttestation 0 PASS (job_01M7XJ5QZA00V20K9978TAVYEW). 공식 원문이나 운영 비밀/기존 DB의 사용자 정보는 이 합성 기록에 포함하지 않음.
+- 임시 DB pg_dump -Fc → 독립 p002_restore DB pg_restore → SourceLink 1, trigger 1, 합성 notice 1 PASS (job_01M7XJ6J5600H56MHGCHP9XVFP).
+- 복원본에서 ai_gateway 0004→0003 rollback 후 table/trigger 제거 PASS, 0003→0004 재적용 후 table/trigger 재생성 PASS (job_01M7XJ789C00FFPFZB3260JKNX).
+- 복원본 DB만 초기화한 뒤 앞선 pg_dump를 다시 복원하여 SourceLink 1, trigger 1, notice 1 재확인 (job_01M7XJ7W7200DDQTBKNV2BGRG9). 위 백업은 운영 백업이 아니며 테스트 종료 시 폐기.
+
+### 실제 P0-01 공식 원본 + 운영 DB 읽기 전용 검증
+
+- 실제 원본 notice 5,764 bytes SHA b342a3e28e32c9e9e0e4499ab939acf0d0019c3c17656f67c49c3bb965891666; 기존 공식 HWPX 894,665 bytes SHA d18a92085d7d01c5e29186b0b10a119cdeb499f70f9183823701c48a993d3dad.
+- 운영 DB를 SET TRANSACTION READ ONLY로 조회해 공고번호/수치 차수, 제목, notice/document 공식 URL, canonical metadata SHA, DocumentVersion current/owner/freshness/ACL을 재검산 (job_01M7XJ2GMC004G8AAX3N1THEWY).
+- 최신 코드의 load_notice_only_source_files, _manifest 및 _validate_current_link를 실제 raw notice/기존 HWPX와 운영 DB NoticeVersion/DocumentVersion에 적용: 네트워크 분리, 기존 비공개 volume/DB socket/비밀 모두 readonly, PostgreSQL READ ONLY 트랜잭션, **PASS**. 공식 raw SHA와 기존 canonical SHA는 서로 다름을 다시 확인했고 문서 SHA/공식 출처는 일치 (job_01M7XJ8TWB00G561K2Y3FNHFP8).
+- 운영 DB에 현재 OfficialSourceLink table **없음**, ai_gateway 0004 migration **미적용**, 해당 기존 DocumentVersion 1건 유지 확인 (job_01M7XJA8PN00GGE063VNNXYAPB).
+- 격리 PostgreSQL/tmpfs와 pinned checkout은 종료·제거됨, 운영 public-bid-mvp-pg-rfp-web 컨테이너 running 유지. 최초 종료 직후 inspect는 즉시 제거 시차로 불일치하였으나 후속 read-only 관측에서 임시 자원 모두 없음 확인 (job_01M7XJBN0Y006FX2D5H4YDFX8C + 후속 확인).
+
+### 잔여 승인·릴리스 경계
+
+- 공식 raw 원본을 격리 DB에 실제 INSERT하는 혼합 도구 요청은 안전 검사에서 차단되어 **NOT_RUN**. 합성 데이터의 DB 실삽입과 실제 raw/운영 DB read-only 검증을 합쳐 실원본 INSERT가 끝났다고 주장하지 않음.
+- 기존 운영 DB 0004 마이그레이션 및 실데이터 SourceLink INSERT를 위해서는 현재 SHA와 일치하는 설치 이미지, 운영 DB·비공개 media·capture 원본의 일관된 백업/격리 복원, 운영자 권한·롤백·인수 승인이 별도로 필요함. 이번 합성 DB 백업 테스트는 운영 데이터의 복구 근거가 아님.
+- P0-03 기존 DB 재추출 및 P0-04 staff PUBLIC/별도 provider_export 승인·AI 호출은 전부 NOT_RUN. 중앙 credential USER ACTION #26, PR #5 Draft/회사 data1/구독 공유·자동 스케줄 제한 유지.
