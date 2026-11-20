@@ -114,6 +114,29 @@ class SnapshotContractTests(unittest.TestCase):
         args["evidence"][0]["extraction_run_id"] = RUN
         self.assertNotEqual(self.make().sha256, build_snapshot(**args).sha256)
 
+    def test_prompt_is_deterministic_and_evidence_remains_json_data(self):
+        from ai_gateway_core.snapshot import render_analysis_prompt
+        snapshot = self.make()
+        first = render_analysis_prompt(
+            snapshot=snapshot, expected_sha256=snapshot.sha256, provider="CODEX",
+        )
+        second = render_analysis_prompt(
+            snapshot=snapshot, expected_sha256=snapshot.sha256, provider="CODEX",
+        )
+        self.assertEqual(first, second)
+        self.assertIn('"schema_version":"analysis_request_v1"', first)
+        self.assertIn("untrusted RFP", first)
+        self.assertIn(snapshot.sha256, first)
+        self.assertIn("UNKNOWN", first)
+
+    def test_prompt_refuses_wrong_digest_or_provider(self):
+        from ai_gateway_core.snapshot import render_analysis_prompt
+        snap = self.make()
+        with self.assertRaisesRegex(SnapshotError, "SNAPSHOT_DIGEST_MISMATCH"):
+            render_analysis_prompt(snapshot=snap, expected_sha256="0" * 64, provider="CODEX")
+        with self.assertRaisesRegex(SnapshotError, "INVALID_PROVIDER"):
+            render_analysis_prompt(snapshot=snap, expected_sha256=snap.sha256, provider="OTHER")
+
     def test_tampered_packet_rejected(self):
         s = self.make()
         s.payload["requirements"][0]["excerpt"] = "Changed"
