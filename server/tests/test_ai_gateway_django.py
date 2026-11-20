@@ -131,7 +131,7 @@ class ProviderStatusAPITests(TestCase):
                                        notice_number="AGW-NOTICE-00001")
         session = SessionBinding.objects.create(
             profile=p, notice=notice,
-            provider_session_id="01a1f6a7-9dd4-7843-99bb-bca6bf1d73ca",
+            provider_session_id="11111111-2222-4333-8444-555555555555",
         )
         response = self.login_as(self.owner.username).get(
             "/api/v1/ai/providers", secure=True
