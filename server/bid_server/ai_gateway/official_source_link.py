@@ -12,7 +12,10 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
+from pathlib import Path
 import re
+import stat
 import zipfile
 
 from django.db import transaction
@@ -293,3 +296,71 @@ def verify_official_source_link(
     if result is None or result.pk != link.pk:
         raise SourceLinkError("SOURCE_LINK_MISSING")
     return result
+
+
+def _safe_private_read(root_path, relative_name, expected_dir=None):
+    """Read an exact, derived key only. Reject symlinks, unsafe modes and hardlinks."""
+    root = Path(root_path) if isinstance(root_path, (str, os.PathLike)) else None
+    try:
+        if root is None or not root.is_absolute() or root.is_symlink():
+            raise SourceLinkError("PRIVATE_SOURCE_PATH_DENIED")
+        root = root.resolve(strict=True)
+        from bid_server.config import REPOSITORY_ROOT
+        if (not root.is_dir() or root.is_relative_to(REPOSITORY_ROOT)
+                or (root.stat().st_mode & 0o022)):
+            raise SourceLinkError("PRIVATE_SOURCE_PATH_DENIED")
+        if expected_dir:
+            folder = root / expected_dir
+            if (folder.is_symlink() or not folder.is_dir()
+                    or stat.S_IMODE(folder.stat().st_mode) != 0o700):
+                raise SourceLinkError("PRIVATE_SOURCE_PATH_DENIED")
+        file_path = root / relative_name
+        if file_path.is_symlink():
+            raise SourceLinkError("PRIVATE_SOURCE_PATH_DENIED")
+        fd = os.open(file_path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        with os.fdopen(fd, "rb") as source:
+            meta = os.fstat(source.fileno())
+            if (not stat.S_ISREG(meta.st_mode)
+                    or stat.S_IMODE(meta.st_mode) != 0o600
+                    or meta.st_nlink != 1 or meta.st_size < 1
+                    or meta.st_size > MAX_BYTES):
+                raise SourceLinkError("PRIVATE_SOURCE_PATH_DENIED")
+            data = source.read(MAX_BYTES + 1)
+        if not data or len(data) > MAX_BYTES:
+            raise SourceLinkError("PRIVATE_SOURCE_PATH_DENIED")
+        return data
+    except SourceLinkError:
+        raise
+    except (OSError, ValueError, TypeError):
+        raise SourceLinkError("PRIVATE_SOURCE_PATH_DENIED") from None
+
+
+def load_notice_only_source_files(
+    *, capture_root, private_media_root, capture_id, document_sha256,
+):
+    """Read only P0-01 archive + EXISTING private HWPX. No network/DB mutation."""
+    if os.name == "nt":
+        raise SourceLinkError("STORAGE_PLATFORM_UNVERIFIED")
+    if (type(capture_id) is not str or not _HEX64.fullmatch(capture_id)
+            or type(document_sha256) is not str
+            or not _HEX64.fullmatch(document_sha256)):
+        raise SourceLinkError("CAPTURE_IDENTITY_MISMATCH")
+    base = f"{CAPTURE_DIR}/{capture_id}"
+    manifest_raw = _safe_private_read(
+        capture_root, base + ".existing.manifest.json", CAPTURE_DIR,
+    )
+    notice_raw = _safe_private_read(
+        capture_root, base + ".notice.raw.json", CAPTURE_DIR,
+    )
+    document_raw = _safe_private_read(
+        private_media_root, f"public-rfp/{document_sha256}.hwpx", "public-rfp",
+    )
+    manifest = _manifest(
+        manifest_bytes=manifest_raw,
+        raw_notice_payload_bytes=notice_raw,
+        raw_document_bytes=document_raw,
+    )
+    if (manifest["capture_id"] != capture_id
+            or manifest["document_sha256"] != document_sha256):
+        raise SourceLinkError("CAPTURE_IDENTITY_MISMATCH")
+    return notice_raw, document_raw, manifest_raw
