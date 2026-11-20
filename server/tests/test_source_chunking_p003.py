@@ -11,10 +11,12 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from bid_server.procurement.source_chunking import (
-    MAX_CHUNK_UTF8_BYTES, MAX_CHUNKS_PER_BLOCK, SourceChunkError,
+    MAX_CHUNK_UTF8_BYTES, SourceChunkError,
     split_source_text,
 )
-from bid_server.procurement.extractor_service import ExtractionService
+from bid_server.procurement.extractor_service import (
+    DocumentSourceMismatchError, ExtractionService,
+)
 from bid_server.procurement.models import (
     ChunkPath, Document, DocumentVersion, ExtractionRun, Notice, NoticeVersion,
 )
@@ -168,7 +170,7 @@ class PersistEvidenceChunkTests(TestCase):
 
     def test_source_tampering_or_chunk_budget_failure_rolls_back(self):
         tampered = self.raw + b"x"
-        with self.assertRaises(Exception):
+        with self.assertRaises(DocumentSourceMismatchError):
             ExtractionService.extract_and_persist(self.doc, tampered, "RFP.hwpx")
         self.assertFalse(ExtractionRun.objects.exists())
         with patch("bid_server.procurement.extractor_service.MAX_CHUNKS_PER_EXTRACTION", 1):
