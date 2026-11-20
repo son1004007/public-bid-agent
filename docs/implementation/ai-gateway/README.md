@@ -1,5 +1,7 @@
 > **2026-11-20 사용자 최신 우선순위 (기존 mock-first 대체):** 유료 Codex/Claude 실호출을 허용하고 **빠른 실제 E2E·정확도 검증을 우선**한다. P0은 AGW-00 공식 이용·호환 확인/AGW-02 안전 격리와 병행하여 **첫 번째 허용 provider 실제 유료 요청→JSON→resume**을 조기 검증하는 것. 그다음 두 번째 provider 실제 요청 및 독립 교차 검증. 기존 '모든 합성 기능 완성 후 실호출'은 과거 백업 경로다. 회사 자료 외부 전송, CLI 구독 중계, data1 운영 배포는 기존 계약/보안 승인 필수. 테스트 코어: [server/ai_gateway_core](../../../server/ai_gateway_core), [코어 회귀 15건](../../../server/tests/test_ai_gateway_core.py), [CI](../../../.github/workflows/ai-gateway-core.yml). 유료 E2E 아직 NOT_RUN.
 
+> **2026-11-20 P0 실제 개발/실측 최신:** [AGW 첫 실행 결과와 검증 로그](AGW-RUN-2026-11-20.md) 참조. 사용자 개인 Windows Codex 0.166.0에서 **실제 모델 JSON 요청 + 동일 세션 Resume 성공**. `server/ai_gateway_core/codex_cli.py`의 코드/테스트 및 `server/bid_server/ai_gateway`의 Django ProviderProfile/SessionBinding/GET /api/v1/ai/providers 코드·migration 추가. [AGW core CI 35건](https://github.com/son1004007/public-bid-agent/actions/runs/44659013489), [Server foundation Linux/Windows/PostgreSQL 303건씩](https://github.com/son1004007/public-bid-agent/actions/runs/44659013442) PASS. **서비스 사용자별 CLI 로그인/OS 격리 실행기/실제 자동 분석 요청·회사 data1 배포는 여전히 미완료.** 기존 '전체 구현 미착수/모의 테스트만' 문구는 이 최신 상태로 대체한다. 상태 정본은 [TASKS](../../../TASKS.md)/[CURRENT_STATE](../../../CURRENT_STATE.md).
+
 # AI Gateway / Codex·Claude Code 구현 작업 단위 인덱스
 
 - 기준일: 2026-11-20 KST
