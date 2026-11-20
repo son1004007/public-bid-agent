@@ -20,8 +20,8 @@ from .codex_cli import (
 )
 
 # Installed/inspected with Synology Container Manager; do not silently upgrade.
-NAS_CODEX_IMAGE = "device-control/codex-runtime:0.163.0"
-NAS_MODEL = "gpt-6.1-sol"
+NAS_CODEX_IMAGE = "device-control/codex-runtime:0.171.0"
+NAS_MODEL = "gpt-6.2-sol"
 
 
 @dataclass(frozen=True)
