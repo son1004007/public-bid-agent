@@ -158,6 +158,9 @@ def validate_raw_result(
                             parse_constant=lambda _: (_ for _ in ()).throw(
                                 ResultContractError("NONFINITE_VALUE")
                             ))
+    except ResultContractError:
+        # Preserve explicit duplicate-key and nonfinite-value rejection codes.
+        raise
     except (ValueError, TypeError, RecursionError) as exc:
         raise ResultContractError("INVALID_RESULT_JSON") from exc
     return validate_model_result(result=result, snapshot=snapshot,
