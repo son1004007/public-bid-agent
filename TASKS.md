@@ -1,3 +1,16 @@
+## 2026-11-20 AI Gateway 구현 작업 계획 — AGW-00~15 (상세 설계 게시 / 구현 미착수)
+
+사용자 지시로 Codex·Claude Code 서버 로그인·기존 세션 resume·0/1/2 프로필 분기·독립 교차 검증을 **모듈별 상세 설계서 16개**로 분해했다. 이 항목은 기존 HBR-04(모델 분석 worker)·HBR-06(사용자 화면)·HBR-08(회사 운영/실자료 승인)의 **하위 세부 계획**이지 기존 HBR 원장/우선순위를 대체하지 않는다. 다른 AI·새 채팅은 반드시 [AGW 작업 인덱스/선행조건·실패/검증 계약](docs/implementation/ai-gateway/README.md) → 선택 카드 순으로 접근한다. 해당 폴더에는 [AGW-15 구현 공통 계약](docs/implementation/ai-gateway/AGW-15-implementation-contracts.md)(DB schema·API·JSON·Adapter 상태)도 있다.
+
+| AGW 묶음 | P0/P1 | 상세 설명/선행관계 | 상태 |
+| --- | --- | --- | --- |
+| AGW-00~04 | P0 (실 CLI/IDC 승인 전 HOLD) | 공급자 계약·사용자별 DB/RBAC·CLI 격리·본인 로그인·세션 Resume/lease | 5개 설계서 작성 / 미구현 |
+| AGW-05~09 | P0 | 불변 RFP 입력·Codex/Claude 별도 adapter·0/1/2 가용 실행·JSON 검증·저장 | 5개 설계서 작성 / 미구현 |
+| AGW-10~12 | P0~P1 | 근거 기반 교차 검증·이슈 한정 공유·React 설정/분석 화면 | 3개 설계서 작성 / 미구현 |
+| AGW-13~15 | P0~P1/운영 HOLD | CI·운영 안전/복구, 성능/정확도 평가, 공통 구현 계약 | 3개 설계서 작성 / 미구현 |
+
+**바로 가능한 첫 개발 슬라이스:** AGW-15 → AGW-01 → AGW-05 → AGW-09 → AGW-03 mock → AGW-04 mock → AGW-08 mock → AGW-10 mock. 모든 코드는 합성 데이터와 허가된 isolated runtime으로만 수행, 실제 회사 외부 데이터/개인 구독 자동 호출/운영 배포는 승인 전 차단. 기존 HBR-01/02/03의 검색·근거 데이터 의존은 유지. 작업별 완료 시 해당 카드/검증 SHA/CURRENT_STATE/이 원장의 증거로 상태 갱신.
+
 > **2026-11-20 최신 서버 CLI/세션 설계 (P0):** [16 사용자별 Codex/Claude 서버 로그인·resume·독립 분석/불일치 때만 공유](docs/server-migration/16-user-cli-session-and-blind-cross-check.md)가 최신 실행 방식이다. 등록·로그인·실제 READY 분리, 0개 AI OFF / 1개 단독 / 2개 독립 병렬. 각 웹 사용자마다 provider 별 격리된 CLI 계정/홈과 **공고×목적별 고정 세션 ID**를 보존, 동일 분석은 resume, **실제 장애·오염·이슈로만 새 session**. 첫 분석은 대화/응답 공유 금지, 비교는 서버 결정론적 검증, 불일치 이슈 발생 시에만 ISSUE_REVIEW 전용 세션에 필요한 짧은 주장·근거 공유. RFP 변경 시 snapshot 버전 재검증, 잠금·동시 resume 차단, 비인가 외부 전송 금지. **회사 공용 개인 구독 중계/인증 토큰 저장 금지; 기업용 또는 사용자가 직접 승인된 공식 CLI 호스팅·조직 정책을 확인하기 전 외부 호출 OFF.** 이전 수동 업로드 우선안은 허용된 서버 실행이 불가능할 때의 fallback. HBR-04/06/08 선행 설계, 구현/CI/운영 미완료.
 
 > **2026-11-20 최신 조건부 교차 검증 요구 (P0):** [15 세부 상태·JSON 계약·13개 인수 시나리오](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). Codex와 Claude Code 각각 독립 프로필 등록. 실제 `READY` 0개=`NO_AI`, 1개=`SINGLE_CODEX|SINGLE_CLAUDE`+교차 검증 미실행, 2개=`DUAL_INDEPENDENT` 동일 근거를 각 모델이 다른 답변을 보지 않고 1차 분석→2개 JSON 도착 시 비교. 불일치·근거 부족은 사람이 검토; 둘 중 하나 누락/실패는 PENDING/DEGRADED로 표시. 소비자 CLI는 사용자 직접 실행·JSON 수동 업로드만, 회사 공용 자동 MCP/CLI 중계는 업체별 승인이 있을 때만. 기존 '1개만 선택' 방향은 위 조건부 모드로 대체. **HBR-04 실행 계약·독립 분석 비교, HBR-06 가용 상태/UI/비교 이력, HBR-08 승인 실자료 검증에 반영; 구현 전**.
