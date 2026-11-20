@@ -1,3 +1,5 @@
+> **2026-11-20 최신 Codex/Claude Code 독립 프로필 방향:** [15 사용자별 직접 실행·JSON 검증 설계](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). 3-provider 자동 멀티 라우터보다 Codex와 Claude Code 개별 등록·사용자 직접 CLI·JSON 가져오기 우선. Gemini 제외(사용자 환경에서 3.8 Flash 확인). 개인 구독을 회사 서버가 대신 호출하지 않음. 구현/운영 배포 미수행.
+
 > **2026-11-20 MCP 모델 실행 최신 진입점:** [15 subscription CLI/MCP provider 실행 계약](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). 사용자는 비용 절감을 위해 서버가 MCP로 Codex/Claude/Gemini 실행기에 JSON 분석을 요청하는 방식을 검토한다. Google AI Pro는 Antigravity에서 Gemini 4 Neon/Argon 지원하나 타사 MCP 래핑은 소비자 약관상 지원되지 않음; 개인 Claude 구독 중계도 금지. 정본은 DECISIONS/TASKS, 실제 provider 연결 NOT_IMPLEMENTED.
 
 > **2026-11-20 전사 역량 및 부서 협업 확장:** [12 전사 역량·협업 Hybrid RAG 설계](docs/server-migration/12-enterprise-capability-hybrid-rag.md)를 HBR 최신 상세로 적용한다. 법인 자격/실적과 주관·지원 부서 역량/가용성을 분리, 정량 SQL + 정성 RAG, 자체/사내/외부/혼합 시나리오 및 전사·주관 손익 비교. 기존 자료 승인/개인 원가 금지/업무권한 유지. 개인 프로젝트 독립 AI 리뷰는 최신 CONTROL에 따라 선택; 필수 자체 검증·실제 결함·회사/운영 승인 유지.
