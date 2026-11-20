@@ -9,6 +9,7 @@ urlpatterns = [
     path("api/v1/health", HealthView.as_view(), name="health"),
     path("api/v1/", include("bid_server.jobs.urls")),
     path("api/v1/", include("bid_server.procurement.urls")),
+    path("api/v1/", include("bid_server.ai_gateway.urls")),
 ]
 for route, view in [("csrf", CsrfView), ("login", LoginView), ("session", SessionView),
                     ("change-password", ChangePasswordView), ("logout", LogoutView)]:
