@@ -8,6 +8,7 @@ on:
       - 'server/tests/test_ai_gateway_core.py'
       - 'server/tests/test_codex_adapter.py'
       - 'server/tests/test_nas_docker_codex.py'
+      - 'server/tests/test_ai_gateway_snapshot.py'
       - '.github/workflows/ai-gateway-core.yml'
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - 'server/tests/test_ai_gateway_core.py'
       - 'server/tests/test_codex_adapter.py'
       - 'server/tests/test_nas_docker_codex.py'
+      - 'server/tests/test_ai_gateway_snapshot.py'
       - '.github/workflows/ai-gateway-core.yml'
 
 permissions:
@@ -35,6 +37,6 @@ jobs:
         with:
           python-version: '3.12'
       - name: Compile
-        run: python -m compileall -q server/ai_gateway_core server/tests/test_ai_gateway_core.py server/tests/test_codex_adapter.py server/tests/test_nas_docker_codex.py
+        run: python -m compileall -q server/ai_gateway_core server/tests/test_ai_gateway_core.py server/tests/test_codex_adapter.py server/tests/test_nas_docker_codex.py server/tests/test_ai_gateway_snapshot.py
       - name: Run fail-closed 0-1-2 and evidence comparison tests
-        run: PYTHONPATH=server python -m unittest server.tests.test_ai_gateway_core server.tests.test_codex_adapter server.tests.test_nas_docker_codex -v
+        run: PYTHONPATH=server python -m unittest server.tests.test_ai_gateway_core server.tests.test_codex_adapter server.tests.test_nas_docker_codex server.tests.test_ai_gateway_snapshot -v
