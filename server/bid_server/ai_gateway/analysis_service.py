@@ -50,11 +50,16 @@ def _authorized_actor(actor):
 
 
 def _chunk_text(chunk):
-    # Avoid splitting UTF-8 characters in half and bound outbound prompts.
-    excerpt = chunk.text.encode("utf-8")[:1800].decode("utf-8", "ignore").strip()
-    if not excerpt:
+    # Silent truncation hides later requirements and defeats full-source integrity.
+    # Explicit chunking must happen in the trusted extraction pipeline instead.
+    if type(chunk.text) is not str:
+        raise AnalysisServiceError("INVALID_SOURCE_SPAN")
+    full_bytes = chunk.text.encode("utf-8")
+    if len(full_bytes) > 1800:
+        raise AnalysisServiceError("SOURCE_CHUNK_TOO_LARGE")
+    if not chunk.text.strip() or "\x00" in chunk.text:
         raise AnalysisServiceError("EMPTY_SOURCE_SPAN")
-    return excerpt
+    return chunk.text
 
 
 def _trusted_chunks(*, chunk_ids, expected_version, actor):
@@ -85,6 +90,8 @@ def _trusted_chunks(*, chunk_ids, expected_version, actor):
 
 def _verify_stored_provenance(*, packet, actor, version):
     """Re-read current database ACL/extraction and the exact chunk bytes."""
+    if packet["notice_source_digest"] != version.source_payload_digest:
+        raise AnalysisServiceError("STALE_NOTICE_SOURCE_DIGEST")
     rows = packet["requirements"] + packet["evidence"]
     ids = {_uuid(row["source_span_id"], "INVALID_SOURCE_SPAN") for row in rows}
     chunks = _trusted_chunks(chunk_ids=ids, expected_version=version, actor=actor)
@@ -92,9 +99,20 @@ def _verify_stored_provenance(*, packet, actor, version):
         chunk = chunks[_uuid(row["source_span_id"], "INVALID_SOURCE_SPAN")]
         doc = chunk.extraction_run.document_version
         excerpt = _chunk_text(chunk)
+        expected_kind = (
+            "QUALIFICATION" if chunk.category == ChunkCategory.QUALIFICATION
+            else "TECHNICAL" if chunk.category == ChunkCategory.REQUIREMENT
+            else None
+        )
         if (
             row["source_document_id"] != str(doc.pk)
             or row["source_version"] != str(doc.pk)
+            or row["document_sha256"] != doc.sha256
+            or row["extraction_run_id"] != str(chunk.extraction_run_id)
+            or (
+                "required_kind" in row
+                and row["required_kind"] != expected_kind
+            )
             or row["excerpt"] != excerpt
             or row["source_hash"] != hashlib.sha256(excerpt.encode("utf-8")).hexdigest()
         ):
@@ -184,6 +202,8 @@ def create_synthetic_analysis_run(
                 "source_version": str(doc.pk),
                 "source_span_id": str(c.pk),
                 "source_hash": hashlib.sha256(excerpt.encode("utf-8")).hexdigest(),
+                "document_sha256": doc.sha256,
+                "extraction_run_id": str(c.extraction_run_id),
                 "required_kind": ("QUALIFICATION" if c.category == ChunkCategory.QUALIFICATION
                                   else "TECHNICAL"),
                 "excerpt": excerpt, "extraction_state": "PARSED",
@@ -198,6 +218,8 @@ def create_synthetic_analysis_run(
                 "source_document_id": str(doc.pk),
                 "source_version": str(doc.pk), "source_span_id": str(c.pk),
                 "source_hash": hashlib.sha256(excerpt.encode("utf-8")).hexdigest(),
+                "document_sha256": doc.sha256,
+                "extraction_run_id": str(c.extraction_run_id),
                 "excerpt": excerpt, "classification": "SYNTHETIC",
                 "approved_for_provider": True,
                 "requirement_ids": ["R-" + str(x) for x in req_ids],
@@ -206,6 +228,7 @@ def create_synthetic_analysis_run(
         corpus_id = uuid.uuid4()
         packet = build_snapshot(
             run_id=str(run_id), notice_version_id=str(version.pk),
+            notice_source_digest=version.source_payload_digest,
             corpus_snapshot_id=str(corpus_id), prompt_version=prompt_version,
             requirements=requirements, evidence=evidence,
             approved_document_ids=frozenset({
