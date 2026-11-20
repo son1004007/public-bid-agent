@@ -1,3 +1,9 @@
+## 2026-11-20 P0-01 완료 — NAS 공식 원본 응답 별도 불변 저장·재검증
+
+- [NAS 실제 5건 검증 및 1건 원본 capture 영속 보관 기록](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 공식 공고 응답 5,764 bytes SHA-256 `b342a3e28e32c9e9e0e4499ab939acf0d0019c3c17656f67c49c3bb965891666`와 manifest를 개인 NAS 별도 private volume에 0700/0600으로 작성, **기존 원본 HWPX 복제 없이** 기존 verified storage key만 참조. 실시간 공식 첨부 5건 중 동일 파일 식별변수에 해당하는 1건 및 원본 GET SHA 검증 PASS. 독립 무네트워크/읽기 전용 컨테이너 SHA·manifest·ACL·2파일 재검증 PASS. 새로운 DB raw↔canonical digest 영속 결속·staff 승인·모델/회사 운영은 여전히 미완료, 기존 서비스 불변. **NEXT P0-02**.
+
+---
+
 ## 2026-11-20 P0-01 실제 NAS 공식 원본 검증 — READ_ONLY_PASS / RAW_PERSIST_PENDING (LATEST)
 
 - [실제 검증 증거·원본별 표·보안 경계·남은 작업](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 개인 NAS에 보관된 실제 HWPX 5/5 원본 `0600`/ZIP/SHA-256 DB·파일명·크기 일치, G2B 공고번호·현재 차수(공식 URL `000` / DB `0` 수치동등)·소유자 ACL/미공유 모두 확인. 총 최신 Chunk **14,594**, 1 structured/4 text-only(각 표·각주 충실도 경고), `coverage.complete` 5건 모두 없음. PostgreSQL 읽기 전용 트랜잭션, 기존 DB·원본 무변경.
