@@ -1,3 +1,26 @@
+> **2026-11-20 최신 사용자 방향:** Google AI Pro에서 본인이 확인한 CLI 대상 모델은 Gemini 3.8 Flash뿐이므로 Google/AGY는 이번 MVP 제외. **Codex·Claude Code 두 개를 각각 등록해 원하는 한 쪽만 사용자 직접 실행하고, 결과 JSON을 업로드·검증·DB에 보관하는 우선 설계**로 변경한다. 자동 Multi-LLM Router/MCP를 통한 개인 구독 무인 호출은 보류한다. 아래의 3-provider MCP executor 그림·비교는 과거 검토 대안이며 현재 실행 1순위가 아니다.
+
+## 최신 구현 제안 — 독립 실행 프로필
+
+| 등록 프로필 | 사용자 작업 | 시스템 처리 | 최초 이용 경로 |
+|---|---|---|---|
+| `CODEX_CLI` | 본인에게 허용된 Codex CLI에 직접 로그인하여 공개 RFP·합성 프로필로 분석, JSON 파일 생성 | Codex 결과로 출처·모델·버전·근거 스냅샷·JSON 검증/저장 | 개인 직접 실행 / 구독 한도 내 |
+| `CLAUDE_CODE` | 본인의 공식 Claude Code CLI에서 직접 로그인·실행, JSON 파일 생성 | Claude 결과 동일한 schema로 검증/저장 | 개인 직접 실행 / 구독 한도 내. 계정/요금제 보유 여부 별도 |
+
+1. **설정 UX:** 분석 화면에서 `AI 실행 방식 = 직접 분석 / Codex CLI / Claude Code` 중 하나 선택. Codex/Claude 모두 사용자가 별도로 '활성화'하는 **프로필 등록**이지 서버가 개인 구독 토큰을 입력받는 로그인 UI가 아니다. 각 프로필은 `profile_id`, `owner_user_id`, `display_name`, `execution_mode=MANUAL_IMPORT`, `enabled`, `schema_version` 등의 최소 정보만 관리한다. 활성화/비활성화·계정 연동 상태를 허위로 표시하지 않는다.
+2. **입력:** 선택 시 서버에서 공개 RFP 및 **실제 회사 비공개 자료를 제외한 합성/전송 승인 자료**만 담은 `analysis_request.json`과 `output.schema.json` 다운로드. 문서의 ID·해시·차수·기간·자료등급을 기록. 사용자는 자신의 공식 CLI·앱에서 직접 분석한다.
+3. **결과:** 사용자가 결과 JSON 파일을 직접 업로드하면 서버가 엄격한 schema·버전·자료 소유/접근권·요구사항별 `evidence_id` 검증, 불확실 `UNKNOWN`/부분추출 표기, 원가 계산 재검증 후 immutable 분석 revision으로 저장한다. **텍스트 출력만으로 확정된 입찰 판단을 하지 않는다.**
+4. **중복/비용:** 동일 `(notice_version, corpus_snapshot, prompt_version, profile_id, model)` 요청은 별개 revision으로 명시적으로 다시 분석하지 않는 한 중복 저장 방지. Codex와 Claude의 비교는 사용자가 명시적으로 각각 수행한 2건의 결과만 나란히 표기; 자동 중복 호출·자동 fallback 없음.
+5. **향후 자동 실행:** 회사의 정식 이용 계약으로 허용되면 **프로필별 독립 Executor**를 붙일 수 있다(MCP 또는 공급자 공식 SDK/app-server 등). 개인 구독 인증정보를 회사 서버 공용 서비스가 대신 사용하지 않으며 Anthropic 인증 중계 제한을 우회하지 않는다.
+6. **검증:** 2개 프로필 등록/비활성, 서로 다른 사용자의 결과 업로드·조회 권한 차단, 비공개 corpus export 차단, 잘못된 JSON/근거 ID 차단, 큰 파일·중복 결과·프롬프트 인젝션 검증, 분석 이력 보존. 실제 CLI 로그인/외부 회사 자료 전송 테스트는 하지 않는다.
+
+**왜 MCP가 필수가 아닌가?** 로컬 CLI를 본인이 직접 실행하고 JSON 파일을 가져오는 초기 흐름에서는 별도 AI 실행 MCP가 없어도 된다. 기존 공개 공고 조회 MCP는 필요할 때 그대로 유지. 실제 사용자별 CLI 서비스 호출이 공식 허용된 경우에만 프로필에 MCP Executor를 추가한다.
+
+공식 검토:
+- [OpenAI Codex SDK/app-server와 `codex exec`](https://developers.openai.com/blog/codex-as-a-platform)
+- [Anthropic Claude Code 인증/호스팅 조건](https://code.claude.com/docs/en/legal-and-compliance)
+- [Anthropic Claude Code CLI 사용법](https://code.claude.com/docs/en/cli-usage)
+
 # 15. MCP Provider Executor 검토 — 구독 CLI·기업용 AI 실행 경계
 
 - 기준일: 2026-11-20 KST (공식 공급자 문서 및 출시일 조회)
