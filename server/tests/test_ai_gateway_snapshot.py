@@ -1,5 +1,6 @@
 """AGW-05/09 pure contract regression; synthetic data only, no model/network."""
 import copy
+import hashlib
 import json
 import unittest
 import uuid
@@ -18,25 +19,32 @@ DOC = "44444444-5555-4666-8777-888888888888"
 SOURCE_VERSION = "55555555-6666-4777-8888-999999999999"
 SPAN1 = "66666666-7777-4888-8999-aaaaaaaaaaaa"
 SPAN2 = "77777777-8888-4999-8aaa-bbbbbbbbbbbb"
+EXTRACTION = "88888888-9999-4aaa-8bbb-cccccccccccc"
+DOCUMENT_SHA = "d" * 64
+NOTICE_DIGEST = "e" * 64
 
 
 def request_args():
     return {
         "run_id": RUN,
         "notice_version_id": NOTICE_VERSION,
+        "notice_source_digest": NOTICE_DIGEST,
         "corpus_snapshot_id": CORPUS,
         "prompt_version": "agw-v1",
         "requirements": [{
             "requirement_id": "R1", "source_document_id": DOC,
             "source_version": SOURCE_VERSION, "source_span_id": SPAN1,
-            "source_hash": "a" * 64,
+            "source_hash": hashlib.sha256(b"Synthetic 3 projects required").hexdigest(),
+            "document_sha256": DOCUMENT_SHA, "extraction_run_id": EXTRACTION,
             "required_kind": "QUALIFICATION", "excerpt": "Synthetic 3 projects required",
             "extraction_state": "PARSED",
         }],
         "evidence": [{
             "evidence_id": "E1", "evidence_type": "RFP",
             "source_document_id": DOC, "source_version": SOURCE_VERSION,
-            "source_span_id": SPAN2, "source_hash": "b" * 64,
+            "source_span_id": SPAN2,
+            "source_hash": hashlib.sha256(b"Synthetic official qualification").hexdigest(),
+            "document_sha256": DOCUMENT_SHA, "extraction_run_id": EXTRACTION,
             "excerpt": "Synthetic official qualification",
             "classification": "SYNTHETIC", "approved_for_provider": True,
             "requirement_ids": ["R1"],
@@ -82,6 +90,29 @@ class SnapshotContractTests(unittest.TestCase):
         a["requirements"][0] = dict(reversed(list(a["requirements"][0].items())))
         a["evidence"][0] = dict(reversed(list(a["evidence"][0].items())))
         self.assertEqual(self.make().sha256, build_snapshot(**a).sha256)
+
+    def test_excerpt_hash_mismatch_rejected_at_creation(self):
+        args = request_args()
+        args["requirements"][0]["source_hash"] = "a" * 64
+        with self.assertRaisesRegex(SnapshotError, "SOURCE_SPAN_HASH_MISMATCH"):
+            build_snapshot(**args)
+
+    def test_document_digest_pinned_to_packet(self):
+        base = self.make()
+        args = request_args()
+        args["evidence"][0]["document_sha256"] = "0" * 64
+        changed = build_snapshot(**args)
+        self.assertNotEqual(base.sha256, changed.sha256)
+
+    def test_notice_revision_digest_pinned_to_packet(self):
+        args = request_args()
+        changed = self.make(notice_source_digest="0" * 64)
+        self.assertNotEqual(changed.sha256, build_snapshot(**args).sha256)
+
+    def test_extraction_run_pinned_to_packet(self):
+        args = request_args()
+        args["evidence"][0]["extraction_run_id"] = RUN
+        self.assertNotEqual(self.make().sha256, build_snapshot(**args).sha256)
 
     def test_tampered_packet_rejected(self):
         s = self.make()
