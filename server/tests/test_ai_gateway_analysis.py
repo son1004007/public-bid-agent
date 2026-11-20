@@ -216,17 +216,11 @@ class SyntheticAnalysisStorageTests(TestCase):
         run = self.create_run()
         # Raw DB mutation simulates a privileged storage compromise.
         # Model.save itself is append-only and cannot perform this.
-        from django.db import connection
-        with connection.cursor() as cursor:
-            # QuerySet.update is intentionally disabled; direct SQL can bypass
-            # this until production DB triggers/grants are deployed.
-            payload = dict(run.snapshot_payload)
-            payload["prompt_version"] = "modified"
-            from django.core.serializers.json import DjangoJSONEncoder
-            cursor.execute(
-                "UPDATE ai_gateway_analysisrun SET snapshot_payload=%s WHERE id=%s",
-                [json.dumps(payload, cls=DjangoJSONEncoder), str(run.id).replace("-", "")],
-            )
+        # Deliberately bypass the public immutable objects manager to simulate
+        # a privileged DB writer. Production needs DB-level immutability grants.
+        payload = dict(run.snapshot_payload)
+        payload["prompt_version"] = "modified"
+        AnalysisRun._base_manager.filter(pk=run.pk).update(snapshot_payload=payload)
         run.refresh_from_db()
         with self.assertRaisesRegex(AnalysisServiceError, "RESULT_NOT_VALIDATED"):
             self.append(run)
