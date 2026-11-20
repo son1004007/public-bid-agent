@@ -1,3 +1,5 @@
+> **실제 연결 우선 (2026-11-20):** 코드/합성 테스트 뒤 무기한 HOLD가 아니라, 허용된 사용자 인증·격리 환경/회사 반출 조건이 확인되면 가장 먼저 **공개 RFP 1건을 실제 유료 Codex 모델로 실행하여 JSON + 동일 세션 resume**까지 E2E한다. 제품 통합에는 `codex exec`만 고집하지 않고 공식 SDK/app-server가 세션 관리에 더 유리할 수 있으므로 검증된 통합 방식을 선택한다. 최소 품질 gate는 run_id·공고 버전·evidence ID 검증. 승인 없는 company data1 설치는 여전히 보류.
+
 # Codex CLI 전용 실행·JSON·Resume Adapter
 
 - 작업 ID: AGW-06
