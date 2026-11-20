@@ -1,3 +1,5 @@
+> **2026-11-20 별도 Django AI Gateway 원본 캡처:** [AGW-05 수동 공식 원본 보관](../docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md)은 기존 local_app의 대화형 문서 텍스트 미리보기와 별도 경로입니다. 원본은 별도 비공개 root에서만 저장; staff 승인·DB digest/coverage·모델 실행/일정 반영은 미완료. 기존 local_app 수집/운영 정책 변경 없음.
+
 > **2026-11-19 pilot provisioning candidate:** operator-only `pilot_provision` validates private, independently hashed aggregate plans; dry-run by default; explicit apply creates initial scope for existing accounts or appends a new cost basis revision without modifying existing membership. No actual company values/roles or deployment applied. See pilot operations handoff.
 
 > **2026-11-19 pilot preflight candidate:** `pilot_preflight` reports fixed non-sensitive readiness statuses; production read-only mode requires separate target approval. No config generation, service start, membership provisioning, data import, or release authorization. See [pilot operations handoff](../docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md).
