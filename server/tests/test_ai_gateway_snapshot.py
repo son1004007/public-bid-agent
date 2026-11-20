@@ -117,7 +117,7 @@ class SnapshotContractTests(unittest.TestCase):
     def test_tampered_packet_rejected(self):
         s = self.make()
         s.payload["requirements"][0]["excerpt"] = "Changed"
-        with self.assertRaisesRegex(SnapshotError, "SNAPSHOT_DIGEST_MISMATCH"):
+        with self.assertRaisesRegex(SnapshotError, "SOURCE_SPAN_HASH_MISMATCH"):
             verify_snapshot(s, expected_sha256=s.sha256)
 
     def test_source_not_approved_rejected(self):
