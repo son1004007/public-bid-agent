@@ -1,5 +1,7 @@
 > **실제 연결 우선 (2026-11-20):** 코드/합성 테스트 뒤 무기한 HOLD가 아니라, 허용된 사용자 인증·격리 환경/회사 반출 조건이 확인되면 가장 먼저 **공개 RFP 1건을 실제 유료 Codex 모델로 실행하여 JSON + 동일 세션 resume**까지 E2E한다. 제품 통합에는 `codex exec`만 고집하지 않고 공식 SDK/app-server가 세션 관리에 더 유리할 수 있으므로 검증된 통합 방식을 선택한다. 최소 품질 gate는 run_id·공고 버전·evidence ID 검증. 승인 없는 company data1 설치는 여전히 보류.
 
+> **2026-11-20 실제 실행 증거:** [AGW 실행 기록](AGW-RUN-2026-11-20.md). Windows 개인 CLI `codex-cli 0.166.0`, 사용자 인증 확인 후 합성 공고를 유료 모델로 분석해 `NOT_MET` JSON 생성 및 **동일 thread UUID로 resume 성공**. 실제 사용된 안전 호출 계약: 시작 `codex exec --skip-git-repo-check --sandbox read-only --json -C <isolated-dir> -`, 재개 `codex --sandbox read-only exec resume --skip-git-repo-check --json <verified-session-uuid> -`. **Windows PowerShell/npm은 공백 포함 prompt를 직접 argv로 넘길 때 인수 분할 위험** → stdin(`-`) 사용. `--sandbox`는 resume 서브명령 옵션이 아니라 최상위 위치에 배치. [실제 구현](../../../server/ai_gateway_core/codex_cli.py), [mock 회귀](../../../server/tests/test_codex_adapter.py), [CI](https://github.com/son1004007/public-bid-agent/actions/runs/44659013489). 단, 코드는 승인된 격리 OS runner와 user-to-session DB binding을 요구하며 **서버 자체 E2E는 미완료**.
+
 # Codex CLI 전용 실행·JSON·Resume Adapter
 
 - 작업 ID: AGW-06
