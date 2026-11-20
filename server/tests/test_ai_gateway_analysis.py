@@ -234,6 +234,7 @@ class SyntheticAnalysisStorageTests(TestCase):
             AnalysisRun.objects.filter(pk=run.pk).update(prompt_version="evil")
         with self.assertRaisesRegex(ValueError, "IMMUTABLE_ANALYSIS_HISTORY"):
             AnalysisRun.objects.filter(pk=run.pk).delete()
+        run.refresh_from_db()
         revision = self.append(run)
         revision.revision_seq = 999
         with self.assertRaisesRegex(ValueError, "IMMUTABLE_ANALYSIS_HISTORY"):
