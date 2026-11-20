@@ -1,9 +1,11 @@
+> **2026-11-20 최신 AGW-05 추가 구현:** [공식 PUBLIC source bytes 검증·문서/공고/추출 digest 결속·dispatch preflight·합성 인수 기록](AGW-05-PUBLIC-PROVENANCE-2026-11-20.md). 기존 1800byte 무음 절단 제거, `notice_source_digest/document_sha256/extraction_run_id/source_hash`와 packet SHA, 원본 바이트 기반 별도 staff 승인 `PublicRfpAttestation` default OFF, official HTTPS exact host, `coverage.complete=True`, 전송 전 ACL/승인 철회 검증. **실제 조달청 API 원본 공고 수집·승인·유료 모델 실행 및 회사 데이터 전송은 여전히 NOT_DONE**, 공개 출처로 보이는 URL만으로 공개자료가 되는 것이 아님. [코어 83 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44680062831), [통합 CI](https://github.com/son1004007/public-bid-agent/actions/runs/44680062793). 아래 초기 JSON 스키마 항목보다 최신 구현 파일의 필드 계약을 우선.
+
 > **2026-11-20 최신 구현 상태: CODE_PARTIAL / SYNTHETIC_SOURCE_PASS.** [AGW-05/09 실제 코드·합성 DB·테스트 기록](AGW-05-09-IMPLEMENTATION-2026-11-20.md). `server/ai_gateway_core/snapshot.py`와 `server/bid_server/ai_gateway/analysis_service.py`에서 SYNTHETIC_FIXTURE의 Notice/DocumentVersion/ExtractionRun.PARSED/Chunk/사용자 소유권·승인 scope를 DB 조회해 SHA256 immutable packet 생성/재검증 구현. PUBLIC 실제 RFP 출처/회사 사실·외부 반출은 **아직 미연결/차단**, 모델 호출·운영 DB 적용 안 함. [AGW core 77개 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44676123480), [Django 378개×3 환경 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44676123557). 아래 계획 항목을 구현 전체 완료로 해석하지 말 것.
 
 # 불변 RFP 근거 패킷·프롬프트·JSON 스키마
 
 - 작업 ID: AGW-05
-- 상태: CODE_PARTIAL / SYNTHETIC_DB_TESTED; PUBLIC_PRODUCTION_NOT_CONNECTED
+- 상태: CODE_PARTIAL / STAFF_ATTESTED_PUBLIC_FIXTURE_PASS; REAL_PUBLIC_INGEST_NOT_DONE
 - 우선순위: P0; 선행 작업과 승인 조건은 [AGW 목차](README.md) 참조.
 - 기존 연계: [HBR 원장](../../../TASKS.md), [사용자별 세션/교차 검증](../../server-migration/16-user-cli-session-and-blind-cross-check.md), [전역 보안·계약](../../server-migration/15-mcp-provider-executor-subscription-policy.md).
 - 범위: 합성·공개 RFP와 격리 환경에서 코드/테스트 가능; 실제 CLI 로그인·회사 데이터 외부 전송·유료 모델·data1 배포는 별도 적격성·승인 전 OFF.
