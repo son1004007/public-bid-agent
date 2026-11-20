@@ -192,3 +192,31 @@ class AnalysisRevision(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValueError("IMMUTABLE_ANALYSIS_HISTORY")
+
+
+class PublicRfpAttestation(models.Model):
+    """Explicit staff review of independently hashed official public bytes.
+
+    Merely setting DocumentVersion.shared_read_approved or pointing at an
+    official-looking URL does NOT establish public provenance or provider
+    transmission permission. The trusted ingestion/review service must hash
+    both raw notice metadata and attachment bytes before recording approval.
+    This model does not grant permission to invoke a provider.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    document_version = models.OneToOneField(
+        "procurement.DocumentVersion", on_delete=models.PROTECT,
+        related_name="public_rfp_attestation",
+    )
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name="public_rfp_attestations",
+    )
+    notice_source_sha256 = models.CharField(max_length=64)
+    document_sha256 = models.CharField(max_length=64)
+    source_url = models.TextField()
+    packet_approved = models.BooleanField(default=False)
+    provider_export_approved = models.BooleanField(default=False)
+    revoked = models.BooleanField(default=False)
+    reviewed_at = models.DateTimeField(default=timezone.now)
