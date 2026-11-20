@@ -1,9 +1,9 @@
 # 서버 전환 설계 — AI·개발자 공통 시작점
 
 - 기준일: 2026-11-14 (Asia/Seoul), 집계 원가/업무 권한 설계 갱신: 2026-11-17
-- 상태: **STACK_DECIDED / DESIGN_DRAFT / NOT_IMPLEMENTED**
+- 상태: **STACK_DECIDED / CODE_PARTIAL / COMPANY_DATA1_NOT_DEPLOYED** (최신 실제 상태는 CURRENT_STATE.md와 TASKS.md)
 - 사용자 확정: Linux 서버 운영, PostgreSQL, React/TypeScript 웹, Django/DRF API, DB 로컬 계정, SSO 제외, 최초 로그인 후 비밀번호 변경 강제.
-- 이번 산출물은 설계 문서다. DB 생성·데이터 이전·인증 구현·신규 서버 배포·공개는 수행하지 않는다. 기존 로컬 운영은 보존한다.
+- 최초 작성 시점에는 설계 문서였다. 2026-11-20 현재 Django 합성 DB 모델/인증·작업 API 일부와 AGW Docker Session Adapter 구현·테스트 증거가 존재한다. **회사 운영 DB 이관·회사 data1 서버 배포·신규 서비스 공개는 아직 수행하지 않았다.** 최신 코드·실행 증거는 CURRENT_STATE/TASKS 및 AGW 실측 문서를 확인한다.
 
 ## 목차와 읽기 순서
 
@@ -26,11 +26,10 @@
 | 14 | [GPT·Claude·Gemini 연동 후보](13-multi-llm-provider-routing.md) | LLM 공급자 교체 구조, 과금·사내 반출 승인, 검증 순서 |
 | 15 | [공개 입찰 MCP 연결·검증](14-bid-mcp-interface.md) | 공개 공고/승인 RFP 읽기 도구·stdio 구현과 인증된 원격 연결 조건 |
 | 16 | [Codex·Claude 조건부 교차 검증 및 MCP·구독 정책](15-mcp-provider-executor-subscription-policy.md) | 가용 0/1/2개별 동작, 독립 분석/근거 비교/JSON 저장, 허가된 실행과 개인 CLI 경계 |
-
-| 20 | [NAS Docker Codex 동일 세션 Resume·AGW-02/04 구현 및 테스트 증거](../implementation/ai-gateway/AGW-NAS-SESSION-E2E-2026-11-20.md) | 실제 NAS Docker 2회 모델/동일 session, DB lease/fencing·컨테이너 runner, 운영 차단 조건 |
-| 19 | [AI Gateway 2026-11-20 실제 구현·검증 기록](../implementation/ai-gateway/AGW-RUN-2026-11-20.md) | 사용자별 서버 API/모델과 개인 Windows Codex E2E 분리, CI 증거 및 남은 실행 허가 |
-| 18 | [AI Gateway 실제 구현용 AGW-00~15 상세 카드/의존성](../implementation/ai-gateway/README.md) | 16개 단위 설계·계획서: CLI 로그인·세션·실행·JSON·교차 검증·UI·배포/평가, 공통 DB/API 계약 |
 | 17 | [사용자별 Codex·Claude CLI 로그인·resume·증거 기반 교차 검증](16-user-cli-session-and-blind-cross-check.md) | 세션 장기 보존, 원본 답변 비공유, 불일치 때만 별도 이슈 세션 검증 |
+| 18 | [AI Gateway 실제 구현용 AGW-00~15 상세 카드/의존성](../implementation/ai-gateway/README.md) | 16개 단위 설계·계획서: CLI 로그인·세션·실행·JSON·교차 검증·UI·배포/평가, 공통 DB/API 계약 |
+| 19 | [AI Gateway 2026-11-20 실제 구현·검증 기록](../implementation/ai-gateway/AGW-RUN-2026-11-20.md) | 사용자별 서버 API/모델과 개인 Windows Codex E2E 분리, CI 증거 및 남은 실행 허가 |
+| 20 | [NAS Docker Codex 동일 세션 Resume·AGW-02/04 구현 및 테스트 증거](../implementation/ai-gateway/AGW-NAS-SESSION-E2E-2026-11-20.md) | 실제 NAS Docker 2회 모델/동일 session, DB lease/fencing·컨테이너 runner, 운영 차단 조건 |
 
 ## 다른 AI에게 전달할 짧은 시작 지시
 
