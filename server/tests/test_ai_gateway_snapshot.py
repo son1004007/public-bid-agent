@@ -45,7 +45,7 @@ def request_args():
     }
 
 
-def model_result(snapshot, assessment="NOT_MET", citations=None):
+def model_result(snapshot, assessment="UNKNOWN", citations=None):
     p = snapshot.payload
     return {
         "schema_version": "bid_analysis_v1",
