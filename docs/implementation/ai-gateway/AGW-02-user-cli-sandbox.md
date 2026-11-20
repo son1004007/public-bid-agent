@@ -1,3 +1,5 @@
+> **구현 업데이트 2026-11-20:** [NAS 2컨테이너 실제 같은 세션 resume 인수 기록](AGW-NAS-SESSION-E2E-2026-11-20.md). 현재 NAS `0.163.0` 이미지·본인 인증에서 synthetic 유료 모델 두 번 성공. `nas_docker_codex.py`는 외부 Docker readonly root/RO workspace/전용 RW HOME, `no-new-privileges`, `cap-drop ALL`, 비승격 UID 및 사전 승인 flags를 구현했으나 **개인별 고유 OS UID, 사설망 egress 차단과 tool control은 아직 실증되지 않아 PROD OFF**. `--cpus`는 NAS 커널에서 exit125라 사용 금지, PID 제한은 지원 확인 전 믿지 않는다. **설계서 상태: CODE_PARTIAL, RUNTIME_SYNTHETIC_E2E_PASS, MULTIUSER_NOT_DONE.**
+
 # 서버 사용자별 공식 CLI 격리·파일/프로세스/네트워크
 
 - 작업 ID: AGW-02
