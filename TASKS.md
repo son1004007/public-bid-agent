@@ -1,5 +1,7 @@
 # 현재 실행 큐 — 2026-11-20 AGW·MVP·HBR 통합 정본
 
+> **2026-11-20 P0-01 완료:** [NAS 실원본/공식 API 검증·원본 저장 실측](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 실제 G2B 공고 응답 원본 5,764 byte SHA `b342a3e28e32c9e9e0e4499ab939acf0d0019c3c17656f67c49c3bb965891666`을 개인 NAS 별도 private volume에 **0600 immutable file+manifest**, 0700 디렉터리로 보관. 기존 HWPX 5개 원본 검증(선정 1건 공식 API·첨부목록·원문 GET 최신 대조), 원본 문서 저장 복제 0건. 저장 후 네트워크 분리 읽기 전용 검산 PASS. 공식 첨부 목록 API는 차수 `000` 필요, DB `0`과 수치 동일; URL 전체 문자열은 달라도 query identity·문서 원본 SHA 일치. **다음 02 P0 = 별도 raw source capture↔canonical metadata/NoticeVersion↔DocumentVersion DB 결속 설계·구현.** PUBLIC staff 승인·모델·운영 data1 여전히 OFF. 정확한 신규 코드 CI는 Actions 별도 조회.
+
 > **P0-01 실측 갱신 2026-11-20:** [NAS 기존 RFP 5건 원본·DB·권한·실 공식 API/첨부 목록 1건 검증](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md) **READ_ONLY_PASS / RAW_API_PERSIST_PENDING**. 기존 보호된 원본 HWPX 5/5 ZIP·SHA/DB 크기·공고차수·소유자 ACL 일치, 14,594 Chunk(구조 1개+text-only 경고 4개). 공식 공고 원문 5,764 bytes SHA `b342a3e28e32...`, 원본 첨부 894,665 bytes 기존 SHA 일치, 공식 첨부 목록 5건 중 동일 URL 확인. 신규 수집기 인코딩된 서비스키 재인코딩 결함 수정 [code `e3fec443`](https://github.com/son1004007/public-bid-agent/commit/e3fec443683529476de5c81740450182f2bbf8a1), [test `c74cc96f`](https://github.com/son1004007/public-bid-agent/commit/c74cc96fdd3b3c0f595de916e380484a3b6593bb): [core 91 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44691630002), [Django Win/Linux/Pg 각 415 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44691631513). **실제 raw notice 원본은 메모리 조회로만 확인, 비공개 영속 보관·DB 별도 SHA mapping·PUBLIC staff 승인/모델 실행 안 함**. 따라서 큐 01의 원본 불변 저장이 남아 있고 전체 DONE 아님. 원본 중복 복사 금지/기존 일정 OFF 유지.
 
 > **실행 우선순위 정본.** 아래 기존 2026-11-19/20 날짜별 NEXT/LATEST/HBR-01/MVP-05 기록은 **당시 이력**으로 보존합니다. 현재 다음 작업은 이 표와 CURRENT_STATE.md, 정확한 commit/CI/실제 runtime 증거를 기준으로 선택합니다. AGW/HBR/MVP 기존 ID를 재사용하며 별도 중복 백로그를 만들지 않습니다.
@@ -15,7 +17,7 @@
 
 | 순서 / 우선 | 원래 카드 | 현재 필요한 작업과 선행 조건 | 완료 기준 / 정확한 상태 |
 | --- | --- | --- | --- |
-| **01 P0 / READ_ONLY_PASS / STORAGE_PENDING** | **AGW-05 + HBR-07 최소 원본** | 기존 NAS의 실제 HWPX **5건**에 대해 원본 바이트·출처 URL·공고번호/차수·원본 SHA·기존 접근권한을 **읽기 전용**으로 재검증. 신규 수동 캡처와 같은 원본인지 대조; 없거나 불일치한 **공식 1건만** 승인된 비공개 경로에 제한 수집. 기존 보호 원본/인증·세션·스케줄 변경 금지. | 실원본 1건 이상: 공식 API 응답과 첨부 raw SHA, 취소/정정, 파일 식별·저장 권한·멱등 일치. **실원본 5/5·실 공식 재조회/첨부목록 1/5 PASS, raw 원문 영속 저장 NOT_DONE** |
+| **01 P0 / DONE (실원본 1건 archive)** | **AGW-05 + HBR-07 최소 원본** | 기존 NAS의 실제 HWPX **5건**에 대해 원본 바이트·출처 URL·공고번호/차수·원본 SHA·기존 접근권한을 **읽기 전용**으로 재검증. 신규 수동 캡처와 같은 원본인지 대조; 없거나 불일치한 **공식 1건만** 승인된 비공개 경로에 제한 수집. 기존 보호 원본/인증·세션·스케줄 변경 금지. | 실원본 1건 이상: 공식 API 응답과 첨부 raw SHA, 취소/정정, 파일 식별·저장 권한·멱등 일치. **실원본 5/5 및 새 공식 1/5 재조회+원본 불변 저장 PASS, 4/5 추가 공식 재조회 NOT_RUN; P0-02 DB 연결 별도** |
 | **02 P0** | **AGW-05·SM04/05** | API 원문 bytes SHA와 기존 metadata canonical SHA를 별도로 유지하는 **불변 source capture ↔ NoticeVersion ↔ DocumentVersion** 영속 결속. 같은 차수 충돌은 보류, 구차수/취소/정정/사람 결정 보존. | DB 무결성·rollback·재시도·중복·stale/권한 차단 합성 테스트 + 승인된 실원본 1건 읽기 전용 검산. **NOT_IMPLEMENTED** |
 | **03 P0** | **AGW-05 + HBR-07 최소 추출** | 실제 HWPX 5건의 구조화/text-only 범위 차이를 보존. 원본 SHA→ExtractionRun→locator·표/각주→Chunk 경로 증명. **UTF-8 1800bytes 이하 출처 보존 분할**; 부분 누락은 PARTIAL/UNKNOWN, complete TRUE 자동 대입 금지. | 필수 자격 위치·표/각주·큰 chunk·변조·누락/경고·정정 stale 검증. **PARTIAL / coverage·safe split NOT_DONE** |
 | **04 P0** | **AGW-05/09 + MVP-02** | 공식 실 RFP 1건의 DB 출처 결속, staff 검토형 PUBLIC 승인과 별도 provider_export_approved 확인, snapshot→근거 JSON→분석 revision. 미확인 회사 역량/실적은 UNKNOWN. | 변경·철회·미승인 시 packet/모델 요청 0건, 실제 원문 위치·근거 검증·과도한 MET 차단. **합성 PASS / 실제 스냅샷 승인 E2E NOT_RUN** |
@@ -24,7 +26,7 @@
 | **07 P1** | **MVP-03/04/05 + HBR-05/06 + AGW-12/14** | 이미 만든 집계 원가/공동검토/UI 재사용. 실공고→RFP→합성 비용·역량→의견→사람 최종 결정→재조회, gold 평가·복구/롤백. | 사용자별 권한·조직 기준/회사 데이터 승인·실제 브라우저/DB/파일 복구 E2E. **합성 코드 존재 / 업무·운영 인수 HOLD** |
 | **HOLD** | **AGW-00/02/07/13 + HBR-08** | company data1 배포/기밀 반출/개인 구독 타인 중계/Claude 실제 인증/자동 일정 재개/인터넷 공개·투찰은 조직·계약·최소권한·사용자 승인 및 실제 검증 전 금지. | 운영 release는 중앙 [USER ACTION #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) 등 현실적 게이트 해결 후. 기존 AGY/Gemini 위임·예약 OFF 유지. **HOLD** |
 
-**이 정렬은 계획 문서 수정입니다.** 실제 원본 다운로드/새 DB migration/인증정보 변경/모델 호출/서비스 배포를 완료한 것으로 주장하지 않습니다. 신규 개발은 P0-01부터, P0-05 합성 Job bridge는 병행할 수 있습니다.
+**이 정렬은 계획 문서 수정입니다.** 실제 원본 다운로드/새 DB migration/인증정보 변경/모델 호출/서비스 배포를 완료한 것으로 주장하지 않습니다. 신규 개발은 **P0-02부터**, P0-05 합성 Job bridge는 병행할 수 있습니다.
 
 ---
 
