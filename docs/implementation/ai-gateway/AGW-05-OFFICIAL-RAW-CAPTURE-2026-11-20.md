@@ -1,3 +1,5 @@
+> **P0-01 현재 실제 검증:** [2026-11-20 NAS 원본 5건/공식 API·첨부 목록 1건 read-only E2E 기록](AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 실제 5개 SHA/DB/ACL 일치, G2B 원본 1건 직접 GET/첨부 URL 공식 목록 검증 PASS. 기존 NAS URL-인코딩 service key를 `urlencode`하여 이중 인코딩하던 호환성 문제 수정(1회 URL decode 후 정상 query 인코딩, 잘못된 escape/control 거부). **raw 공고 HTTP 응답 비공개 영속 보관/신규 DB 결속/직원 공개 승인 아직 NOT_DONE**. 이 문서의 아래 원래 '실제 API E2E NOT_RUN'은 생성 당시 이력이며 이번 검증으로 **1건 읽기 전용 직접 GET만** 대체되었다.
+
 # AGW-05 P0-1 — 공식 공고·첨부 원본 바이트 캡처 (2026-11-20)
 
 ## 구현 범위 / 판정
