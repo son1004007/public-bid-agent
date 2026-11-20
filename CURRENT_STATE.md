@@ -1,3 +1,11 @@
+## 2026-11-20 P0-01 실제 NAS 공식 원본 검증 — READ_ONLY_PASS / RAW_PERSIST_PENDING (LATEST)
+
+- [실제 검증 증거·원본별 표·보안 경계·남은 작업](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 개인 NAS에 보관된 실제 HWPX 5/5 원본 `0600`/ZIP/SHA-256 DB·파일명·크기 일치, G2B 공고번호·현재 차수(공식 URL `000` / DB `0` 수치동등)·소유자 ACL/미공유 모두 확인. 총 최신 Chunk **14,594**, 1 structured/4 text-only(각 표·각주 충실도 경고), `coverage.complete` 5건 모두 없음. PostgreSQL 읽기 전용 트랜잭션, 기존 DB·원본 무변경.
+- **REAL OFFICIAL HTTP E2E 1/5 PASS:** 실제 공식 용역공고 조회 응답 원본 **5,764 byte, SHA `b342a3e28e32c9e9e0e4499ab939acf0d0019c3c17656f67c49c3bb965891666`**, 공식 첨부 GET **894,665 byte SHA가 기존 저장된 `d18a92085d7d`와 일치**, 공식 첨부 목록 **5건의 URL 포함 검증 PASS**. 이 1건의 새로운 raw 공고 응답은 **영속 파일로 저장하지 않았음**, 직원 PUBLIC 승인/모델 egress/회사 배포 없음.
+- **실제 오류 교정:** NAS API key는 `%` URL-인코딩되어 신규 수집기가 이중 인코딩으로 첫 시도 실패. 1회 정규화 후 실제 공식 API 성공. `official_g2b_capture.py`와 합성 regression 교정 [core 91 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44691630002), [Django Windows/Linux/PostgreSQL 415 tests씩 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44691631513). 기존 P0-01 완료 전 **남은 raw immutable private storage**, 이후 P0-02 별도 canonical vs raw SHA mapping/권한/차수 충돌 및 P0-03 coverage.
+
+---
+
 ## 2026-11-20 통합 TASKS 우선순위 정합성 검토 (최신 계획 인계)
 
 - [TASKS 최상단 현행 실행 큐](TASKS.md): 기존 NAS 실공고 metadata **879건** 및 실제 HWPX 원본 5건/5건 파싱(구조 완전성 미검증) 기록을 보존하고, **신규 AGW-05 PUBLIC 원본↔DB↔추출↔승인 E2E가 없다는 범위 차이**를 분리했다. 기존 실자료 5건을 먼저 읽기 전용으로 확인하고 중복 다운로드를 피한다. 이후 원본 raw-response SHA와 canonical metadata SHA 별도 보존, coverage/source locator, staff 실원본 승인, 합성 AGW-08 Job 연결 순서. HBR-07 최소 원본/coverage P0, 확장 PDF/HWP 자동화는 P1.
