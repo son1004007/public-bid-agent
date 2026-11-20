@@ -8,7 +8,7 @@ import unittest
 import zipfile
 from urllib.parse import parse_qs, urlsplit
 
-from ai_gateway_core.official_g2b_capture import CaptureError, capture, persist
+from ai_gateway_core.official_g2b_capture import CaptureError, capture, persist, persist_notice_for_existing_document
 
 NUMBER = "R26BK00000001"
 REV = "1"
@@ -144,6 +144,50 @@ class OfficialG2BCaptureTests(unittest.TestCase):
             document.write_bytes(b"X" * len(captured.raw_document))
             with self.assertRaisesRegex(CaptureError, "STORAGE_CONFLICT"):
                 persist(captured, private)
+
+    @unittest.skipIf(os.name == 'nt', 'POSIX private storage only')
+    def test_existing_document_reference_persists_only_raw_notice_and_manifest(self):
+        captured = self.run_capture()
+        document_key = "public-rfp/" + captured.summary()["document_sha256"] + ".hwpx"
+        with tempfile.TemporaryDirectory() as private:
+            first = persist_notice_for_existing_document(
+                captured, private, document_storage_key=document_key,
+            )
+            self.assertEqual(first, persist_notice_for_existing_document(
+                captured, private, document_storage_key=document_key,
+            ))
+            self.assertFalse(first["document_bytes_copied"])
+            stored = Path(private) / "official-g2b-capture"
+            files = list(stored.iterdir())
+            self.assertEqual(len(files), 2)
+            self.assertFalse(any(p.suffix == ".hwpx" for p in files))
+            details = json.loads((Path(private) / first["manifest_key"]).read_text())
+            self.assertEqual(details["document_storage_key"], document_key)
+            self.assertEqual(details["document_storage_scope"], "EXISTING_PRIVATE_MEDIA")
+            self.assertEqual(details["document_reference_validation"], "HASH_AND_KEY_ONLY")
+            self.assertEqual(details["attestation_state"], "UNREVIEWED")
+            self.assertNotIn("synthetic-key-not-real", json.dumps(details))
+            self.assertTrue(all((p.stat().st_mode & 0o777) == 0o600 for p in files))
+            raw_file = Path(private) / details["notice_storage_key"]
+            self.assertEqual(raw_file.read_bytes(), captured.raw_notice)
+            raw_file.write_bytes(b"corrupted")
+            with self.assertRaisesRegex(CaptureError, "STORAGE_CONFLICT"):
+                persist_notice_for_existing_document(
+                    captured, private, document_storage_key=document_key,
+                )
+
+    def test_existing_document_reference_rejects_bad_storage_keys(self):
+        captured = self.run_capture()
+        valid_key = "public-rfp/" + captured.summary()["document_sha256"] + ".hwpx"
+        invalid = ["", "../" + valid_key, valid_key.replace(".hwpx", ".pdf"),
+                   valid_key.replace("public-rfp/", "outside/"),
+                   "public-rfp/" + "0" * 64 + ".hwpx", True, None]
+        for key in invalid:
+            with self.subTest(key_type=type(key).__name__):
+                with self.assertRaisesRegex(CaptureError, "EXISTING_DOCUMENT_KEY_DENIED"):
+                    persist_notice_for_existing_document(
+                        captured, "unused-private-root", document_storage_key=key,
+                    )
 
     def test_refuse_relative_root_and_repo_storage(self):
         expected = 'STORAGE_PLATFORM_UNVERIFIED' if os.name == 'nt' else 'STORAGE_ROOT_DENIED'
