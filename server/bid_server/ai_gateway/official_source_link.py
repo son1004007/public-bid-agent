@@ -339,12 +339,12 @@ def load_notice_only_source_files(
     *, capture_root, private_media_root, capture_id, document_sha256,
 ):
     """Read only P0-01 archive + EXISTING private HWPX. No network/DB mutation."""
-    if os.name == "nt":
-        raise SourceLinkError("STORAGE_PLATFORM_UNVERIFIED")
     if (type(capture_id) is not str or not _HEX64.fullmatch(capture_id)
             or type(document_sha256) is not str
             or not _HEX64.fullmatch(document_sha256)):
         raise SourceLinkError("CAPTURE_IDENTITY_MISMATCH")
+    if os.name == "nt":
+        raise SourceLinkError("STORAGE_PLATFORM_UNVERIFIED")
     base = f"{CAPTURE_DIR}/{capture_id}"
     manifest_raw = _safe_private_read(
         capture_root, base + ".existing.manifest.json", CAPTURE_DIR,
