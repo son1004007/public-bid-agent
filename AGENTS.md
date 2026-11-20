@@ -1,3 +1,5 @@
+> **2026-11-20 P0-01 실제 NAS 원본 5건/공식 API 1건 검증 정본:** [실측·원본별 SHA/차수/DB ACL·첨부목록·CI 결과](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 개인 NAS 원본 HWPX 5건 해시 일치, 실제 공식 02 공고 API/첨부 목록·다운로드 1건 PASS. 저장된 인코딩 API key 지원 수집기 수정, core 91 / Django 415×3. **raw notice 영속 보관/DB 결속·coverage 완전성·staff/모델/실제 data1 배포는 NOT_DONE**. 다음 단계는 TASKS 통합 실행 큐 01 잔여로 진행; 원본/권한·일정 변경 금지.
+
 > **2026-11-20 AGW-05 최신 진입점:** [RFP 원본 공고/문서/추출 chain 해시·공식 PUBLIC 출처 승인·dispatch preflight 구현/검증 기록](docs/implementation/ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md). 1800byte 무음 절단 제거, `PublicRfpAttestation` 기본 OFF. 실제 조달청 API 내려받기/실공고 승인, 모델 계정/사내 반출/운영 NAS 배포는 NOT_DONE. [CURRENT_STATE](CURRENT_STATE.md) 및 [TASKS](TASKS.md) 최신 P0 우선.
 
 > **2026-11-20 최신 AGW-05/09 코드·증거 진입점:** [합성 RFP EvidenceSnapshot + StrictResultValidation + Django AnalysisRun/Revision 인수 기록](docs/implementation/ai-gateway/AGW-05-09-IMPLEMENTATION-2026-11-20.md). core 77 PASS/Django Win/Linux/PostgreSQL 각 378 PASS. 실제 운영 DB 마이그레이션/공개 RFP·회사 fact 반출/자동 유료 AI 호출 미완료. 다음 AGW-08/05 public evidence/소유권/보안 게이트.
