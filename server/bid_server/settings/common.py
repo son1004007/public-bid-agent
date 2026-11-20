@@ -13,7 +13,8 @@ ASGI_APPLICATION = "bid_server.asgi.application"
 INSTALLED_APPS = ["django.contrib.auth", "django.contrib.contenttypes", "django.contrib.sessions",
                   "rest_framework", "bid_server.accounts.apps.AccountsConfig",
                   "bid_server.procurement.apps.ProcurementConfig",
-                  "bid_server.jobs.apps.JobsConfig"]
+                  "bid_server.jobs.apps.JobsConfig",
+                  "bid_server.ai_gateway.apps.AIGatewayConfig"]
 AUTH_USER_MODEL = "accounts.User"
 MIDDLEWARE = [
     "bid_server.core.middleware.ApiBoundaryMiddleware",
