@@ -1,3 +1,9 @@
+## 2026-11-20 NAS 우선 실행 결정 및 Codex 인증/실호출 검증
+
+사용자 최신 결정은 AI Gateway의 우선 실행·개발 장소를 **개인 Synology NAS**로 하는 것이다. `son1004007` 비승격 SSH 계정으로 실제 점검한 결과 Codex가 `~/.local/bin/codex`에 있고 Node v22.23.4가 `/usr/local/bin/node`에 있었다. 비대화형 SSH `PATH`가 누락된 것이 원인일 뿐 **Codex 0.163.0 / ChatGPT 로그인 완료 / 실제 synthetic model response `NAS_CODEX_OK`** 모두 2026-11-20 PASS. NAS 시스템 설정 및 계정 인증 변경 없이 프로세스 `PATH` 조정으로 정상 확인했다.
+
+다음 AGW-02/03/04/06 구현 시 기존 `device-control`의 **Docker external sandbox 격리 원칙**을 유지해야 한다. 이번 호스트의 text-only/--sandbox read-only/--ephemeral 호출은 **모델 응답 smoke에 한정**되고 도구 실행/새로운 공용 CLI 호스팅·다중 사용자 계정 전환·사용자별 session resume/기업 자료 전송을 보장하지 않는다. 이 결정은 data1/회사 서버 배포 승인이나 소비자 OAuth 제3자 중계 허가를 뜻하지 않는다. [실측 문서](docs/implementation/ai-gateway/AGW-RUN-2026-11-20.md).
+
 ## 2026-11-20 최신 우선순위 교정 — 유료 AI 실제 호출 허용, 구현 속도·정확도 최우선
 
 사용자는 Codex/Claude Code **유료 모델을 실제 호출해도 좋으며**, 비용 절감을 위해 실제 AI 연결을 마지막으로 미루지 말고 **빠른 제품 구현과 정확한 입찰 판단**을 최우선으로 하라고 지시했다. 기존 'mock-first 완료→실제 연결' 순서를 대체한다. 새 기본 개발 순서는 **승인 가능한 1개 provider의 최소 실제 호출+JSON+세션 resume E2E를 가능한 한 빨리 실증**, 동시에 0/1/2 READY/근거 검증 로직을 합성 CI로 개발, **2번째 provider도 실제 E2E** 및 두 모델 독립 분석→근거 비교→이슈 시 제한 공유를 수직 통합한다. 모의 테스트는 중요한 검증 도구이지만 실제 모델 호출의 대체 완료 조건이 아니다.
