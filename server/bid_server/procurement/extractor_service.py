@@ -30,6 +30,9 @@ from .models import (
     ChunkPath,
 )
 from .parser import parse_document_bytes, parse_public_hwpx_text, ParserError
+from .source_chunking import split_source_text, SourceChunkError, MAX_CHUNK_UTF8_BYTES
+
+MAX_CHUNKS_PER_EXTRACTION = 30000
 
 
 class DocumentAccessError(ValueError):
@@ -115,6 +118,103 @@ class ExtractionService:
         if parsed["format"] != expected_format:
             raise ParserError("Document format mismatch.")
 
+
+        # P0-03 preflight: no database mutation until *every* extracted source
+        # block/cell/footnote has been losslessly segmented. These offsets
+        # refer to parser-extracted text, never claimed XML/archive positions.
+        prepared_chunks = []
+        footnote_missing = False
+
+        def classify(text):
+            if any(key in text for key in ("자격", "참가", "제한", "실적")):
+                return ChunkCategory.QUALIFICATION
+            if any(key in text for key in ("요구", "과업", "기능", "규격")):
+                return ChunkCategory.REQUIREMENT
+            if any(key in text for key in ("평가", "배점", "기술평가")):
+                return ChunkCategory.EVALUATION
+            if any(key in text for key in ("예산", "금액", "원")):
+                return ChunkCategory.BUDGET
+            return ChunkCategory.GENERAL
+
+        def prepare(text, path, base_locator, refs, category):
+            if type(text) is not str:
+                raise ParserError("Invalid extracted source text.")
+            if not text:
+                return
+            try:
+                spans = split_source_text(text)
+            except SourceChunkError:
+                raise ParserError("Unsafe source chunk boundary or size.") from None
+            for span in spans:
+                if len(prepared_chunks) >= MAX_CHUNKS_PER_EXTRACTION:
+                    raise ParserError("Extracted chunk budget exceeded.")
+                prepared_chunks.append({
+                    "category": category,
+                    "text": span.text,
+                    "locator": {
+                        **base_locator, **span.locator,
+                        "source_document_sha256": digest,
+                    },
+                    "path": path,
+                    "source_block_refs": refs,
+                })
+
+        for block in parsed["blocks"]:
+            if block["kind"] == "text":
+                content = block.get("text", "")
+                prepare(content, ChunkPath.TEXT, block.get("locator", {}),
+                        [block["block_id"]], classify(content))
+            elif block["kind"] == "footnote":
+                foot = block.get("footnote", {})
+                content = foot.get("text", "")
+                # The legacy HWPX parser uses this placeholder, which is
+                # fabricated and MUST NOT be represented as source evidence.
+                if content == "각주 내용 없음" or not content:
+                    footnote_missing = True
+                else:
+                    prepare(content, ChunkPath.FOOTNOTE,
+                            foot.get("locator", block.get("locator", {})),
+                            [block["block_id"]], classify(content))
+        for table in parsed["tables"]:
+            for cell in table.get("cells", []):
+                # Legacy code omitted cells with <=5 characters, including
+                # qualification/score tokens. Preserve every nonempty cell.
+                content = cell.get("text", "")
+                prepare(content, ChunkPath.TABLE, cell.get("locator", {}),
+                        [table["block_id"], cell["cell_id"]], classify(content))
+
+        # A successful text parse is not an audited guarantee that all tables,
+        # spans, page anchors, footnotes and images were recovered. Until full
+        # structural verification is implemented, NEVER set complete=True.
+        fidelity_warnings = list(parsed["warnings"])
+        if public_hwpx_text_only:
+            fidelity_warnings.append("TEXT_ONLY_LAYOUT_AND_FOOTNOTES_UNVERIFIED")
+        else:
+            fidelity_warnings.append("STRUCTURAL_COVERAGE_NOT_VERIFIED")
+        if footnote_missing:
+            fidelity_warnings.append("EMPTY_FOOTNOTE_SOURCE_UNVERIFIED")
+        if not prepared_chunks:
+            raise ParserError("No verifiable extracted source spans.")
+        chunk_bytes = sum(len(item["text"].encode("utf-8")) for item in prepared_chunks)
+        coverage = {
+            "format": parsed["format"],
+            "block_count": len(parsed["blocks"]),
+            "table_count": len(parsed["tables"]),
+            "table_cell_count": sum(len(t.get("cells", [])) for t in parsed["tables"]),
+            "footnote_count": len(parsed["footnotes"]),
+            "character_count": len(parsed["full_text"]),
+            "chunk_count": len(prepared_chunks),
+            "chunk_utf8_bytes": chunk_bytes,
+            "max_chunk_utf8_bytes": MAX_CHUNK_UTF8_BYTES,
+            "offset_origin": "EXTRACTED_BLOCK_TEXT",
+            "source_document_sha256": digest,
+            "source_text_lossless_segmentation": True,
+            "structure_fidelity": "UNVERIFIED",
+            "status": "PARTIAL",
+            "complete": False,
+        }
+
+
         with transaction.atomic():
             # 사용자 행을 문서보다 먼저 잠가 보안 변경 및 저장을 직렬화한다.
             # exists()가 아닌 실제 행 조회로 잠금을 획득하고 commit까지 유지한다.
@@ -136,14 +236,8 @@ class ExtractionService:
                 extractor_version="1.1.0-public-hwpx-text" if public_hwpx_text_only else "1.0.0-def03",
                 job_attempt_id=job_attempt_id,
                 state=ExtractionState.PARSED,
-                coverage={
-                    "format": parsed["format"],
-                    "block_count": len(parsed["blocks"]),
-                    "table_count": len(parsed["tables"]),
-                    "footnote_count": len(parsed["footnotes"]),
-                    "character_count": len(parsed["full_text"]),
-                },
-                warnings=parsed["warnings"],
+                coverage=coverage,
+                warnings=fidelity_warnings,
                 completed_at=timezone.now(),
             )
 
@@ -208,47 +302,12 @@ class ExtractionService:
                         anchor_refs=anchors,
                     )
 
-            # 4. Chunks 분할 생성
-            ordinal = 1
-            # 본문 텍스트 블록
-            for b_data in parsed["blocks"]:
-                if b_data["kind"] == "text" and b_data.get("text"):
-                    txt = b_data["text"]
-                    cat = ChunkCategory.GENERAL
-                    # Category heuristic
-                    if any(k in txt for k in ("자격", "참가", "제한", "실적")):
-                        cat = ChunkCategory.QUALIFICATION
-                    elif any(k in txt for k in ("요구", "과업", "기능", "규격")):
-                        cat = ChunkCategory.REQUIREMENT
-                    elif any(k in txt for k in ("평가", "배점", "기술평가")):
-                        cat = ChunkCategory.EVALUATION
-                    elif any(k in txt for k in ("예산", "금액", "원")):
-                        cat = ChunkCategory.BUDGET
-
-                    Chunk.objects.create(
-                        extraction_run=run,
-                        ordinal=ordinal,
-                        category=cat,
-                        text=txt,
-                        locator=b_data.get("locator", {}),
-                        path=ChunkPath.TEXT,
-                        source_block_refs=[b_data["block_id"]],
-                    )
-                    ordinal += 1
-
-            # 표 셀 데이터도 Chunk로 등록 (표 내 주요 조건 검색 가능)
-            for tbl in parsed["tables"]:
-                for cell in tbl.get("cells", []):
-                    if cell.get("text") and len(cell["text"]) > 5:
-                        Chunk.objects.create(
-                            extraction_run=run,
-                            ordinal=ordinal,
-                            category=ChunkCategory.REQUIREMENT,
-                            text=cell["text"],
-                            locator=cell.get("locator", {}),
-                            path=ChunkPath.TABLE,
-                            source_block_refs=[tbl["block_id"], cell["cell_id"]],
-                        )
-                        ordinal += 1
+            # 4. Preflighted, lossless spans with source-text and span SHA.
+            for ordinal, chunk in enumerate(prepared_chunks, start=1):
+                Chunk.objects.create(
+                    extraction_run=run,
+                    ordinal=ordinal,
+                    **chunk,
+                )
 
             return run
