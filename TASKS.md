@@ -1,3 +1,5 @@
+> **2026-11-20 NAS Codex 최신 변경 완료 (runtime verified):** 호스트 `codex-cli 0.171.0`, 기본 `gpt-6.2-sol` / `model_reasoning_effort=medium`, 기본값 실제 응답 PASS. 격리 Docker 이미지 `device-control/codex-runtime:0.171.0` 신규 빌드 및 명시한 GPT-6.2 Sol Medium 실제 모델 응답 PASS. Synology 설치된 제한 실행기(read-only/workspace-write) 2개 소스를 새 image/model로 맞추고 GitHub blob 일치·`sh -n`·미승인 작업 차단 exit8 모두 PASS. 기존 0.163 패키지/이미지·설정/스크립트 백업 유지. [NAS 운영 정본](https://github.com/son1004007/device-control/blob/main/docs/SYNOLOGY_AGENT_RUNTIME.md). [앱 CI](https://github.com/son1004007/public-bid-agent/actions/runs/44672859099), [서버 CI](https://github.com/son1004007/public-bid-agent/actions/runs/44672859075) PASS. 과거 0.163 이력은 아래 historique이며 **새 웹 사용자별 운영 연결·격리 게이트는 아직 OFF**. 다음 작업 AGW-05/09 및 승인된 Job 연결.
+
 ## 2026-11-20 NAS 우선 AGW P0 다음 단계 구현 — 현재 진척
 
 [AGW NAS Docker 실제 세션 Resume/DB Lease 구현·검증 기록](docs/implementation/ai-gateway/AGW-NAS-SESSION-E2E-2026-11-20.md) / [AGW 세부 목차](docs/implementation/ai-gateway/README.md)
