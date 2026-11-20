@@ -1,3 +1,9 @@
+## 2026-11-20 NAS Codex P0 실측 결론 — 별도 Docker 컨테이너에서 동일 session resume
+
+사용자 우선 개발환경은 개인 NAS. 비승격 `son1004007` 계정의 기존 Codex 인증으로, **기존 `device-control/codex-runtime:0.163.0` 이미지**에서 synthetic RFP 최초 실제 모델 실행 → 컨테이너 종료 → 또 다른 컨테이너에서 **기존 thread UUID로 resume** 성공. 이전 입력 R1 4건 요건/3건 실적/`NOT_MET` 정확히 유지. Docker 외부 readonly sandbox, 좁은 workspace RO와 사용자 전용 HOME RW, 권한 제거, 비승격 UID 유지. Synology CPU CFS 커널 미지원으로 Docker `--cpus 1`이 exit125를 반환해 해당 옵션만 제거; 커널/네트워크/SSH/기존 CISA 운영 환경 변화 없음.
+
+이에 [AGW-02/04/06 실행 기록](docs/implementation/ai-gateway/AGW-NAS-SESSION-E2E-2026-11-20.md) 및 DB session lease/fence와 Docker 실행 프로토타입 소스를 작성했다. **실제 앱 서버 사용자별 계정 인증/전용 영속 HOME/OS 고유 UID 매핑, egress·모델 shell tool 제한 및 상용서비스 구독 적격성까지 검증된 것은 아니므로** 프로덕션 executor flags는 기본 거부. 이전 Host CLI 단발 테스트와 이번 Docker 2-turn 실측을 구분한다. 신규 영속/분석 API·운영 NAS 배포는 별도 단계.
+
 ## 2026-11-20 NAS 우선 실행 결정 및 Codex 인증/실호출 검증
 
 사용자 최신 결정은 AI Gateway의 우선 실행·개발 장소를 **개인 Synology NAS**로 하는 것이다. `son1004007` 비승격 SSH 계정으로 실제 점검한 결과 Codex가 `~/.local/bin/codex`에 있고 Node v22.23.4가 `/usr/local/bin/node`에 있었다. 비대화형 SSH `PATH`가 누락된 것이 원인일 뿐 **Codex 0.163.0 / ChatGPT 로그인 완료 / 실제 synthetic model response `NAS_CODEX_OK`** 모두 2026-11-20 PASS. NAS 시스템 설정 및 계정 인증 변경 없이 프로세스 `PATH` 조정으로 정상 확인했다.
