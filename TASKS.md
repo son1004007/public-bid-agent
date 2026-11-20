@@ -1,3 +1,22 @@
+## 2026-11-20 AGW P0 첫 구현·실측 현황 (LATEST / SOURCE OF TRUTH)
+
+[실측·CI 근거 및 복구 기록](docs/implementation/ai-gateway/AGW-RUN-2026-11-20.md) · [16개 작업 카드와 구현 순서](docs/implementation/ai-gateway/README.md) · [현재 코드/검증 상태](CURRENT_STATE.md)
+
+| 작업 | 우선 | 현재 진척 / 정확한 한계 | 다음 구현 |
+|---|---|---|---|
+| AGW-06 Codex | P0 | **개인 Windows 공식 CLI 실제 유료 추론 1회 + 같은 session resume 1회 PASS**; `codex_cli.py` 작성, JSONL/승인/에러 회귀 CI PASS. **Django 사용자 계정/서버 worker와는 아직 미연결** | 계정별 격리 runner + DB Binding 연동 + 실제 호출 E2E |
+| AGW-01 DB/API | P0 | ProviderProfile/SessionBinding Django 모델·마이그레이션, GET `/api/v1/ai/providers`와 사용자·ACL fail-closed 테스트 **303건 전체 CI 포함 PASS (Win/Linux/PostgreSQL)**. 서버에 실제 로그인 연결/쓰기 등록 API 미구현 | 안전한 공급자 등록, 실제 본인 로그인/가용성 증거 결속 |
+| AGW-03 로그인/가용성 | P0 | 서버용 TTL/auth_epoch 정책 체크 구현, CLI 본인 인증은 개인 Windows Codex만 read-only 확인. Claude Code는 SSH 컨텍스트 인증 실패 | 승인된 사용자 전용 CLI 홈/실로그인 검증 |
+| AGW-04 session | P0 | 영속 DB Binding·현재 세션 유일성/목적 constraint 구현, **lease/resume worker 미구현** | 각 user×provider×notice×purpose 잠금·fencing/복구 |
+| AGW-08/10 core | P0 | 0/1/2 READY 분기, 입력 근거 ID 차이 탐지 코드와 mock tests PASS. **법적 자격 SQL·LLM 실결과 DB 검증 미구현** | 영속 Job/Run 및 정형 사실 기준 연결 |
+| AGW-00/02 | P0-GATE | 공식 CLI 버전·개인 노트북 실행 가능성 실측, 구독·IDC 다중 사용자 운영 계약과 OS 격리 승인은 별도 | 회사/공급자 적격 실행 경로 확인, 반출 최소화 |
+| AGW-07 Claude | P0 | 설치본 2.1.50 발견, 해당 Gateway SSH 컨텍스트의 로그인 상태는 불가, 실제 호출 미실행 | 사용자 직접 인증/상업 이용 계약 확인 후 독립 실행 |
+| AGW-05/09/11/12/13/14 | P0~P1 | 상세 설계 작성, 비공개 RFP 실데이터 연결/결과 DB·UI·평가/배포 미구현 | 공개 RFP 근거 → JSON revision → UI → 독립 비교 → 실제 승인된 인수 |
+
+**증거:** [AGW core CI 35/35](https://github.com/son1004007/public-bid-agent/actions/runs/44659013489); [Server foundation Win/Linux/PostgreSQL 303 tests each PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44659013442). GitHub 설계 작성과 **실제 모델/개인 노트북 E2E**는 검증 수준이 다르며, 회사 data1 서버에는 배포하지 않았다. 기존 HBR-01/02/03 검색/근거 데이터 선행 필요, AGY 자동 위임 중지 유지.
+
+**다음 작업 1순위:** AGW-04/06/03을 사용자 전용 격리 실행기로 결합해 서버가 허용된 Codex 세션을 재개하는 최소 E2E 및 결과 JSON의 근거/차수 결속. **data1 서버에 설치하거나 사내 비공개 자료를 외부 전송하는 것은 별도 운영/회사 승인 전 HOLD**. 이슈 없으면 새 세션을 자동 생성하지 않는다.
+
 ## 2026-11-20 최신 개발 우선순위 — 유료 모델 실제 호출/빠른 E2E 허용
 
 **확정:** 사용자는 비용 최소화보다 **구현 속도·입찰 분석 정확도**를 우선하며 Codex/Claude **유료 모델 실제 호출을 허용**한다. 과거 '전체 mock→마지막에 실제 연결' 순서보다 본 항목이 우선한다. 회사 기밀 전송·사업장 운영 권한·외부 서비스 계약/개별 계정 인증 허가는 여전히 별도다.
