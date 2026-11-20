@@ -1,3 +1,5 @@
+> **2026-11-20 사용자 최신 우선순위 (기존 mock-first 대체):** 유료 Codex/Claude 실호출을 허용하고 **빠른 실제 E2E·정확도 검증을 우선**한다. P0은 AGW-00 공식 이용·호환 확인/AGW-02 안전 격리와 병행하여 **첫 번째 허용 provider 실제 유료 요청→JSON→resume**을 조기 검증하는 것. 그다음 두 번째 provider 실제 요청 및 독립 교차 검증. 기존 '모든 합성 기능 완성 후 실호출'은 과거 백업 경로다. 회사 자료 외부 전송, CLI 구독 중계, data1 운영 배포는 기존 계약/보안 승인 필수. 테스트 코어: [server/ai_gateway_core](../../../server/ai_gateway_core), [코어 회귀 15건](../../../server/tests/test_ai_gateway_core.py), [CI](../../../.github/workflows/ai-gateway-core.yml). 유료 E2E 아직 NOT_RUN.
+
 # AI Gateway / Codex·Claude Code 구현 작업 단위 인덱스
 
 - 기준일: 2026-11-20 KST
