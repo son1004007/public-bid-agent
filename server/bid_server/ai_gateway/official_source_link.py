@@ -23,7 +23,7 @@ from ai_gateway_core.official_g2b_capture import (
     _official_attachment, _official_response,
 )
 from bid_server.procurement.models import (
-    DocumentFreshness, DocumentVersion, NoticeVersion,
+    DocumentFreshness, DocumentVersion, Notice, NoticeVersion,
 )
 from .models import OfficialSourceLink
 from .public_source import official_source_url
@@ -198,16 +198,27 @@ def _reconcile_locked(
     )
     with transaction.atomic():
         try:
-            notice_version = (
-                NoticeVersion.objects.select_related("notice")
-                .select_for_update().get(pk=notice_version_id)
+            # The importer locks Notice before advancing current_version. Take
+            # the same lock order for writes, then re-read and validate current.
+            # Dry runs do not acquire write locks and can run on a read-only DB.
+            initial_version = NoticeVersion.objects.only("notice_id").get(
+                pk=notice_version_id,
             )
-            doc = (
-                DocumentVersion.objects.select_related(
-                    "document", "notice_version", "owner_user",
-                ).select_for_update(of=("self",)).get(pk=document_version_id)
+            if apply:
+                Notice.objects.select_for_update().get(pk=initial_version.notice_id)
+            version_query = NoticeVersion.objects.select_related("notice")
+            doc_query = DocumentVersion.objects.select_related(
+                "document", "notice_version", "owner_user",
             )
-        except (NoticeVersion.DoesNotExist, DocumentVersion.DoesNotExist):
+            if apply:
+                version_query = version_query.select_for_update(of=("self",))
+                # Only lock the concrete DocumentVersion row; owner_user is a
+                # nullable LEFT OUTER JOIN and PostgreSQL forbids locking it.
+                doc_query = doc_query.select_for_update(of=("self",))
+            notice_version = version_query.get(pk=notice_version_id)
+            doc = doc_query.get(pk=document_version_id)
+        except (Notice.DoesNotExist, NoticeVersion.DoesNotExist,
+                DocumentVersion.DoesNotExist):
             raise SourceLinkError("UNKNOWN_SOURCE_VERSION") from None
         _validate_current_link(
             notice_version=notice_version, document_version=doc,
