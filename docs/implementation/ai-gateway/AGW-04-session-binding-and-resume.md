@@ -3,7 +3,7 @@
 # 장기 SessionBinding·Resume·신규 세션 전환
 
 - 작업 ID: AGW-04
-- 상태: DESIGN_READY / IMPLEMENTATION_NOT_STARTED (GitHub 문서만 작성)
+- 상태: CODE_PARTIAL / CI_VERIFIED / MULTIUSER_RUNTIME_NOT_READY
 - 범위: public-bid-agent AI Gateway 실행기 설계. 참조 [작업 목차](README.md), [상위 세션 설계](../../server-migration/16-user-cli-session-and-blind-cross-check.md).
 - 실행 정책: 중앙 CONTROL 및 대상 AGENTS 우선, 실제 회사 자료·외부 호출·data1 운영 배포는 승인 이전 차단, 별도 AI 코드 리뷰는 선택·기능/보안/회귀 검사는 필수.
 
