@@ -7,7 +7,7 @@
 | **AGW-02 NAS Docker executor** | 기존 이미지 0.163.0 **실제 모델 1차·별도 컨테이너 동일 세션 Resume PASS**, `nas_docker_codex.py`의 사용자 UUID/UID/권한·RW HOME + RO evidence 마운트·JSONL adapter 구현, **정책 flag 3개 기본 OFF** | 사용자별 고유 OS UID/공급자 본인 로그인, egress·도구 제한 검증, 서비스 worker 등록/운영 배포 |
 | **AGW-04 SessionBinding** | `session_service.py` DB row lock/lease·fencing, 재진입, 사용자/공고·AUTH_READY 확인, timeout·만료 불명/수정 공고/UUID mismatch fail-closed 테스트 PASS | Django Job/Outbox/result revision과 원자 결합, 실제 NAS 영속 HOME/백업 |
 | **AGW-06 Codex Adapter** | 일반 `codex_cli.py`+NAS Docker runner 분리, 실제 NAS 모델 JSON/resume 검증 및 합성 unit CI | 앱의 실동작 API/결과 근거 validator/영속 기록과 연계 |
-| **CI** | [AGW core 50 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44663410679), [Linux/PostgreSQL Django 332 tests each PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44663410740) | Windows 기존 Chrome CDP `Decision not retained` 실패 job 원인 확인/재실행, 전체 성공 증거 필요 |
+| **CI** | [AGW core 50 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44663410679), [Windows/Linux/PostgreSQL Django 334 tests each PASS (CDP rerun passed)](https://github.com/son1004007/public-bid-agent/actions/runs/44663410740) | Windows 기존 Chrome CDP `Decision not retained` 1차 실패 → 실패한 Windows job 재실행 2차 PASS; 최초 오류 및 재실행 증거 보존 |
 
 **다음 P0 우선:** AGW-05(RFP/근거 스냅샷 검증) → AGW-09(불변 분석결과·idempotent Job) → `SessionBinding`과 Docker executor 연결 → 승인된 본인 사용자/공개 RFP 기준 앱 API 실제 분석. 완전한 운영 기능·자동 유료 호출·회사 자료 외부 반출은 여전히 보안/계약 게이트를 만족한 뒤에만. `--cpus`는 Synology 커널에서 Docker exit125라 제거했으며 시스템 보안 설정을 완화하지 않음. AGY/Gemini 자동 위임 OFF.
 
