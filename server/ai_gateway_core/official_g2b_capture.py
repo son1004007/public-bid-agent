@@ -264,3 +264,61 @@ def persist(result: OfficialCapture, private_root):
         raise
     except (OSError, TypeError, ValueError):
         raise CaptureError("STORAGE_FAILED") from None
+
+def persist_notice_for_existing_document(
+        result: OfficialCapture, private_root, *, document_storage_key):
+    """기존 별도 private-media 원문을 복사하지 않고 공식 API 원본만 불변 생성한다.
+
+    document_storage_key는 운영 DB/기존 보관 파일을 호출자가 별도로 재검증해 제공한다.
+    이 함수는 해당 외부 파일을 읽지 않으므로 staff 원본 승인/DB 출처 결속이 아니다.
+    """
+    if type(result) is not OfficialCapture:
+        raise CaptureError("INVALID_CAPTURE")
+    digest = _sha(result.raw_document)
+    if (type(document_storage_key) is not str
+            or document_storage_key != "public-rfp/" + digest + ".hwpx"):
+        raise CaptureError("EXISTING_DOCUMENT_KEY_DENIED")
+    if os.name == "nt":
+        raise CaptureError("STORAGE_PLATFORM_UNVERIFIED")
+    root = Path(private_root) if isinstance(private_root, (str, os.PathLike)) else None
+    try:
+        if root is None or not root.is_absolute() or root.is_symlink():
+            raise CaptureError("STORAGE_ROOT_DENIED")
+        root = root.resolve(strict=True)
+        repository_root = Path(__file__).resolve().parents[2]
+        if (not root.is_dir() or root.is_relative_to(repository_root)
+                or (root.stat().st_mode & 0o022)):
+            raise CaptureError("STORAGE_ROOT_DENIED")
+        folder = root / CAPTURE_DIR
+        folder.mkdir(mode=0o700, exist_ok=True)
+        if (folder.is_symlink() or not folder.is_dir()
+                or stat.S_IMODE(folder.stat().st_mode) != 0o700):
+            raise CaptureError("STORAGE_ROOT_DENIED")
+        summary = result.summary()
+        capture_id = _sha((":".join([
+            summary["notice_sha256"], summary["document_sha256"],
+            result.notice_number, result.source_revision,
+        ])).encode())
+        raw_name = capture_id + ".notice.raw.json"
+        manifest_name = capture_id + ".existing.manifest.json"
+        _write_once(folder, raw_name, result.raw_notice)
+        manifest = {
+            **summary,
+            "capture_id": capture_id,
+            "notice_storage_key": CAPTURE_DIR + "/" + raw_name,
+            "document_storage_key": document_storage_key,
+            "document_storage_scope": "EXISTING_PRIVATE_MEDIA",
+            "document_bytes_copied": False,
+            "document_reference_validation": "HASH_AND_KEY_ONLY",
+            "attestation_state": "UNREVIEWED",
+        }
+        raw_manifest = (json.dumps(manifest, sort_keys=True, ensure_ascii=False,
+                                   separators=(",", ":")) + "\n").encode()
+        _write_once(folder, manifest_name, raw_manifest)
+        return {**summary, "capture_id": capture_id,
+                "manifest_key": CAPTURE_DIR + "/" + manifest_name,
+                "document_bytes_copied": False}
+    except CaptureError:
+        raise
+    except (OSError, TypeError, ValueError):
+        raise CaptureError("STORAGE_FAILED") from None
