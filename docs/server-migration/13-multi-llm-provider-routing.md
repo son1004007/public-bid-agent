@@ -1,3 +1,5 @@
+> **2026-11-20 최신 설계 변경:** [16 서버 사용자별 Codex/Claude 로그인 및 기존 session resume](16-user-cli-session-and-blind-cross-check.md)가 0/1/2 AI 실행의 최신 방식이다. 독립 초기 분석 후 근거 비교, 불일치 발생 시만 별도 이슈 세션에서 상대 근거 전달. 직접 API 기반 3-provider fanout은 여전히 실행하지 않는다.
+
 > **2026-11-20 최신 조건부 교차 검증:** [15 가용 0/1/2개 조건부 Codex·Claude 교차 검증](15-mcp-provider-executor-subscription-policy.md). 기존의 3-provider 자동 병렬 fan-out은 보류하되 **실제 가용 Codex·Claude가 2개인 경우 사용자가 각 CLI에서 독립 실행한 결과를 서버가 자동 교차 검증**한다. 이는 승인 없는 유료 API 중복 호출과 구독 토큰 공유를 뜻하지 않는다.
 
 > **2026-11-20 최신 사용자 제안:** API/CLI 3개를 공용 자동 라우팅하는 구조는 **보류**. MVP는 [15 Codex·Claude Code 독립 사용자 실행 프로필 + JSON 수동 수집](15-mcp-provider-executor-subscription-policy.md)을 우선하며 Gemini/AGY는 제외한다. 이 문서의 자동 3-provider 경로는 추후 별도 계약/승인 시의 선택안이다.
