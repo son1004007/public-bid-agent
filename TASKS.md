@@ -1,3 +1,16 @@
+## 2026-11-20 NAS 우선 AGW P0 다음 단계 구현 — 현재 진척
+
+[AGW NAS Docker 실제 세션 Resume/DB Lease 구현·검증 기록](docs/implementation/ai-gateway/AGW-NAS-SESSION-E2E-2026-11-20.md) / [AGW 세부 목차](docs/implementation/ai-gateway/README.md)
+
+| ID | 완료된 범위 | 아직 막힌 연결/다음 항목 |
+| --- | --- | --- |
+| **AGW-02 NAS Docker executor** | 기존 이미지 0.163.0 **실제 모델 1차·별도 컨테이너 동일 세션 Resume PASS**, `nas_docker_codex.py`의 사용자 UUID/UID/권한·RW HOME + RO evidence 마운트·JSONL adapter 구현, **정책 flag 3개 기본 OFF** | 사용자별 고유 OS UID/공급자 본인 로그인, egress·도구 제한 검증, 서비스 worker 등록/운영 배포 |
+| **AGW-04 SessionBinding** | `session_service.py` DB row lock/lease·fencing, 재진입, 사용자/공고·AUTH_READY 확인, timeout·만료 불명/수정 공고/UUID mismatch fail-closed 테스트 PASS | Django Job/Outbox/result revision과 원자 결합, 실제 NAS 영속 HOME/백업 |
+| **AGW-06 Codex Adapter** | 일반 `codex_cli.py`+NAS Docker runner 분리, 실제 NAS 모델 JSON/resume 검증 및 합성 unit CI | 앱의 실동작 API/결과 근거 validator/영속 기록과 연계 |
+| **CI** | [AGW core 50 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44663410679), [Linux/PostgreSQL Django 332 tests each PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44663410740) | Windows 기존 Chrome CDP `Decision not retained` 실패 job 원인 확인/재실행, 전체 성공 증거 필요 |
+
+**다음 P0 우선:** AGW-05(RFP/근거 스냅샷 검증) → AGW-09(불변 분석결과·idempotent Job) → `SessionBinding`과 Docker executor 연결 → 승인된 본인 사용자/공개 RFP 기준 앱 API 실제 분석. 완전한 운영 기능·자동 유료 호출·회사 자료 외부 반출은 여전히 보안/계약 게이트를 만족한 뒤에만. `--cpus`는 Synology 커널에서 Docker exit125라 제거했으며 시스템 보안 설정을 완화하지 않음. AGY/Gemini 자동 위임 OFF.
+
 > **2026-11-20 NAS Codex 실측 최신:** 사용자 요청대로 NAS `son1004007` 계정에서 Codex를 확인했다. SSH 비대화형 `PATH`에 Node/Codex가 빠졌던 문제는 **명령 1회에만** `PATH="/usr/local/bin:$HOME/.local/bin:$PATH"` 적용해 해결. `codex-cli 0.163.0`, ChatGPT 인증 `exit 0`, **합성 텍스트 실제 모델 응답 `NAS_CODEX_OK` / JSONL turn 완료 / exit 0 PASS**. 초기 "NAS CLI 미설치/사용 불가" 가정은 취소한다. Codex host no-tool smoke와 **NAS Docker 격리 서비스 운영**은 구분하며, 사용자별 Docker home+기존 session resume/API worker·다중 사용자 계약/보안은 아직 미구현. [실제 재검증 기록](docs/implementation/ai-gateway/AGW-RUN-2026-11-20.md). NAS 우선 개발, 회사 data1 임의 배포 금지 유지.
 
 ## 2026-11-20 AGW P0 첫 구현·실측 현황 (LATEST / SOURCE OF TRUTH)
