@@ -1,3 +1,5 @@
+> **2026-11-20 최신 실제 실행 증거/재개:** [AGW 실행 기록](docs/implementation/ai-gateway/AGW-RUN-2026-11-20.md), [TASKS 최신 P0 상태](TASKS.md), [CURRENT_STATE](CURRENT_STATE.md). 개인 Windows Codex 본인 CLI로 실제 synthetic RFP 분석 JSON+동일 thread resume E2E PASS. GitHub에는 Codex adapter 및 Django 사용자별 provider/session 메타데이터·조회 API 소스가 있으며 Win/Linux/PostgreSQL CI 통과. 운영 서버 자동 model 호출과 가입/로그인 UI는 아직 구현되지 않았고 회사 data1 배포 승인 없음.
+
 > **2026-11-20 최신 개발 우선순위 — 유료 모델 실호출 허용:** 사용자는 비용 최소화보다 **실제 유료 Codex/Claude로 빠르고 정확한 E2E 구현**을 우선한다. [AGW 목차](docs/implementation/ai-gateway/README.md)와 [TASKS 최상단](TASKS.md)의 P0-R1/R2를 우선하여 mock-only 개발 후 마지막에 실제 연결하는 순서를 대체한다. **최초 허가된 provider 실호출→JSON 검증→resume**, 병행 core+CI, 두 번째 provider 및 교차 검증 실제 E2E 순. 개인 구독 다른 사용자 중계/실제 회사자료 반출/승인 없는 data1 운영 설치는 금지. AGY/Gemini 자동 위임 중지 유지.
 
 > **2026-11-20 AI Gateway 작업별 즉시 구현 설계 목차:** [AGW-00~15 상세 작업 카드](docs/implementation/ai-gateway/README.md). 다른 AI/새 채팅에서 **전역 CONTROL→registry→local AGENTS/DECISIONS→CURRENT_STATE/TASKS→이 AGW 목차→첫 미완료·선행조건 충족 카드**로 복원. 작업별 기술/DB/API/CLI/상태·오류·보안/인수 테스트를 카드에 기술. 신규 설계 작성은 구현 완료/실제 CLI 로그인/회사 data1 배포/공급자 허용 승인이 아니다.
