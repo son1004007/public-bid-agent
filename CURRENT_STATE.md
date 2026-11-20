@@ -1,3 +1,10 @@
+## 2026-11-21 P0-03 새 코드 SHA CI 확정 (문서 HEAD와 분리)
+
+- > **2026-11-21 P0-03 최신 정확 코드 CI 확인:** SHA `80ef1409750de4c8672f877802249d7ece64d6dc` [core 94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818921068), [Django Windows/Linux/PostgreSQL 각각 437 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818921064) (migration --check PASS). 기존 P0-03 synthetic test의 예외 catch를 구체화한 최신 코드까지 검증됨. NAS 실원본 5/5 read-only preview 14,743 chunks/단축 표 셀 149/1800 초과 0·원본·DB 무변경 (Gateway job_01M7XD0K8Z00PV044MDX3RXN6K). 운영 DB 재추출/업무 승인/모델 반출은 수행하지 않음.
+- 새 소스의 coverage.complete=False/status=PARTIAL은 의도적 fail-closed이며, 실제 기존 NAS ExtractionRun에 값을 backfill하거나 기존 Chunk를 재처리하지 않았습니다.
+
+---
+
 ## 2026-11-21 P0-03 — source chunking CI·NAS 실원본 read-only PASS / 실제 re-extract NOT_RUN
 
 - [P0-03 HWPX 원문 보존 Chunk·실제 NAS 5건 읽기 전용 검증](docs/implementation/ai-gateway/AGW-05-P0-03-EXTRACTION-COVERAGE-2026-11-21.md). new source_chunking.py + extractor_service.py: 모든 본문·표 cell(1글자 포함)·footnote text를 1,800 UTF-8 byte 이내 원문-불변 span(추출블록 상대 char/byte 위치·SHA+원본 HWPX SHA)으로 저장, 전체 새 ExtractionRun.coverage.complete=False/status=PARTIAL·structure_fidelity=UNVERIFIED를 보수적으로 지정. fallback 4건은 표/각주 구조 복구 미인증을 유지, 1건 structured도 완전성 단정 금지.

@@ -1,5 +1,7 @@
 # 현재 실행 큐 — 2026-11-20 AGW·MVP·HBR 통합 정본
 
+> **2026-11-21 P0-03 최신 정확 코드 CI 확인:** SHA `80ef1409750de4c8672f877802249d7ece64d6dc` [core 94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818921068), [Django Windows/Linux/PostgreSQL 각각 437 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818921064) (migration --check PASS). 기존 P0-03 synthetic test의 예외 catch를 구체화한 최신 코드까지 검증됨. NAS 실원본 5/5 read-only preview 14,743 chunks/단축 표 셀 149/1800 초과 0·원본·DB 무변경 (Gateway job_01M7XD0K8Z00PV044MDX3RXN6K). 운영 DB 재추출/업무 승인/모델 반출은 수행하지 않음.
+
 > **2026-11-21 P0-03 코드 및 NAS 읽기 전용 검산:** [P0-03 HWPX 원문 보존 Chunk·실제 NAS 5건 읽기 전용 검증](docs/implementation/ai-gateway/AGW-05-P0-03-EXTRACTION-COVERAGE-2026-11-21.md). 한글/이모지 포함 출처 텍스트를 정확히 1,800 UTF-8 bytes 이하로 무손실 분할하여 char/byte offsets·source/span SHA·기존 DocumentVersion SHA를 Chunk에 결속, 1~5글자 표 셀 및 실제 각주 텍스트 Chunk 추가. 모든 새 추출은 coverage.complete=False/status=PARTIAL/structure_fidelity=UNVERIFIED로 fail-closed. 실제 NAS 기존 5건 5/5 SHA/ACL/read-only 검산과 **새 예상 Chunk 14,743건(기존 14,594 대비 짧은 표 셀 149건 포함)**, 초과 0건, 기존 complete 전부 MISSING PASS (Gateway job_01M7XD0K8Z00PV044MDX3RXN6K). 합성 CI 코드 SHA a34847c2 [core 94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818463555), [Django Windows/Linux/PostgreSQL 각 437 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818463609). **실제 NAS DB 새 Chunk 저장/재추출 NOT_RUN**, P0-02 실제 DB SourceLink migration 미적용, staff PUBLIC/모델 egress OFF.
 
 

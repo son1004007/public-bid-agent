@@ -2,7 +2,7 @@
 
 - 기준일: 2026-11-21 KST
 - 작업 원장: [TASKS.md 최상단 P0-03](../../../TASKS.md)
-- 상태: CODE_IMPLEMENTED / SYNTHETIC_CI_PASS_SHA_a34847c2 / NAS_REAL_5_RFP_READ_ONLY_SOURCE_SPLIT_PASS / NAS_REEXTRACTION_DB_WRITE_NOT_RUN / PUBLIC_COMPLETE_OFF
+- 상태: CODE_IMPLEMENTED / SYNTHETIC_CI_PASS_SHA_80ef1409 / NAS_REAL_5_RFP_READ_ONLY_SOURCE_SPLIT_PASS / NAS_REEXTRACTION_DB_WRITE_NOT_RUN / PUBLIC_COMPLETE_OFF
 - 선행: [P0-01 실원본 5건 보전](AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md), [P0-02 공식 raw vs canonical DB source mapping](AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md) (운영 DB migration/real link 아직 NOT_APPLIED).
 
 ## 1. 문제
@@ -36,7 +36,7 @@
 ## 4. 테스트
 
 - [test_source_chunking_p003.py](../../../server/tests/test_source_chunking_p003.py): Unicode(한글, emoji, 결합문자, 개행), 바이트 경계, zero/NULL/미완성 surrogate, 모든 span의 SHA·byte/char offsets·연결 무손실, 1글자 table cell, footnote chunks, fallback warning/partial coverage, 원본 불일치 및 chunk budget rollback.
-- 코드 SHA `a34847c25d3c0a08c551fa24e05755417bf7603c`: [AI Gateway core 94/94](https://github.com/son1004007/public-bid-agent/actions/runs/44818463555), [Django Windows/Linux/PostgreSQL 각 437 통과](https://github.com/son1004007/public-bid-agent/actions/runs/44818463609), [Windows synthetic local acceptance](https://github.com/son1004007/public-bid-agent/actions/runs/44818463585) 등 관련 CI PASS. 이후 합성 테스트 하나의 예외 타입을 구체화한 새 코드 SHA에서의 CI는 재확인 필요.
+- 최신 코드 SHA `80ef1409750de4c8672f877802249d7ece64d6dc`: [core 94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818921068), [Django Windows/Linux/PostgreSQL 각각 437 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818921064); 해당 SHA에서 migrate check도 PASS. 별도 [Windows synthetic local acceptance](https://github.com/son1004007/public-bid-agent/actions/runs/44818463585) 등 이전 코드 SHA 기준 워크플로도 PASS. 기존 테스트의 오류 타입을 정확히 검증하도록 수정한 상태까지 재검증했습니다.
 
 ## 5. 다음 단계 / 승인 경계
 
