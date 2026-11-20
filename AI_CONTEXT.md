@@ -1,3 +1,5 @@
+> **2026-11-20 P0-01 실제 NAS 검증 인계:** [실제 RFP 5건 SHA/DB/ACL·공식 02 공고+첨부 목록 1건 E2E 증거](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 5/5 기존 보호 원본 일치, 1/5 공식 실응답 5,764 bytes/첨부 894,665 bytes SHA 일치. 기존 URL-인코딩 API 키의 이중 인코딩 수집 오류 수정, CI core 91 / Django 415×3 PASS. **실제 원본 HTTP 응답 영속 저장 및 별도 DB source identity, 추출 complete, staff 승인/운영 AI 호출 미완료**. TASKS 최상단 큐 01 read-only 완료/원본 저장 잔여 기준.
+
 > **2026-11-20 official raw capture 추가:** [AGW-05 수동 수집·비공개 원본 SHA 계약](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md) 코드·합성 6 tests 구현. 이력 저장/attestation/모델과는 격리. 다음 연결은 **NoticeVersion canonical-metadata SHA != 공식 원문 바이트 SHA**와 **ExtractionRun coverage.complete 미검증**부터 해결. 실공고 수집/인증 승인/유료 호출/배포는 아직 NOT_RUN.
 
 > **2026-11-20 AGW-05 실코드 인계:** [공식 출처 RFP 근거/무결성 승인 및 최신 결과 검증](docs/implementation/ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md): `snapshot.py`, `analysis_service.py`, `public_source.py`, `PublicRfpAttestation/0003`, `test_ai_gateway_public_source.py`. 공개처럼 보이는 URL만으로 허용하지 않고 staff raw bytes SHA/최신 공고·완전한 추출/별도 내보내기 승인을 요구. 현재 코드+합성 CI만 진행; 실제 데이터/모델/회사 배포 OFF. 다음 AGW-08, official ingest/원문 추출 후 실제 RFP E2E.
