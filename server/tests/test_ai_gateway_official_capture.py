@@ -1,6 +1,7 @@
 """AGW-05 official capture: synthetic HTTP fixtures only, no real G2B or paid calls."""
 import io
 import json
+import os
 import tempfile
 from pathlib import Path
 import unittest
@@ -110,6 +111,7 @@ class OfficialG2BCaptureTests(unittest.TestCase):
         with self.assertRaisesRegex(CaptureError, "ENCODING_DENIED"):
             self.run_capture(opener=FakeOpener(encoding="gzip"))
 
+    @unittest.skipIf(os.name == 'nt', 'POSIX private raw storage has no Windows ACL implementation')
     def test_persistence_replay_and_tamper_detection(self):
         captured = self.run_capture()
         with tempfile.TemporaryDirectory() as private:
@@ -125,9 +127,10 @@ class OfficialG2BCaptureTests(unittest.TestCase):
                 persist(captured, private)
 
     def test_refuse_relative_root_and_repo_storage(self):
-        with self.assertRaisesRegex(CaptureError, "STORAGE_ROOT_DENIED"):
+        expected = 'STORAGE_PLATFORM_UNVERIFIED' if os.name == 'nt' else 'STORAGE_ROOT_DENIED'
+        with self.assertRaisesRegex(CaptureError, expected):
             persist(self.run_capture(), "relative/untrusted")
-        with self.assertRaisesRegex(CaptureError, "STORAGE_ROOT_DENIED"):
+        with self.assertRaisesRegex(CaptureError, expected):
             persist(self.run_capture(), Path(__file__).resolve().parents[2])
 
 
