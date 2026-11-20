@@ -194,6 +194,7 @@ class ResultContractTests(unittest.TestCase):
     def test_unknown_requires_missing_reason(self):
         r = self.result()
         r["requirements"][0]["assessment"] = "UNKNOWN"
+        r["requirements"][0]["missing_evidence_ids"] = []
         with self.assertRaisesRegex(ResultContractError, "UNKNOWN_REQUIRES_MISSING_EVIDENCE"):
             validate_model_result(result=r, snapshot=self.snapshot,
                                   expected_provider="CODEX")
