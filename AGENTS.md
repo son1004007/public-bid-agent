@@ -1,3 +1,5 @@
+> **2026-11-20 최신 P0-01 DONE / 다음 P0-02:** [기존 HWPX 5건 및 공식 공고 1건 재조회/원본 비공개 O_EXCL 저장·독립 재검증](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 신규 별도 원본 응답 5,764 byte와 manifest만 0600/0700 비공개 보관, 기존 HWPX 복제 및 DB/권한/기존 스케줄 변경 0. 공식 첨부 목록은 `bidNtceOrd=000`이 필요. [TASKS.md 최상단](TASKS.md)의 다음 **P0-02 raw digest↔metadata digest↔현재 공고·문서 별도 불변 source mapping**이 다음 과제입니다. 실원본 직원 승인·AI 실행·회사 data1 배포는 계속 OFF.
+
 > **2026-11-20 P0-01 실제 NAS 원본 5건/공식 API 1건 검증 정본:** [실측·원본별 SHA/차수/DB ACL·첨부목록·CI 결과](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 개인 NAS 원본 HWPX 5건 해시 일치, 실제 공식 02 공고 API/첨부 목록·다운로드 1건 PASS. 저장된 인코딩 API key 지원 수집기 수정, core 91 / Django 415×3. **raw notice 영속 보관/DB 결속·coverage 완전성·staff/모델/실제 data1 배포는 NOT_DONE**. 다음 단계는 TASKS 통합 실행 큐 01 잔여로 진행; 원본/권한·일정 변경 금지.
 
 > **2026-11-20 AGW-05 최신 진입점:** [RFP 원본 공고/문서/추출 chain 해시·공식 PUBLIC 출처 승인·dispatch preflight 구현/검증 기록](docs/implementation/ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md). 1800byte 무음 절단 제거, `PublicRfpAttestation` 기본 OFF. 실제 조달청 API 내려받기/실공고 승인, 모델 계정/사내 반출/운영 NAS 배포는 NOT_DONE. [CURRENT_STATE](CURRENT_STATE.md) 및 [TASKS](TASKS.md) 최신 P0 우선.
