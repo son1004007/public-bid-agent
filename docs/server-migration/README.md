@@ -27,6 +27,7 @@
 | 15 | [공개 입찰 MCP 연결·검증](14-bid-mcp-interface.md) | 공개 공고/승인 RFP 읽기 도구·stdio 구현과 인증된 원격 연결 조건 |
 | 16 | [Codex·Claude 조건부 교차 검증 및 MCP·구독 정책](15-mcp-provider-executor-subscription-policy.md) | 가용 0/1/2개별 동작, 독립 분석/근거 비교/JSON 저장, 허가된 실행과 개인 CLI 경계 |
 
+| 18 | [AI Gateway 실제 구현용 AGW-00~15 상세 카드/의존성](../implementation/ai-gateway/README.md) | 16개 단위 설계·계획서: CLI 로그인·세션·실행·JSON·교차 검증·UI·배포/평가, 공통 DB/API 계약 |
 | 17 | [사용자별 Codex·Claude CLI 로그인·resume·증거 기반 교차 검증](16-user-cli-session-and-blind-cross-check.md) | 세션 장기 보존, 원본 답변 비공유, 불일치 때만 별도 이슈 세션 검증 |
 
 ## 다른 AI에게 전달할 짧은 시작 지시
