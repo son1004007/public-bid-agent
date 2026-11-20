@@ -205,7 +205,7 @@ def _reconcile_locked(
             doc = (
                 DocumentVersion.objects.select_related(
                     "document", "notice_version", "owner_user",
-                ).select_for_update().get(pk=document_version_id)
+                ).select_for_update(of=("self",)).get(pk=document_version_id)
             )
         except (NoticeVersion.DoesNotExist, DocumentVersion.DoesNotExist):
             raise SourceLinkError("UNKNOWN_SOURCE_VERSION") from None
