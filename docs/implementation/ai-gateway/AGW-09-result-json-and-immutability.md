@@ -1,7 +1,9 @@
+> **2026-11-20 최신 구현 상태: CODE_PARTIAL / SYNTHETIC_DB_PASS.** [AGW-05/09 실제 코드·합성 DB·테스트 기록](AGW-05-09-IMPLEMENTATION-2026-11-20.md). `server/ai_gateway_core/result_contract.py`의 strict JSON/중복키/결과 연결/허위 근거/요건 coverage 검증, `ai_gateway.models.AnalysisRun/AnalysisRevision` 및 `migrations/0002_analysis_results.py`, `analysis_service.py` 멱등/결과 수정 거부/승인 신규 revision 구현. RFP 자료만으로 MET·NOT_MET 확정 금지. **PostgreSQL DB-level trigger/grants/WORM·실제 Job/outbox·회사 데이터는 미구현**. ORM 막음만으로 특권 SQL 변경까지 방지하는 것은 아님. [core 77 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44676123480), [Django 378×3 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44676123557).
+
 # JSON 구조 검증·증빙 식별자 대조·불변 결과 저장
 
 - 작업 ID: AGW-09
-- 상태: DESIGN_READY / IMPLEMENTATION_NOT_STARTED
+- 상태: CODE_PARTIAL / SYNTHETIC_DB_TESTED; PUBLIC_PRODUCTION_NOT_CONNECTED
 - 우선순위: P0; 선행 작업과 승인 조건은 [AGW 목차](README.md) 참조.
 - 기존 연계: [HBR 원장](../../../TASKS.md), [사용자별 세션/교차 검증](../../server-migration/16-user-cli-session-and-blind-cross-check.md), [전역 보안·계약](../../server-migration/15-mcp-provider-executor-subscription-policy.md).
 - 범위: 합성·공개 RFP와 격리 환경에서 코드/테스트 가능; 실제 CLI 로그인·회사 데이터 외부 전송·유료 모델·data1 배포는 별도 적격성·승인 전 OFF.
