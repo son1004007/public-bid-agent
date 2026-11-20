@@ -1,3 +1,5 @@
+> **2026-11-20 AGW 실제 구현/검증 인계:** [AGW 첫 실행·검증 기록](docs/implementation/ai-gateway/AGW-RUN-2026-11-20.md). 개인 Windows Codex 모델 실제 호출+동일 session resume PASS; Codex CLI adapter/JSONL parser, Django ProviderProfile/SessionBinding 및 사용자별 GET 상태 API 구현. AGW core 35건·Server foundation Win/Linux/PostgreSQL 303건씩 CI PASS. 실제 서버의 사용자별 CLI 등록/로그인·세션 worker/공개 RFP 자동 분석 및 회사 data1 배포는 아직 NOT_DONE. 다음 P0은 AGW-03/04/06 격리 runner 결속.
+
 > **2026-11-20 최신 사용자 우선순위:** 유료 Codex·Claude 모델 실제 호출 허용, 빠른 구현·정확한 입찰 판단 중심. [AGW 계획](docs/implementation/ai-gateway/README.md)과 TASKS P0-R1/R2: 첫 provider 실제 유료 공개 RFP E2E+resume를 조기 수행하고 0/1/2 도메인 코어 테스트는 병행. 회사 자료 반출/서버 배포/구독 중계는 여전히 별도 정책·승인. 실제 모델 실행 완료로 주장하지 않는다.
 
 > **2026-11-20 AGW 구현 재개 인덱스:** [AGW-00~15 작업 단위별 상세 설계/구현 계획](docs/implementation/ai-gateway/README.md). 16개 카드별 입력/출력 계약·Django/CLI·실패/복구/테스트·선행조건을 확인한 후 해당 상태는 TASKS/CURRENT_STATE에서 최신 확인. 설계서 게시만으로 실제 API/CLI/운영이 구현되었다고 주장하지 않는다.
