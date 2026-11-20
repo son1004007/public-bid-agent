@@ -32,6 +32,10 @@ class NasCodexConfig:
     identity_root: Path
     workspace: Path
     docker_binary: str = "/usr/local/bin/docker"
+    # Set by trusted runtime attestation, never by a browser/API request.
+    user_os_mapping_verified: bool = False
+    egress_restricted_verified: bool = False
+    model_tool_policy_verified: bool = False
 
 
 def _private_dir(path: Path, *, uid: int | None = None) -> Path:
@@ -131,6 +135,18 @@ def run_nas_docker_codex(
     """
     if type(policy) is not CodexRunPolicy or not policy.allowed:
         raise CodexAdapterError("PROVIDER_EXECUTION_NOT_APPROVED")
+    if not all(
+        type(flag) is bool and flag
+        for flag in (
+            config.user_os_mapping_verified,
+            config.egress_restricted_verified,
+            config.model_tool_policy_verified,
+        )
+    ):
+        # The existing Synology Docker smoke uses synthetic prompts only.
+        # A production runner needs network and untrusted-RFP tool-use policy
+        # independently verified; --read-only alone is NOT sufficient.
+        raise CodexAdapterError("NAS_RUNTIME_GATES_NOT_APPROVED")
     if not isinstance(prompt, str) or not prompt.strip() or len(prompt.encode("utf-8")) > 100_000:
         raise CodexAdapterError("INVALID_PROMPT")
     if type(timeout_seconds) is not int or not 15 <= timeout_seconds <= 180:
