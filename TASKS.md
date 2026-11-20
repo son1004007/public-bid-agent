@@ -1,3 +1,15 @@
+## 2026-11-20 P0 최신 작업 결과 — AGW-05/09 합성 근거 패킷·분석 결과 이력
+
+[AGW-05/09 구현/테스트 인수 기록](docs/implementation/ai-gateway/AGW-05-09-IMPLEMENTATION-2026-11-20.md) · [현재 상태 정본](CURRENT_STATE.md)
+
+| 단계 | 상태 | 근거 / 다음 작업 |
+| --- | --- | --- |
+| **AGW-05 core** | **CODE_PARTIAL / SYNTHETIC_PASS** | 정규화된 packet/hash 및 RFP 문서·Chunk/Extraction ACL·버전 검증 구현. 공개 실공고/회사 실적·실제 반출 gate는 미연결 |
+| **AGW-09 core+DB** | **CODE_PARTIAL / SYNTHETIC_DB_PASS** | `AnalysisRun`/`AnalysisRevision` 모델·migration·append/replay 멱등, 가짜 출처·확정 자격 오판 차단. 운영 DB immutable trigger/권한·Job/outbox 결과 연결은 미완료 |
+| **CI** | **PASS** | [core 77개](https://github.com/son1004007/public-bid-agent/actions/runs/44676123480), [Django Win/Linux/Postgres 각 378개](https://github.com/son1004007/public-bid-agent/actions/runs/44676123557) PASS. 합성 환경만 사용 |
+| **다음 P0** | **READY_FOR_CODE** | 실제 공개 RFP evidence/fact source ACL 및 AGW-08 JobAttempt/outbox↔SessionBinding/lease↔NAS Docker adapter 연결(승인되지 않은 회사 데이터 egress·자동 유료 호출은 OFF) |
+| **차기 P0/P1** | **NOT_DONE** | Claude 사용자별 인증/분석, 2개 provider 독립 비교/실체 사실 검산, 이슈/웹 UI, gold 평가, 운영 배포·회사업무 승인 |
+
 > **2026-11-20 NAS Codex 최신 변경 완료 (runtime verified):** 호스트 `codex-cli 0.171.0`, 기본 `gpt-6.2-sol` / `model_reasoning_effort=medium`, 기본값 실제 응답 PASS. 격리 Docker 이미지 `device-control/codex-runtime:0.171.0` 신규 빌드 및 명시한 GPT-6.2 Sol Medium 실제 모델 응답 PASS. Synology 설치된 제한 실행기(read-only/workspace-write) 2개 소스를 새 image/model로 맞추고 GitHub blob 일치·`sh -n`·미승인 작업 차단 exit8 모두 PASS. 기존 0.163 패키지/이미지·설정/스크립트 백업 유지. [NAS 운영 정본](https://github.com/son1004007/device-control/blob/main/docs/SYNOLOGY_AGENT_RUNTIME.md). [앱 CI](https://github.com/son1004007/public-bid-agent/actions/runs/44672859099), [서버 CI](https://github.com/son1004007/public-bid-agent/actions/runs/44672859075) PASS. 과거 0.163 이력은 아래 historique이며 **새 웹 사용자별 운영 연결·격리 게이트는 아직 OFF**. 다음 작업 AGW-05/09 및 승인된 Job 연결.
 
 ## 2026-11-20 NAS 우선 AGW P0 다음 단계 구현 — 현재 진척
