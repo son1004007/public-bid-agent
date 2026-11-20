@@ -6,6 +6,10 @@ import copy
 import hashlib
 import io
 import json
+import os
+from pathlib import Path
+import tempfile
+import unittest
 import uuid
 import zipfile
 
@@ -17,7 +21,8 @@ from ai_gateway_core.official_g2b_capture import CAPTURE_DIR
 from bid_server.accounts.models import User
 from bid_server.ai_gateway.models import OfficialSourceLink, PublicRfpAttestation
 from bid_server.ai_gateway.official_source_link import (
-    SourceLinkError, reconcile_official_source_capture, verify_official_source_link,
+    SourceLinkError, load_notice_only_source_files,
+    reconcile_official_source_capture, verify_official_source_link,
 )
 from bid_server.procurement.models import (
     Document, DocumentFreshness, DocumentVersion, Notice, NoticeVersion,
@@ -298,4 +303,67 @@ class OfficialSourceLinkTests(TestCase):
                 raw_notice_payload_bytes=self.raw_notice,
                 raw_document_bytes=self.raw_doc,
                 manifest_bytes=_manifest_bytes(self.manifest),
+            )
+
+
+    @unittest.skipIf(os.name == "nt", "POSIX 0700/0600 storage only; NTFS ACL unverified")
+    def test_private_archive_loader_existing_document_no_copy_and_tamper(self):
+        capture_id = self.manifest["capture_id"]
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base)
+            media = root / "private-media"
+            media.mkdir(mode=0o700)
+            doc_dir = media / "public-rfp"
+            doc_dir.mkdir(mode=0o700)
+            capture_dir = root / "official-g2b-capture"
+            capture_dir.mkdir(mode=0o700)
+            raw_path = capture_dir / (capture_id + ".notice.raw.json")
+            manifest_path = capture_dir / (capture_id + ".existing.manifest.json")
+            document_path = doc_dir / (self.doc.sha256 + ".hwpx")
+            for p, value in [
+                (raw_path, self.raw_notice),
+                (manifest_path, _manifest_bytes(self.manifest)),
+                (document_path, self.raw_doc),
+            ]:
+                p.write_bytes(value)
+                p.chmod(0o600)
+            raw, doc, manifest = load_notice_only_source_files(
+                capture_root=root, private_media_root=media,
+                capture_id=capture_id, document_sha256=self.doc.sha256,
+            )
+            self.assertEqual(raw, self.raw_notice)
+            self.assertEqual(doc, self.raw_doc)
+            self.assertEqual(manifest, _manifest_bytes(self.manifest))
+            self.assertEqual(
+                len(list(capture_dir.iterdir())), 2,
+                "Existing HWPX must not be copied into capture archive",
+            )
+            with self.assertRaisesRegex(SourceLinkError, "PRIVATE_SOURCE_PATH_DENIED"):
+                load_notice_only_source_files(
+                    capture_root="relative", private_media_root=media,
+                    capture_id=capture_id, document_sha256=self.doc.sha256,
+                )
+            document_path.chmod(0o644)
+            with self.assertRaisesRegex(SourceLinkError, "PRIVATE_SOURCE_PATH_DENIED"):
+                load_notice_only_source_files(
+                    capture_root=root, private_media_root=media,
+                    capture_id=capture_id, document_sha256=self.doc.sha256,
+                )
+            document_path.chmod(0o600)
+            manifest_path.write_bytes(
+                _manifest_bytes({**self.manifest, "notice_sha256": "0" * 64}),
+            )
+            manifest_path.chmod(0o600)
+            with self.assertRaisesRegex(SourceLinkError, "CAPTURE_INTEGRITY_MISMATCH"):
+                load_notice_only_source_files(
+                    capture_root=root, private_media_root=media,
+                    capture_id=capture_id, document_sha256=self.doc.sha256,
+                )
+
+    def test_private_archive_loader_denies_non_hex_ids_before_filesystem(self):
+        with self.assertRaisesRegex(SourceLinkError, "CAPTURE_IDENTITY_MISMATCH"):
+            load_notice_only_source_files(
+                capture_root="relative", private_media_root="relative",
+                capture_id="../" + "a" * 64,
+                document_sha256=self.doc.sha256,
             )
