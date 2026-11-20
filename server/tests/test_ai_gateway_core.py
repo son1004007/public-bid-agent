@@ -27,6 +27,14 @@ class PlanTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertEqual(select_plan([replace(ALL_READY, **{name: False})]).mode.value, "NO_AI")
 
+    def test_truthy_non_boolean_gate_is_not_ready(self):
+        for value in (1, "yes", "true", [], object()):
+            with self.subTest(value=repr(value)):
+                self.assertEqual(
+                    select_plan([replace(ALL_READY, authenticated=value)]).mode.value,
+                    "NO_AI",
+                )
+
     def test_single_codex(self):
         self.assertEqual(select_plan([ALL_READY]).mode.value, "SINGLE_CODEX")
 
