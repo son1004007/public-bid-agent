@@ -1,3 +1,5 @@
+> **2026-11-20 진행:** [Django Provider readiness 읽기 전용 로직](../../../server/bid_server/ai_gateway/service.py) 및 [실측](AGW-RUN-2026-11-20.md). 개인 Windows Gateway SSH에서 Codex 0.166.0 인증 확인 exit 0, Claude Code 2.1.50 인증 확인 exit 1. 이는 *서버의 다중 사용자 로그인 기능 구현을 뜻하지 않음*. 웹앱에는 공급자 인증정보를 수집하는 POST API를 만들지 않았으며 상태조회는 기본 NO_AI. 실제 본인 계정 사용자별 OS 격리/업체 계약 확인 후 실행 연결.
+
 # 공식 CLI 사용자별 로그인·등록/가용성 상태
 
 - 작업 ID: AGW-03
