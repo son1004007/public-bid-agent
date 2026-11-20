@@ -33,7 +33,7 @@
 - 코드: [`snapshot.py`](../../../server/ai_gateway_core/snapshot.py), [`analysis_service.py`](../../../server/bid_server/ai_gateway/analysis_service.py), [`public_source.py`](../../../server/bid_server/ai_gateway/public_source.py), [`models.py`](../../../server/bid_server/ai_gateway/models.py), [`0003_public_rfp_attestation.py`](../../../server/bid_server/ai_gateway/migrations/0003_public_rfp_attestation.py)
 - 테스트: [`test_ai_gateway_snapshot.py`](../../../server/tests/test_ai_gateway_snapshot.py), [`test_ai_gateway_analysis.py`](../../../server/tests/test_ai_gateway_analysis.py), [`test_ai_gateway_public_source.py`](../../../server/tests/test_ai_gateway_public_source.py)
 - 인수 항목: 1800byte 이후 RFP 텍스트 거부, 조작된 source hash/원본 PDF SHA/notice payload SHA/extraction ID/category 거부, source approval 없거나 revoked·권한 제거·불완전 추출 실패, spoofed G2B URL/서비스키 차단, 승인된 같은 PUBLIC packet을 CODEX/CLAUDE에 독립 전달 가능한 identity, read-only preflight 변경 감지, 전체 schema/migration 검증.
-- **정확한 CI 성공/실패 결과는 GitHub Actions의 실제 workflow 상태를 확인한 후 CURRENT_STATE/TASKS에 기록한다.**
+- **코드 SHA 검증 통과:** [AGW core 83개 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44680062831), [Server foundation Windows/Linux/PostgreSQL 각 407개 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44680062793). PostgreSQL 마이그레이션 dry-run에 pending schema 변경 없음. 모두 합성 fixture이며 실제 공식 첨부 원문 ingest/유료 모델 실행 미포함.
 
 ## 4. 남은 P0 / 운영 차단
 
