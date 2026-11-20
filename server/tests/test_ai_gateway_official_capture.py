@@ -6,6 +6,7 @@ import tempfile
 from pathlib import Path
 import unittest
 import zipfile
+from urllib.parse import parse_qs, urlsplit
 
 from ai_gateway_core.official_g2b_capture import CaptureError, capture, persist
 
@@ -73,6 +74,24 @@ class OfficialG2BCaptureTests(unittest.TestCase):
         self.assertEqual(len(captured.summary()["notice_sha256"]), 64)
         self.assertEqual(len(opener.calls), 2)
         self.assertNotIn("synthetic-key-not-real", json.dumps(captured.summary()))
+
+    def test_decoded_and_percent_encoded_portal_keys_have_identical_wire_value(self):
+        for key in ("synthetic/+key", "synthetic%2F%2Bkey"):
+            with self.subTest(portal_format="encoded" if "%" in key else "decoded"):
+                opener = FakeOpener()
+                captured = self.run_capture(service_key=key, opener=opener)
+                requested = parse_qs(urlsplit(opener.calls[0]).query)
+                self.assertEqual(requested["serviceKey"], ["synthetic/+key"])
+                self.assertEqual(captured.summary()["status"], "UNATTESTED_RAW_CAPTURE")
+                self.assertNotIn(key, json.dumps(captured.summary()))
+
+    def test_reject_broken_key_encoding_and_encoded_controls_before_network(self):
+        for key in ("synthetic%ZZ", "synthetic%", "synthetic%0Akey", "synthetic%00key"):
+            with self.subTest(format_only=True):
+                opener = FakeOpener()
+                with self.assertRaisesRegex(CaptureError, "MISSING_SERVICE_KEY"):
+                    self.run_capture(service_key=key, opener=opener)
+                self.assertEqual(opener.calls, [])
 
     def test_identity_mismatch_and_duplicate_json_are_rejected(self):
         bad = [
