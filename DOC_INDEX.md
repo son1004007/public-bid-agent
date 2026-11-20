@@ -1,3 +1,4 @@
+| [AGW-05 공식 원본 공고·HWPX 바이트 수동 캡처](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md) | 공식 02 응답 원문·첨부 SHA 비공개 보존, 합성 보안 검사, 남은 DB digest/coverage 연결 게이트 |
 # 문서 목차 | Public Bid Agent
 
 상태와 진행률은 아래 정본을 확인합니다. 이 파일에는 상태를 복제하지 않습니다.
