@@ -61,6 +61,30 @@ class SynologyDockerCommandTests(unittest.TestCase):
             identity_root=root, workspace=workspace,
         )
 
+    def reviewed_config(self):
+        return replace(
+            self.config, user_os_mapping_verified=True,
+            egress_restricted_verified=True, model_tool_policy_verified=True,
+        )
+
+    @patch("ai_gateway_core.nas_docker_codex.subprocess.run")
+    def test_provider_approval_alone_does_not_authorize_unverified_nas(self, child):
+        with self.assertRaisesRegex(CodexAdapterError, "NAS_RUNTIME_GATES_NOT_APPROVED"):
+            run_nas_docker_codex(config=self.config, policy=valid_policy(),
+                                 prompt="synthetic")
+        child.assert_not_called()
+
+    @patch("ai_gateway_core.nas_docker_codex.subprocess.run")
+    def test_each_runtime_attestation_is_required(self, child):
+        for name in ("user_os_mapping_verified", "egress_restricted_verified",
+                     "model_tool_policy_verified"):
+            with self.subTest(name=name):
+                conf = replace(self.reviewed_config(), **{name: False})
+                with self.assertRaisesRegex(CodexAdapterError, "NAS_RUNTIME_GATES_NOT_APPROVED"):
+                    run_nas_docker_codex(config=conf, policy=valid_policy(),
+                                         prompt="synthetic")
+        child.assert_not_called()
+
     def test_start_has_verified_synology_isolation_flags(self):
         args = build_nas_docker_codex_argv(config=self.config)
         self.assertEqual(args[:3], ("/usr/local/bin/docker", "run", "--rm"))
@@ -137,7 +161,7 @@ class SynologyDockerCommandTests(unittest.TestCase):
     def test_allowlisted_mock_exec_returns_object(self, child):
         child.return_value = subprocess.CompletedProcess([], 0, final_stream(), "")
         outcome = run_nas_docker_codex(
-            config=self.config, policy=valid_policy(),
+            config=self.reviewed_config(), policy=valid_policy(),
             prompt="synthetic", session_id=SESSION_ID,
         )
         self.assertEqual(outcome.session_id, SESSION_ID)
@@ -152,7 +176,7 @@ class SynologyDockerCommandTests(unittest.TestCase):
     def test_nonzero_error_does_not_echo_credentials(self, child):
         child.return_value = subprocess.CompletedProcess([], 125, "", "FAKE_SECRET")
         with self.assertRaises(CodexAdapterError) as caught:
-            run_nas_docker_codex(config=self.config, policy=valid_policy(),
+            run_nas_docker_codex(config=self.reviewed_config(), policy=valid_policy(),
                                  prompt="synthetic")
         self.assertEqual(caught.exception.code, "DOCKER_CODEX_FAILED")
         self.assertNotIn("FAKE_SECRET", str(caught.exception))
@@ -162,7 +186,7 @@ class SynologyDockerCommandTests(unittest.TestCase):
     def test_timeout_does_not_retry_paid_call(self, child):
         child.side_effect = subprocess.TimeoutExpired(cmd=["docker"], timeout=150)
         with self.assertRaisesRegex(CodexAdapterError, "CODEX_TIMEOUT"):
-            run_nas_docker_codex(config=self.config, policy=valid_policy(),
+            run_nas_docker_codex(config=self.reviewed_config(), policy=valid_policy(),
                                  prompt="synthetic")
         child.assert_called_once()
 
