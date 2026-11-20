@@ -187,7 +187,7 @@ class ResultContractTests(unittest.TestCase):
     def test_rfp_alone_cannot_prove_met(self):
         r = self.result()
         r["requirements"][0]["assessment"] = "MET"
-        with self.assertRaisesRegex(ResultContractError, "UNPROVEN_MET_ASSESSMENT"):
+        with self.assertRaisesRegex(ResultContractError, "UNPROVEN_ELIGIBILITY_ASSESSMENT"):
             validate_model_result(result=r, snapshot=self.snapshot,
                                   expected_provider="CODEX")
 
