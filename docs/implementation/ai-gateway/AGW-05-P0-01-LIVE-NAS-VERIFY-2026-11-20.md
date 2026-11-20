@@ -1,3 +1,11 @@
+> **2026-11-20 P0-01 최종 보완 PASS — 공식 공고 raw 응답 불변 비공개 보관:** 아래 본문에서 RAW_API_PERSIST_NOT_DONE, STORAGE_PENDING으로 표시된 항목은 이전 작업 시점의 기록입니다. 개인 NAS의 별도 비공개 Docker volume(비승격 사용자 소유 0700)에 공식 공고 HTTP 응답 원본 5,764 bytes, SHA-256 `b342a3e28e32c9e9e0e4499ab939acf0d0019c3c17656f67c49c3bb965891666`과 manifest 1개를 각각 0600으로 O_EXCL 저장했습니다. 기존 HWPX는 파일/DB SHA를 검증하고 기존 private-media storage key를 참조해 **복제하지 않았습니다**.
+
+- 공식 02 공고 API, 첨부 목록 API(5건), G2B 실제 HWPX GET을 재검증했습니다. 공식 첨부 목록은 `bidNtceOrd=000`일 때 반환되며 `0`일 때 0건입니다. 저장된 공식 첨부 URL과 목록 URL은 원문 문자열이 동일하지 않지만 hostname/path 및 순서 무관 query identity(공고, 수치 차수, fileSeq, sector, fileType)가 유일하게 1건 대응하고 HWPX 원본 SHA도 같습니다. 단순 URL 문자열 일치만으로 정상 원본을 배제하지 않도록 검증했습니다.
+- 별도 **무네트워크/읽기 전용** 컨테이너에서 원본 SHA, manifest, 파일 0600·디렉터리 0700, 저장 파일 정확히 2개, HWPX 미복제, 승인 상태 `UNREVIEWED`를 재검증했습니다. 실제 저장 Gateway job `job_01M7VYN2RF00W4KYXE7HZZKE5F`, 독립 검산 job `job_01M7VYP3AQ00FH5E3VC6GCEFBP`.
+- **최종 판정: P0-01 DONE (기존 HWPX 5개 보호 원본 재검증 + 공식 공고 1건 실제 재조회/불변 raw 보관 범위).** 남은 4개 공고의 2026-11-20 직접 API 재조회는 NOT_RUN입니다. P0-02 DB raw↔canonical digest 별도 불변 mapping, P0-03 구조/coverage, P0-04 staff 실제 승인 및 모델 송신은 NOT_DONE. 기존 DB/인증/원본/웹 컨테이너/스케줄/회사 data1 미변경.
+
+---
+
 # AGW-05 / P0-01 — NAS 기존 공개 RFP 원본·DB·공식 API 재검증 (2026-11-20)
 
 - 상태: **EXISTING_RAW_5_OF_5_READ_ONLY_PASS / LIVE_OFFICIAL_1_OF_5_PASS / RAW_API_PERSIST_NOT_DONE / PUBLIC_ATTESTATION_OFF**
