@@ -190,6 +190,21 @@ class SyntheticAnalysisStorageTests(TestCase):
         with self.assertRaisesRegex(AnalysisServiceError, "STALE_OR_TAMPERED_SOURCE"):
             self.append(run)
 
+    def test_pre_dispatch_read_only_preflight(self):
+        from bid_server.ai_gateway.analysis_service import verify_run_snapshot_for_dispatch
+        run = self.create_run()
+        validated = verify_run_snapshot_for_dispatch(actor=self.actor, run_id=run.pk)
+        self.assertEqual(validated.sha256, run.snapshot_sha256)
+        self.assertEqual(AnalysisRevision.objects.count(), 0)
+
+    def test_pre_dispatch_rejects_stale_acl(self):
+        from bid_server.ai_gateway.analysis_service import verify_run_snapshot_for_dispatch
+        run = self.create_run()
+        self.document_version.owner_user = self.other
+        self.document_version.save(update_fields=["owner_user"])
+        with self.assertRaisesRegex(AnalysisServiceError, "UNAPPROVED_OR_STALE_SOURCE"):
+            verify_run_snapshot_for_dispatch(actor=self.actor, run_id=run.pk)
+
     def test_model_result_add_and_idempotent_replay(self):
         run = self.create_run()
         first = self.append(run)
