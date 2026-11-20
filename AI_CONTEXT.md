@@ -1,3 +1,5 @@
+> **2026-11-20 official raw capture 추가:** [AGW-05 수동 수집·비공개 원본 SHA 계약](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md) 코드·합성 6 tests 구현. 이력 저장/attestation/모델과는 격리. 다음 연결은 **NoticeVersion canonical-metadata SHA != 공식 원문 바이트 SHA**와 **ExtractionRun coverage.complete 미검증**부터 해결. 실공고 수집/인증 승인/유료 호출/배포는 아직 NOT_RUN.
+
 > **2026-11-20 AGW-05 실코드 인계:** [공식 출처 RFP 근거/무결성 승인 및 최신 결과 검증](docs/implementation/ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md): `snapshot.py`, `analysis_service.py`, `public_source.py`, `PublicRfpAttestation/0003`, `test_ai_gateway_public_source.py`. 공개처럼 보이는 URL만으로 허용하지 않고 staff raw bytes SHA/최신 공고·완전한 추출/별도 내보내기 승인을 요구. 현재 코드+합성 CI만 진행; 실제 데이터/모델/회사 배포 OFF. 다음 AGW-08, official ingest/원문 추출 후 실제 RFP E2E.
 
 > **2026-11-20 최신 AGW 개발 인계:** [AGW-05/09 RFP 합성 packet/근거 검증·DB 분석 이력 구현](docs/implementation/ai-gateway/AGW-05-09-IMPLEMENTATION-2026-11-20.md). `snapshot.py`/`result_contract.py`/`ai_gateway/models.py`/`analysis_service.py` + 0002 migration, 코어 77/77 + Django 378×3 합성 CI PASS. 모델이 RFP만 보고 MET/NOT_MET 확정 못하게 차단. 운영 불변 SQL trigger/회사 실데이터/실제 Job/worker 연결은 미완료.
