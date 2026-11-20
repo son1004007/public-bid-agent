@@ -15,17 +15,17 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 _REQUEST_KEYS = frozenset({
-    "schema_version", "run_id", "notice_version_id", "corpus_snapshot_id",
+    "schema_version", "run_id", "notice_version_id", "notice_source_digest", "corpus_snapshot_id",
     "prompt_version", "requirements", "evidence", "company_facts", "policy",
 })
 _REQ_KEYS = frozenset({
     "requirement_id", "source_document_id", "source_version",
-    "source_span_id", "source_hash", "required_kind", "excerpt",
+    "source_span_id", "source_hash", "document_sha256", "extraction_run_id", "required_kind", "excerpt",
     "extraction_state",
 })
 _EVIDENCE_KEYS = frozenset({
     "evidence_id", "evidence_type", "source_document_id", "source_version",
-    "source_span_id", "source_hash", "excerpt", "classification",
+    "source_span_id", "source_hash", "document_sha256", "extraction_run_id", "excerpt", "classification",
     "approved_for_provider", "requirement_ids",
 })
 _TYPES = frozenset({"RFP", "COMPANY_FACT"})
@@ -106,6 +106,7 @@ def build_snapshot(
     *,
     run_id: str,
     notice_version_id: str,
+    notice_source_digest: str,
     corpus_snapshot_id: str,
     prompt_version: str,
     requirements: list[dict],
@@ -116,6 +117,7 @@ def build_snapshot(
     """Reject unapproved inputs BEFORE returning any model-transmittable content."""
     run_id = _uuid(run_id, "INVALID_RUN_ID")
     notice_version_id = _uuid(notice_version_id, "INVALID_NOTICE_VERSION")
+    notice_source_digest = _hash(notice_source_digest, "INVALID_NOTICE_SOURCE_DIGEST")
     corpus_snapshot_id = _uuid(corpus_snapshot_id, "INVALID_CORPUS_SNAPSHOT")
     prompt_version = _id(prompt_version, "INVALID_PROMPT_VERSION")
     if (
@@ -145,16 +147,21 @@ def build_snapshot(
         source_version = _uuid(item["source_version"], "INVALID_SOURCE_VERSION")
         source_span = _uuid(item["source_span_id"], "INVALID_SOURCE_SPAN")
         source_hash = _hash(item["source_hash"], "INVALID_SOURCE_HASH")
+        document_sha256 = _hash(item["document_sha256"], "INVALID_DOCUMENT_DIGEST")
+        extraction_run_id = _uuid(item["extraction_run_id"], "INVALID_EXTRACTION_RUN")
         kind = item["required_kind"]
         if kind not in _KINDS or type(kind) is not str:
             raise SnapshotError("INVALID_REQUIREMENT_KIND")
         if item["extraction_state"] != "PARSED":
             raise SnapshotError("INCOMPLETE_EXTRACTION")
         excerpt = _text(item["excerpt"], 2400, "INVALID_REQUIREMENT_EXCERPT")
+        if hashlib.sha256(excerpt.encode("utf-8")).hexdigest() != source_hash:
+            raise SnapshotError("SOURCE_SPAN_HASH_MISMATCH")
         accepted_requirements.append({
             "requirement_id": rid, "source_document_id": document,
             "source_version": source_version, "source_span_id": source_span,
-            "source_hash": source_hash, "required_kind": kind,
+            "source_hash": source_hash, "document_sha256": document_sha256,
+            "extraction_run_id": extraction_run_id, "required_kind": kind,
             "excerpt": excerpt, "extraction_state": "PARSED",
         })
     ids: set[str] = set()
@@ -171,6 +178,8 @@ def build_snapshot(
         source_version = _uuid(item["source_version"], "INVALID_SOURCE_VERSION")
         source_span = _uuid(item["source_span_id"], "INVALID_SOURCE_SPAN")
         source_hash = _hash(item["source_hash"], "INVALID_SOURCE_HASH")
+        document_sha256 = _hash(item["document_sha256"], "INVALID_DOCUMENT_DIGEST")
+        extraction_run_id = _uuid(item["extraction_run_id"], "INVALID_EXTRACTION_RUN")
         if type(item["evidence_type"]) is not str or item["evidence_type"] not in _TYPES:
             raise SnapshotError("INVALID_EVIDENCE_TYPE")
         if type(item["classification"]) is not str or item["classification"] not in allowed_classifications:
@@ -178,6 +187,8 @@ def build_snapshot(
         if item["approved_for_provider"] is not True:
             raise SnapshotError("PROVIDER_EGRESS_NOT_APPROVED")
         excerpt = _text(item["excerpt"], 2400, "INVALID_EVIDENCE_EXCERPT")
+        if hashlib.sha256(excerpt.encode("utf-8")).hexdigest() != source_hash:
+            raise SnapshotError("SOURCE_SPAN_HASH_MISMATCH")
         linked = item["requirement_ids"]
         if (not isinstance(linked, list) or not 1 <= len(linked) <= 200
                 or any(type(r) is not str or r not in req_ids for r in linked)
@@ -187,12 +198,14 @@ def build_snapshot(
             "evidence_id": eid, "evidence_type": item["evidence_type"],
             "source_document_id": document, "source_version": source_version,
             "source_span_id": source_span, "source_hash": source_hash,
+            "document_sha256": document_sha256, "extraction_run_id": extraction_run_id,
             "excerpt": excerpt, "classification": item["classification"],
             "approved_for_provider": True, "requirement_ids": sorted(linked),
         })
     packet = {
         "schema_version": "analysis_request_v1",
         "run_id": run_id, "notice_version_id": notice_version_id,
+        "notice_source_digest": notice_source_digest,
         "corpus_snapshot_id": corpus_snapshot_id, "prompt_version": prompt_version,
         "requirements": sorted(accepted_requirements, key=lambda r: r["requirement_id"]),
         "evidence": sorted(accepted_evidence, key=lambda r: r["evidence_id"]),
@@ -234,6 +247,7 @@ def verify_snapshot(snapshot: EvidenceSnapshot, *, expected_sha256: str) -> None
         raise SnapshotError("INVALID_STORED_SNAPSHOT")
     rebuilt = build_snapshot(
         run_id=p.get("run_id"), notice_version_id=p.get("notice_version_id"),
+        notice_source_digest=p.get("notice_source_digest"),
         corpus_snapshot_id=p.get("corpus_snapshot_id"),
         prompt_version=p.get("prompt_version"),
         requirements=reqs, evidence=evidence,
