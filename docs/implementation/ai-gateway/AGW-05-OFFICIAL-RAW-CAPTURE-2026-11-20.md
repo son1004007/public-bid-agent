@@ -1,3 +1,5 @@
+> **2026-11-20 P0-01 최종 실증:** [실제 NAS 기존 RFP 5건·원본 공식 API 1건·비공개 notice raw+manifest O_EXCL 0600 보관 및 독립 검증](AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md) **DONE**. 기존 HWPX는 검증 후 `public-rfp/<SHA>.hwpx` 참조만 보관해 **중복 복사 0건**. 공식 첨부 목록은 공고 차수 `000`으로 조회하고 URL 문자열이 아니라 정규화된 공식 host/path/query identity 및 문서 SHA로 결속. 이전 문서의 `NOT_RUN` 표기는 작성 당시 이력입니다. `capture_official_g2b.py`에 `--apply --private-root ... --existing-document-storage-key public-rfp/<SHA>.hwpx`를 주면 notice-only manifest를 보관하고 기존 문서를 재저장하지 않습니다. 파일/DB 원본을 별도로 검증한 승인 환경에서만 사용합니다. **P0-02 DB raw/canonical source mapping과 staff PUBLIC 승인/모델 export는 아직 NOT_DONE**.
+
 > **P0-01 현재 실제 검증:** [2026-11-20 NAS 원본 5건/공식 API·첨부 목록 1건 read-only E2E 기록](AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 실제 5개 SHA/DB/ACL 일치, G2B 원본 1건 직접 GET/첨부 URL 공식 목록 검증 PASS. 기존 NAS URL-인코딩 service key를 `urlencode`하여 이중 인코딩하던 호환성 문제 수정(1회 URL decode 후 정상 query 인코딩, 잘못된 escape/control 거부). **raw 공고 HTTP 응답 비공개 영속 보관/신규 DB 결속/직원 공개 승인 아직 NOT_DONE**. 이 문서의 아래 원래 '실제 API E2E NOT_RUN'은 생성 당시 이력이며 이번 검증으로 **1건 읽기 전용 직접 GET만** 대체되었다.
 
 # AGW-05 P0-1 — 공식 공고·첨부 원본 바이트 캡처 (2026-11-20)
