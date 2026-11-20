@@ -104,11 +104,12 @@ def validate_model_result(
             raise ResultContractError("CROSS_REQUIREMENT_CITATION")
         if any(x in cited for x in missing):
             raise ResultContractError("CONTRADICTORY_EVIDENCE_IDS")
-        if assessment == "MET":
-            # RFP text only describes demand. A MET claim needs trusted,
-            # preapproved non-RFP company evidence; still not final legal proof.
+        if assessment in {"MET", "NOT_MET"}:
+            # RFP explains the requirement, never whether the company complies.
+            # Both positive AND negative definitive eligibility need trusted,
+            # independently approved company evidence, never RFP citations alone.
             if not any(evidence[eid]["evidence_type"] == "COMPANY_FACT" for eid in cited):
-                raise ResultContractError("UNPROVEN_MET_ASSESSMENT")
+                raise ResultContractError("UNPROVEN_ELIGIBILITY_ASSESSMENT")
         rationale = _bounded_text(row.get("rationale_short"), 2000, "INVALID_RATIONALE")
         if assessment == "UNKNOWN" and not missing:
             raise ResultContractError("UNKNOWN_REQUIRES_MISSING_EVIDENCE")
