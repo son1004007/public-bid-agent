@@ -29,9 +29,11 @@ class Profile:
 
     @property
     def ready(self) -> bool:
-        return all((self.registered, self.enabled, self.authenticated,
-                    self.execution_contract_approved, self.runtime_isolated,
-                    self.data_export_approved, self.quota_available))
+        flags = (self.registered, self.enabled, self.authenticated,
+                 self.execution_contract_approved, self.runtime_isolated,
+                 self.data_export_approved, self.quota_available)
+        # Reject truthy strings/integers from poorly validated external settings.
+        return all(type(flag) is bool and flag for flag in flags)
 
 
 @dataclass(frozen=True)
