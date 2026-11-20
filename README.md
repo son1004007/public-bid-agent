@@ -1,3 +1,5 @@
+> **2026-11-20 AI Gateway AGW-05 원본 캡처:** 운영자 수동 [official G2B raw-byte capture](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md) 코드·합성 검증. 실제 공식 API E2E, 원본 SHA와 기존 NoticeVersion 메타 해시 reconcile, 완전한 추출·staff PUBLIC 승인 및 모델 호출은 미완료. 공개 Git에는 원문과 인증정보 보관 금지.
+
 > NAS preview collection: `scripts/collect_g2b_public.py` reads the API key via stdin and outputs bounded public metadata; `refresh_g2b_snapshot --expected-db-name NAME` reads JSON on stdin, defaults to dry-run, and accepts `--apply` only for the approved PostgreSQL target. No company data or credentials in snapshots. Older revisions and same-order conflicts cannot overwrite reviewed current data. See current state before running; schedules and production release are separate.
 
 > **2026-11-19 pilot provisioning candidate:** operator-only `pilot_provision` validates private, independently hashed aggregate plans; dry-run by default; explicit apply creates initial scope for existing accounts or appends a new cost basis revision without modifying existing membership. No actual company values/roles or deployment applied. See pilot operations handoff.
