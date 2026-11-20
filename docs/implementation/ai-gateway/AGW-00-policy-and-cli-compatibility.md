@@ -1,3 +1,7 @@
+> **최신 개발 목적/우선순위 (2026-11-20):** 사용자에게 유료 모델 비용 허용을 받았으므로 **회사·공급자별 이용 적격성이 확인되는 최초 provider 실제 유료 E2E를 가능한 한 먼저 수행한다.** '비용 절감을 위한 수동 JSON만 허용'으로 불필요하게 지연시키지 않는다. 승인 조건을 만족하지 못하면 그 provider 실호출만 BLOCKED로 명시하고 다른 안전한 코드 개발을 병행한다. 공개 RFP+합성 데이터 1차 테스트, user-confirmed account, 제한된 실행 횟수/금액/timeout, 결과 JSON 및 이어쓰기 resume가 수용 기준이다. 사용자 비용 허용은 회사 기밀 반출·무한 과금·구독 중계 면책이 아니다.
+
+**2026-11-20 공식 재검증:** OpenAI 공식 [Codex as a platform](https://developers.openai.com/blog/codex-as-a-platform)은 `codex exec`(단발 구조화), SDK(시작/resume/stream), app-server(제품 내 제어)를 지원한다. Anthropic [Claude Code legal](https://code.claude.com/docs/en/legal-and-compliance)은 제품에서 변조 없는 Claude Code 호스팅 시 Commercial Terms 준수 및 각 사용자 본인 계정/개별 과금을 요구하고, 소비자 계정으로 다른 사용자 요청을 중계하는 것은 불허한다. [Claude CLI reference](https://code.claude.com/docs/en/cli-reference)에서 `claude -p`, `claude auth status`, `-r` 재개 확인. 최종 선택 전 해당 설치 버전 `--help`와 회사 계약/권한·서버 실측 확인 필수.
+
 # 계약·공식 CLI 호환성·실행 승인
 
 - 작업 ID: AGW-00
