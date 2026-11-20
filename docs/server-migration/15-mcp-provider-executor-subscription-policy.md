@@ -1,3 +1,98 @@
+> **2026-11-20 최신 조건부 교차 검증 요구 (최우선):** Codex와 Claude Code를 각각 독립 등록한다. **사용 가능한 실행기 1개면 단독 분석, 2개면 두 AI가 서로의 결과를 보지 않고 동일 스냅샷을 독립 분석한 후 근거 기반 교차 검증**, 0개면 AI 비활성화. 개인 구독 사용자 직접 CLI와 회사 공용 서버의 합법적인 자동 실행을 구분한다. 아래의 '한 번에 하나 선택'은 이 신규 조건부 교차 검증 설계에 의해 대체된다.
+
+## 최우선 설계 — 0/1/2개 등록·가용 상태에 따른 교차 검증
+
+### 1. 등록과 실제 가용 상태 분리
+
+- `ProviderProfile`: `profile_id`, `provider_id=CODEX_CLI|CLAUDE_CODE`, `owner_user_id`, `enabled`, `execution_mode=MANUAL_IMPORT|AUTHORIZED_EXECUTOR`, `last_verified_at`, `availability_state=UNKNOWN|READY|UNAVAILABLE|DISABLED`, `availability_reason`, `schema_version`. **개인 암호/토큰/OAuth/CLI 세션은 DB/공개 설정에 저장하지 않는다**.
+- 등록 또는 `enabled=true`만으로는 `READY`가 아니다. `READY`의 필수 조건은 등록·활성, 유효한 서비스 계약과 데이터 전송 권한, 해당 실행 모드에서 수행 가능한 사용자/실행기, 환경·모델 접근성/허용량/시간대, 실행 전 건강 상태 확인이다. 프로필별 가용 상태는 스냅샷 시각·근거를 남긴다.
+- `MANUAL_IMPORT`에서는 서비스가 사용자 기기의 CLI에 자동 접속하거나 구독 쿼터를 원격 탐색할 수 없다. 따라서 `READY`는 **해당 사용자가 직접 실행 가능하다고 확인한 상태**이며 서버가 무인 호출을 수행할 수 있다는 보장은 아니다. 실제 JSON 수신 전에는 실행 완료로 표시하지 않는다.
+- `AUTHORIZED_EXECUTOR`는 업체가 회사/사용자별 자동 실행을 명시적으로 허용한 계약·인증·네트워크·데이터 범위가 확인된 경우에만 활성화. 회사 공용 서버가 개인 Claude/Codex 구독 세션을 중계하는 방식은 금지한다.
+- 사용 가능 여부는 **요청 생성 직전**에도 재평가. 중간 실패/할당량 소진/로그아웃은 승인되지 않은 타 provider로 자동 재시도하지 않는다.
+
+| Codex | Claude Code | 분석 계획 `plan_mode` | 완료 상태 |
+|---|---|---|---|
+| 미등록/UNAVAILABLE/DISABLED | 미등록/UNAVAILABLE/DISABLED | `NO_AI` | AI 중지, RAG+SQL만 |
+| READY | 미등록/UNAVAILABLE/DISABLED | `SINGLE_CODEX` | 1회 분석; `SINGLE_NOT_CROSS_VALIDATED` |
+| 미등록/UNAVAILABLE/DISABLED | READY | `SINGLE_CLAUDE` | 1회 분석; `SINGLE_NOT_CROSS_VALIDATED` |
+| READY | READY | `DUAL_INDEPENDENT` | 독립 결과 2개 수신 후 검증; 미수신이면 `PENDING_SECOND_RESULT` |
+| 둘 다 READY였으나 한쪽 실행/업로드 실패 | - | 최초 계획 `DUAL_INDEPENDENT` 유지 | `DEGRADED_SINGLE`; 자동 교차 검증 PASS 금지 |
+
+**기본 정책:** 가용 실행기가 둘이라면 두 AI 교차 검증을 제안/계획하되, 별도 API 비용이나 사용자 수동 작업이 발생하는 경로에서는 **실제 두 번째 실행 전 실행자에게 예상 비용·요금제/할당량과 데이터 전송 대상을 확인**한다. 수동 가져오기 MVP에서 '자동'은 **두 독립 작업을 생성하고 두 결과가 도착한 즉시 비교하는 동작**이며, 서버가 개인 CLI를 대신 호출하는 의미가 아니다.
+
+### 2. 독립 실행과 비교 단계
+
+```mermaid
+flowchart TD
+    U["공고/RFP·권한에 맞는 내부 근거"] --> F["동일 불변 corpus_snapshot / evidence ID"]
+    F --> A{"사용 가능한 프로필 수"}
+    A -->|0| NO["NO_AI: 검색/SQL만"]
+    A -->|1| S["SINGLE: Codex 또는 Claude"]
+    A -->|2| X["CODEX 독립 1차 JSON"]
+    A -->|2| Y["CLAUDE 독립 1차 JSON"]
+    X --> V["각 JSON schema·ACL·근거 ID 검증"]
+    Y --> V
+    V --> C["결정론적 차이 비교"]
+    C -->|필수조건·근거 모두 일치| OK["AGREED_WITH_EVIDENCE"]
+    C -->|중요 불일치·근거 부족| DIF["DISAGREEMENT / HUMAN_REVIEW"]
+    C -->|둘 중 하나 미제출| PEND["PENDING_SECOND_RESULT"]
+    S --> SOLO["SINGLE_NOT_CROSS_VALIDATED"]
+```
+
+1. 두 AI에는 **같은 `notice_version_id`, `corpus_snapshot_id`, `prompt_version`, 허용된 `evidence_ids`, 출력 스키마**만 제공하고 서로의 1차 응답은 공개하지 않는다. `provider`, `model`, `actor`, `data_classification`, `submitted_at`, `digest`는 실행 이력에 기록한다.
+2. 수동 실행 MVP: 사용자는 각각의 공식 CLI에서 요청 파일을 **직접 실행**하고 `codex.json`, `claude.json`을 순서에 관계없이 업로드한다. **두 결과의 업로드 순서는 자유**이며, 한 개 도착 상태는 `PENDING_SECOND_RESULT`, 기한 만료·실행 불가에서는 `DEGRADED_SINGLE`으로 명시.
+3. 권한 검사: 업로드 사용자가 해당 snapshot/notice/version 및 허가 evidence에 접근할 수 있는지 다시 평가. `run_id`, provider, schema, snapshot/hash, 중복 업로드/idempotency, JSON 크기 제한 및 정규화 여부를 검증한다. 회사 비공개 자료를 개인 구독 CLI에 업로드하거나 외부로 보내는 작업은 별도 회사 승인 이전 금지.
+4. 각 AI의 **필수 자격/면허/입찰 조건**, RFP 필수 과업과 납기, 증빙 가능한 회사/부서 실적, 누락/모순/불확실성, 추천 수행 시나리오를 **근거 ID 단위**로 비교한다. 표현이 달라도 `requirement_id`와 `evidence_id`가 같은 동일 사실이면 동의로 인정. 숫자·원가·MM·마진은 LLM이 아니라 서버의 `Decimal`/정형 SQL 스냅샷 값으로 재계산.
+5. 결과 분류는 `AGREED_WITH_EVIDENCE`, `PARTIAL_AGREEMENT`, `DISAGREEMENT`, `INSUFFICIENT_EVIDENCE`, `PENDING_SECOND_RESULT`, `DEGRADED_SINGLE`, `SINGLE_NOT_CROSS_VALIDATED` 등으로 명시. **두 AI가 같은 결론을 냈다는 이유만으로 사실 검증 PASS가 아니며**, 근거 부족/상충 시 최종 자동 Bid 판정 금지.
+6. `DISAGREEMENT` 발생 시 차이 유형(자격/필수요건/실적/비용/증빙/불확실성), 원문 근거와 양쪽 주장을 같은 화면에 표시한다. 정형 SQL·공식 RFP로 확정되는 사실은 서버가 우선, 판단·검증되지 않은 것은 `UNKNOWN`. 사용자/승인권자가 필요하면 **별도 명시적 선택으로만** 대상 AI에게 근거를 재질의한다.
+7. 독립 분석·검증 이력은 immutable revision으로 저장하고 비교 결과는 두 입력 revision ID에 결속. 한쪽 실패 시 다른 쪽 결과를 보존하지만 교차 검증된 것으로 표기하지 않는다. 개발 프로세스의 '독립 AI 검토 선택' 전역 정책과 구분: 이 조건부 교차 검증은 **제품 사용자 선택 기능**이며 모든 개발 검수의 필수 절차가 아니다.
+
+### 3. JSON 및 상태 계약 (개념)
+
+```json
+{
+  "schema_version": "bid_analysis_v1",
+  "run_id": "<server-issued-uuid>",
+  "provider": "CODEX_CLI",
+  "notice_version_id": "<uuid>",
+  "corpus_snapshot_id": "<uuid>",
+  "prompt_version": "bid_v1",
+  "requirements": [
+    {
+      "requirement_id": "RFP-REQ-001",
+      "assessment": "MET",
+      "evidence_ids": ["<server-known-passage-id>"],
+      "reasoning_summary": "공식 근거 요약"
+    }
+  ],
+  "unknowns": []
+}
+```
+
+- `provider`는 Codex/Claude 각자 고정된 등록 ID이며 **모델이 생성한 문자열을 그대로 신뢰하지 않는다**. 서버가 요청 시 결속한 프로필과 업로드 경로/실행자 권한을 비교한다. 입력에 임의 비밀·로컬 절대경로·개인 계정 정보를 포함하지 않는다.
+- `analysis_run`: `plan_mode`, `profiles_selected`, `corpus_snapshot_hash`, `input_policy`, `created_by`, `created_at`. `analysis_revision`: `run_id`, `provider_profile_id`, `output_hash`, `validated_json`, `status`. `comparison`: `left_revision_id`, `right_revision_id`, `result_state`, `field_level_diffs`, `human_resolution`, `updated_at`. 모두 사용자·부서 권한으로 조회 제한.
+- 교차 검증 자동화는 서버 내 비교/검증에만 적용한다. 모델 호출은 `MANUAL_IMPORT`이면 사용자 직접, `AUTHORIZED_EXECUTOR`이면 회사·업체 승인 조건 하의 개별 호출.
+
+### 4. 인수 테스트 (합성·격리)
+
+| # | 테스트 | 기대 결과 |
+|---|---|---|
+| 1 | 아무 프로필도 없음 | `NO_AI`, 모델 호출 0 |
+| 2 | Codex만 READY | `SINGLE_CODEX`, 단독 상태 |
+| 3 | Claude만 READY | `SINGLE_CLAUDE`, 단독 상태 |
+| 4 | 두 개 모두 READY | `DUAL_INDEPENDENT`, 서로의 1차 결과 비공개 |
+| 5 | 등록됐으나 만료/미승인/사용 불가 | READY 대상에서 제외 |
+| 6 | dual 계획, 첫 결과만 업로드 | `PENDING_SECOND_RESULT`, 교차 검증 PASS 아님 |
+| 7 | 두 결과 동일 결론+유효 근거 | `AGREED_WITH_EVIDENCE`, 서버 사실 게이트 별도 |
+| 8 | 두 결과 같은 결론+근거 부재 | `INSUFFICIENT_EVIDENCE` |
+| 9 | 법적 자격/필수요건/비용 주장이 충돌 | `DISAGREEMENT`, 사용자 확인 필수 |
+| 10 | 두 번째 실행 실패/한도 초과 | `DEGRADED_SINGLE`, 무단 fallback·무단 과금 없음 |
+| 11 | 다른 사용자/부서 snapshot 업로드 | 403, 비밀/원문 응답 없음 |
+| 12 | 변조한 snapshot·evidence·JSON·중복 업로드 | 원인별 4xx, 모델 판단 확정 금지 |
+| 13 | MCP 자동실행 계약 미승인/비활성 | 개인 OAuth 호출·외부 요청 0 |
+
+**상태:** 설계만 변경한다. DB migration·실행 화면·실제 CLI·MCP 실행·회사 data1 배포/테스트는 미수행이다.
+
 > **2026-11-20 최신 사용자 방향:** Google AI Pro에서 본인이 확인한 CLI 대상 모델은 Gemini 3.8 Flash뿐이므로 Google/AGY는 이번 MVP 제외. **Codex·Claude Code 두 개를 각각 등록해 원하는 한 쪽만 사용자 직접 실행하고, 결과 JSON을 업로드·검증·DB에 보관하는 우선 설계**로 변경한다. 자동 Multi-LLM Router/MCP를 통한 개인 구독 무인 호출은 보류한다. 아래의 3-provider MCP executor 그림·비교는 과거 검토 대안이며 현재 실행 1순위가 아니다.
 
 ## 최신 구현 제안 — 독립 실행 프로필
