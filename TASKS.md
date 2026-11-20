@@ -1,3 +1,5 @@
+> **2026-11-20 NAS Codex 실측 최신:** 사용자 요청대로 NAS `son1004007` 계정에서 Codex를 확인했다. SSH 비대화형 `PATH`에 Node/Codex가 빠졌던 문제는 **명령 1회에만** `PATH="/usr/local/bin:$HOME/.local/bin:$PATH"` 적용해 해결. `codex-cli 0.163.0`, ChatGPT 인증 `exit 0`, **합성 텍스트 실제 모델 응답 `NAS_CODEX_OK` / JSONL turn 완료 / exit 0 PASS**. 초기 "NAS CLI 미설치/사용 불가" 가정은 취소한다. Codex host no-tool smoke와 **NAS Docker 격리 서비스 운영**은 구분하며, 사용자별 Docker home+기존 session resume/API worker·다중 사용자 계약/보안은 아직 미구현. [실제 재검증 기록](docs/implementation/ai-gateway/AGW-RUN-2026-11-20.md). NAS 우선 개발, 회사 data1 임의 배포 금지 유지.
+
 ## 2026-11-20 AGW P0 첫 구현·실측 현황 (LATEST / SOURCE OF TRUTH)
 
 [실측·CI 근거 및 복구 기록](docs/implementation/ai-gateway/AGW-RUN-2026-11-20.md) · [16개 작업 카드와 구현 순서](docs/implementation/ai-gateway/README.md) · [현재 코드/검증 상태](CURRENT_STATE.md)
