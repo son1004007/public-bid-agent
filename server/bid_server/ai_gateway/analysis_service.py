@@ -330,6 +330,40 @@ def create_attested_public_analysis_run(
     )
 
 
+def verify_run_snapshot_for_dispatch(*, actor, run_id) -> EvidenceSnapshot:
+    """Read-only, trusted-worker preflight before a separate provider execution.
+
+    Validates owner, current notice version, immutable canonical digest, latest
+    document/extraction ACL and public attestation/revocation. It deliberately
+    performs NO LLM call and does NOT imply provider account/egress approval.
+    """
+    _authorized_actor(actor)
+    with transaction.atomic():
+        try:
+            run = AnalysisRun.objects.select_related(
+                "notice_version", "notice_version__notice",
+            ).get(pk=_uuid(run_id, "INVALID_RUN_ID"))
+        except AnalysisRun.DoesNotExist as exc:
+            raise AnalysisServiceError("UNKNOWN_RUN") from exc
+        if run.owner_id != actor.pk:
+            raise AnalysisServiceError("UNAUTHORIZED_USER")
+        notice = run.notice_version.notice
+        if (
+            notice.current_version_id != run.notice_version_id
+            or run.notice_version.cancellation
+        ):
+            raise AnalysisServiceError("STALE_NOTICE_VERSION")
+        snapshot = EvidenceSnapshot(run.snapshot_payload, run.snapshot_sha256)
+        try:
+            verify_snapshot(snapshot, expected_sha256=run.snapshot_sha256)
+        except SnapshotError as exc:
+            raise AnalysisServiceError("INVALID_STORED_SNAPSHOT") from exc
+        _verify_stored_provenance(
+            packet=run.snapshot_payload, actor=actor, version=run.notice_version,
+        )
+        return snapshot
+
+
 def append_validated_result(
     *, actor, run_id, provider: str, raw_json: str,
     authorize_additional_revision=False,
