@@ -29,6 +29,7 @@
 | 17 | [사용자별 Codex·Claude CLI 로그인·resume·증거 기반 교차 검증](16-user-cli-session-and-blind-cross-check.md) | 세션 장기 보존, 원본 답변 비공유, 불일치 때만 별도 이슈 세션 검증 |
 | 18 | [AI Gateway 실제 구현용 AGW-00~15 상세 카드/의존성](../implementation/ai-gateway/README.md) | 16개 단위 설계·계획서: CLI 로그인·세션·실행·JSON·교차 검증·UI·배포/평가, 공통 DB/API 계약 |
 | 19 | [AI Gateway 2026-11-20 실제 구현·검증 기록](../implementation/ai-gateway/AGW-RUN-2026-11-20.md) | 사용자별 서버 API/모델과 개인 Windows Codex E2E 분리, CI 증거 및 남은 실행 허가 |
+| 22 | [AGW-05 공고·첨부 원본 바이트 SHA·PUBLIC 승인 구현 인수](../implementation/ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md) | 초과 Chunk 차단, 공식 출처/승인, 무결성 재검증, 실제 공고 수집·실행 HOLD |
 | 21 | [AGW-05/09 합성 RFP 출처 packet·JSON 검증/DB 실행 이력 구현](../implementation/ai-gateway/AGW-05-09-IMPLEMENTATION-2026-11-20.md) | 2026-11-20 P0 첫 구현, CI 증거 및 남은 공개 공고·Fact·보안 게이트 |
 | 20 | [NAS Docker Codex 동일 세션 Resume·AGW-02/04 구현 및 테스트 증거](../implementation/ai-gateway/AGW-NAS-SESSION-E2E-2026-11-20.md) | 실제 NAS Docker 2회 모델/동일 session, DB lease/fencing·컨테이너 runner, 운영 차단 조건 |
 
