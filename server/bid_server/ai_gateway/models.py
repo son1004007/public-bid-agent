@@ -94,3 +94,101 @@ class SessionBinding(models.Model):
                 name="agw_session_lease_epoch_positive",
             ),
         ]
+
+
+class ImmutableAnalysisQuerySet(models.QuerySet):
+    """Block ordinary ORM update/delete of signed analysis history."""
+
+    def update(self, **kwargs):
+        raise ValueError("IMMUTABLE_ANALYSIS_HISTORY")
+
+    def delete(self):
+        raise ValueError("IMMUTABLE_ANALYSIS_HISTORY")
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValueError("IMMUTABLE_ANALYSIS_HISTORY")
+
+
+class ImmutableAnalysisManager(models.Manager.from_queryset(ImmutableAnalysisQuerySet)):
+    pass
+
+
+class AnalysisRun(models.Model):
+    """One access-checked RFP snapshot reused unchanged for both providers.
+
+    Model/ORM update and delete are forbidden. DB privileged raw SQL and direct
+    bulk migrations remain outside this Python guard; production DB role grants
+    and database-level immutability controls are still an AGW-13 gate.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+                              related_name="ai_analysis_runs")
+    notice_version = models.ForeignKey(
+        "procurement.NoticeVersion", on_delete=models.PROTECT,
+        related_name="ai_analysis_runs"
+    )
+    corpus_snapshot_id = models.UUIDField()
+    request_key = models.UUIDField()
+    input_digest = models.CharField(max_length=64)
+    prompt_version = models.CharField(max_length=64)
+    snapshot_sha256 = models.CharField(max_length=64)
+    snapshot_payload = models.JSONField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = ImmutableAnalysisManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "notice_version", "request_key"],
+                name="agw_one_run_per_request_key",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError("IMMUTABLE_ANALYSIS_HISTORY")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("IMMUTABLE_ANALYSIS_HISTORY")
+
+
+class AnalysisRevision(models.Model):
+    """Append-only, canonicalized evidence-bound model result; not a bid decision."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    run = models.ForeignKey(AnalysisRun, on_delete=models.PROTECT,
+                            related_name="revisions")
+    provider = models.CharField(max_length=10, choices=ProviderName.choices)
+    revision_seq = models.PositiveIntegerField()
+    result_sha256 = models.CharField(max_length=64)
+    validated_payload = models.JSONField()
+    created_at = models.DateTimeField(default=timezone.now)
+
+    objects = ImmutableAnalysisManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["run", "provider", "result_sha256"],
+                name="agw_unique_result_digest",
+            ),
+            models.UniqueConstraint(
+                fields=["run", "provider", "revision_seq"],
+                name="agw_unique_result_revision",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(revision_seq__gte=1),
+                name="agw_revision_seq_positive",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError("IMMUTABLE_ANALYSIS_HISTORY")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("IMMUTABLE_ANALYSIS_HISTORY")
