@@ -1,7 +1,7 @@
 # AGW-05 / P0-02 — 공식 raw 응답과 기존 DB 정규화 digest 불변 결속
 
 - 기준일: 2026-11-21 KST. 소유: [TASKS 최상단 P0-02](../../../TASKS.md) / [P0-01 실측](AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md).
-- 상태: CODE_IMPLEMENTED / SYNTHETIC_CI_PENDING_FINAL / NAS_REAL_SOURCE_READ_ONLY_PASS / EXISTING_NAS_DB_MIGRATION_NOT_RUN / REAL_LINK_NOT_APPLIED.
+- 상태: CODE_IMPLEMENTED / SYNTHETIC_CODE_CI_PASS_SHA_7fe897c4 / NAS_REAL_SOURCE_READ_ONLY_PASS / EXISTING_NAS_DB_MIGRATION_NOT_RUN / REAL_LINK_NOT_APPLIED.
 
 ## 1. 원인 / 설계
 
@@ -34,7 +34,7 @@
 ## 5. 검증 및 후속
 
 - [합성 회귀](../../../server/tests/test_ai_gateway_official_source_link.py): dry-run/replay/메타 SHA 분리, 같은 차수 충돌, 취소/정정/stale/owner/ACL·원본 조작, POSIX raw file reader 권한/무복제, ORM 불변 및 PostgreSQL UPDATE trigger 오류·savepoint rollback.
-- 첫 CI에서 PostgreSQL nullable owner_user 외부 조인에 FOR UPDATE가 적용된 오류와 SQL 트리거 테스트 savepoint 정리 오류를 발견해 수정했습니다. 최종 exact SHA CI는 Actions 확인 후 TASKS/CURRENT_STATE에 별도 기재합니다.
+- PostgreSQL nullable owner_user 외부 조인 FOR UPDATE, 트리거 test savepoint rollback, Windows POSIX 저장소 오류 우선순위 문제를 수정했습니다. 정확 코드 SHA 7fe897c4ff7681a51d6132238cbb7aec54eda203: [core 94/94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44817182658), [Django Windows/Linux/PostgreSQL 각 431건 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44817182690). PostgreSQL migration/schema check, raw SQL UPDATE trigger 거부, 3개 OS 플랫폼 회귀가 CI에서 확인되었습니다. 이는 기존 NAS 운영 DB 적용/실데이터 row INSERT 증거가 아닙니다.
 - 다음 P0-03: 표/각주 누락 PARTIAL, source locator·offset 유지한 UTF-8 1800byte 이하 Chunk 분할, coverage.complete 허위 승인 금지.
 - P0-04 BLOCKER: 기존 public_source.py는 raw 응답 digest를 NoticeVersion canonical digest와 직접 대조해 실공고를 승인할 수 없습니다. P0-04에서 OfficialSourceLink 재검증과 staff 명시 승인으로 변경하기 전 PUBLIC packet/provider egress는 OFF입니다.
 - 운영 release/회사 data1/모델 자동 실행/AGY 위임/기존 예약은 승인 전 OFF. PR #5 미병합 유지.

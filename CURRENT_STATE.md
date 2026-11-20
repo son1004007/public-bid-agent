@@ -1,3 +1,9 @@
+## 2026-11-21 P0-02 정확 코드 CI 확정 / 실 DB 적용 구분
+
+- [P0-02 source-link 증거](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md). [core 94/94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44817182658), [Django Windows/Linux/PostgreSQL 각 431건 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44817182690); 코드 SHA `7fe897c4ff7681a51d6132238cbb7aec54eda203`, 신규 마이그레이션+합성 테스트 및 PostgreSQL 불변 trigger 검증 PASS. 기존 NAS 공식 raw 원본과 DB canonical digest 차이/문서·차수·제목 일치 read-only 검산 PASS. 기존 NAS DB migration/실제 SourceLink INSERT, 담당자 공개 승인·모델 호출·회사 data1 배포 **NOT_RUN**. 브랜치 Draft PR #5, 기존 앱/키/DB/스케줄 변경 없음.
+
+---
+
 ## 2026-11-21 P0-02 — 공식 raw notice와 기존 canonical digest 독립 결속 (CODE_IMPL / LIVE_READONLY_PASS)
 
 - [P0-02 공식 원본 SHA↔정규화 메타데이터 SHA 불변 DB source mapping](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md): 기존 NoticeVersion.source_payload_digest는 canonical metadata SHA로 보존하고 OfficialSourceLink의 metadata_canonical_sha256/raw_notice_sha256을 분리. DocumentVersion OneToOne/NoticeVersion PROTECT FK, default dry-run, 승인된 staff-only apply, cancel/correction/stale/같은차수 충돌 차단, PostgreSQL DB UPDATE/DELETE trigger. 비공개 원문 독립 0700/0600 재검증, 모델 및 staff 공개 승인 기능 변경 없음.
