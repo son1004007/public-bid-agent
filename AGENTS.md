@@ -1,3 +1,5 @@
+> **2026-11-20 최신 사용자 요구 — 자동 0/1/2 가용 프로필 판단:** [15 Codex·Claude 독립 실행 및 교차 검증 계약](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). 1개 실제 READY면 단독 JSON 결과, 2개 READY면 양쪽 독립 1차 JSON 수집 후 근거 기반 교차 검증, 0개면 AI 없음. 수동 CLI 모드에서 사용자가 직접 두 번 실행/업로드해야 하며 서비스가 개인 CLI/OAuth를 대리 실행하지 않는다. 두 모델 동의=사실 확인 아님, 충돌/누락은 담당자 검토. 기능 구현·배포/외부 호출은 아직 아님.
+
 > **2026-11-20 최신 사용자 방향 — Codex/Claude Code 개별 등록:** 자동 3-provider Router를 구현하지 말고 [15 독립 프로필·직접 CLI·JSON 결과 검증 설계](docs/server-migration/15-mcp-provider-executor-subscription-policy.md)를 우선한다. 각 CLI는 사용자 소유 공식 계정에서 직접 실행하고 입찰 시스템은 결과만 검증·저장한다. Gemini는 사용자 실측 CLI 제약으로 MVP 제외. 개인 OAuth/CLI 세션을 서버에 입력받거나 회사 공용 서비스가 대리 실행하지 않는다. 코드·서버·실제 모델 호출은 미승인/미구현.
 
 > **2026-11-20 AI Gateway 최신 설계 지시:** [15 모델 실행용 MCP·CLI 구독 조사](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). 사용자 요구는 **Bid server→MCP client→Provider executor→JSON 저장**이며 기존 [14 공개 공고 MCP](docs/server-migration/14-bid-mcp-interface.md)는 반대 방향이다. 개인 Google AI Pro `agy` 타사 래핑/타 사용자를 위한 Claude 개인 구독 중계 금지; API-only 구조를 유일한 답으로 취급하지 않되 허가된 기업용 연결 전 모델 호출 OFF. 원격 자동화/운영/회사 자료 업로드 승인 없음.
