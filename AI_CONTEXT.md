@@ -1,3 +1,5 @@
+> **2026-11-20 최신 사용자별 서버 실행·세션 resume 설계:** [16](docs/server-migration/16-user-cli-session-and-blind-cross-check.md). 서버의 각 사용자 자체 provider 로그인, Codex/Claude 기존 session 유지·resume, 최초 판단은 독립, 상호 확인은 구조화 근거 비교부터, **불일치 이슈 때만 별도 검증 session에 상대의 짧은 근거를 공유**. 장기 세션/OS 실행 프로세스 분리, 교차 사용자 인증 재사용 금지. 자동 호출·회사 자료 전송/배포 승인 전 OFF.
+
 > **2026-11-20 최신 조건부 교차 검증 계약:** [15 Codex+Claude 0/1/2 가용 상태 및 독립 검증 설계](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). 준비된 하나면 단독, 둘이면 동일 snapshot/근거에서 서로의 답변을 보지 않는 1차 결과 각각 수집→검증 후 구조화 비교. 수동 CLI는 사용자 직접 실행·업로드; 회사 공용 구독 중계 금지. 기존 1개만 선택 제안보다 우선; 구현·테스트 미실행.
 
 > **2026-11-20 최신 Codex/Claude Code 독립 프로필 방향:** [15 사용자별 직접 실행·JSON 검증 설계](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). 3-provider 자동 멀티 라우터보다 Codex와 Claude Code 개별 등록·사용자 직접 CLI·JSON 가져오기 우선. Gemini 제외(사용자 환경에서 3.8 Flash 확인). 개인 구독을 회사 서버가 대신 호출하지 않음. 구현/운영 배포 미수행.
