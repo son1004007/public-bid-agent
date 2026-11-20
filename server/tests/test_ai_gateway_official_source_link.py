@@ -285,8 +285,9 @@ class OfficialSourceLinkTests(TestCase):
         if connection.vendor != "postgresql":
             self.skipTest("Real PostgreSQL trigger is tested by CI postgres-authentication job")
         link = self.link(apply=True)
-        with transaction.atomic():
-            with self.assertRaises(DatabaseError):
+        with self.assertRaises(DatabaseError):
+            # Let atomic see the exception and rollback to its savepoint.
+            with transaction.atomic():
                 with connection.cursor() as cursor:
                     cursor.execute(
                         "UPDATE ai_gateway_officialsourcelink "
