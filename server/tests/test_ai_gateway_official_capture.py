@@ -1,5 +1,8 @@
 """AGW-05 official capture: synthetic HTTP fixtures only, no real G2B or paid calls."""
 import io
+import contextlib
+import importlib.util
+from unittest import mock
 import json
 import os
 import tempfile
@@ -188,6 +191,40 @@ class OfficialG2BCaptureTests(unittest.TestCase):
                     persist_notice_for_existing_document(
                         captured, "unused-private-root", document_storage_key=key,
                     )
+
+
+    def test_cli_existing_document_mode_does_not_duplicate_hwpx(self):
+        script = Path(__file__).resolve().parents[2] / "scripts" / "capture_official_g2b.py"
+        spec = importlib.util.spec_from_file_location("g2b_capture_cli_test", script)
+        cli = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cli)
+        captured = self.run_capture()
+        key = "public-rfp/" + captured.summary()["document_sha256"] + ".hwpx"
+        argv = [
+            "--notice-number", NUMBER, "--source-revision", REV,
+            "--attachment-url", URL, "--attachment-name", "test.hwpx",
+            "--private-root", "/private-unrelated-to-git", "--apply",
+            "--existing-document-storage-key", key,
+        ]
+        result = {**captured.summary(), "document_bytes_copied": False}
+        with mock.patch.object(cli, "capture", return_value=captured) as getter, \
+             mock.patch.object(cli, "persist", side_effect=AssertionError("duplicates raw HWPX")) as duplicate, \
+             mock.patch.object(cli, "persist_notice_for_existing_document", return_value=result) as store, \
+             mock.patch.dict(os.environ, {"G2B_SERVICE_KEY": "synthetic-cli-key"}, clear=False), \
+             contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(cli.main(argv), 0)
+            self.assertEqual(json.loads(output.getvalue())["document_bytes_copied"], False)
+            self.assertEqual(getter.call_args.kwargs["service_key"], "synthetic-cli-key")
+            store.assert_called_once_with(
+                captured, "/private-unrelated-to-git", document_storage_key=key,
+            )
+            duplicate.assert_not_called()
+
+        with mock.patch.object(cli, "capture", side_effect=AssertionError("network called")) as getter, \
+             contextlib.redirect_stderr(io.StringIO()) as errors:
+            self.assertEqual(cli.main(argv[:-3] + ["--existing-document-storage-key", key]), 2)
+            self.assertEqual(json.loads(errors.getvalue())["code"], "EXISTING_DOCUMENT_REQUIRES_APPLY")
+            getter.assert_not_called()
 
     def test_refuse_relative_root_and_repo_storage(self):
         expected = 'STORAGE_PLATFORM_UNVERIFIED' if os.name == 'nt' else 'STORAGE_ROOT_DENIED'
