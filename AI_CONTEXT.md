@@ -1,3 +1,5 @@
+> **2026-11-20 최신 사용자 우선순위:** 유료 Codex·Claude 모델 실제 호출 허용, 빠른 구현·정확한 입찰 판단 중심. [AGW 계획](docs/implementation/ai-gateway/README.md)과 TASKS P0-R1/R2: 첫 provider 실제 유료 공개 RFP E2E+resume를 조기 수행하고 0/1/2 도메인 코어 테스트는 병행. 회사 자료 반출/서버 배포/구독 중계는 여전히 별도 정책·승인. 실제 모델 실행 완료로 주장하지 않는다.
+
 > **2026-11-20 AGW 구현 재개 인덱스:** [AGW-00~15 작업 단위별 상세 설계/구현 계획](docs/implementation/ai-gateway/README.md). 16개 카드별 입력/출력 계약·Django/CLI·실패/복구/테스트·선행조건을 확인한 후 해당 상태는 TASKS/CURRENT_STATE에서 최신 확인. 설계서 게시만으로 실제 API/CLI/운영이 구현되었다고 주장하지 않는다.
 
 > **2026-11-20 최신 사용자별 서버 실행·세션 resume 설계:** [16](docs/server-migration/16-user-cli-session-and-blind-cross-check.md). 서버의 각 사용자 자체 provider 로그인, Codex/Claude 기존 session 유지·resume, 최초 판단은 독립, 상호 확인은 구조화 근거 비교부터, **불일치 이슈 때만 별도 검증 session에 상대의 짧은 근거를 공유**. 장기 세션/OS 실행 프로세스 분리, 교차 사용자 인증 재사용 금지. 자동 호출·회사 자료 전송/배포 승인 전 OFF.
