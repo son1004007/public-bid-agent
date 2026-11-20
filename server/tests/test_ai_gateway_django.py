@@ -117,9 +117,11 @@ class ProviderStatusAPITests(TestCase):
 
     def test_post_cannot_register_or_force_ready(self):
         client = self.login_as(self.owner.username)
+        csrf = client.get("/api/v1/auth/csrf", secure=True).json()["data"]["csrf_token"]
         result = client.post("/api/v1/ai/providers",
                              {"provider": "CODEX", "enabled": True},
-                             format="json", secure=True)
+                             format="json", secure=True,
+                             HTTP_X_CSRFTOKEN=csrf, HTTP_ORIGIN="https://testserver")
         self.assertEqual(result.status_code, 405)
         self.assertFalse(ProviderProfile.objects.exists())
 
