@@ -198,6 +198,18 @@ class AttestedPublicSourceTests(TestCase):
             )
         self.assertFalse(AnalysisRevision.objects.exists())
 
+    def test_pre_dispatch_rechecks_revocation(self):
+        from bid_server.ai_gateway.analysis_service import verify_run_snapshot_for_dispatch
+        approval = self.approve()
+        run = self.make_run()
+        self.assertEqual(verify_run_snapshot_for_dispatch(
+            actor=self.actor, run_id=run.pk,
+        ).sha256, run.snapshot_sha256)
+        approval.revoked = True
+        approval.save(update_fields=["revoked"])
+        with self.assertRaisesRegex(AnalysisServiceError, "PUBLIC_SOURCE_NOT_APPROVED"):
+            verify_run_snapshot_for_dispatch(actor=self.actor, run_id=run.pk)
+
     def test_source_url_modified_after_approval_denied(self):
         self.approve()
         self.doc.source_url = "https://www.g2b.go.kr/pn/pnp/another-file"
