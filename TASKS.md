@@ -1,3 +1,31 @@
+# 현재 실행 큐 — 2026-11-20 AGW·MVP·HBR 통합 정본
+
+> **실행 우선순위 정본.** 아래 기존 2026-11-19/20 날짜별 NEXT/LATEST/HBR-01/MVP-05 기록은 **당시 이력**으로 보존합니다. 현재 다음 작업은 이 표와 CURRENT_STATE.md, 정확한 commit/CI/실제 runtime 증거를 기준으로 선택합니다. AGW/HBR/MVP 기존 ID를 재사용하며 별도 중복 백로그를 만들지 않습니다.
+
+## 재정렬 근거
+
+- **이미 완료한 경로를 다시 만들지 않습니다:** 2026-11-19 NAS에서 실제 공식 metadata 879개 공고 갱신/재실행, 공개 HWPX 5개 다운로드·원본 SHA 확인, 초기 1개 구조화 파싱 + 4개 text-only fallback으로 **5/5 파싱**한 기록이 있습니다. text-only 4개의 표·각주 완전성은 검증되지 않았습니다. **신규 AGW-05 PUBLIC 출처 승인·분석 E2E는 이 기존 수집과 연결되지 않았습니다.**
+- **신규 구현/합성 검증:** official_g2b_capture.py 및 수동 CLI, AGW-05 증거 스냅샷/무결성/검토형 공개 승인, AGW-09 분석 결과 기록, Codex/DB SessionBinding/격리 Docker Adapter 코드. [AI Gateway core 89 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44683570764) 및 [Django Windows·Linux·PostgreSQL 각 413 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44683570703), 코드 SHA 0295caf2. **합성 CI != 신규 AGW 경로의 실제 조달청 E2E.**
+- **출처 충돌:** 기존 NoticeVersion.source_payload_digest는 정규화된 metadata row의 canonical SHA이고 새 AGW-05는 **공식 원본 HTTP response bytes의 SHA**를 요구합니다. 기존 버전을 덮어쓰거나 같은 차수의 임의 새 버전을 생성하지 말고, 별도 불변 원본 캡처 identity/해시를 기존 공고 버전에 결속하는 방식을 우선 검토합니다. ExtractionRun.coverage.complete도 기존 파서에 없으므로 근거 없이 TRUE 처리하지 않습니다.
+- **최신 전역 검수 원칙:** 개인 독립 AI 검토는 선택(NOT_RUN_OPTIONAL). 실제 기능·보안 결함, 원본/권한/회사 정책/운영 승인 및 [중앙 credential USER ACTION #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) 등 객관적 차단은 유지합니다. Issue #26은 PR #5 release에만 차단, 합성·격리 개발은 가능.
+
+## 실제 진행 순서 (P0 먼저, 병행 작업 명시)
+
+| 순서 / 우선 | 원래 카드 | 현재 필요한 작업과 선행 조건 | 완료 기준 / 정확한 상태 |
+| --- | --- | --- | --- |
+| **01 P0 / NEXT** | **AGW-05 + HBR-07 최소 원본** | 기존 NAS의 실제 HWPX **5건**에 대해 원본 바이트·출처 URL·공고번호/차수·원본 SHA·기존 접근권한을 **읽기 전용**으로 재검증. 신규 수동 캡처와 같은 원본인지 대조; 없거나 불일치한 **공식 1건만** 승인된 비공개 경로에 제한 수집. 기존 보호 원본/인증·세션·스케줄 변경 금지. | 실원본 1건 이상: 공식 API 응답과 첨부 raw SHA, 취소/정정, 파일 식별·저장 권한·멱등 일치. **기존 5건 수집 실측 / 신규 AGW 실제 연결 NOT_RUN** |
+| **02 P0** | **AGW-05·SM04/05** | API 원문 bytes SHA와 기존 metadata canonical SHA를 별도로 유지하는 **불변 source capture ↔ NoticeVersion ↔ DocumentVersion** 영속 결속. 같은 차수 충돌은 보류, 구차수/취소/정정/사람 결정 보존. | DB 무결성·rollback·재시도·중복·stale/권한 차단 합성 테스트 + 승인된 실원본 1건 읽기 전용 검산. **NOT_IMPLEMENTED** |
+| **03 P0** | **AGW-05 + HBR-07 최소 추출** | 실제 HWPX 5건의 구조화/text-only 범위 차이를 보존. 원본 SHA→ExtractionRun→locator·표/각주→Chunk 경로 증명. **UTF-8 1800bytes 이하 출처 보존 분할**; 부분 누락은 PARTIAL/UNKNOWN, complete TRUE 자동 대입 금지. | 필수 자격 위치·표/각주·큰 chunk·변조·누락/경고·정정 stale 검증. **PARTIAL / coverage·safe split NOT_DONE** |
+| **04 P0** | **AGW-05/09 + MVP-02** | 공식 실 RFP 1건의 DB 출처 결속, staff 검토형 PUBLIC 승인과 별도 provider_export_approved 확인, snapshot→근거 JSON→분석 revision. 미확인 회사 역량/실적은 UNKNOWN. | 변경·철회·미승인 시 packet/모델 요청 0건, 실제 원문 위치·근거 검증·과도한 MET 차단. **합성 PASS / 실제 스냅샷 승인 E2E NOT_RUN** |
+| **05 P0 병행 가능** | **AGW-08 + AGW-01/03/04/06/09** | Django Job/outbox/idempotency→snapshot preflight→SessionBinding lease/fence→NAS Docker Codex→strict JSON/Revision의 **합성 수직 연결**. 실제 모델 호출 기본 OFF. | 이중 실행/시간초과/권한 철회·공고 변경·실패 재개 테스트; 실제 user별 계정·OS 격리·egress·도구 정책/계약 통과 전 유료 실행 OFF. **CODE_PARTIAL / JOB BRIDGE NOT_DONE** |
+| **06 P0 다음 단계** | **HBR-01/02/03/04 + AGW-10** | 승인된 공개 RFP + **합성** 법인/부서 역량·집계 SQL로 실제 근거 조회/자격 하드 게이트/LLM 의견 비교. 최초 lexical 검색 baseline; pgvector는 격리 DB 성능·라이선스/리소스 확인 후 연결. | 근거 빈칸·법적 자격·MM/원가 SQL 검산 및 UNKNOWN 유지. **설계·코어 일부 / 통합 검색·SQL E2E NOT_DONE** |
+| **07 P1** | **MVP-03/04/05 + HBR-05/06 + AGW-12/14** | 이미 만든 집계 원가/공동검토/UI 재사용. 실공고→RFP→합성 비용·역량→의견→사람 최종 결정→재조회, gold 평가·복구/롤백. | 사용자별 권한·조직 기준/회사 데이터 승인·실제 브라우저/DB/파일 복구 E2E. **합성 코드 존재 / 업무·운영 인수 HOLD** |
+| **HOLD** | **AGW-00/02/07/13 + HBR-08** | company data1 배포/기밀 반출/개인 구독 타인 중계/Claude 실제 인증/자동 일정 재개/인터넷 공개·투찰은 조직·계약·최소권한·사용자 승인 및 실제 검증 전 금지. | 운영 release는 중앙 [USER ACTION #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) 등 현실적 게이트 해결 후. 기존 AGY/Gemini 위임·예약 OFF 유지. **HOLD** |
+
+**이 정렬은 계획 문서 수정입니다.** 실제 원본 다운로드/새 DB migration/인증정보 변경/모델 호출/서비스 배포를 완료한 것으로 주장하지 않습니다. 신규 개발은 P0-01부터, P0-05 합성 Job bridge는 병행할 수 있습니다.
+
+---
+
 > **2026-11-20 P0 다음 단계 (AGW-05 공식 원본 캡처 PARTIAL):** [공식 원본 바이트 수집·무결성 계약](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md) 코드+synthetic 6 test 로컬 PASS. **P0 미완료**: 실제 02 공고/첨부 GET·SHA E2E → 기존 metadata digest와 raw-response digest의 불변 신규 NoticeVersion 결속/같은 차수 conflict 해결 → DocumentVersion/Extractor coverage·locator 확인 → staff PUBLIC 승인(별도 export 허용) → AGW-08 Job/SessionBinding. 원문 보관만으로 승인/실운영/모델 완료 아님. AGY/회사 외부 반출/자동 스케줄 OFF.
 
 ## 2026-11-20 AGW-05 최근 구현 진행 — RFP Source Integrity / PUBLIC attestation
@@ -114,10 +142,10 @@
 | HBR-04 | P0 | 요건 추출 및 RFP↔전사/부서 근거 비교, 부족분·자체/사내/외부/혼합 보완안 LLM worker (HBR-02/03, 승인 모델) | 실제 공개 RFP + 합성 복수 부서, scope·근거 ID·상충·필수조건·누락·지원 미확정 테스트, 실제 AI/disabled 분리 | 대기 |
 | HBR-05 | P0 | 승인 월별 공급 풀·역할별 MM, 지원 요청/승인·예약 모델, 기존 집계 원가와 시나리오 판정 (HBR-03/04) | legal hard gate, 지원 승인/만료/동시예약 및 풀 중복 방지, 전사 비용·주관 부서 손익 구분, Decimal 산식/미확인/내부거래 제거/재식별 방지 | 대기 |
 | HBR-06 | P0 | 공고 상세·근거·시나리오 비교·지원 요청/승인·추천 및 담당자 Bid/No-Bid UI; HBR-04/05 | 기존 공동 검토 재사용, 실제 공개+합성 명시, 5건 E2E, 명시적 쓰기/공급 부서 승인·권한/정정/보류·해당 SHA CI 및 자체 검증 | 대기 |
-| HBR-07 | P1 | 실제 PDF/HWP/HWPX 등 최소 추출·RFP 수집/재시도 자동화 및 coverage 표시 | 공식 원문/차수/해시 결속, 형식별 실제 표본, OCR/표 누락 PARTIAL, 백로그/증분/중복/용량 제한; 자동 실행은 승인 후 | 대기 |
+| HBR-07 | P0 (AGW-05 최소 출처·coverage) / P1 (PDF/HWP·전체 자동화) | 실제 PDF/HWP/HWPX 등 최소 추출·RFP 수집/재시도 자동화 및 coverage 표시 | 공식 원문/차수/해시 결속, 형식별 실제 표본, OCR/표 누락 PARTIAL, 백로그/증분/중복/용량 제한; 자동 실행은 승인 후 | 대기 |
 | HBR-08 | P1 | 승인된 실제 사업부 자료·AI 이용 조건·안전 공유·복구·업무 전문가 기준 검수, 제한 시범 | 승인된 실제 자료 검증·실제 검색/판단 품질·비용·운영 복구·동일 SHA CI/필수 검증, 열린 보안 조치 및 승인 충족 | 차단: 회사자료/모델/운영 승인 |
 
-다음 실행 카드 **HBR-01** (설계 자체 검토, 별도 AI 검토 선택; 회사자료/모델/운영 승인 경계 유지, 합성·격리 범위). pgvector/모델 선택은 가정이 아닌 실측 기반. 문서 형식 확장은 핵심 end-to-end 검증 후, 필수 누락 발견 시 필요한 최소 보완만 앞당긴다. 새 예약 활성화/재부팅 자동 기동은 선행 작업 아님.
+다음 실행 카드는 **최상단 통합 실행 큐 01 (AGW-05 + HBR-07 최소 원본 실측 확인)**입니다. HBR-01 pgvector 연구는 큐 06의 격리된 후속/병행 작업으로서 공식 원본 결속 인수를 대체하지 않습니다. pgvector/모델 선택은 가정이 아닌 실측 기반. 문서 형식 확장은 핵심 end-to-end 검증 후, 필수 누락 발견 시 필요한 최소 보완만 앞당긴다. 새 예약 활성화/재부팅 자동 기동은 선행 작업 아님.
 
 ## 2026-11-19 HWPX real recovery
 
@@ -188,9 +216,9 @@
 | P0 / MVP-00 | 필수 보안 결함만 보완. 문서 추출 저장 직전 최신 DB 계정/epoch/객체 권한 재검증 및 철회/동시성 음성 테스트, 기존 인증·CSRF·소유권 회귀. 실제 계정 사고 조치는 중앙 비공개 원장에서 별도 추적. | PR #5, SM03 | PARTIAL / RELEASE_BLOCKED |
 | P1 / MVP-01 | 공고 목록/상세/검색·분류·마감/취소/정정 및 공식 링크. 기존 importer/API/UI 재사용, 승인 공개 데이터/합성 데이터의 명시적 가져오기·수동 최신화 우선. 중복·누락·최신성·실패 상태 검증. 실 API는 승인 연결로만. | SM04/05/06, BID-04/05 | PARTIAL, 서버 수집 E2E 미확정 |
 | P1 / MVP-02 | 상세검토 후보 추천 및 공식 RFP 근거, 법적 필수 자격·실적·기술·인력/MM 확인. 출처/차수/원문 위치·검증 상태 결속. 지원 불가 형식은 공식 원문·수기 근거 확인으로 대체. 취소·정정·불충분 근거는 보류. 작은 승인 정답 표본 비교; 없으면 NOT_EVALUATED. | BID-05/06/07, A02~05, SM04/06 | PARTIAL / BLOCKED_EVIDENCE |
-| P1 / MVP-03 | 사업부 총인건비·기준/가용 MM·표준 비용의 승인 버전, 필요 MM/보완비 및 VAT 제외 공급가액 기반 예상 이익·이익률 서버 계산. 누락/만료/충돌 구분, 개인급여/단가 입력·저장 금지, 소그룹 역산 방지. 실제 원가와 정책은 승인 전 사용 금지. | AGG-01/02/04, BID-07 | PLANNED |
-| P1 / MVP-04 | 승인된 동일 사업부 사용자에게 안전한 추천·손익·의견 공통 조회, 지정 권한자만 기준 변경·최종 Bid/No-Bid/Hold. 출처·버전·작성자·시각·이력 보존. 부서 경계, 기존 개인 작업/비밀/원본 소유권, 역할·CSRF·동시 수정·재식별 음성 테스트. | AGG-01/03/04, BID-08, SM03/06 | PLANNED / 실사용 권한 정책 미정 |
-| P0 release gate / MVP-05 | 정확 SHA CI, 별도 문맥 독립 최종 검수, 승인 백업 범위·DB/파일 통합 복원·롤백, 브라우저 390/1440에서 로그인→공고→RFP→예상 손익→의견→판단→재조회 인수. 승인된 사내 격리 환경/HTTPS/권한·운영 계정/백업을 확인하고 제한 시범 운영 및 피드백. | SM07/08, AGG-04/05, BID-09 | BLOCKED / 실제 릴리스 증거 필요 |
+| P1 / MVP-03 | 사업부 총인건비·기준/가용 MM·표준 비용의 승인 버전, 필요 MM/보완비 및 VAT 제외 공급가액 기반 예상 이익·이익률 서버 계산. 누락/만료/충돌 구분, 개인급여/단가 입력·저장 금지, 소그룹 역산 방지. 실제 원가와 정책은 승인 전 사용 금지. | AGG-01/02/04, BID-07 | CODE_IMPLEMENTED / SYNTHETIC_ONLY; 실제 원가·조직 정책 HOLD |
+| P1 / MVP-04 | 승인된 동일 사업부 사용자에게 안전한 추천·손익·의견 공통 조회, 지정 권한자만 기준 변경·최종 Bid/No-Bid/Hold. 출처·버전·작성자·시각·이력 보존. 부서 경계, 기존 개인 작업/비밀/원본 소유권, 역할·CSRF·동시 수정·재식별 음성 테스트. | AGG-01/03/04, BID-08, SM03/06 | CODE_IMPLEMENTED / SYNTHETIC_ONLY; 실제 조직 권한 미승인 |
+| P0 release gate / MVP-05 | 정확 SHA CI, 필수 자체 보안·회귀 검증(독립 AI 검토 선택), 승인 백업 범위·DB/파일 통합 복원·롤백, 브라우저 390/1440에서 로그인→공고→RFP→예상 손익→의견→판단→재조회 인수. 승인된 사내 격리 환경/HTTPS/권한·운영 계정/백업을 확인하고 제한 시범 운영 및 피드백. | SM07/08, AGG-04/05, BID-09 | BLOCKED / 실제 릴리스 증거 필요 |
 
 P0 보안 보완부터 시작하되 실제 관리자 조치·운영 승인·독립 검수가 지연되어도 비릴리스 브랜치에서 합성 MVP 개발을 지속한다. 동일 파일 동시 변경 방지 및 기존 후보/운영 환경 보존. 모든 적용되는 릴리스 차단 조건을 해소하기 전 main 병합·실제 배포 금지.
 
@@ -199,7 +227,7 @@ P0 보안 보완부터 시작하되 실제 관리자 조치·운영 승인·독�
 | 우선순위 | 후속 작업 |
 |---|---|
 | P2 | 자동 수집/정기 갱신 및 스케줄러·워커 운영 고도화(최소 오류/중복 안전은 MVP 필수) |
-| P2 | 대량 OCR·전 형식 자동 추출·AI 연동/고급 적합성 분석·실자료 평가 확대(외부 전송 별도 승인; 공식 원문/수동 검토는 MVP 필수) |
+| P2 | 대량 OCR·전 형식 자동 추출·고급 AI 분석 확장/실자료 평가 확대(최소 AGW-05/08 모델 수직 슬라이스는 P0)(외부 전송 별도 승인; 공식 원문/수동 검토는 MVP 필수) |
 | P2 | 편의 UI, 고급 통계/보고서, 운영 관측/백업 자동화 고도화(기본 권한·로그·복구는 MVP 필수) |
 | P3 | 제안서 자동 생성/편집/HWPX·DOCX 산출물 고도화, 포괄적 하네스·다중 Agent 확장(H02/03 등) |
 
@@ -251,7 +279,7 @@ P0 보안 보완부터 시작하되 실제 관리자 조치·운영 승인·독�
 ### 실행 원칙 및 다음 재개 지점
 
 - 다음: MVP-05 최신 SHA 통합 복구 CI 확인 및 실패 수정 → 독립 최종 검수 → 정책/실자료/운영 승인 게이트. 이미 성공한 DB 개별 복원 및 브라우저 기록은 해당 SHA/범위에서 재사용한다. 통합 복원·릴리스 롤백은 별도이며 새 SHA에서 과거 CI를 재사용해 통과라 주장하지 않는다. 검수는 논리적 단위로 수행하고 불필요한 반복 조사/완벽주의를 피한다.
-- 기존 PR #5 릴리스 차단은 유지한다. fresh-context reviewer 미확보 시 REVIEW_DEBT로 기록하고 비릴리스 개발만 한다. AGY/Gemini 자동 위임 및 기존 예약 재활성화 금지.
+- 기존 PR #5 릴리스 차단은 유지한다. 개인 독립 AI 검토는 최신 CONTROL(2026-11-20) 기준 선택(NOT_RUN_OPTIONAL)이며, 미실행만을 REVIEW_DEBT/릴리스 차단으로 사용하지 않는다. 실제 보안/품질 결함, 조직 승인, 중앙 계정 회전 Issue #26, 복구·배포 게이트는 별도 유지한다. AGY/Gemini 자동 위임 및 기존 예약 재활성화 금지.
 - 승인 없는 회사 실자료/정답/원가 생성·외부 전송·계정 변경·실제 서버 설치·입찰 제출 금지. 사업부 귀속/공개 정책 미확정은 합성 개발과 실사용 차단을 구분한다.
 - 카드별 실제 구현·검증·실자료 검증·배포 상태를 CURRENT_STATE.md/TASKS.md에 증거로 추가한다. 이번 변경은 실행 계획이며 코드 변경·배포·게이트 해제를 하지 않는다.
 
