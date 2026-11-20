@@ -23,7 +23,8 @@ from bid_server.procurement.models import (
     Chunk, ChunkCategory, DocumentFreshness, ExtractionState,
     NoticeVersion,
 )
-from .models import AnalysisRun, AnalysisRevision, ProviderName
+from .models import AnalysisRun, AnalysisRevision, ProviderName, PublicRfpAttestation
+from .public_source import official_source_url
 
 
 class AnalysisServiceError(ValueError):
@@ -62,7 +63,7 @@ def _chunk_text(chunk):
     return chunk.text
 
 
-def _trusted_chunks(*, chunk_ids, expected_version, actor):
+def _trusted_chunks(*, chunk_ids, expected_version, actor, source_mode="SYNTHETIC"):
     chunks = list(
         Chunk.objects.select_related(
             "extraction_run", "extraction_run__document_version",
@@ -85,6 +86,35 @@ def _trusted_chunks(*, chunk_ids, expected_version, actor):
             or not (doc.owner_user_id == actor.pk or doc.shared_read_approved)
         ):
             raise AnalysisServiceError("UNAPPROVED_OR_STALE_SOURCE")
+        if source_mode == "PUBLIC":
+            if (
+                not doc.shared_read_approved
+                or extraction.coverage.get("complete") is not True
+                or extraction.warnings
+                or doc.size_bytes <= 0
+                or not official_source_url(doc.source_url)
+                or not official_source_url(expected_version.source_url)
+            ):
+                raise AnalysisServiceError("PUBLIC_SOURCE_NOT_APPROVED")
+            try:
+                attestation = PublicRfpAttestation.objects.select_related(
+                    "approved_by"
+                ).get(document_version=doc)
+            except PublicRfpAttestation.DoesNotExist as exc:
+                raise AnalysisServiceError("PUBLIC_SOURCE_NOT_APPROVED") from exc
+            if (
+                attestation.revoked
+                or not attestation.packet_approved
+                or not attestation.provider_export_approved
+                or not attestation.approved_by.is_active
+                or not attestation.approved_by.is_staff
+                or attestation.source_url != doc.source_url
+                or attestation.document_sha256 != doc.sha256
+                or attestation.notice_source_sha256 != expected_version.source_payload_digest
+            ):
+                raise AnalysisServiceError("PUBLIC_SOURCE_NOT_APPROVED")
+        elif source_mode != "SYNTHETIC":
+            raise AnalysisServiceError("INVALID_SOURCE_MODE")
     return by_id
 
 
@@ -94,7 +124,16 @@ def _verify_stored_provenance(*, packet, actor, version):
         raise AnalysisServiceError("STALE_NOTICE_SOURCE_DIGEST")
     rows = packet["requirements"] + packet["evidence"]
     ids = {_uuid(row["source_span_id"], "INVALID_SOURCE_SPAN") for row in rows}
-    chunks = _trusted_chunks(chunk_ids=ids, expected_version=version, actor=actor)
+    classes = packet["policy"]["classification_allowlist"]
+    if classes == ["PUBLIC"] and version.notice.source == "G2B_OFFICIAL_API":
+        source_mode = "PUBLIC"
+    elif classes == ["SYNTHETIC"] and version.notice.source == "SYNTHETIC_FIXTURE":
+        source_mode = "SYNTHETIC"
+    else:
+        raise AnalysisServiceError("SOURCE_CLASSIFICATION_MISMATCH")
+    chunks = _trusted_chunks(
+        chunk_ids=ids, expected_version=version, actor=actor, source_mode=source_mode,
+    )
     for row in rows:
         chunk = chunks[_uuid(row["source_span_id"], "INVALID_SOURCE_SPAN")]
         doc = chunk.extraction_run.document_version
@@ -120,16 +159,17 @@ def _verify_stored_provenance(*, packet, actor, version):
 
 
 def _input_digest(*, actor_id, notice_version_id, requirement_chunk_ids, evidence_chunk_ids,
-                  request_key, prompt_version):
+                  request_key, prompt_version, source_mode):
     return payload_hash({
         "actor_id": str(actor_id), "notice_version_id": str(notice_version_id),
         "requirement_chunk_ids": sorted(str(x) for x in requirement_chunk_ids),
         "evidence_chunk_ids": sorted(str(x) for x in evidence_chunk_ids),
         "request_key": str(request_key), "prompt_version": prompt_version,
+        "source_mode": source_mode,
     })
 
 
-def create_synthetic_analysis_run(
+def _create_analysis_run(
     *,
     actor,
     notice_version_id,
@@ -137,8 +177,9 @@ def create_synthetic_analysis_run(
     requirement_chunk_ids,
     evidence_chunk_ids,
     prompt_version="agw-v1",
+    source_mode="SYNTHETIC",
 ):
-    """Create source-linked immutable packet. Replay same request key is idempotent."""
+    """Trusted service, NOT HTTP: immutable packet from reviewed source rows."""
     _authorized_actor(actor)
     version_id = _uuid(notice_version_id, "INVALID_NOTICE_VERSION")
     replay_key = _uuid(request_key, "INVALID_REQUEST_KEY")
@@ -157,6 +198,7 @@ def create_synthetic_analysis_run(
         actor_id=actor.pk, notice_version_id=version_id,
         requirement_chunk_ids=req_ids, evidence_chunk_ids=evidence_ids,
         request_key=replay_key, prompt_version=prompt_version,
+        source_mode=source_mode,
     )
     with transaction.atomic():
         try:
@@ -168,7 +210,11 @@ def create_synthetic_analysis_run(
         notice = Notice.objects.select_for_update().get(pk=version.notice_id)
         if (
             notice.current_version_id != version.pk or version.cancellation
-            or notice.source != "SYNTHETIC_FIXTURE"
+            or (
+                (source_mode == "SYNTHETIC" and notice.source != "SYNTHETIC_FIXTURE")
+                or (source_mode == "PUBLIC" and notice.source != "G2B_OFFICIAL_API")
+                or source_mode not in {"SYNTHETIC", "PUBLIC"}
+            )
         ):
             raise AnalysisServiceError("STALE_OR_UNAPPROVED_NOTICE")
         existing = AnalysisRun.objects.filter(
@@ -187,7 +233,7 @@ def create_synthetic_analysis_run(
             return existing
         chunks = _trusted_chunks(
             chunk_ids=set(req_ids + evidence_ids), expected_version=version,
-            actor=actor,
+            actor=actor, source_mode=source_mode,
         )
         requirements = []
         for c_id in req_ids:
@@ -220,7 +266,7 @@ def create_synthetic_analysis_run(
                 "source_hash": hashlib.sha256(excerpt.encode("utf-8")).hexdigest(),
                 "document_sha256": doc.sha256,
                 "extraction_run_id": str(c.extraction_run_id),
-                "excerpt": excerpt, "classification": "SYNTHETIC",
+                "excerpt": excerpt, "classification": source_mode,
                 "approved_for_provider": True,
                 "requirement_ids": ["R-" + str(x) for x in req_ids],
             })
@@ -234,7 +280,7 @@ def create_synthetic_analysis_run(
             approved_document_ids=frozenset({
                 str(c.extraction_run.document_version_id) for c in chunks.values()
             }),
-            allowed_classifications=frozenset({"SYNTHETIC"}),
+            allowed_classifications=frozenset({source_mode}),
         )
         return AnalysisRun.objects.create(
             id=run_id, owner=actor, notice_version=version,
@@ -242,6 +288,46 @@ def create_synthetic_analysis_run(
             input_digest=digest, prompt_version=prompt_version,
             snapshot_sha256=packet.sha256, snapshot_payload=packet.payload,
         )
+
+
+def create_synthetic_analysis_run(
+    *,
+    actor,
+    notice_version_id,
+    request_key,
+    requirement_chunk_ids,
+    evidence_chunk_ids,
+    prompt_version="agw-v1",
+):
+    """Existing synthetic-only entrypoint; no data egress or model calls."""
+    return _create_analysis_run(
+        actor=actor, notice_version_id=notice_version_id,
+        request_key=request_key, requirement_chunk_ids=requirement_chunk_ids,
+        evidence_chunk_ids=evidence_chunk_ids, prompt_version=prompt_version,
+        source_mode="SYNTHETIC",
+    )
+
+
+def create_attested_public_analysis_run(
+    *,
+    actor,
+    notice_version_id,
+    request_key,
+    requirement_chunk_ids,
+    evidence_chunk_ids,
+    prompt_version="agw-v1",
+):
+    """Trusted backend-only construction from reviewed official bytes/ACL.
+
+    No public API, CLI, model or external network call is triggered here.
+    All document versions must have a current staff byte-hash attestation.
+    """
+    return _create_analysis_run(
+        actor=actor, notice_version_id=notice_version_id,
+        request_key=request_key, requirement_chunk_ids=requirement_chunk_ids,
+        evidence_chunk_ids=evidence_chunk_ids, prompt_version=prompt_version,
+        source_mode="PUBLIC",
+    )
 
 
 def append_validated_result(
