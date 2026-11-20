@@ -1,3 +1,11 @@
+## 2026-11-21 P0-02 — 공식 raw notice와 기존 canonical digest 독립 결속 (CODE_IMPL / LIVE_READONLY_PASS)
+
+- [P0-02 공식 원본 SHA↔정규화 메타데이터 SHA 불변 DB source mapping](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md): 기존 NoticeVersion.source_payload_digest는 canonical metadata SHA로 보존하고 OfficialSourceLink의 metadata_canonical_sha256/raw_notice_sha256을 분리. DocumentVersion OneToOne/NoticeVersion PROTECT FK, default dry-run, 승인된 staff-only apply, cancel/correction/stale/같은차수 충돌 차단, PostgreSQL DB UPDATE/DELETE trigger. 비공개 원문 독립 0700/0600 재검증, 모델 및 staff 공개 승인 기능 변경 없음.
+- **실제 NAS read-only:** 보관된 원문 5,764 bytes SHA b342a3e28e32c9e9e0e4499ab939acf0d0019c3c17656f67c49c3bb965891666 **!=** 기존 canonical DB SHA; 공식 제목/차수/현재 NoticeVersion/DocumentVersion SHA·storage/소유권 일치, 기존 버전 이력 2건 보존 확인. 증거 job_01M7XC404100Y0KQR7614K9TF7.
+- **미수행:** 실제 NAS 기존 DB migration/SourceLink row insert, 실제 staff 승인, 추출 coverage 완전성, 운영 모델/회사 data1. 최신 최종 CI는 Actions SHA 검증 전까지 PASS 주장 금지. 사용자 계정/스케줄/기존 운영 컨테이너 변경 없음.
+
+---
+
 ## 2026-11-20 P0-01 완료 — NAS 공식 원본 응답 별도 불변 저장·재검증
 
 - [NAS 실제 5건 검증 및 1건 원본 capture 영속 보관 기록](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 공식 공고 응답 5,764 bytes SHA-256 `b342a3e28e32c9e9e0e4499ab939acf0d0019c3c17656f67c49c3bb965891666`와 manifest를 개인 NAS 별도 private volume에 0700/0600으로 작성, **기존 원본 HWPX 복제 없이** 기존 verified storage key만 참조. 실시간 공식 첨부 5건 중 동일 파일 식별변수에 해당하는 1건 및 원본 GET SHA 검증 PASS. 독립 무네트워크/읽기 전용 컨테이너 SHA·manifest·ACL·2파일 재검증 PASS. 새로운 DB raw↔canonical digest 영속 결속·staff 승인·모델/회사 운영은 여전히 미완료, 기존 서비스 불변. **NEXT P0-02**.

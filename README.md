@@ -1,3 +1,5 @@
+> **2026-11-21 P0-02 공식 raw/canonical SHA 독립 매핑:** [설계·구현·검증·보안 게이트](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md). 기존 G2B 공고/문서 버전은 덮어쓰지 않고 별도 불변 SourceLink/DB migration/운영자 기본 read-only 명령으로 출처를 결속하도록 구현. NAS 원본 SHA와 DB 정규화 SHA가 실제로 다름을 검증했으나, 기존 NAS DB의 새 migration/SourceLink 적용과 공개·모델 승인은 아직 하지 않음.
+
 > **2026-11-20 AI Gateway AGW-05 원본 캡처:** 운영자 수동 [official G2B raw-byte capture](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md) 코드·합성 검증. 실제 공식 API E2E, 원본 SHA와 기존 NoticeVersion 메타 해시 reconcile, 완전한 추출·staff PUBLIC 승인 및 모델 호출은 미완료. 공개 Git에는 원문과 인증정보 보관 금지.
 
 > NAS preview collection: `scripts/collect_g2b_public.py` reads the API key via stdin and outputs bounded public metadata; `refresh_g2b_snapshot --expected-db-name NAME` reads JSON on stdin, defaults to dry-run, and accepts `--apply` only for the approved PostgreSQL target. No company data or credentials in snapshots. Older revisions and same-order conflicts cannot overwrite reviewed current data. See current state before running; schedules and production release are separate.
