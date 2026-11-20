@@ -1,3 +1,5 @@
+> **실제 연결 우선 (2026-11-20):** 사용자 유료 호출 허용을 반영하여 다른 provider의 전체 mock/DB/UI 작업이 끝날 때까지 미루지 않는다. **Anthropic Commercial Terms를 충족하고 각 최종 사용자가 미변조 CLI에 직접 인증한 호스팅 경로** 또는 회사가 허용한 개별 사용자 API key 경로가 확보되면 즉시 **공개 RFP 실제 Claude 결과 JSON + 동일 세션 resume** E2E를 추진한다. 공식 [Claude 법무 정책](https://code.claude.com/docs/en/legal-and-compliance)상 제3자 제품이 소비자 계정 인증정보를 받아 사용자를 대신 중계하는 방식은 불허. 회사 실자료 전송/IDC 배포는 별도 승인.
+
 # Claude Code 공식 CLI 실행·JSON·Resume Adapter
 
 - 작업 ID: AGW-07
