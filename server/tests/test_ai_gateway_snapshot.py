@@ -153,7 +153,7 @@ class ResultContractTests(unittest.TestCase):
         r = validate_model_result(result=self.result(), snapshot=self.snapshot,
                                   expected_provider="CODEX")
         self.assertEqual(r.sha256, payload_hash(r.payload))
-        self.assertEqual(r.payload["requirements"][0]["assessment"], "NOT_MET")
+        self.assertEqual(r.payload["requirements"][0]["assessment"], "UNKNOWN")
 
     def test_raw_json_no_duplicate_keys(self):
         result = self.result()
