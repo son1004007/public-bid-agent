@@ -220,3 +220,66 @@ class PublicRfpAttestation(models.Model):
     provider_export_approved = models.BooleanField(default=False)
     revoked = models.BooleanField(default=False)
     reviewed_at = models.DateTimeField(default=timezone.now)
+
+
+class ImmutableSourceLinkQuerySet(models.QuerySet):
+    """No ordinary ORM mutation of previously captured official byte identities."""
+
+    def update(self, **kwargs):
+        raise ValueError("IMMUTABLE_OFFICIAL_SOURCE_LINK")
+
+    def delete(self):
+        raise ValueError("IMMUTABLE_OFFICIAL_SOURCE_LINK")
+
+    def bulk_update(self, objs, fields, batch_size=None):
+        raise ValueError("IMMUTABLE_OFFICIAL_SOURCE_LINK")
+
+
+class ImmutableSourceLinkManager(models.Manager.from_queryset(ImmutableSourceLinkQuerySet)):
+    pass
+
+
+class OfficialSourceLink(models.Model):
+    """P0-02: append-only cross-reference, not an approval or exported source.
+
+    NoticeVersion.source_payload_digest is the historical canonical metadata
+    digest and MUST NOT be changed to the raw official HTTP response digest.
+    Raw bytes remain in a private, off-repository store; the database records
+    independently checked sizes, digests, storage keys and exact FK identities.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    notice_version = models.ForeignKey(
+        "procurement.NoticeVersion", on_delete=models.PROTECT,
+        related_name="official_source_links",
+    )
+    document_version = models.OneToOneField(
+        "procurement.DocumentVersion", on_delete=models.PROTECT,
+        related_name="official_source_link",
+    )
+    linked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name="official_source_links",
+    )
+    capture_id = models.CharField(max_length=64, unique=True)
+    official_revision = models.CharField(max_length=5)
+    metadata_canonical_sha256 = models.CharField(max_length=64)
+    raw_notice_sha256 = models.CharField(max_length=64)
+    raw_notice_size_bytes = models.PositiveIntegerField()
+    raw_notice_storage_key = models.CharField(max_length=160)
+    manifest_storage_key = models.CharField(max_length=180)
+    document_sha256 = models.CharField(max_length=64)
+    document_size_bytes = models.PositiveIntegerField()
+    existing_document_storage_key = models.CharField(max_length=180)
+    linked_at = models.DateTimeField(default=timezone.now)
+
+    objects = ImmutableSourceLinkManager()
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValueError("IMMUTABLE_OFFICIAL_SOURCE_LINK")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("IMMUTABLE_OFFICIAL_SOURCE_LINK")
+
