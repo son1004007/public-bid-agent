@@ -1,3 +1,5 @@
+> **2026-11-20 최신 사용자 방향 — Codex/Claude Code 개별 등록:** 자동 3-provider Router를 구현하지 말고 [15 독립 프로필·직접 CLI·JSON 결과 검증 설계](docs/server-migration/15-mcp-provider-executor-subscription-policy.md)를 우선한다. 각 CLI는 사용자 소유 공식 계정에서 직접 실행하고 입찰 시스템은 결과만 검증·저장한다. Gemini는 사용자 실측 CLI 제약으로 MVP 제외. 개인 OAuth/CLI 세션을 서버에 입력받거나 회사 공용 서비스가 대리 실행하지 않는다. 코드·서버·실제 모델 호출은 미승인/미구현.
+
 > **2026-11-20 AI Gateway 최신 설계 지시:** [15 모델 실행용 MCP·CLI 구독 조사](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). 사용자 요구는 **Bid server→MCP client→Provider executor→JSON 저장**이며 기존 [14 공개 공고 MCP](docs/server-migration/14-bid-mcp-interface.md)는 반대 방향이다. 개인 Google AI Pro `agy` 타사 래핑/타 사용자를 위한 Claude 개인 구독 중계 금지; API-only 구조를 유일한 답으로 취급하지 않되 허가된 기업용 연결 전 모델 호출 OFF. 원격 자동화/운영/회사 자료 업로드 승인 없음.
 
 > **2026-11-20 MCP 공개 도구 소스 후보:** [14 MCP 연결 계약](docs/server-migration/14-bid-mcp-interface.md). Django 조달 DB에서 공개 공식 공고 메타데이터만 조회하는 stdio MCP 및 기본 차단·테스트 소스 후보. data1 배포, HTTP·OAuth, 회사 비공개 자료, GPT/Claude/Gemini 앱 연결은 미완료. 개인·조직 데이터 보안과 전역 AGY/Gemini 자동 위임 중지 유지.
