@@ -1,3 +1,5 @@
+> **2026-11-21 P0-03:** [HWPX 5건 실제 검증·1,800-byte source Chunk 및 coverage PARTIAL](AGW-05-P0-03-EXTRACTION-COVERAGE-2026-11-21.md). 샘플의 1~5글자 표 셀 149개 보존, 기존 원본 5건 read-only 검증, 합성 Django Windows/Linux/PostgreSQL 437 tests PASS. **실 NAS DB 재추출/저장 미수행**, P0-02 raw source mapping 운영 적용 및 P0-04 직원 검토 승인 이전 모델 송신 OFF.
+
 > **2026-11-21 P0-02 코드/CI 최종 검증:** [raw↔canonical digest 불변 mapping](AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md). 코드 `7fe897c4ff7681a51d6132238cbb7aec54eda203` [core 94/94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44817182658), [Django Windows/Linux/PostgreSQL 각 431건 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44817182690); 기존 NAS 공식 원본·DB 버전 read-only 대조 PASS. **기존 NAS DB 신규 migration/실제 SourceLink 적용 NOT_RUN**, P0-03 추출 완전성/P0-04 staff 승인·모델 egress OFF.
 
 > **2026-11-21 P0-02 구현 인계:** [공식 raw 응답↔기존 canonical metadata 불변 연결](AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md). 코드·마이그레이션·synthetic 회귀 및 NAS raw-vs-canonical read-only 비교 구현. 기존 DB 버전·원본 SHA 불변, 중복/정정 차단. 실 NAS DB 마이그레이션/새 row 삽입·직원 승인/AI 모델 호출은 별개 미실시. 다음은 실제 P0-02 DB 연결 인수·P0-03 추출 coverage, TASKS가 상태 정본.

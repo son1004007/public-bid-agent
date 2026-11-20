@@ -1,3 +1,12 @@
+## 2026-11-21 P0-03 — source chunking CI·NAS 실원본 read-only PASS / 실제 re-extract NOT_RUN
+
+- [P0-03 HWPX 원문 보존 Chunk·실제 NAS 5건 읽기 전용 검증](docs/implementation/ai-gateway/AGW-05-P0-03-EXTRACTION-COVERAGE-2026-11-21.md). new source_chunking.py + extractor_service.py: 모든 본문·표 cell(1글자 포함)·footnote text를 1,800 UTF-8 byte 이내 원문-불변 span(추출블록 상대 char/byte 위치·SHA+원본 HWPX SHA)으로 저장, 전체 새 ExtractionRun.coverage.complete=False/status=PARTIAL·structure_fidelity=UNVERIFIED를 보수적으로 지정. fallback 4건은 표/각주 구조 복구 미인증을 유지, 1건 structured도 완전성 단정 금지.
+- **실제 NAS (기존 DB/미디어 전부 읽기 전용):** 공식 HWPX 5/5 SHA 및 현재 공고·문서 ACL PASS, 기존 coverage.complete 5건 전부 MISSING, 새 분할 예행 14,743 chunks·UTF-8>1800 0·기존 제외된 5자 이하 표 셀 149개 검출. 구조화 1건, text-only 4건. Gateway job_01M7XD0K8Z00PV044MDX3RXN6K exit0; 기존 실제 Chunk 14,594개·원본/DB/스케줄 변경 0.
+- **합성 코드 CI:** SHA a34847c2: [core 94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818463555), [foundation Win/Linux/Pg 각 437 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818463609). 후속 테스트의 예외 타입 정밀화 커밋은 새 SHA CI 별도 확인.
+- **보류:** 기존 NAS 운영 DB 신규 extraction write/마이그레이션 적용 미실행, P0-02 raw↔canonical real DB 연결 미적용, P0-04 staff PUBLIC/모델 export OFF. Draft PR #5 미병합, 인가 범위/credential issue release 차단 유지.
+
+---
+
 ## 2026-11-21 P0-02 정확 코드 CI 확정 / 실 DB 적용 구분
 
 - [P0-02 source-link 증거](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md). [core 94/94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44817182658), [Django Windows/Linux/PostgreSQL 각 431건 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44817182690); 코드 SHA `7fe897c4ff7681a51d6132238cbb7aec54eda203`, 신규 마이그레이션+합성 테스트 및 PostgreSQL 불변 trigger 검증 PASS. 기존 NAS 공식 raw 원본과 DB canonical digest 차이/문서·차수·제목 일치 read-only 검산 PASS. 기존 NAS DB migration/실제 SourceLink INSERT, 담당자 공개 승인·모델 호출·회사 data1 배포 **NOT_RUN**. 브랜치 Draft PR #5, 기존 앱/키/DB/스케줄 변경 없음.

@@ -4,6 +4,7 @@
 
 | 문서 | 목적 |
 |---|---|
+| [P0-03 HWPX 원문 보존 Chunk·실제 NAS 5건 읽기 전용 검증](docs/implementation/ai-gateway/AGW-05-P0-03-EXTRACTION-COVERAGE-2026-11-21.md) | 1,800-byte UTF-8 출처 무손실 Chunk·표/각주 누락 복구, coverage PARTIAL, 실 NAS 5건 read-only 및 CI 검증 |
 | [P0-02 공식 원본 SHA↔정규화 메타데이터 SHA 불변 DB source mapping](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md) | 실제 NAS 1건 raw vs canonical SHA 상이, 별도 NoticeVersion·DocumentVersion 불변 매핑, DB trigger/회귀·배포 게이트 |
 | [P0-01 실 NAS 원본 5건·공식 공고/첨부 목록 1건 검증](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md) | 기존 5/5 SHA·DB·ACL, 실제 G2B 재조회·첨부 목록 대조, 인증키 인코딩 수정·CI·남은 원본 영속 저장 |
 | [AGW-05 공식 원본 공고·HWPX 바이트 수동 캡처](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md) | 공식 02 응답 원문·첨부 SHA 비공개 보존, 합성 보안 검사, 남은 DB digest/coverage 연결 게이트 |
