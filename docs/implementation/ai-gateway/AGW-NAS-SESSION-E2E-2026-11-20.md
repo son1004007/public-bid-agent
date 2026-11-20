@@ -51,6 +51,13 @@ flowchart TD
 
 **현재 구현 경계:** 위 도식 중 C~E의 구성 요소와 SessionBinding의 잠금·상태 전이는 **각각 코드로 존재**하지만 **실제 Django Job/Run/Revision과 Docker worker를 결합한 외부 모델 자동 호출 API는 아직 없다**. F의 현재 JSONL 구문 파싱은 제공되지만 RFP 근거·법적 참가자격·회사 원가에 대한 실제 DB 정합성 검증은 미완료. G의 **revision 저장도 미완료**. 임의의 웹 요청이 현재 공식 CLI를 호출할 수 없다.
 
+## 3.1 코드·CI 최종 인수 증거 (현재 브랜치)
+
+- [AGW core GitHub Actions run 44663410679](https://github.com/son1004007/public-bid-agent/actions/runs/44663410679): **50개 통과**, 포함 대상 `test_ai_gateway_core`, `test_codex_adapter`, `test_nas_docker_codex`. Ubuntu/Python 3.12, 실제 CLI 호출·인증정보 없음.
+- [Server foundation GitHub Actions run 44663410740](https://github.com/son1004007/public-bid-agent/actions/runs/44663410740), commit `b4f3bc5ba5b1ca84abefe28f97d7652eef03e9a1`, **최종 attempt 2 SUCCESS**: Windows, Ubuntu, PostgreSQL 각 **334개 Django 테스트 통과**; Windows의 Synology-only fixture는 OS 조건에 따라 SKIP됨. 보안/모델·DB/회귀 테스트 로그 확인.
+- **재현된 실패도 보존:** 최초 attempt에서는 Windows의 기존 Chrome CDP 테스트가 `CDP_WORKSPACE_FAILED_STAGE=reopen; Decision not retained`로 실패했다. **실패한 Windows job만 재실행하여 CDP 테스트 포함 PASS**했다. 재실행 성공이 해당 브라우저 동작의 비결정적 오류 가능성을 부정하는 것은 아님. 이 PR 내 NAS Docker/session 변경과 해당 UI 테스트 사이의 인과관계는 확인되지 않았다.
+- 최신 문서-only HEAD와 테스트 통과 HEAD가 다를 수 있다. 위 링크는 **실제 코드 SHA**에 대한 검증이며 배포/실서비스 승인은 아니다.
+
 ## 4. 운영 전 필수 게이트 (P0)
 
 1. NAS의 **웹 사용자별 별도 OS UID/GID**와 공급자별 인증·세션 홈의 운영 정책. `son1004007` 1개 계정의 로그인으로 다른 회사 사용자를 대신하는 방식 금지.
