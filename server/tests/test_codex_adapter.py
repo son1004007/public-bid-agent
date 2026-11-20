@@ -11,7 +11,7 @@ from ai_gateway_core.codex_cli import (
     parse_codex_jsonl, run_codex,
 )
 
-SESSION = "01a1f6a7-9dd4-7843-99bb-bca6bf1d73ca"
+SESSION = "11111111-2222-4333-8444-555555555555"
 
 
 def event_stream(*, session=SESSION, result=None, completed=True):
