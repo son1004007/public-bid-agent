@@ -13,7 +13,9 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "server"))
-from ai_gateway_core.official_g2b_capture import CaptureError, capture, persist
+from ai_gateway_core.official_g2b_capture import (
+    CaptureError, capture, persist, persist_notice_for_existing_document,
+)
 
 
 def main(argv=None):
@@ -24,10 +26,14 @@ def main(argv=None):
     parser.add_argument("--attachment-name", required=True)
     parser.add_argument("--private-root", help="Existing private root outside Git")
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--existing-document-storage-key",
+                        help="Verified existing private-media key; do not duplicate HWPX")
     args = parser.parse_args(argv)
     try:
         if args.apply and not args.private_root:
             raise CaptureError("STORAGE_ROOT_REQUIRED")
+        if args.existing_document_storage_key and not args.apply:
+            raise CaptureError("EXISTING_DOCUMENT_REQUIRES_APPLY")
         captured = capture(
             notice_number=args.notice_number,
             source_revision=args.source_revision,
@@ -35,7 +41,15 @@ def main(argv=None):
             attachment_name=args.attachment_name,
             service_key=os.environ.get("G2B_SERVICE_KEY", ""),
         )
-        summary = persist(captured, args.private_root) if args.apply else captured.summary()
+        if args.existing_document_storage_key:
+            summary = persist_notice_for_existing_document(
+                captured, args.private_root,
+                document_storage_key=args.existing_document_storage_key,
+            )
+        elif args.apply:
+            summary = persist(captured, args.private_root)
+        else:
+            summary = captured.summary()
         print(json.dumps(summary, sort_keys=True, ensure_ascii=True))
         return 0
     except CaptureError as exc:
