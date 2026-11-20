@@ -1,3 +1,5 @@
+> **2026-11-20 AGW 구현 재개 인덱스:** [AGW-00~15 작업 단위별 상세 설계/구현 계획](docs/implementation/ai-gateway/README.md). 16개 카드별 입력/출력 계약·Django/CLI·실패/복구/테스트·선행조건을 확인한 후 해당 상태는 TASKS/CURRENT_STATE에서 최신 확인. 설계서 게시만으로 실제 API/CLI/운영이 구현되었다고 주장하지 않는다.
+
 > **2026-11-20 최신 사용자별 서버 실행·세션 resume 설계:** [16](docs/server-migration/16-user-cli-session-and-blind-cross-check.md). 서버의 각 사용자 자체 provider 로그인, Codex/Claude 기존 session 유지·resume, 최초 판단은 독립, 상호 확인은 구조화 근거 비교부터, **불일치 이슈 때만 별도 검증 session에 상대의 짧은 근거를 공유**. 장기 세션/OS 실행 프로세스 분리, 교차 사용자 인증 재사용 금지. 자동 호출·회사 자료 전송/배포 승인 전 OFF.
 
 > **2026-11-20 최신 조건부 교차 검증 계약:** [15 Codex+Claude 0/1/2 가용 상태 및 독립 검증 설계](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). 준비된 하나면 단독, 둘이면 동일 snapshot/근거에서 서로의 답변을 보지 않는 1차 결과 각각 수집→검증 후 구조화 비교. 수동 CLI는 사용자 직접 실행·업로드; 회사 공용 구독 중계 금지. 기존 1개만 선택 제안보다 우선; 구현·테스트 미실행.
