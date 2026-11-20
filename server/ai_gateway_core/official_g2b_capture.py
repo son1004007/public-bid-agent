@@ -20,7 +20,7 @@ from pathlib import Path
 import re
 import stat
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qsl, urlencode, urlsplit
+from urllib.parse import parse_qsl, unquote, urlencode, urlsplit
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
 import zipfile
 
@@ -52,6 +52,20 @@ def _identity(number, revision):
             or number.startswith("SYNTHETIC-")
             or not re.fullmatch(r"[0-9]{1,5}", revision)):
         raise CaptureError("INVALID_NOTICE_ID")
+
+
+def _normalized_service_key(service_key):
+    """공공데이터포털의 일반 인증키와 1회 URL 인코딩된 인증키를 안전하게 동일하게 처리."""
+    if (type(service_key) is not str or not 1 <= len(service_key) <= 1024
+            or any(ord(ch) < 33 for ch in service_key)):
+        raise CaptureError("MISSING_SERVICE_KEY")
+    if "%" in service_key:
+        if re.search(r"%(?![0-9a-fA-F]{2})", service_key):
+            raise CaptureError("MISSING_SERVICE_KEY")
+        service_key = unquote(service_key)
+        if not service_key or len(service_key) > 1024 or any(ord(ch) < 33 for ch in service_key):
+            raise CaptureError("MISSING_SERVICE_KEY")
+    return service_key
 
 
 def _no_duplicate_keys(pairs):
@@ -165,9 +179,7 @@ class OfficialCapture:
 def capture(*, notice_number, source_revision, attachment_url, attachment_name, service_key, opener=None):
     """고정 공식 URL에서 GET만 수행한다. 공고 metadata/attachment URL 간 신뢰 결속은 부분 검증."""
     _identity(notice_number, source_revision)
-    if (type(service_key) is not str or not 1 <= len(service_key) <= 1024
-            or any(ord(ch) < 33 for ch in service_key)):
-        raise CaptureError("MISSING_SERVICE_KEY")
+    service_key = _normalized_service_key(service_key)
     if (type(attachment_name) is not str or not 1 <= len(attachment_name) <= 180
             or not attachment_name.lower().endswith(".hwpx")
             or any(ord(ch) < 32 or ch in "/\\" for ch in attachment_name)):
