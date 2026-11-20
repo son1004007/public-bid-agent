@@ -126,6 +126,7 @@ class SnapshotContractTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertIn('"schema_version":"analysis_request_v1"', first)
         self.assertIn("untrusted RFP", first)
+        self.assertIn("\n", first)
         self.assertIn(snapshot.sha256, first)
         self.assertIn("UNKNOWN", first)
 
