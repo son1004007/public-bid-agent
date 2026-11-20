@@ -1,3 +1,5 @@
+> **2026-11-20 AGW-05 최신 진입점:** [RFP 원본 공고/문서/추출 chain 해시·공식 PUBLIC 출처 승인·dispatch preflight 구현/검증 기록](docs/implementation/ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md). 1800byte 무음 절단 제거, `PublicRfpAttestation` 기본 OFF. 실제 조달청 API 내려받기/실공고 승인, 모델 계정/사내 반출/운영 NAS 배포는 NOT_DONE. [CURRENT_STATE](CURRENT_STATE.md) 및 [TASKS](TASKS.md) 최신 P0 우선.
+
 > **2026-11-20 최신 AGW-05/09 코드·증거 진입점:** [합성 RFP EvidenceSnapshot + StrictResultValidation + Django AnalysisRun/Revision 인수 기록](docs/implementation/ai-gateway/AGW-05-09-IMPLEMENTATION-2026-11-20.md). core 77 PASS/Django Win/Linux/PostgreSQL 각 378 PASS. 실제 운영 DB 마이그레이션/공개 RFP·회사 fact 반출/자동 유료 AI 호출 미완료. 다음 AGW-08/05 public evidence/소유권/보안 게이트.
 
 > **2026-11-20 NAS 최신 버전 전환 실측:** Codex `0.171.0` / `gpt-6.2-sol` / `medium`이 NAS 호스트의 기본 설정과 Docker 이미지 모두에서 **실제 모델 응답 PASS**. 제한된 설치 실행기 source SHA·deny canary 검증, 구버전 롤백 보존. [실제 runtime/source 정본](https://github.com/son1004007/device-control/blob/main/docs/SYNOLOGY_AGENT_RUNTIME.md), [현재 상태](CURRENT_STATE.md), [작업 원장](TASKS.md). 이전 0.163.0/6.1 모델 문구는 역사적 실측이며 현 기본 설정이 아님. 사용자별 등록/다중 사용자 실행 정책 및 company data1 운영은 미완료.
