@@ -7,7 +7,7 @@
 | **AGW-05 Chunk/문서/공고 digest 결속** | **CODE_IMPLEMENTED / SYNTHETIC_PASS**. 1800byte 본문 절단 거부, 공고 payload SHA·DocumentVersion SHA·ExtractionRun ID·span SHA·snapshot SHA 결속, 조회/결과 저장/dispatch preflight에 current ACL·해시 검증 | 실제 저장된 RFP 첨부 원본 바이트와 추출기 input/output provenance 검증 |
 | **AGW-05 승인형 PUBLIC packet** | **CODE_IMPLEMENTED / FIXTURE_PASS**. 공식 HTTPS 출처 exact host, staff-only 공고 원본/첨부 raw bytes checksum·공개 공유승인, 별도 DB attestation 기본 OFF; 공개처럼 보이는 URL만으로 허용 불가 | **실제 공식 공고 API/원문 수집·검토 승인 E2E NOT_DONE**; 회사 실적/원가 projection 반출 HOLD |
 | **AGW-05 prompt/dispatch preflight** | **CODE_IMPLEMENTED / TESTED**. 같은 packet/hash·provider별 determinism, RFP 텍스트를 untrusted JSON으로 취급, Run 권한/정정/승인 철회·현재 source 복원 검사 | 악성 프롬프트 평가·NAS 실제 사용자별 도구/egress 격리 검증 및 AGW-08 실행 Job 결합 |
-| **CI** | [코어 83 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44680062831), [server foundation](https://github.com/son1004007/public-bid-agent/actions/runs/44680062793) Linux/Pg 각 407 PASS, Windows 마지막 검증 중 | 최신 실제 CI 결과 확인 후 마무리 기록 |
+| **CI** | [코어 83 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44680062831), [server foundation](https://github.com/son1004007/public-bid-agent/actions/runs/44680062793) Windows/Linux/Pg 각각 407 PASS, 전체 CI SUCCESS | 최신 실제 CI 결과 확인 후 마무리 기록 |
 
 **NEXT:** 공식 공고 수집/문서 다운로드 원본 바이트·공고 차수·첨부 SHA·표/각주 추출 coverage 검증과 AGW-08 Django Job→SessionBinding lease→NAS Codex Docker 0.171.0/GPT-6.2 Sol medium 연결(계약/OS/egress 승인 전 실제 업무 모델 호출 OFF). AGY 위임 OFF, 회사 자료 반출·data1 운영 임의 배포 금지 유지.
 
