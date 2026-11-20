@@ -191,6 +191,15 @@ class ResultContractTests(unittest.TestCase):
             validate_model_result(result=r, snapshot=self.snapshot,
                                   expected_provider="CODEX")
 
+    def test_rfp_alone_cannot_assert_not_met(self):
+        r = self.result()
+        r["requirements"][0]["assessment"] = "NOT_MET"
+        r["requirements"][0]["missing_evidence_ids"] = []
+        with self.assertRaisesRegex(ResultContractError, "UNPROVEN_ELIGIBILITY_ASSESSMENT"):
+            validate_model_result(
+                result=r, snapshot=self.snapshot, expected_provider="CODEX",
+            )
+
     def test_unknown_requires_missing_reason(self):
         r = self.result()
         r["requirements"][0]["assessment"] = "UNKNOWN"
