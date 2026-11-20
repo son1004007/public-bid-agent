@@ -1,3 +1,7 @@
+## 2026-11-20 AGW-05 P0-1 official raw-byte capture (CODE_PARTIAL)
+
+- [실구현/계약/다음 단계](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md). 공식 02 공고 응답 원본·G2B 지정 HWPX 원문 8MiB 제한 GET, 번호·차수·URL 검증, SHA-256·비공개 O_EXCL 보존 및 수동 실행기 작성. 합성 HTTP/변조·접근 보안 6개 로컬 PASS; GitHub Actions는 별도 최신 실행 결과 확인. **실제 나라장터 원본 API 호출/검증·DB 영속 원본 연계·staff 공개 승인·실제 분석·NAS 운영 배포 NOT_RUN.** 기존 metadata row의 canonical SHA와 실제 API raw-response SHA가 다르고 extractor coverage.complete가 없으므로 자동 PUBLIC 승인을 금지. 회사/모델/스케줄 보안은 기존 OFF 유지.
+
 ## 2026-11-20 AGW-05 RFP Source Integrity / PUBLIC reviewed snapshot — LATEST
 
 - [AGW-05 구현·보안·재개 정본](docs/implementation/ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md). 이전 **SYNTHETIC-only** 스냅샷에 이어 **실제 RFP에도 적용 가능한 검토형 PUBLIC source 승인 경로**를 코드로 구현했다. `snapshot.py`에는 공고 `source_payload_digest`·첨부 원본 `document_sha256`·`extraction_run_id`·UTF-8 span SHA·전체 packet canonical SHA 재검증, `render_analysis_prompt`의 untrusted JSON data 표현을 추가했다.
