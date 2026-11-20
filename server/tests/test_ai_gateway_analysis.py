@@ -151,6 +151,45 @@ class SyntheticAnalysisStorageTests(TestCase):
         with self.assertRaisesRegex(AnalysisServiceError, "STALE_OR_UNAPPROVED_NOTICE"):
             self.create_run()
 
+    def test_oversized_chunk_rejected_instead_of_silent_truncation(self):
+        self.evidence.text = "A" * 1800 + "Critical eligibility condition after cutoff"
+        self.evidence.save(update_fields=["text"])
+        with self.assertRaisesRegex(AnalysisServiceError, "SOURCE_CHUNK_TOO_LARGE"):
+            self.create_run()
+        self.assertFalse(AnalysisRun.objects.exists())
+
+    def test_document_digest_change_blocks_result(self):
+        run = self.create_run()
+        self.document_version.sha256 = "0" * 64
+        self.document_version.save(update_fields=["sha256"])
+        with self.assertRaisesRegex(AnalysisServiceError, "STALE_OR_TAMPERED_SOURCE"):
+            self.append(run)
+
+    def test_notice_payload_digest_change_blocks_result(self):
+        run = self.create_run()
+        self.version.source_payload_digest = "0" * 64
+        self.version.save(update_fields=["source_payload_digest"])
+        with self.assertRaisesRegex(AnalysisServiceError, "STALE_NOTICE_SOURCE_DIGEST"):
+            self.append(run)
+
+    def test_extraction_run_reassignment_blocks_result(self):
+        run = self.create_run()
+        other = ExtractionRun.objects.create(
+            document_version=self.document_version, extractor_version="synthetic-v2",
+            state=ExtractionState.PARSED,
+        )
+        self.evidence.extraction_run = other
+        self.evidence.save(update_fields=["extraction_run"])
+        with self.assertRaisesRegex(AnalysisServiceError, "STALE_OR_TAMPERED_SOURCE"):
+            self.append(run)
+
+    def test_source_category_tamper_blocks_result(self):
+        run = self.create_run()
+        self.req.category = ChunkCategory.GENERAL
+        self.req.save(update_fields=["category"])
+        with self.assertRaisesRegex(AnalysisServiceError, "STALE_OR_TAMPERED_SOURCE"):
+            self.append(run)
+
     def test_model_result_add_and_idempotent_replay(self):
         run = self.create_run()
         first = self.append(run)
