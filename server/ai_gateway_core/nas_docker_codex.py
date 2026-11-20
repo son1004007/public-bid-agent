@@ -35,7 +35,7 @@ class NasCodexConfig:
 
 
 def _private_dir(path: Path, *, uid: int | None = None) -> Path:
-    if type(path) is not Path or not path.is_absolute() or path.is_symlink():
+    if not isinstance(path, Path) or not path.is_absolute() or path.is_symlink():
         raise CodexAdapterError("INVALID_PRIVATE_DIRECTORY")
     if not path.exists() or not path.is_dir():
         raise CodexAdapterError("PRIVATE_DIRECTORY_MISSING")
@@ -72,6 +72,7 @@ def _check_environment(config: NasCodexConfig) -> tuple[Path, Path]:
     for path in (base, user_dir, home, workspace):
         if any(c in str(path) for c in (":", "\n", "\r", "\x00")):
             raise CodexAdapterError("INVALID_MOUNT_PATH")
+    _private_dir(home / ".codex", uid=config.os_uid)
     auth = home / ".codex" / "auth.json"
     if not auth.is_file() or auth.is_symlink():
         raise CodexAdapterError("AUTH_REQUIRED")
