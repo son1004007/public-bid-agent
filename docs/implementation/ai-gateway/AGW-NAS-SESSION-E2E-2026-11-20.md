@@ -1,3 +1,5 @@
+> **2026-11-20 NAS Codex 버전/모델 갱신:** host 기본/격리 Docker 모두 `codex-cli 0.171.0` + `gpt-6.2-sol` + `medium`으로 변경하여 실제 응답 PASS. 두 설치 restricted agent 스크립트 source hash PASS/unauthorized workspace DENY PASS, 이전 CLI/이미지·설정 rollback 보존. [정본/실측·제한](https://github.com/son1004007/device-control/blob/main/docs/SYNOLOGY_AGENT_RUNTIME.md); 앱 [NAS Docker Adapter](../../../server/ai_gateway_core/nas_docker_codex.py)의 pin 갱신. 이전 0.163.0 Docker session-resume 테스트는 역사적이며 새 버전의 서비스/실제 resume 테스트는 별도 인수 필요.
+
 # AGW-02/04/06 | NAS Docker Codex 세션 재개 E2E 및 작업 구현 증거
 
 - 기준: 2026-11-20 KST
