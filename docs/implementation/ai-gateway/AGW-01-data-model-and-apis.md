@@ -1,7 +1,9 @@
+> **2026-11-20 구현 실측:** `server/bid_server/ai_gateway/` Django `ProviderProfile`, `SessionBinding`, `migrations/0001_initial.py`와 `GET /api/v1/ai/providers` 실행 가능한 실제 코드 반영. 본인 DB 세션만 조회·token 입력 불허·기본 NO_AI·인증 최신성/epoch/계약/환경 게이트. [Windows/Linux/PostgreSQL Django 전체 303건씩 CI 성공](https://github.com/son1004007/public-bid-agent/actions/runs/44659013442), [실행 기록](AGW-RUN-2026-11-20.md). **AnalysisRun/AnalysisRevision/Comparison DB, 사용자 공식 CLI 등록·자동 실행/세션 lease는 아직 구현되지 않음.** 아래의 모델명/필드 예시는 전체 목표안이며 이미 구현된 스키마와 같다고 간주하지 않는다.
+
 # Provider/Session/Run/Comparison 데이터 모델·DRF 계약
 
 - 작업 ID: AGW-01
-- 상태: DESIGN_READY / IMPLEMENTATION_NOT_STARTED (GitHub 문서만 작성)
+- 상태: CODE_PARTIAL / PROFILE_SESSION_DB_READ_API_TESTED; RUN_COMPARISON_NOT_IMPLEMENTED
 - 범위: public-bid-agent AI Gateway 실행기 설계. 참조 [작업 목차](README.md), [상위 세션 설계](../../server-migration/16-user-cli-session-and-blind-cross-check.md).
 - 실행 정책: 중앙 CONTROL 및 대상 AGENTS 우선, 실제 회사 자료·외부 호출·data1 운영 배포는 승인 이전 차단, 별도 AI 코드 리뷰는 선택·기능/보안/회귀 검사는 필수.
 
