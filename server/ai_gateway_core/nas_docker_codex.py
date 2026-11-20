@@ -135,6 +135,8 @@ def run_nas_docker_codex(
     """
     if type(policy) is not CodexRunPolicy or not policy.allowed:
         raise CodexAdapterError("PROVIDER_EXECUTION_NOT_APPROVED")
+    if type(config) is not NasCodexConfig:
+        raise CodexAdapterError("INVALID_DOCKER_CONFIG")
     if not all(
         type(flag) is bool and flag
         for flag in (
