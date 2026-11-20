@@ -38,6 +38,7 @@ def final_stream(thread=SESSION_ID):
     return "\n".join(json.dumps(e) for e in events) + "\n"
 
 
+@unittest.skipIf(os.name == "nt", "Synology Docker mount/UID checks are Linux-only")
 class SynologyDockerCommandTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
