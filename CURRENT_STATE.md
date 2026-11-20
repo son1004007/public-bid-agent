@@ -1,3 +1,11 @@
+## 2026-11-20 통합 TASKS 우선순위 정합성 검토 (최신 계획 인계)
+
+- [TASKS 최상단 현행 실행 큐](TASKS.md): 기존 NAS 실공고 metadata **879건** 및 실제 HWPX 원본 5건/5건 파싱(구조 완전성 미검증) 기록을 보존하고, **신규 AGW-05 PUBLIC 원본↔DB↔추출↔승인 E2E가 없다는 범위 차이**를 분리했다. 기존 실자료 5건을 먼저 읽기 전용으로 확인하고 중복 다운로드를 피한다. 이후 원본 raw-response SHA와 canonical metadata SHA 별도 보존, coverage/source locator, staff 실원본 승인, 합성 AGW-08 Job 연결 순서. HBR-07 최소 원본/coverage P0, 확장 PDF/HWP 자동화는 P1.
+- **현재 코드 CI 정확한 근거 SHA 0295caf2:** [AI Gateway core 89/89 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44683570764) 및 [Server foundation Win/Linux/Pg 각 413 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44683570703). Windows 비공개 저장은 ACL 검증 미지원이므로 fail-closed, POSIX 저장 양성 test 1건 skipped by policy. 이 증거는 **코드·합성 CI**이고 실제 새 AGW 공고 원본 E2E·외부 모델/운영 설치 검증 아님.
+- **보안 및 조직 승인:** 독립 AI 검토는 최신 전역 CONTROL에 따라 선택(NOT_RUN_OPTIONAL), 실제 보안 차단 및 [중앙 계정 회전·세션 폐기 Issue #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26)은 PR #5 릴리스에 계속 적용. 승인되지 않은 회사 자료·NAS 다중 사용자 로그인/egress/모델 자동 호출/재스케줄/data1 배포는 변함없이 OFF/HOLD. 이번 변경은 **작업 원장·상태 정리만**이며 runtime/DB/키 변경 없음.
+
+---
+
 ## 2026-11-20 AGW-05 P0-1 official raw-byte capture (CODE_PARTIAL)
 
 - [실구현/계약/다음 단계](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md). 공식 02 공고 응답 원본·G2B 지정 HWPX 원문 8MiB 제한 GET, 번호·차수·URL 검증, SHA-256·비공개 O_EXCL 보존 및 수동 실행기 작성. 합성 HTTP/변조·접근 보안 6개 로컬 PASS; GitHub Actions는 별도 최신 실행 결과 확인. **실제 나라장터 원본 API 호출/검증·DB 영속 원본 연계·staff 공개 승인·실제 분석·NAS 운영 배포 NOT_RUN.** 기존 metadata row의 canonical SHA와 실제 API raw-response SHA가 다르고 extractor coverage.complete가 없으므로 자동 PUBLIC 승인을 금지. 회사/모델/스케줄 보안은 기존 OFF 유지.
