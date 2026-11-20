@@ -1,3 +1,5 @@
+> **2026-11-20 P0 다음 단계 (AGW-05 공식 원본 캡처 PARTIAL):** [공식 원본 바이트 수집·무결성 계약](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md) 코드+synthetic 6 test 로컬 PASS. **P0 미완료**: 실제 02 공고/첨부 GET·SHA E2E → 기존 metadata digest와 raw-response digest의 불변 신규 NoticeVersion 결속/같은 차수 conflict 해결 → DocumentVersion/Extractor coverage·locator 확인 → staff PUBLIC 승인(별도 export 허용) → AGW-08 Job/SessionBinding. 원문 보관만으로 승인/실운영/모델 완료 아님. AGY/회사 외부 반출/자동 스케줄 OFF.
+
 ## 2026-11-20 AGW-05 최근 구현 진행 — RFP Source Integrity / PUBLIC attestation
 
 [AGW-05 공식 공고 근거·원본 SHA 구현 및 검증 기록](docs/implementation/ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md) · [설계 카드](docs/implementation/ai-gateway/AGW-05-evidence-packet-and-json-schema.md)
