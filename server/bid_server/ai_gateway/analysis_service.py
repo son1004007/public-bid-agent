@@ -83,6 +83,24 @@ def _trusted_chunks(*, chunk_ids, expected_version, actor):
     return by_id
 
 
+def _verify_stored_provenance(*, packet, actor, version):
+    """Re-read current database ACL/extraction and the exact chunk bytes."""
+    rows = packet["requirements"] + packet["evidence"]
+    ids = {_uuid(row["source_span_id"], "INVALID_SOURCE_SPAN") for row in rows}
+    chunks = _trusted_chunks(chunk_ids=ids, expected_version=version, actor=actor)
+    for row in rows:
+        chunk = chunks[_uuid(row["source_span_id"], "INVALID_SOURCE_SPAN")]
+        doc = chunk.extraction_run.document_version
+        excerpt = _chunk_text(chunk)
+        if (
+            row["source_document_id"] != str(doc.pk)
+            or row["source_version"] != str(doc.pk)
+            or row["excerpt"] != excerpt
+            or row["source_hash"] != hashlib.sha256(excerpt.encode("utf-8")).hexdigest()
+        ):
+            raise AnalysisServiceError("STALE_OR_TAMPERED_SOURCE")
+
+
 def _input_digest(*, actor_id, notice_version_id, requirement_chunk_ids, evidence_chunk_ids,
                   request_key, prompt_version):
     return payload_hash({
@@ -144,6 +162,9 @@ def create_synthetic_analysis_run(
             verify_snapshot(
                 EvidenceSnapshot(existing.snapshot_payload, existing.snapshot_sha256),
                 expected_sha256=existing.snapshot_sha256,
+            )
+            _verify_stored_provenance(
+                packet=existing.snapshot_payload, actor=actor, version=version
             )
             return existing
         chunks = _trusted_chunks(
@@ -227,6 +248,9 @@ def append_validated_result(
         packet = EvidenceSnapshot(run.snapshot_payload, run.snapshot_sha256)
         try:
             verify_snapshot(packet, expected_sha256=run.snapshot_sha256)
+            _verify_stored_provenance(
+                packet=run.snapshot_payload, actor=actor, version=run.notice_version
+            )
             validated = validate_raw_result(
                 raw_json=raw_json, snapshot=packet, expected_provider=provider
             )
