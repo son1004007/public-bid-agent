@@ -213,6 +213,9 @@ def persist(result: OfficialCapture, private_root):
     """private root 외·저장소 내부 금지. 생성 후 원본은 덮어쓰기/삭제하지 않는다."""
     if type(result) is not OfficialCapture:
         raise CaptureError("INVALID_CAPTURE")
+    # Windows ACL 검증을 구현하지 않았으므로 POSIX 파일 권한 보장 없이 원본을 저장하지 않는다.
+    if os.name == "nt":
+        raise CaptureError("STORAGE_PLATFORM_UNVERIFIED")
     root = Path(private_root) if isinstance(private_root, (str, os.PathLike)) else None
     try:
         if root is None or not root.is_absolute() or root.is_symlink():
