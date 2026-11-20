@@ -15,6 +15,7 @@
 | [전사 역량·부서 협업 및 전체 도식](docs/server-migration/12-enterprise-capability-hybrid-rag.md) | 법인/부서 모델, SQL+RAG, 지원 승인·가용성·시나리오 손익 |
 | [GPT·Claude·Gemini 연동 후보](docs/server-migration/13-multi-llm-provider-routing.md) | 업체 중립 라우터·승인/비용/데이터 경계, 실제 연동 미구현 |
 | [공개 입찰 MCP 연결·검증](docs/server-migration/14-bid-mcp-interface.md) | 읽기 전용 MCP 도구 구현·테스트·원격 연결 미완료 게이트 |
+| [NAS Docker Codex 실제 Session Resume·AGW-02/04 개발/테스트 기록](docs/implementation/ai-gateway/AGW-NAS-SESSION-E2E-2026-11-20.md) | Synology `son1004007` Docker 실모델 2회/같은 session, DB lease/fence 및 Adapter 코드, 제한사항·다음 작업 |
 | [AI Gateway P0 실제 Codex E2E·Adapter·Django DB/API 실행 기록](docs/implementation/ai-gateway/AGW-RUN-2026-11-20.md) | 실제 Windows 개인 CLI 추론/동일 세션 Resume, 소스/35+303×3 테스트, 서버 연결 남은 작업 |
 | [AI Gateway 구현 작업 단위별 설계·계획 전체 목차 (AGW-00~15)](docs/implementation/ai-gateway/README.md) | **16개 상세 설계서**, 기술·DB/API·실행·오류·보안·테스트·선행조건, 다른 AI 작업 재개 진입점 |
 | [사용자별 Codex·Claude 서버 로그인·Resume 및 독립 교차 검증](docs/server-migration/16-user-cli-session-and-blind-cross-check.md) | 최신 실행·세션 격리·근거 비교/이슈 공유·인수 기준 |
