@@ -1,3 +1,14 @@
+## 2026-11-20 최신 개발 우선순위 — 유료 모델 실제 호출/빠른 E2E 허용
+
+**확정:** 사용자는 비용 최소화보다 **구현 속도·입찰 분석 정확도**를 우선하며 Codex/Claude **유료 모델 실제 호출을 허용**한다. 과거 '전체 mock→마지막에 실제 연결' 순서보다 본 항목이 우선한다. 회사 기밀 전송·사업장 운영 권한·외부 서비스 계약/개별 계정 인증 허가는 여전히 별도다.
+
+- **P0-R1 (즉시):** AGW-00 공급자 공식 조건/실제 CLI capability 확인 + AGW-02 최소 실행 격리 검토, 공개 RFP/합성 역량만으로 **첫 provider 실호출 1건 + 결과 JSON 검증 + 기존 세션 resume 1회** E2E. 허용된 제공자/등록 계정이 없으면 정확한 BLOCKED 이유 기록하고 기본 기능 개발 병행. Codex SDK/app-server 또는 공식 CLI, Claude 공식 미변조 CLI + 상업 조건/BYOK 기업 API 중 허용 경로 선택.
+- **P0-R2 (병행):** 공통 0/1/2 provider 선택 및 서버 근거 검증 도메인 코어 `server/ai_gateway_core/`부터 실제 코드+hosted CI로 구현. 기존 로그인/권한/DB와 결합(AGW-01/03/04/05/09/08). 단순 데이터 파싱 PASS를 실제 RFP 분석 성공으로 취급하지 않음.
+- **P0-R3:** 2번째 provider의 유료 실제 호출 + 동일 사용자/공고별 독립 session resume, 동일 immutable RFP snapshot에서 각각 1차 분석, 구조화 근거 비교(AGW-06/07/10); 성공/불일치/한쪽 실패 처리 E2E.
+- **P1-R4:** 실제 UI/사용자별 계정 상태 및 이슈가 있을 때만 제한 근거 공유(AGW-11/12), 실제 RFP 기반 핵심요건 누락/법적 자격 오판/잘못된 Bid 권고의 gold 평가(AGW-14), 승인된 staging→data1 운영(AGW-13).
+- **비용/보안:** 실행은 사용자 명시 분석 요청/승인된 프로필, 제공자별 호출 수·time/budget limit/실행 이력, 회사 반출 승인 적용. 모델 두 개에 유료 요청이 나가더라도 동일 자료 권한/근거 검증 강제. 개인 구독을 무단 회사 공용 중계 금지, AGY/Gemini 자동 위임 중지 유지.
+- **현재 확인:** 로컬 개발 환경에서 0/1/2 가용 판단·근거 비교 테스트 15건 성공. GitHub 후보 소스 `server/ai_gateway_core`와 `server/tests/test_ai_gateway_core.py` 및 독립 CI workflow 추가, 실제 CI/head 결과는 마지막 실행 기록 확인 후 별도 갱신. **실제 paid model/network call NOT_RUN, data1 NOT_DEPLOYED**.
+
 ## 2026-11-20 AI Gateway 구현 작업 계획 — AGW-00~15 (상세 설계 게시 / 구현 미착수)
 
 사용자 지시로 Codex·Claude Code 서버 로그인·기존 세션 resume·0/1/2 프로필 분기·독립 교차 검증을 **모듈별 상세 설계서 16개**로 분해했다. 이 항목은 기존 HBR-04(모델 분석 worker)·HBR-06(사용자 화면)·HBR-08(회사 운영/실자료 승인)의 **하위 세부 계획**이지 기존 HBR 원장/우선순위를 대체하지 않는다. 다른 AI·새 채팅은 반드시 [AGW 작업 인덱스/선행조건·실패/검증 계약](docs/implementation/ai-gateway/README.md) → 선택 카드 순으로 접근한다. 해당 폴더에는 [AGW-15 구현 공통 계약](docs/implementation/ai-gateway/AGW-15-implementation-contracts.md)(DB schema·API·JSON·Adapter 상태)도 있다.
