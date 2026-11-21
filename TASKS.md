@@ -1,3 +1,5 @@
+> **2026-11-21 P0-04 PUBLIC source SHA gate 코드 보강:** `public_source.py`의 기존 raw notice SHA == legacy canonical metadata SHA 잘못된 비교를 제거하고, P0-02 `OfficialSourceLink`(notice/document/version/canonical/raw SHA·size·storage/revision)를 반드시 통과한 경우에만 staff attestation을 만들도록 변경. `analysis_service.py`의 PUBLIC snapshot/dispatch/result replay 재검증도 attested raw SHA와 SourceLink raw SHA를 비교함. 새로운 synthetic stale/missing-link/서명 후 storage 변경 테스트 추가. **실 NAS DB 0004 미적용, 실원본 link/승인 및 모델 송신 0, CI 최신 SHA 결과 별도 확인 필요.**
+
 # 현재 실행 큐 — 2026-11-20 AGW·MVP·HBR 통합 정본
 
 > **2026-11-21 P0-02 실 NAS 격리 DB/복구 인수:** [격리 PostgreSQL migration·복구·실원본 대조](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md#6-2026-11-21-격리-db-배포복구-및-실원본-검증). 작업 브랜치 e2756f38의 별도 임시 checkout + 네트워크 차단 PostgreSQL 16.15 tmpfs 환경에서 신규 0004 테이블/불변 트리거 설치, 합성 SourceLink 1건 INSERT, 독립 DB 백업·복구 및 rollback/reapply 모두 **PASS**. 실제 공식 원본과 기존 운영 DB는 정확한 최신 검증 함수로 **읽기 전용 PASS**. **운영 DB migration/실원본 INSERT는 NOT_APPLIED**, 격리 DB로 실제 raw 바이트 INSERT는 도구 안전검사에서 차단되어 **NOT_RUN**. 임시 컨테이너·checkout 폐기, 기존 NAS 앱 running. 직원 승인/AI 반출/회사 배포 및 PR #5 release 차단 유지.
