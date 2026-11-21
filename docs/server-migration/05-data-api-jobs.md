@@ -12,7 +12,9 @@
 | ExtractionRun / Chunk | 문서 버전+추출기 버전·페이지/offset/표·OCR 정보·잘림/경고·해시 |
 | ReviewScope / ReviewEvent / GoldSpan | 독립 정답·위치·분류·승인/보류·작성자·시각·수정/이전 버전 |
 | EvaluationRun | 승인 표본 집합·prediction snapshot·규칙 버전·TP/FP/FN·범위/한계 |
-| CompanyEvidence | 회사/면허/실적/인력/MM/원가 근거·확인일·접근 범위·유효 기간 |
+| CompanyEvidence | 회사/면허/실적/집계 역량·MM 근거·확인일·접근 범위·유효 기간 (급여 원본 제외) |
+| DepartmentCostBasis / DepartmentCostBasisVersion | 사업부 합계 인건비·총 MM·기간·원가 구성 정책·승인/검증 상태·revision, 개인별 원가 없음 |
+| BidCostEstimate | 공고 버전·승인 원가 기준 버전·사업 필요 MM·기타 비용 가정·예상 매출/손익·검증 상태 |
 | DecisionProfile / DecisionEvent | 기준 버전·가중치·판단 당시 근거·사람 선택/사유·이력 |
 | CollectionConfig / Job / JobAttempt | 예약·명시 실행·멱등키·시도·lease/heartbeat·오류/결과 참조 |
 | AuditEvent | 누가/어떤 범위/언제/무슨 변경을 했는지 최소 감사 |
@@ -23,7 +25,7 @@
 
 원본 bytes는 비공개 volume에 불변 저장하고 DB에 SHA/크기/형식/버전을 보관한다. 원본 변경 시 새 DocumentVersion과 새 추출 작업을 만들며 기존 승인 정답을 자동으로 새 버전에 복사하지 않는다. 과거 관계를 입증할 수 없는 기존 캐시는 VERSION_UNVERIFIED로 이관한다. 추출 offset을 원본 페이지라고 변환하지 않는다.
 
-파일 경로/스토리지 키를 클라이언트가 지정할 수 없게 하고, 다운로드/뷰어 요청마다 객체 권한을 검사한다. 추출·원본·회사 정보가 로그나 에러 body에 들어가지 않는다. DB와 파일의 백업 세대를 manifest로 연결한다.
+파일 경로/스토리지 키를 클라이언트가 지정할 수 없게 하고, 다운로드/뷰어 요청마다 객체 권한을 검사한다. 추출·원본·회사 정보가 로그나 에러 body에 들어가지 않는다. DB와 파일의 백업 세대를 manifest로 연결한다. 파일은 임시 저장→크기/SHA 검증→동일 volume 원자 확정→DB 참조 게시 순서로 처리한다. DB 실패로 남은 파일은 orphan으로 격리·재조정하고 기존 참조 파일을 자동 삭제하지 않는다. SM04에서 각 crash 지점의 재실행과 불완전 파일 비노출을 검증한다.
 
 ## 3. API 공통 계약
 
@@ -31,14 +33,16 @@
 
 - 조회: `/api/notices`, `/api/notices/{id}`, `/api/document-queue`, `/api/reviews`, `/api/evaluations`, `/api/jobs/{id}`.
 - 명시 변경: `/api/collection-runs`, `/api/extraction-runs`, `/api/reviews/{id}/events`, `/api/decisions`, `/api/jobs/{id}/cancel`.
-- 401 미인증, 403 변경 필요/권한 없음, 409 revision/멱등키 충돌, 422 입력 불일치, 503 의존 서비스/스냅샷 불가를구분한다. Django 기본 응답과 명시 API 계약을통일하는 구현이 필요하며 기존 동작이 이 계약을 충족한 것으로 취급하지 않는다。
-- POST의 Idempotency-Key는 사용자+업무범위+동작에 묶고 request digest와 결과를 보존한다. 동일 키/동일 요청은 기존 작업·결과를 반환하고 다른 요청은409. timeout 후 무조건 새 작업 ID로 재제출하지 않는다.
+- 401 미인증, 403 변경 필요/권한 없음, 409 revision/멱등키 충돌, 422 입력 불일치, 503 의존 서비스/스냅샷 불가를 구분한다. Django 기본 응답과 명시 API 계약을 통일하는 구현이 필요하며 기존 동작이 이 계약을 충족한 것으로 취급하지 않는다.
+- POST의 Idempotency-Key는 사용자+업무범위+동작에 묶고 request digest와 결과를 보존한다. 동일 키/동일 요청은 기존 작업·결과를 반환하고 다른 요청은 409. timeout 후 무조건 새 작업 ID로 재제출하지 않는다.
 
 ## 4. 작업 원장과 재시도
 
 Redis 전달은 중복될 수 있다는 전제로 PostgreSQL 원장을 정본으로 삼는다. 업무 저장과 전달 요청은 같은 DB transaction의 outbox에 기록하고 dispatcher가 broker 전달을 재개한다. 워커는 unique 업무키/lease·fencing token으로 소유권을 검사하고 외부 호출과 저장을 멱등 처리한다. 단순 Redis lock 하나로 원본 보존을 보장한다고 쓰지 않는다.
 
 작업 상태는 QUEUED/RUNNING/SUCCEEDED/FAILED/CANCEL_REQUESTED/CANCELLED/REVIEW_REQUIRED. 시도는 별도 이력이며 기존 성공 결과를 실패 시도로 덮지 않는다. 다운로드 실패/추출 실패/근거 부족/권한 철회/worker 단절을 구분한다. heartbeat 유실은 자동 완료가 아니다. 취소는 요청과 실제 종료/cleanup 증거를 구분한다.
+
+예약은 CollectionConfig의 명시적 실행 주체와 허용 범위를 가진다. 사용자 또는 별도 서비스 주체 선택은 SM05에서 확정하며 암묵적 superuser 실행을 금지한다. 발급자 비활성/권한 철회/일정 비활성 시 대기 작업과 실행 중 작업의 정책을 명시한다. 실행 직전과 외부 I/O·결과 게시의 안전 지점에서 권한·일정 상태를 재검사하고 새로운 부작용을 중지하되 이미 확보한 성공 결과와 이력은 보존한다. 이미 전송된 외부 요청의 취소를 보장하지 않는다.
 
 일정 dispatcher는 하나만 운영하고 scheduled occurrence를 unique key로 중복 방지한다. 일시 네트워크 오류에만 횟수/전체 시간 상한과 backoff를 적용한다. 인증·자격·SHA/버전 충돌·문서 악성 입력은 자동 반복하지 않는다. PDF/OCR CPU 작업은 별도 동시성/시간·메모리/입출력 한도를 둔다. 사용자가 중지한 PC 스케줄러를 서버 전환 작업이 자동 재활성화하지 않는다.
 
@@ -49,3 +53,7 @@ Redis 전달은 중복될 수 있다는 전제로 PostgreSQL 원장을 정본으
 공식 API·AI 공급자·DB/Redis 비밀은 서버 secret 참조로 주입하고 화면/DB export/로그에서 평문 공개하지 않는다. 사용자 로그인 암호와 API 공급자 키는 별개이며 단일 공통 기본 암호를 만들지 않는다.
 
 인증·암호 변경에는 위 일반 업무 결과 재전달 규칙을 그대로 적용하지 않는다. [인증 계약](03-authentication.md)의 commit 결과 불명·재로그인 절차를 따르고 암호/세션 비밀/인증 응답 원문을 멱등 결과로 캐시·재노출하지 않는다.
+
+## 6. 집계 원가와 공통 분석 API
+
+[09 최신 상세 계약](09-aggregate-cost-and-shared-review.md)이 원가/공유 범위를 우선한다. 서버에서 승인 집계 버전에 결속해 결정적으로 계산하고 회사·사업부 범위를 강제한다. 집계 기준 원본과 공개용 projection을 분리하며 일반 조회/검색/export/AI 입력에 개인·계약상 비공개 원본을 포함하지 않는다. 기존 작업 소유권/API 권한은 그대로 유지한다. 기준정보 변경 권한·revision·승인 감사와 불변 견적 버전을 검증한다. 구체 엔드포인트/모델은 AGG-01에서 확정한다.

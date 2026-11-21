@@ -1,3 +1,29 @@
+> **2026-11-21 서버 AI Gateway P0-04:** 별도 Django 경로의 PUBLIC 원본 검증은 `OfficialSourceLink.raw_notice_sha256`과 기존 canonical metadata digest를 분리해 검사하도록 보강했습니다. local_app의 수집·로그인/서빙 동작은 변경하지 않았습니다. 기존 NAS DB migration, 실원본 staff 승인·모델 송신은 미실행. [상태 정본](../CURRENT_STATE.md).
+
+> **2026-11-20 별도 Django AI Gateway 원본 캡처:** [AGW-05 수동 공식 원본 보관](../docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md)은 기존 local_app의 대화형 문서 텍스트 미리보기와 별도 경로입니다. 원본은 별도 비공개 root에서만 저장; staff 승인·DB digest/coverage·모델 실행/일정 반영은 미완료. 기존 local_app 수집/운영 정책 변경 없음.
+
+> **2026-11-19 pilot provisioning candidate:** operator-only `pilot_provision` validates private, independently hashed aggregate plans; dry-run by default; explicit apply creates initial scope for existing accounts or appends a new cost basis revision without modifying existing membership. No actual company values/roles or deployment applied. See pilot operations handoff.
+
+> **2026-11-19 pilot preflight candidate:** `pilot_preflight` reports fixed non-sensitive readiness statuses; production read-only mode requires separate target approval. No config generation, service start, membership provisioning, data import, or release authorization. See [pilot operations handoff](../docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md).
+
+> **2026-11-19 MVP-05 권한/기준 검수 후보:** 원가 승인자 활성·강제 암호 변경·잠금 상태와 현재 승인 membership 검증, 기존 공유 견적을 현재 승인된 가공 기준으로 재계산·대조하여 불일치 시 금액 숨김 및 재결정 요구. 합성 검증만; 실제 조직 정책·독립 검수·운영 릴리스 미완료.
+
+> **2026-11-19 MVP-05 recovery candidate:** backup manifest v2 extends parity inventory to current domain/session tables and content fingerprints for the four MVP cost/review tables. V2 restore requires separately trusted manifest + dump digests. Legacy v1 restore remains partial; use the pinned compatible pre-upgrade backup script for old schemas. No operational backup or restore performed by this change.
+
+> **2026-11-19 MVP-05 candidate:** extended real Chrome synthetic acceptance to RFP, projected cost, publication, opinion, decision and reopening; explicit 1440/390 viewport checks. Detail reads are sequential and tests await loaded panels before logout. Exact SHA CI required; no production deployment.
+
+> **2026-11-19 MVP-04 후보:** 동일 승인 사업부 정형 의견·공유 견적·참여/보류/미참여 결정과 차수별 append-only 이력 연결. 별도 업무 권한·CSRF·기대 revision, 현재 기준 검증, 과거 기준 금액 비노출. 실제 입찰 제출·회사 자료/정책 확정·배포 없음. 검증은 CURRENT_STATE.md와 CI 확인.
+
+> **2026-11-19 MVP-02/03 frontend test:** synthetic workspace DOM fixture supports text-node construction and verifies hostile RFP excerpts remain text, cost view clears on drawer close; previous mock lacked createElement. Latest CI must be checked.
+
+> **2026-11-19 MVP-03 후보:** 사업부 집계 기준 DB 모델 및 승인된 가공 기준 기반 손익 시뮬레이션(공고 상세) 추가. 개인 급여 입력/API 없음. 운영 기준 발급·정식 승인/검수 저장은 아직 연결하지 않으며 승인된 명시적 사업부 구성원·현재 기준 없으면 계산 차단. 실자료 입력/운영 배포 미실행.
+
+> **2026-11-19 MVP-02 후보:** 서버 workspace의 상세검토 후보(마감순) 및 상세 RFP 근거 패널 추가. 최신 공고/문서 차수와 접근권한, 추출 실행/구절/SHA/위치를 결속한 미검증 규칙 후보만 반환. 원문 미확보·취소·정정·마감 미확인은 보류, 공식 원문 수동 확인 우선. 회사 적격·수익성·실제 정확도는 미평가. 실자료/배포 미실행.
+
+> **2026-11-19 MVP-01 후보:** 기존 운영자 JSON 이관 CLI를 사용한 명시적 수집→Django 목록/검색/상세/취소 이력 합성 인수 테스트 추가. 과거 동일 해시 재수입은 최신 차수를 되돌리지 않으며 낮은 공식 차수/근거 없는 취소 해제는 거부. 마감 시각 미확인 공고는 진행 중에서 제외. 실 API/운영 DB·배포 미실행.
+
+> **2026-11-19 MVP-00 후보:** Django 문서 추출은 요청 epoch와 최신 DB 계정 상태를 대조하고 쓰기 트랜잭션에서 사용자·문서 행을 순서대로 잠근다. 파싱 중 선행 커밋된 권한 철회는 저장 거부. 합성 회귀/독립 검수 상태는 ../CURRENT_STATE.md와 정확 SHA CI 확인. 기존 local_app 동작 및 실제 운영 배포는 변경하지 않는다.
+
 > **2026-11-14 서버 전환 목표 설계:** [최신 목차](../docs/server-migration/README.md). SSO 제외·DB 계정/최초 암호 변경 강제. 현재 로컬 구현과 미래 서버 설계를 구분하며 이번 변경은 문서뿐이다.
 
 > H02 감사 테스트는 기존 개발 의존성 `packaging>=26,<27`을 재사용합니다. 큐 실행기 자체는 표준 라이브러리이며 감사 검사는 분리된 개발 Python에서 실행합니다.
@@ -495,3 +521,15 @@ Windows SID 동등성으로 예약 작업 소유자를 확인하도록 등록 �
 ### Codex 2차 지적: 공식 첨부 목록의 조용한 절단 보완
 - 공식 첨부 목록은 **400건 이내에서 identity를 대조**합니다. 121번째의 정상 공식 첨부는 분석 대상에 포함됩니다. 400건을 초과하면 공식 첨부 탐색 상한을 `PARTIAL`과 명시적 경고로 표시하고 누락 원인을 감추지 않습니다.
 - 합성 회귀 2건(121번째 정상 첨부 인식, 401번째 이후 탐색 상한 경고)을 추가했습니다. 앞의 Codex 개선 사항(출처 파일명 결속 및 최대 120개의 증거 이력에서 성공 2개 선정)은 유지합니다.
+
+
+### 2026-11-17 PR #5 local transaction and server security boundary
+- `local_app/json_transaction.py` serializes local dashboard/RFP read-modify-write operations using an in-process thread lock plus OS file lock. The Windows byte-range lock is acquired before any write to its lock file; it is released on context exit. The lock file may be created inside the approved local data directory, but user JSON/RFP content is not written to it.
+- The server foundation and restore rehearsal in PR #5 are isolated development features, not approval to migrate or delete production data. Backup/restore requires guarded loopback/test targets; backup database row-count parity alone is not proof of zero data loss, and document/storage files require separate verification.
+- Server signing secrets belong outside Git. Local development must not use fixed credentials, `DEBUG=True` in production, public listeners, or live company RFPs. Existing 127.0.0.1 services, uncommitted user files, and private data must remain unchanged. PR merge/deployment remain gated on full security review, complete CI success and protected-data hash verification.
+
+
+### 2026-11-17 PR #5 job ledger security follow-up
+- Job worker completion/failure requires a live matching lease under row lock. Cancellation wins over result publication; an expired cancellation enters REVIEW_REQUIRED and cannot be retried automatically or through the existing retry endpoint while cleanup is unconfirmed.
+- Job API list/detail/cancel/retry is owner-scoped, including directors; ownerless jobs are not exposed. No new global manager permission is assumed. Existing local app data/storage and deployment are unchanged.
+- Regression tests added; CI and independent review must be verified before merge. Domain writes performed before ledger publication need separate review; ledger fencing alone is not proof of artifact rollback.

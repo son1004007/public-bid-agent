@@ -1,3 +1,9 @@
+> **2026-11-20 AGW-05 다음 AI 인계:** [RFP 근거 스냅샷 무결성·공식 출처 raw byte SHA 승인/테스트](ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md), [작업 원장](../../TASKS.md). 실제 공식 공고 자동 수집·회사 증빙·모델 반출·NAS Job 연결은 미완료. 최신 검증/정본은 CURRENT_STATE.
+
+> **2026-11-20 최신 AGW-05/09 구현 인계:** [합성 RFP 패킷·불변 분석 결과 DB 구현/CI](ai-gateway/AGW-05-09-IMPLEMENTATION-2026-11-20.md), [원장](../../TASKS.md). core 77 PASS, Django 378×3 PASS. 실제 회사/RFP 모델 자동 호출·보안 승인/DB trigger는 미완료. NAS Codex CLI 0.171.0/6.2 Sol medium 기존 격리 경계 유지.
+
+> **2026-11-20 AI Gateway 상세 구현 재개:** [AGW-00~15 작업 단위별 설계/계획 인덱스](ai-gateway/README.md). Codex/Claude 서버 사용자별 로그인, 세션 Resume, 독립 교차 검증의 최신 상세. 전역 CONTROL/레포 AGENTS/DECISIONS/CURRENT_STATE/TASKS를 먼저 읽은 후, 인덱스에서 선행 조건을 만족하는 첫 미완료 AGW 카드를 택한다. 설계서 작성은 구현/실행/운영 배포 완료가 아니다.
+
 > **2026-11-14 서버 전환 목표 설계:** [최신 목차](../server-migration/README.md). SSO 제외·DB 계정/최초 암호 변경 강제. 현재 로컬 구현과 미래 서버 설계를 구분하며 이번 변경은 문서뿐이다.
 
 > **최신 H01 실행 진입점:** [반복 사용 하네스 안내](HARNESS_USAGE.md). 실행 프로그램이 추가되었습니다. 아래 과거 NOT IMPLEMENTED는 설계 당시 이력입니다. 최신 branch/검수/CI를 확인하고 고정 SHA의 validate → run → verify/status를 사용합니다. A01 전체 완료·배포는 별도입니다.

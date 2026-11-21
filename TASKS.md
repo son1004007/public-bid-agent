@@ -1,3 +1,488 @@
+> **2026-11-21 P0-02 신규 staff 계정 실운영 생성 PASS / 최초 변경 대기:** 사용자 요청으로 개인 NAS 기존 운영 DB에 최소권한 직원 검토자 계정 1명 생성(`is_staff=True`, `is_superuser=False`, `role=lead`, `must_change_password=True`). 운영 DB 사용자 2/관리자 1/**유효 직원 검토자 0**/SourceLink 0; 기존 문서 8/Chunk 14,612 보존, 감사 로그 1. SHA 보호된 비밀번호는 NAS 소유자 0700/0600에만 보관하고 24시간 만료. 운영 DB 원본/HWPX/capture 최신 검증 PASS, 현재 LINK_OPERATOR_NOT_AUTHORIZED 정상 차단. TTY 전용 **본인 최초 비밀번호 변경 CLI와 NAS SSH helper 준비**, 실제 변경은 NOT_RUN. 변경 완료 후 SourceLink dry-run→apply→replay, [중앙 #35](https://github.com/son1004007/ai-agent-workflow-playbook/issues/35). [P0-02 실운영 기록 §9](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md#9-2026-11-21-개인-nas-직원-관리자-1명-신규-생성보안-게이트-실증). GitHub 코드 SHA `d85d9309` 주요 CI 6개 성공, PR #5 Draft, 자격증명 #26 유지. **ACCOUNT_CREATED / FIRST_CHANGE_PENDING / REAL_LINK_NOT_APPLIED**.
+
+> **2026-11-21 P0-02 개인 NAS 운영 DB 스키마 반영 완료:** 사용자 명시 요청으로 PostgreSQL 16.15 운영 DB에 ai_gateway 0001~0004 실제 적용, OfficialSourceLink table/immutable trigger 설치 PASS. 변경 전 운영 DB·media·capture 백업, 실제 DB 독립 복원과 복원본 migration, HWPX 5개/capture 2개 복원·SHA 검증 PASS. 변경 후 기존 사용자 1/문서 버전 8/Chunk 14,612 보존, HTTP GET / = 200, 웹 컨테이너 restart 0. 실 SourceLink row 0, PUBLIC 승인 0, 모델 OFF. 유효 staff 0명으로 실제 raw 결속 INSERT는 [USER ACTION #35](https://github.com/son1004007/ai-agent-workflow-playbook/issues/35) 해소 전 BLOCKED. [실운영 상세 기록 §8](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md#8-2026-11-21-실제-nas-운영-postgresql-스키마-적용-사용자-명시-요청). 기존 이미지/역할/원본/스케줄·회사 data1 변경 없음, PR #5 Draft 및 자격증명 [#26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) release 제한 유지. **SCHEMA_DONE / REAL_LINK_BLOCKED**.
+
+> **2026-11-21 P0-04 code CI PASS / NAS 운영 변경 보류:** 코드 SHA [`0c1e1ac7`](https://github.com/son1004007/public-bid-agent/commit/0c1e1ac73151ecdd25db0a8e83238bd9945cdf4a) [Server foundation CI Windows/Linux/PostgreSQL 각 441 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44843275144). 공식 raw SHA != canonical metadata SHA인 정상 PUBLIC 링크 fixture 및 missing/stale mapping/승인 후 storage key 변경 fail-closed 검증. 추가 NAS read-only 관측: 기존 컨테이너 running, PG dump/restore 16.15 사용 가능, 현 운영 이미지 0004 미확인. **운영 DB·비공개 파일의 일관 백업/독립 복원, 운영 이미지 교체, migration/실원본 SourceLink INSERT는 미실행**. P0-04 실제 staff 승인/프로바이더 외부 전송도 OFF, 전체 release 미완료.
+
+> **2026-11-21 P0-04 PUBLIC source SHA gate 코드 보강:** `public_source.py`의 기존 raw notice SHA == legacy canonical metadata SHA 잘못된 비교를 제거하고, P0-02 `OfficialSourceLink`(notice/document/version/canonical/raw SHA·size·storage/revision)를 반드시 통과한 경우에만 staff attestation을 만들도록 변경. `analysis_service.py`의 PUBLIC snapshot/dispatch/result replay 재검증도 attested raw SHA와 SourceLink raw SHA를 비교함. 새로운 synthetic stale/missing-link/서명 후 storage 변경 테스트 추가. **실 NAS DB 0004 미적용, 실원본 link/승인 및 모델 송신 0, CI 최신 SHA 결과 별도 확인 필요.**
+
+# 현재 실행 큐 — 2026-11-20 AGW·MVP·HBR 통합 정본
+
+> **2026-11-21 P0-02 실 NAS 격리 DB/복구 인수:** [격리 PostgreSQL migration·복구·실원본 대조](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md#6-2026-11-21-격리-db-배포복구-및-실원본-검증). 작업 브랜치 e2756f38의 별도 임시 checkout + 네트워크 차단 PostgreSQL 16.15 tmpfs 환경에서 신규 0004 테이블/불변 트리거 설치, 합성 SourceLink 1건 INSERT, 독립 DB 백업·복구 및 rollback/reapply 모두 **PASS**. 실제 공식 원본과 기존 운영 DB는 정확한 최신 검증 함수로 **읽기 전용 PASS**. **운영 DB migration/실원본 INSERT는 NOT_APPLIED**, 격리 DB로 실제 raw 바이트 INSERT는 도구 안전검사에서 차단되어 **NOT_RUN**. 임시 컨테이너·checkout 폐기, 기존 NAS 앱 running. 직원 승인/AI 반출/회사 배포 및 PR #5 release 차단 유지.
+
+
+> **2026-11-21 P0-03 최신 정확 코드 CI 확인:** SHA `80ef1409750de4c8672f877802249d7ece64d6dc` [core 94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818921068), [Django Windows/Linux/PostgreSQL 각각 437 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818921064) (migration --check PASS). 기존 P0-03 synthetic test의 예외 catch를 구체화한 최신 코드까지 검증됨. NAS 실원본 5/5 read-only preview 14,743 chunks/단축 표 셀 149/1800 초과 0·원본·DB 무변경 (Gateway job_01M7XD0K8Z00PV044MDX3RXN6K). 운영 DB 재추출/업무 승인/모델 반출은 수행하지 않음.
+
+> **2026-11-21 P0-03 코드 및 NAS 읽기 전용 검산:** [P0-03 HWPX 원문 보존 Chunk·실제 NAS 5건 읽기 전용 검증](docs/implementation/ai-gateway/AGW-05-P0-03-EXTRACTION-COVERAGE-2026-11-21.md). 한글/이모지 포함 출처 텍스트를 정확히 1,800 UTF-8 bytes 이하로 무손실 분할하여 char/byte offsets·source/span SHA·기존 DocumentVersion SHA를 Chunk에 결속, 1~5글자 표 셀 및 실제 각주 텍스트 Chunk 추가. 모든 새 추출은 coverage.complete=False/status=PARTIAL/structure_fidelity=UNVERIFIED로 fail-closed. 실제 NAS 기존 5건 5/5 SHA/ACL/read-only 검산과 **새 예상 Chunk 14,743건(기존 14,594 대비 짧은 표 셀 149건 포함)**, 초과 0건, 기존 complete 전부 MISSING PASS (Gateway job_01M7XD0K8Z00PV044MDX3RXN6K). 합성 CI 코드 SHA a34847c2 [core 94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818463555), [Django Windows/Linux/PostgreSQL 각 437 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44818463609). **실제 NAS DB 새 Chunk 저장/재추출 NOT_RUN**, P0-02 실제 DB SourceLink migration 미적용, staff PUBLIC/모델 egress OFF.
+
+
+> **2026-11-21 P0-02 정확 코드 CI 확정:** [P0-02 source-link 증거](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md), 코드 SHA `7fe897c4ff7681a51d6132238cbb7aec54eda203`에서 [core 94/94 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44817182658) 및 [Django Windows/Linux/PostgreSQL 각 431건 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44817182690). 초기 PostgreSQL FOR UPDATE nullable JOIN, savepoint rollback, Windows 경계 오류 수정. 신규 OfficialSourceLink/0004 migration/합성 replay·충돌·ACL/트리거 인수 **CODE_PASS**, NAS 실제 raw·canonical mismatch read-only PASS. **기존 NAS DB의 신규 migration/SourceLink 실제 INSERT는 NOT_APPLIED**. 사용자/운영/모델/회사 자료 무변경. P0-03 코드 준비 가능하나 P0-02 운영 반영·release gate 별도 유지.
+
+
+> **2026-11-21 P0-02 원본 출처 결속 코드·실측:** [상세 설계·코드·테스트·NAS read-only 검산](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md). 새 OfficialSourceLink 모델/0004 migration(PostgreSQL UPDATE·DELETE 방지 트리거), manifest/원본 HWPX 검증, read-only 기본 CLI·명시 apply·동일차수 conflict 차단, POSIX 0700/0600 저장 경로 검증 구현. 실제 NAS 원본 5,764bytes SHA와 기존 NoticeVersion canonical SHA 불일치·공식 제목/차수/문서 SHA 일치 **읽기 전용 PASS** (Gateway job_01M7XC404100Y0KQR7614K9TF7). 기존 NAS 앱 DB migration/row 적용/운영 배포는 NOT_RUN이며 PUBLIC staff 승인 및 모델 export OFF. 최종 코어·Django CI 상태는 정확한 Actions SHA에서 별도 확인; 단순 코드 생성만으로 운영 완료 아님.
+
+> **2026-11-20 P0-01 완료:** [NAS 실원본/공식 API 검증·원본 저장 실측](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md). 실제 G2B 공고 응답 원본 5,764 byte SHA `b342a3e28e32c9e9e0e4499ab939acf0d0019c3c17656f67c49c3bb965891666`을 개인 NAS 별도 private volume에 **0600 immutable file+manifest**, 0700 디렉터리로 보관. 기존 HWPX 5개 원본 검증(선정 1건 공식 API·첨부목록·원문 GET 최신 대조), 원본 문서 저장 복제 0건. 저장 후 네트워크 분리 읽기 전용 검산 PASS. 공식 첨부 목록 API는 차수 `000` 필요, DB `0`과 수치 동일; URL 전체 문자열은 달라도 query identity·문서 원본 SHA 일치. **다음 02 P0 = 별도 raw source capture↔canonical metadata/NoticeVersion↔DocumentVersion DB 결속 설계·구현.** PUBLIC staff 승인·모델·운영 data1 여전히 OFF. 정확한 신규 코드 CI는 Actions 별도 조회.
+
+> **P0-01 실측 갱신 2026-11-20:** [NAS 기존 RFP 5건 원본·DB·권한·실 공식 API/첨부 목록 1건 검증](docs/implementation/ai-gateway/AGW-05-P0-01-LIVE-NAS-VERIFY-2026-11-20.md) **READ_ONLY_PASS / RAW_API_PERSIST_PENDING**. 기존 보호된 원본 HWPX 5/5 ZIP·SHA/DB 크기·공고차수·소유자 ACL 일치, 14,594 Chunk(구조 1개+text-only 경고 4개). 공식 공고 원문 5,764 bytes SHA `b342a3e28e32...`, 원본 첨부 894,665 bytes 기존 SHA 일치, 공식 첨부 목록 5건 중 동일 URL 확인. 신규 수집기 인코딩된 서비스키 재인코딩 결함 수정 [code `e3fec443`](https://github.com/son1004007/public-bid-agent/commit/e3fec443683529476de5c81740450182f2bbf8a1), [test `c74cc96f`](https://github.com/son1004007/public-bid-agent/commit/c74cc96fdd3b3c0f595de916e380484a3b6593bb): [core 91 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44691630002), [Django Win/Linux/Pg 각 415 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44691631513). **실제 raw notice 원본은 메모리 조회로만 확인, 비공개 영속 보관·DB 별도 SHA mapping·PUBLIC staff 승인/모델 실행 안 함**. 따라서 큐 01의 원본 불변 저장이 남아 있고 전체 DONE 아님. 원본 중복 복사 금지/기존 일정 OFF 유지.
+
+> **실행 우선순위 정본.** 아래 기존 2026-11-19/20 날짜별 NEXT/LATEST/HBR-01/MVP-05 기록은 **당시 이력**으로 보존합니다. 현재 다음 작업은 이 표와 CURRENT_STATE.md, 정확한 commit/CI/실제 runtime 증거를 기준으로 선택합니다. AGW/HBR/MVP 기존 ID를 재사용하며 별도 중복 백로그를 만들지 않습니다.
+
+## 재정렬 근거
+
+- **이미 완료한 경로를 다시 만들지 않습니다:** 2026-11-19 NAS에서 실제 공식 metadata 879개 공고 갱신/재실행, 공개 HWPX 5개 다운로드·원본 SHA 확인, 초기 1개 구조화 파싱 + 4개 text-only fallback으로 **5/5 파싱**한 기록이 있습니다. text-only 4개의 표·각주 완전성은 검증되지 않았습니다. **신규 AGW-05 PUBLIC 출처 승인·분석 E2E는 이 기존 수집과 연결되지 않았습니다.**
+- **신규 구현/합성 검증:** official_g2b_capture.py 및 수동 CLI, AGW-05 증거 스냅샷/무결성/검토형 공개 승인, AGW-09 분석 결과 기록, Codex/DB SessionBinding/격리 Docker Adapter 코드. [AI Gateway core 89 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44683570764) 및 [Django Windows·Linux·PostgreSQL 각 413 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44683570703), 코드 SHA 0295caf2. **합성 CI != 신규 AGW 경로의 실제 조달청 E2E.**
+- **출처 충돌:** 기존 NoticeVersion.source_payload_digest는 정규화된 metadata row의 canonical SHA이고 새 AGW-05는 **공식 원본 HTTP response bytes의 SHA**를 요구합니다. 기존 버전을 덮어쓰거나 같은 차수의 임의 새 버전을 생성하지 말고, 별도 불변 원본 캡처 identity/해시를 기존 공고 버전에 결속하는 방식을 우선 검토합니다. ExtractionRun.coverage.complete도 기존 파서에 없으므로 근거 없이 TRUE 처리하지 않습니다.
+- **최신 전역 검수 원칙:** 개인 독립 AI 검토는 선택(NOT_RUN_OPTIONAL). 실제 기능·보안 결함, 원본/권한/회사 정책/운영 승인 및 [중앙 credential USER ACTION #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) 등 객관적 차단은 유지합니다. Issue #26은 PR #5 release에만 차단, 합성·격리 개발은 가능.
+
+## 실제 진행 순서 (P0 먼저, 병행 작업 명시)
+
+| 순서 / 우선 | 원래 카드 | 현재 필요한 작업과 선행 조건 | 완료 기준 / 정확한 상태 |
+| --- | --- | --- | --- |
+| **01 P0 / DONE (실원본 1건 archive)** | **AGW-05 + HBR-07 최소 원본** | 기존 NAS의 실제 HWPX **5건**에 대해 원본 바이트·출처 URL·공고번호/차수·원본 SHA·기존 접근권한을 **읽기 전용**으로 재검증. 신규 수동 캡처와 같은 원본인지 대조; 없거나 불일치한 **공식 1건만** 승인된 비공개 경로에 제한 수집. 기존 보호 원본/인증·세션·스케줄 변경 금지. | 실원본 1건 이상: 공식 API 응답과 첨부 raw SHA, 취소/정정, 파일 식별·저장 권한·멱등 일치. **실원본 5/5 및 새 공식 1/5 재조회+원본 불변 저장 PASS, 4/5 추가 공식 재조회 NOT_RUN; P0-02 DB 연결 별도** |
+| **02 P0** | **AGW-05·SM04/05** | API 원문 bytes SHA와 기존 metadata canonical SHA를 별도로 유지하는 **불변 source capture ↔ NoticeVersion ↔ DocumentVersion** 영속 결속. 같은 차수 충돌은 보류, 구차수/취소/정정/사람 결정 보존. | DB 무결성·rollback·재시도·중복·stale/권한 차단 합성 테스트 + 승인된 실원본 1건 읽기 전용 검산. **CODE_PASS / NAS 격리 PG16.15 migration·합성 Link INSERT·백업/복구·rollback/reapply PASS 및 실원본/기존 운영 DB 최신 검증 함수 READ_ONLY_PASS; 실원본 격리 INSERT NOT_RUN(도구 안전 검사 차단), 운영 DB ai_gateway 0001~0004 SCHEMA_APPLIED; 신규 직원 관리자 계정 1명 최초 암호 변경 대기; OfficialSourceLink row 0 (USER ACTION #35 전 real INSERT BLOCKED)** |
+| **03 P0** | **AGW-05 + HBR-07 최소 추출** | 실제 HWPX 5건의 구조화/text-only 범위 차이를 보존. 원본 SHA→ExtractionRun→locator·표/각주→Chunk 경로 증명. **UTF-8 1800bytes 이하 출처 보존 분할**; 부분 누락은 PARTIAL/UNKNOWN, complete TRUE 자동 대입 금지. | 필수 자격 위치·표/각주·큰 chunk·변조·누락/경고·정정 stale 검증. **CODE_PASS / NAS 5/5 원본 읽기 전용·분할 예행 PASS(예상 14,743 / 짧은 셀 149), 실제 DB 재추출 NOT_APPLIED; coverage complete FALSE 유지, 표·각주 구조 정합성 미인증** |
+| **04 P0** | **AGW-05/09 + MVP-02** | 공식 실 RFP 1건의 DB 출처 결속, staff 검토형 PUBLIC 승인과 별도 provider_export_approved 확인, snapshot→근거 JSON→분석 revision. 미확인 회사 역량/실적은 UNKNOWN. | 변경·철회·미승인 시 packet/모델 요청 0건, 실제 원문 위치·근거 검증·과도한 MET 차단. **합성 PASS / 실제 스냅샷 승인 E2E NOT_RUN** |
+| **05 P0 병행 가능** | **AGW-08 + AGW-01/03/04/06/09** | Django Job/outbox/idempotency→snapshot preflight→SessionBinding lease/fence→NAS Docker Codex→strict JSON/Revision의 **합성 수직 연결**. 실제 모델 호출 기본 OFF. | 이중 실행/시간초과/권한 철회·공고 변경·실패 재개 테스트; 실제 user별 계정·OS 격리·egress·도구 정책/계약 통과 전 유료 실행 OFF. **CODE_PARTIAL / JOB BRIDGE NOT_DONE** |
+| **06 P0 다음 단계** | **HBR-01/02/03/04 + AGW-10** | 승인된 공개 RFP + **합성** 법인/부서 역량·집계 SQL로 실제 근거 조회/자격 하드 게이트/LLM 의견 비교. 최초 lexical 검색 baseline; pgvector는 격리 DB 성능·라이선스/리소스 확인 후 연결. | 근거 빈칸·법적 자격·MM/원가 SQL 검산 및 UNKNOWN 유지. **설계·코어 일부 / 통합 검색·SQL E2E NOT_DONE** |
+| **07 P1** | **MVP-03/04/05 + HBR-05/06 + AGW-12/14** | 이미 만든 집계 원가/공동검토/UI 재사용. 실공고→RFP→합성 비용·역량→의견→사람 최종 결정→재조회, gold 평가·복구/롤백. | 사용자별 권한·조직 기준/회사 데이터 승인·실제 브라우저/DB/파일 복구 E2E. **합성 코드 존재 / 업무·운영 인수 HOLD** |
+| **HOLD** | **AGW-00/02/07/13 + HBR-08** | company data1 배포/기밀 반출/개인 구독 타인 중계/Claude 실제 인증/자동 일정 재개/인터넷 공개·투찰은 조직·계약·최소권한·사용자 승인 및 실제 검증 전 금지. | 운영 release는 중앙 [USER ACTION #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) 등 현실적 게이트 해결 후. 기존 AGY/Gemini 위임·예약 OFF 유지. **HOLD** |
+
+**이 정렬은 계획 문서 수정입니다.** 실제 원본 다운로드/새 DB migration/인증정보 변경/모델 호출/서비스 배포를 완료한 것으로 주장하지 않습니다. 신규 개발은 **P0-02부터**, P0-05 합성 Job bridge는 병행할 수 있습니다.
+
+---
+
+> **2026-11-20 P0 다음 단계 (AGW-05 공식 원본 캡처 PARTIAL):** [공식 원본 바이트 수집·무결성 계약](docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md) 코드+synthetic 6 test 로컬 PASS. **P0 미완료**: 실제 02 공고/첨부 GET·SHA E2E → 기존 metadata digest와 raw-response digest의 불변 신규 NoticeVersion 결속/같은 차수 conflict 해결 → DocumentVersion/Extractor coverage·locator 확인 → staff PUBLIC 승인(별도 export 허용) → AGW-08 Job/SessionBinding. 원문 보관만으로 승인/실운영/모델 완료 아님. AGY/회사 외부 반출/자동 스케줄 OFF.
+
+## 2026-11-20 AGW-05 최근 구현 진행 — RFP Source Integrity / PUBLIC attestation
+
+[AGW-05 공식 공고 근거·원본 SHA 구현 및 검증 기록](docs/implementation/ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md) · [설계 카드](docs/implementation/ai-gateway/AGW-05-evidence-packet-and-json-schema.md)
+
+| 항목 | 판정 | 남은 작업 |
+| --- | --- | --- |
+| **AGW-05 Chunk/문서/공고 digest 결속** | **CODE_IMPLEMENTED / SYNTHETIC_PASS**. 1800byte 본문 절단 거부, 공고 payload SHA·DocumentVersion SHA·ExtractionRun ID·span SHA·snapshot SHA 결속, 조회/결과 저장/dispatch preflight에 current ACL·해시 검증 | 실제 저장된 RFP 첨부 원본 바이트와 추출기 input/output provenance 검증 |
+| **AGW-05 승인형 PUBLIC packet** | **CODE_IMPLEMENTED / FIXTURE_PASS**. 공식 HTTPS 출처 exact host, staff-only 공고 원본/첨부 raw bytes checksum·공개 공유승인, 별도 DB attestation 기본 OFF; 공개처럼 보이는 URL만으로 허용 불가 | **실제 공식 공고 API/원문 수집·검토 승인 E2E NOT_DONE**; 회사 실적/원가 projection 반출 HOLD |
+| **AGW-05 prompt/dispatch preflight** | **CODE_IMPLEMENTED / TESTED**. 같은 packet/hash·provider별 determinism, RFP 텍스트를 untrusted JSON으로 취급, Run 권한/정정/승인 철회·현재 source 복원 검사 | 악성 프롬프트 평가·NAS 실제 사용자별 도구/egress 격리 검증 및 AGW-08 실행 Job 결합 |
+| **CI** | [코어 83 PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44680062831), [server foundation](https://github.com/son1004007/public-bid-agent/actions/runs/44680062793) Windows/Linux/Pg 각각 407 PASS, 전체 CI SUCCESS | 최신 실제 CI 결과 확인 후 마무리 기록 |
+
+**NEXT:** 공식 공고 수집/문서 다운로드 원본 바이트·공고 차수·첨부 SHA·표/각주 추출 coverage 검증과 AGW-08 Django Job→SessionBinding lease→NAS Codex Docker 0.171.0/GPT-6.2 Sol medium 연결(계약/OS/egress 승인 전 실제 업무 모델 호출 OFF). AGY 위임 OFF, 회사 자료 반출·data1 운영 임의 배포 금지 유지.
+
+## 2026-11-20 P0 최신 작업 결과 — AGW-05/09 합성 근거 패킷·분석 결과 이력
+
+[AGW-05/09 구현/테스트 인수 기록](docs/implementation/ai-gateway/AGW-05-09-IMPLEMENTATION-2026-11-20.md) · [현재 상태 정본](CURRENT_STATE.md)
+
+| 단계 | 상태 | 근거 / 다음 작업 |
+| --- | --- | --- |
+| **AGW-05 core** | **CODE_PARTIAL / SYNTHETIC_PASS** | 정규화된 packet/hash 및 RFP 문서·Chunk/Extraction ACL·버전 검증 구현. 공개 실공고/회사 실적·실제 반출 gate는 미연결 |
+| **AGW-09 core+DB** | **CODE_PARTIAL / SYNTHETIC_DB_PASS** | `AnalysisRun`/`AnalysisRevision` 모델·migration·append/replay 멱등, 가짜 출처·확정 자격 오판 차단. 운영 DB immutable trigger/권한·Job/outbox 결과 연결은 미완료 |
+| **CI** | **PASS** | [core 77개](https://github.com/son1004007/public-bid-agent/actions/runs/44676123480), [Django Win/Linux/Postgres 각 378개](https://github.com/son1004007/public-bid-agent/actions/runs/44676123557) PASS. 합성 환경만 사용 |
+| **다음 P0** | **READY_FOR_CODE** | 실제 공개 RFP evidence/fact source ACL 및 AGW-08 JobAttempt/outbox↔SessionBinding/lease↔NAS Docker adapter 연결(승인되지 않은 회사 데이터 egress·자동 유료 호출은 OFF) |
+| **차기 P0/P1** | **NOT_DONE** | Claude 사용자별 인증/분석, 2개 provider 독립 비교/실체 사실 검산, 이슈/웹 UI, gold 평가, 운영 배포·회사업무 승인 |
+
+> **2026-11-20 NAS Codex 최신 변경 완료 (runtime verified):** 호스트 `codex-cli 0.171.0`, 기본 `gpt-6.2-sol` / `model_reasoning_effort=medium`, 기본값 실제 응답 PASS. 격리 Docker 이미지 `device-control/codex-runtime:0.171.0` 신규 빌드 및 명시한 GPT-6.2 Sol Medium 실제 모델 응답 PASS. Synology 설치된 제한 실행기(read-only/workspace-write) 2개 소스를 새 image/model로 맞추고 GitHub blob 일치·`sh -n`·미승인 작업 차단 exit8 모두 PASS. 기존 0.163 패키지/이미지·설정/스크립트 백업 유지. [NAS 운영 정본](https://github.com/son1004007/device-control/blob/main/docs/SYNOLOGY_AGENT_RUNTIME.md). [앱 CI](https://github.com/son1004007/public-bid-agent/actions/runs/44672859099), [서버 CI](https://github.com/son1004007/public-bid-agent/actions/runs/44672859075) PASS. 과거 0.163 이력은 아래 historique이며 **새 웹 사용자별 운영 연결·격리 게이트는 아직 OFF**. 다음 작업 AGW-05/09 및 승인된 Job 연결.
+
+## 2026-11-20 NAS 우선 AGW P0 다음 단계 구현 — 현재 진척
+
+[AGW NAS Docker 실제 세션 Resume/DB Lease 구현·검증 기록](docs/implementation/ai-gateway/AGW-NAS-SESSION-E2E-2026-11-20.md) / [AGW 세부 목차](docs/implementation/ai-gateway/README.md)
+
+| ID | 완료된 범위 | 아직 막힌 연결/다음 항목 |
+| --- | --- | --- |
+| **AGW-02 NAS Docker executor** | 기존 이미지 0.163.0 **실제 모델 1차·별도 컨테이너 동일 세션 Resume PASS**, `nas_docker_codex.py`의 사용자 UUID/UID/권한·RW HOME + RO evidence 마운트·JSONL adapter 구현, **정책 flag 3개 기본 OFF** | 사용자별 고유 OS UID/공급자 본인 로그인, egress·도구 제한 검증, 서비스 worker 등록/운영 배포 |
+| **AGW-04 SessionBinding** | `session_service.py` DB row lock/lease·fencing, 재진입, 사용자/공고·AUTH_READY 확인, timeout·만료 불명/수정 공고/UUID mismatch fail-closed 테스트 PASS | Django Job/Outbox/result revision과 원자 결합, 실제 NAS 영속 HOME/백업 |
+| **AGW-06 Codex Adapter** | 일반 `codex_cli.py`+NAS Docker runner 분리, 실제 NAS 모델 JSON/resume 검증 및 합성 unit CI | 앱의 실동작 API/결과 근거 validator/영속 기록과 연계 |
+| **CI** | [AGW core 50 tests PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44663410679), [Windows/Linux/PostgreSQL Django 334 tests each PASS (CDP rerun passed)](https://github.com/son1004007/public-bid-agent/actions/runs/44663410740) | Windows 기존 Chrome CDP `Decision not retained` 1차 실패 → 실패한 Windows job 재실행 2차 PASS; 최초 오류 및 재실행 증거 보존 |
+
+**다음 P0 우선:** AGW-05(RFP/근거 스냅샷 검증) → AGW-09(불변 분석결과·idempotent Job) → `SessionBinding`과 Docker executor 연결 → 승인된 본인 사용자/공개 RFP 기준 앱 API 실제 분석. 완전한 운영 기능·자동 유료 호출·회사 자료 외부 반출은 여전히 보안/계약 게이트를 만족한 뒤에만. `--cpus`는 Synology 커널에서 Docker exit125라 제거했으며 시스템 보안 설정을 완화하지 않음. AGY/Gemini 자동 위임 OFF.
+
+> **2026-11-20 NAS Codex 실측 최신:** 사용자 요청대로 NAS `son1004007` 계정에서 Codex를 확인했다. SSH 비대화형 `PATH`에 Node/Codex가 빠졌던 문제는 **명령 1회에만** `PATH="/usr/local/bin:$HOME/.local/bin:$PATH"` 적용해 해결. `codex-cli 0.163.0`, ChatGPT 인증 `exit 0`, **합성 텍스트 실제 모델 응답 `NAS_CODEX_OK` / JSONL turn 완료 / exit 0 PASS**. 초기 "NAS CLI 미설치/사용 불가" 가정은 취소한다. Codex host no-tool smoke와 **NAS Docker 격리 서비스 운영**은 구분하며, 사용자별 Docker home+기존 session resume/API worker·다중 사용자 계약/보안은 아직 미구현. [실제 재검증 기록](docs/implementation/ai-gateway/AGW-RUN-2026-11-20.md). NAS 우선 개발, 회사 data1 임의 배포 금지 유지.
+
+## 2026-11-20 AGW P0 첫 구현·실측 현황 (LATEST / SOURCE OF TRUTH)
+
+[실측·CI 근거 및 복구 기록](docs/implementation/ai-gateway/AGW-RUN-2026-11-20.md) · [16개 작업 카드와 구현 순서](docs/implementation/ai-gateway/README.md) · [현재 코드/검증 상태](CURRENT_STATE.md)
+
+| 작업 | 우선 | 현재 진척 / 정확한 한계 | 다음 구현 |
+|---|---|---|---|
+| AGW-06 Codex | P0 | **개인 Windows 공식 CLI 실제 유료 추론 1회 + 같은 session resume 1회 PASS**; `codex_cli.py` 작성, JSONL/승인/에러 회귀 CI PASS. **Django 사용자 계정/서버 worker와는 아직 미연결** | 계정별 격리 runner + DB Binding 연동 + 실제 호출 E2E |
+| AGW-01 DB/API | P0 | ProviderProfile/SessionBinding Django 모델·마이그레이션, GET `/api/v1/ai/providers`와 사용자·ACL fail-closed 테스트 **303건 전체 CI 포함 PASS (Win/Linux/PostgreSQL)**. 서버에 실제 로그인 연결/쓰기 등록 API 미구현 | 안전한 공급자 등록, 실제 본인 로그인/가용성 증거 결속 |
+| AGW-03 로그인/가용성 | P0 | 서버용 TTL/auth_epoch 정책 체크 구현, CLI 본인 인증은 개인 Windows Codex만 read-only 확인. Claude Code는 SSH 컨텍스트 인증 실패 | 승인된 사용자 전용 CLI 홈/실로그인 검증 |
+| AGW-04 session | P0 | 영속 DB Binding·현재 세션 유일성/목적 constraint 구현, **lease/resume worker 미구현** | 각 user×provider×notice×purpose 잠금·fencing/복구 |
+| AGW-08/10 core | P0 | 0/1/2 READY 분기, 입력 근거 ID 차이 탐지 코드와 mock tests PASS. **법적 자격 SQL·LLM 실결과 DB 검증 미구현** | 영속 Job/Run 및 정형 사실 기준 연결 |
+| AGW-00/02 | P0-GATE | 공식 CLI 버전·개인 노트북 실행 가능성 실측, 구독·IDC 다중 사용자 운영 계약과 OS 격리 승인은 별도 | 회사/공급자 적격 실행 경로 확인, 반출 최소화 |
+| AGW-07 Claude | P0 | 설치본 2.1.50 발견, 해당 Gateway SSH 컨텍스트의 로그인 상태는 불가, 실제 호출 미실행 | 사용자 직접 인증/상업 이용 계약 확인 후 독립 실행 |
+| AGW-05/09/11/12/13/14 | P0~P1 | 상세 설계 작성, 비공개 RFP 실데이터 연결/결과 DB·UI·평가/배포 미구현 | 공개 RFP 근거 → JSON revision → UI → 독립 비교 → 실제 승인된 인수 |
+
+**증거:** [AGW core CI 35/35](https://github.com/son1004007/public-bid-agent/actions/runs/44659013489); [Server foundation Win/Linux/PostgreSQL 303 tests each PASS](https://github.com/son1004007/public-bid-agent/actions/runs/44659013442). GitHub 설계 작성과 **실제 모델/개인 노트북 E2E**는 검증 수준이 다르며, 회사 data1 서버에는 배포하지 않았다. 기존 HBR-01/02/03 검색/근거 데이터 선행 필요, AGY 자동 위임 중지 유지.
+
+**다음 작업 1순위:** AGW-04/06/03을 사용자 전용 격리 실행기로 결합해 서버가 허용된 Codex 세션을 재개하는 최소 E2E 및 결과 JSON의 근거/차수 결속. **data1 서버에 설치하거나 사내 비공개 자료를 외부 전송하는 것은 별도 운영/회사 승인 전 HOLD**. 이슈 없으면 새 세션을 자동 생성하지 않는다.
+
+## 2026-11-20 최신 개발 우선순위 — 유료 모델 실제 호출/빠른 E2E 허용
+
+**확정:** 사용자는 비용 최소화보다 **구현 속도·입찰 분석 정확도**를 우선하며 Codex/Claude **유료 모델 실제 호출을 허용**한다. 과거 '전체 mock→마지막에 실제 연결' 순서보다 본 항목이 우선한다. 회사 기밀 전송·사업장 운영 권한·외부 서비스 계약/개별 계정 인증 허가는 여전히 별도다.
+
+- **P0-R1 (즉시):** AGW-00 공급자 공식 조건/실제 CLI capability 확인 + AGW-02 최소 실행 격리 검토, 공개 RFP/합성 역량만으로 **첫 provider 실호출 1건 + 결과 JSON 검증 + 기존 세션 resume 1회** E2E. 허용된 제공자/등록 계정이 없으면 정확한 BLOCKED 이유 기록하고 기본 기능 개발 병행. Codex SDK/app-server 또는 공식 CLI, Claude 공식 미변조 CLI + 상업 조건/BYOK 기업 API 중 허용 경로 선택.
+- **P0-R2 (병행):** 공통 0/1/2 provider 선택 및 서버 근거 검증 도메인 코어 `server/ai_gateway_core/`부터 실제 코드+hosted CI로 구현. 기존 로그인/권한/DB와 결합(AGW-01/03/04/05/09/08). 단순 데이터 파싱 PASS를 실제 RFP 분석 성공으로 취급하지 않음.
+- **P0-R3:** 2번째 provider의 유료 실제 호출 + 동일 사용자/공고별 독립 session resume, 동일 immutable RFP snapshot에서 각각 1차 분석, 구조화 근거 비교(AGW-06/07/10); 성공/불일치/한쪽 실패 처리 E2E.
+- **P1-R4:** 실제 UI/사용자별 계정 상태 및 이슈가 있을 때만 제한 근거 공유(AGW-11/12), 실제 RFP 기반 핵심요건 누락/법적 자격 오판/잘못된 Bid 권고의 gold 평가(AGW-14), 승인된 staging→data1 운영(AGW-13).
+- **비용/보안:** 실행은 사용자 명시 분석 요청/승인된 프로필, 제공자별 호출 수·time/budget limit/실행 이력, 회사 반출 승인 적용. 모델 두 개에 유료 요청이 나가더라도 동일 자료 권한/근거 검증 강제. 개인 구독을 무단 회사 공용 중계 금지, AGY/Gemini 자동 위임 중지 유지.
+- **현재 확인:** 로컬 개발 환경에서 0/1/2 가용 판단·근거 비교 테스트 15건 성공. GitHub 후보 소스 `server/ai_gateway_core`와 `server/tests/test_ai_gateway_core.py` 및 독립 CI workflow 추가, 실제 CI/head 결과는 마지막 실행 기록 확인 후 별도 갱신. **실제 paid model/network call NOT_RUN, data1 NOT_DEPLOYED**.
+
+## 2026-11-20 AI Gateway 구현 작업 계획 — AGW-00~15 (상세 설계 게시 / 구현 미착수)
+
+사용자 지시로 Codex·Claude Code 서버 로그인·기존 세션 resume·0/1/2 프로필 분기·독립 교차 검증을 **모듈별 상세 설계서 16개**로 분해했다. 이 항목은 기존 HBR-04(모델 분석 worker)·HBR-06(사용자 화면)·HBR-08(회사 운영/실자료 승인)의 **하위 세부 계획**이지 기존 HBR 원장/우선순위를 대체하지 않는다. 다른 AI·새 채팅은 반드시 [AGW 작업 인덱스/선행조건·실패/검증 계약](docs/implementation/ai-gateway/README.md) → 선택 카드 순으로 접근한다. 해당 폴더에는 [AGW-15 구현 공통 계약](docs/implementation/ai-gateway/AGW-15-implementation-contracts.md)(DB schema·API·JSON·Adapter 상태)도 있다.
+
+| AGW 묶음 | P0/P1 | 상세 설명/선행관계 | 상태 |
+| --- | --- | --- | --- |
+| AGW-00~04 | P0 (실 CLI/IDC 승인 전 HOLD) | 공급자 계약·사용자별 DB/RBAC·CLI 격리·본인 로그인·세션 Resume/lease | 5개 설계서 작성 / 미구현 |
+| AGW-05~09 | P0 | 불변 RFP 입력·Codex/Claude 별도 adapter·0/1/2 가용 실행·JSON 검증·저장 | 5개 설계서 작성 / 미구현 |
+| AGW-10~12 | P0~P1 | 근거 기반 교차 검증·이슈 한정 공유·React 설정/분석 화면 | 3개 설계서 작성 / 미구현 |
+| AGW-13~15 | P0~P1/운영 HOLD | CI·운영 안전/복구, 성능/정확도 평가, 공통 구현 계약 | 3개 설계서 작성 / 미구현 |
+
+**바로 가능한 첫 개발 슬라이스:** AGW-15 → AGW-01 → AGW-05 → AGW-09 → AGW-03 mock → AGW-04 mock → AGW-08 mock → AGW-10 mock. 모든 코드는 합성 데이터와 허가된 isolated runtime으로만 수행, 실제 회사 외부 데이터/개인 구독 자동 호출/운영 배포는 승인 전 차단. 기존 HBR-01/02/03의 검색·근거 데이터 의존은 유지. 작업별 완료 시 해당 카드/검증 SHA/CURRENT_STATE/이 원장의 증거로 상태 갱신.
+
+> **2026-11-20 최신 서버 CLI/세션 설계 (P0):** [16 사용자별 Codex/Claude 서버 로그인·resume·독립 분석/불일치 때만 공유](docs/server-migration/16-user-cli-session-and-blind-cross-check.md)가 최신 실행 방식이다. 등록·로그인·실제 READY 분리, 0개 AI OFF / 1개 단독 / 2개 독립 병렬. 각 웹 사용자마다 provider 별 격리된 CLI 계정/홈과 **공고×목적별 고정 세션 ID**를 보존, 동일 분석은 resume, **실제 장애·오염·이슈로만 새 session**. 첫 분석은 대화/응답 공유 금지, 비교는 서버 결정론적 검증, 불일치 이슈 발생 시에만 ISSUE_REVIEW 전용 세션에 필요한 짧은 주장·근거 공유. RFP 변경 시 snapshot 버전 재검증, 잠금·동시 resume 차단, 비인가 외부 전송 금지. **회사 공용 개인 구독 중계/인증 토큰 저장 금지; 기업용 또는 사용자가 직접 승인된 공식 CLI 호스팅·조직 정책을 확인하기 전 외부 호출 OFF.** 이전 수동 업로드 우선안은 허용된 서버 실행이 불가능할 때의 fallback. HBR-04/06/08 선행 설계, 구현/CI/운영 미완료.
+
+> **2026-11-20 최신 조건부 교차 검증 요구 (P0):** [15 세부 상태·JSON 계약·13개 인수 시나리오](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). Codex와 Claude Code 각각 독립 프로필 등록. 실제 `READY` 0개=`NO_AI`, 1개=`SINGLE_CODEX|SINGLE_CLAUDE`+교차 검증 미실행, 2개=`DUAL_INDEPENDENT` 동일 근거를 각 모델이 다른 답변을 보지 않고 1차 분석→2개 JSON 도착 시 비교. 불일치·근거 부족은 사람이 검토; 둘 중 하나 누락/실패는 PENDING/DEGRADED로 표시. 소비자 CLI는 사용자 직접 실행·JSON 수동 업로드만, 회사 공용 자동 MCP/CLI 중계는 업체별 승인이 있을 때만. 기존 '1개만 선택' 방향은 위 조건부 모드로 대체. **HBR-04 실행 계약·독립 분석 비교, HBR-06 가용 상태/UI/비교 이력, HBR-08 승인 실자료 검증에 반영; 구현 전**.
+
+> **2026-11-20 최신 실행 모델 방향 (P0):** 자동 Multi-LLM Router 대신 **`Codex`·`Claude Code` 2개 독립 등록 프로필**을 먼저 계획한다. Google Gemini/AGY는 CLI에서 사용자 실측 3.8 Flash 제약으로 MVP 제외. 각 프로필: 실행자(사용자)·사용 가능 상태·별도 모델·입력 스냅샷·정해진 출력 JSON schema·출처/근거 식별자·검증 후 DB 저장; 기본 **수동 실행/JSON 업로드**로 별도 API 사용료 발생 방지. 계정 패스워드/OAuth/CLI 세션은 서버에 등록하지 않는다. 사용자가 명시적으로 선택한 1개 프로필만 적용, 병렬·자동 fallback 없음. 기업용/허용 API·MCP 실제 실행은 적격 승인 후 확장. [상세](docs/server-migration/15-mcp-provider-executor-subscription-policy.md). HBR-04/06에서 2개 선택+JSON 수집, HBR-08 운영 승인을 다룬다. **기능 구현 미완료**.
+
+> **2026-11-20 AI Gateway 최신 의도/조사 (P0 설계):** 사용자는 **입찰 서버 → MCP client → Provider Executor → 승인된 모델 실행 → JSON 저장**을 희망한다. [15 모델 실행 MCP·구독 약관 조사](docs/server-migration/15-mcp-provider-executor-subscription-policy.md)가 13 API-only 설계보다 우선한다. 기존 14의 공고 조회 MCP(모델→데이터)와 분리한다. Google AI Pro 개인 계정은 구 `gemini` CLI 미지원(2026-06-18 이후); Gemini 4 Neon/Argon/Hydrogen은 Antigravity에서 제공되지만 개인 `agy`의 **타사 서비스 래핑은 Google 공식 FAQ상 미지원**, Claude Code 개인 구독의 타 사용자 라우팅도 금지. **무단 구독 자동화/회사 실자료 업로드/외부 호출 금지**. 다음: HBR-04의 모델 provider MCP typed contract 및 mock JSON+DB 검증, 기업용/허용 공급자 계약 확인 후만 실제 호출. 기존 HBR-01/02 우선 유지.
+
+## 2026-11-20 최신 우선순위 — Hybrid RAG 입찰 의사결정 MVP
+
+사용자 요청으로 기존 RAG 설계를 구체화하고 실행 순서를 재조정한다. [기술 설계](docs/server-migration/10-hybrid-rag-bid-decision.md) · [사업 담당자 안내](docs/server-migration/11-hybrid-rag-business-guide.md). 아래 HBR 작업이 이전 파서 우선 계획보다 우선. 기존 데이터·권한·이력 보존, 필수 자체 검증·운영 승인·회사자료 반출 제한 유지(독립 AI 검토는 선택). **설계/계획 게시 단계; 구현 완료 아님.** 이전 파서/부서 비교(BID-07)/수익성 카드와 연계하며 중복 원장을 만들지 않는다. 작업 하나씩 실제 증거와 함께 완료.
+
+조직 범위/협업/비용 최신 상세: [12 전사 역량·부서 협업 설계](docs/server-migration/12-enterprise-capability-hybrid-rag.md). 기존 HBR 순서 유지.
+
+2026-11-20 MCP 격리 검증 증거: [hosted Actions 44636741407](https://github.com/son1004007/public-bid-agent/actions/runs/44636741407)에서 입력/권한 6건 + 합성 Django DB 3건 + SDK 메모리 프로토콜 3 도구 스모크 PASS. **실운영 IDC 연결/원격 모델 호출은 NOT_RUN**. 다음 게이트: 회사 승인된 격리 서비스 계정 및 읽기 전용 DB, 안전한 authenticated HTTPS transport/등록, 최종 실제 연결 E2E.
+
+2026-11-20 MCP 도구 연결 구현 후보: [14 공개 입찰 MCP 서버 및 검증 계약](docs/server-migration/14-bid-mcp-interface.md). HBR-04/06 연결점 앞에 공개 공고/승인 공개 RFP 읽기 전용 stdio MCP를 구현하고 SDK 프로토콜 검증을 추가한다. **원격 GPT/Claude/Gemini 등록·data1 운영 배포·비공개 회사자료 접근은 미완료/차단**. 기존 13의 LLM 공급자 API 연결과 MCP 도구 노출은 별도 기능이며 신규 HBR 번호는 만들지 않는다.
+
+2026-11-20 다중 LLM 연동 **후보**: GPT·Claude·Gemini를 제품에서 향후 선택할 수 있도록 [13 Provider Router 설계](docs/server-migration/13-multi-llm-provider-routing.md)를 HBR-04(서버 단일 provider E2E), HBR-06(선택/상태 UI), HBR-08(회사 자료별 provider 승인)에 연결한다. 공급자 사용/비용/실자료 외부 전송 **미승인**. HBR-01/02 로컬 검색 우선, OFF 기본값, Gemini/AGY 자동 위임 금지, 새 HBR 번호 추가 없음.
+
+| ID | 우선 | 작업/의존 | 완료 기준 | 상태 |
+|---|---|---|---|---|
+| HBR-00 | P0 | Hybrid RAG 설계, 데이터·판정·권한 계약 및 업무 시안(이 문서) | 상위 설계/목차 연결, 문서·계약 자체 검토, 선택적 독립 AI 검토 | 초안 게시 / NOT_RUN_OPTIONAL |
+| HBR-01 | P0 | 격리 DB pgvector 설치 가능성/호환·백업 복구 검증; 한국어 임베딩 로컬 후보 및 라이선스/벤치, provider 승인 게이트 | 기존 전용 DB/서비스 불변, 별도 테스트 DB 벡터 insert/query, 버전·차원·리소스 확인, 승인 없는 외부 호출 없음 | 대기 |
+| HBR-02 | P0 | 기존 RFP 5개 청크를 검색 친화적으로 재구성/멱등 임베딩; 출처/ACL/버전 기록; lexical·dense·RRF baseline | 실제 모델 벡터와 SQL 쿼리, 문서별 coverage와 사람이 정한 근거 표본 비교, 정정/권한/중복 방지 | 대기 |
+| HBR-03 | P0 | 법인·주관/지원 부서 실적·정량/정성 역량 관리, scoped RAG + 자격 SQL; HBR-01/02 병행 가능 | 합성 복수 부서, 실적 dedup·법인 식별·공유 요약 ACL/원문 분리; UNKNOWN, 개인정보·비공개 실자료 외부전송 금지 | 대기 |
+| HBR-04 | P0 | 요건 추출 및 RFP↔전사/부서 근거 비교, 부족분·자체/사내/외부/혼합 보완안 LLM worker (HBR-02/03, 승인 모델) | 실제 공개 RFP + 합성 복수 부서, scope·근거 ID·상충·필수조건·누락·지원 미확정 테스트, 실제 AI/disabled 분리 | 대기 |
+| HBR-05 | P0 | 승인 월별 공급 풀·역할별 MM, 지원 요청/승인·예약 모델, 기존 집계 원가와 시나리오 판정 (HBR-03/04) | legal hard gate, 지원 승인/만료/동시예약 및 풀 중복 방지, 전사 비용·주관 부서 손익 구분, Decimal 산식/미확인/내부거래 제거/재식별 방지 | 대기 |
+| HBR-06 | P0 | 공고 상세·근거·시나리오 비교·지원 요청/승인·추천 및 담당자 Bid/No-Bid UI; HBR-04/05 | 기존 공동 검토 재사용, 실제 공개+합성 명시, 5건 E2E, 명시적 쓰기/공급 부서 승인·권한/정정/보류·해당 SHA CI 및 자체 검증 | 대기 |
+| HBR-07 | P0 (AGW-05 최소 출처·coverage) / P1 (PDF/HWP·전체 자동화) | 실제 PDF/HWP/HWPX 등 최소 추출·RFP 수집/재시도 자동화 및 coverage 표시 | 공식 원문/차수/해시 결속, 형식별 실제 표본, OCR/표 누락 PARTIAL, 백로그/증분/중복/용량 제한; 자동 실행은 승인 후 | 대기 |
+| HBR-08 | P1 | 승인된 실제 사업부 자료·AI 이용 조건·안전 공유·복구·업무 전문가 기준 검수, 제한 시범 | 승인된 실제 자료 검증·실제 검색/판단 품질·비용·운영 복구·동일 SHA CI/필수 검증, 열린 보안 조치 및 승인 충족 | 차단: 회사자료/모델/운영 승인 |
+
+다음 실행 카드는 **최상단 통합 실행 큐 01 (AGW-05 + HBR-07 최소 원본 실측 확인)**입니다. HBR-01 pgvector 연구는 큐 06의 격리된 후속/병행 작업으로서 공식 원본 결속 인수를 대체하지 않습니다. pgvector/모델 선택은 가정이 아닌 실측 기반. 문서 형식 확장은 핵심 end-to-end 검증 후, 필수 누락 발견 시 필요한 최소 보완만 앞당긴다. 새 예약 활성화/재부팅 자동 기동은 선행 작업 아님.
+
+## 2026-11-19 HWPX real recovery
+
+- [x] db1ed40 bounded operator-only fallback; 4/4 real failed specimens recovered, overall 5/5 parsed, 14,594 current chunks, all five rule projections have evidence candidates. Original hashes and four failure runs preserved; replay no pending work. 40 NAS tests PASS/1 skip; exact 4/4 CI PASS. No structural fidelity claim for four text-only documents.
+- [ ] Next functional priority: bounded PDF and HWP parsing with dependency/license/format checks and real specimens; reproducible RFP batch, coverage/failure badge, authenticated browser acceptance. Current web version unchanged; new parser worker used one-shot. Independent review/release NO_GO remains.
+
+## 2026-11-19 parser candidate
+
+- [ ] Verify bounded HWPX text-only fallback on actual four failed originals, preserve original runs/current identity and ACL; PDF/HWP separately. No release approval.
+
+## 2026-11-19 RFP actual first slice
+
+- [x] Live metadata probe 331 attachments/123 notices, five HWPX downloads, private originals/DB hash verification 5/5; one parsed, four limit failures, five replay unchanged; real rule evidence from one notice. RFP screen cutover and separate HTTPS anonymous boundary verified; 40 tests PASS, 1 skip; CI Sprint 1 CI 44509836275: success; Development harness 44509836163: success; Server foundation CI 44509836296: success; Windows synthetic local acceptance 44509836243: success.
+- [ ] RFP collection is still one-shot, not automated. Next: reproducible bounded discovery/download runner, safely improve HWPX extraction on actual failed files, add PDF/HWP and visible parse status, authenticated browser validation. Keep regular notice schedule pending until owner confirms; reboot auto-start deferred. No independent GO or production release.
+
+## 2026-11-19 RFP first public slice
+
+- [x] Actual official attachment metadata probe and five HWPX downloads (one parsed, four parser-limit failures).
+- [ ] Candidate identity-bound source URL, private raw storage and extraction status import, NAS UI evidence and regression tests. Next address actual HWPX parser limit failures and PDF/HWP support; no unbounded parsing.
+
+## 2026-11-19 NAS regular collection — latest results
+
+- [x] Candidate 525d8c7 one-shot official API + PostgreSQL incremental ingestion validated on NAS. 879 actual notices (32 new), 1,732 versions, 879 official links; replay no writes. 7 focused tests and 3/4 CI PASS; legacy Chrome startup timeout retry pending. Existing scheduler remains disabled.
+- [ ] New NAS Gateway schedule 6-hour cadence, previous 24-hour overlap: created pending user confirmation. First scheduled execution not verified. Reboot auto-start explicitly deferred. Next functional task: actual RFP download/extraction/evidence analysis. Independent review/release NO_GO unchanged.
+
+## 2026-11-19 latest MVP priority
+
+- [ ] NAS periodic official G2B refresh: isolated collector/DB writer, real run/replay, new schedule only after approval; 6-hour candidate, 24-hour overlap. Reboot auto-start explicitly deferred by owner (do not treat as complete). Real RFP next.
+
+## 2026-11-19 NAS PostgreSQL — live verification
+
+- [x] Dedicated PostgreSQL 16.15 persistent DB, source backup, exact typed-field migration and live cutover; 850 notices / 1,697 versions / 847 official links / 3,621 serialized objects, existing account preserved, sessions excluded. Independent-client HTTPS shell/health and anonymous 401 PASS. Archive export/decode PASS, real restore pending.
+- [ ] Next P0: restart-safe app/relay, persistent collection credential/config and controlled restart; restore rehearsal, backup policy; then bounded official data refresh and RFP. Existing schedules remain paused; no production approval or claim of actual NAS reboot.
+
+## 2026-11-19 NAS official URL — verified preview
+
+- [x] b272f27 4/4 CI and NAS 35 tests; re-query existing 847 exact metadata matches and 847 allowed public links; clone import/cutover, separate-client HTTPS shell and 401 verified. Existing DB/old app preserved. Manual authenticated link-click verification remains pending. Preview banner distinguishes synthetic cost.
+- [ ] Next: durable isolated PostgreSQL migration and backups (retain notice versions, user accounts/decisions; no changes to existing DBs), restart-safe deployment and approved bounded collection refresh. Then RFP evidence collection. No automatic schedules enabled or production approval.
+
+## 2026-11-19 official notice URL correction
+
+- [ ] Narrow official notice-link projection candidate (fixed provider path, two matching public identifiers) and browser allowlist; CI and actual source URL re-collection/backfill, NAS runtime validation pending. Existing document URL restriction unchanged.
+
+## 2026-11-19 G2B key and first NAS import — latest results
+
+- [x] Secure key delivery and actual official API collection on NAS (892 rows, 847 latest logical notices; 18:05 KST).
+- [x] Isolated DB dry-run, import, repeat/duplicate guard PASS (847 real + 3 synthetic; 622 future exact noncancelled/noncorrected, 233 AI/DATA/SW tags). Workspace shell 200, actual logged-in list acceptance pending.
+- [ ] P0 next: approved public official URL handling (0 displayed links), make demo basis/real-data distinction explicit, verify authenticated list and data quality. PostgreSQL durable storage and collector deployment/reboot; real RFP; authorized refresh. No production release or scheduler reactivation.
+
+## 2026-11-19 G2B key reuse — current blocker
+
+- [ ] Existing notebook API key reuse authorized for personal NAS only; direct SSH authentication unavailable. Secure Gateway file secret registration required, then apply to isolated collector (no plaintext chat/log/Git), actual API query and DB/UI parity. No schedule reactivation or production release. Prior snapshot export success unconfirmed.
+
+## 2026-11-19 최신 우선순위 — 실제 데이터 검증 우선
+
+사용자 피드백: 합성 공고만 표시되는 NAS 환경에서는 실사업 검토가 불가능하다. MVP 기능 검증보다 **실제 나라장터 API 수집 → NAS DB 적재 → 목록·마감·원문 링크 조회**를 먼저 완료한다. 기존 Windows API 수집 결과는 공개 공고 메타데이터만 별도 스냅샷으로 전달하며 기존 원장/사람 판단/비밀/개인정보는 이전하지 않는다. 기존 예약은 재활성화하지 않는다. 다음은 영속 PostgreSQL 및 승인된 서버 수집 경로, RFP 원문, 실제 데이터 기반 업무 기능 검증 순서. 소스와 차수, KST 마감 정합성, 데이터 건수 일치를 확인하고 실제 API와 합성 데이터를 구분한다. 운영 릴리스 게이트는 유지한다.
+
+## 2026-11-19 MVP-FIRST — 현재 실행 우선순위 정본
+
+사용자 최신 지시: 전체 기능 완성보다 MVP를 먼저 제공하도록 남은 작업의 우선순위를 재정렬한다. 아래 실행 순서는 과거 A/BID/SM/AGG/H02 카드의 일괄 선행 순서보다 우선한다. 과거 작업·검증 이력은 보존하고 이미 검증된 기능은 재구현하지 않는다. 기존 보안·독립 검수·운영 승인 경계는 유지한다.
+
+### 목표 및 MVP 인수 기준
+
+공개 입찰공고 → 공식 RFP 및 필수 자격·수행 가능성 확인 → 사업부 집계 원가 기반 예상 손익 → 공동 검토 → 권한 있는 담당자의 참여/보류/미참여 결정과 이력 확인. 이 업무를 실제로 처음부터 끝까지 수행할 수 있는 최소 수직 슬라이스를 우선 완성한다. 직접 투찰·계약·제안서 자동 작성·근거 없는 수주확률 예측은 MVP 제외.
+
+| 우선순위 / 카드 | 실행 범위 및 검증 기준 | 기존 카드 | 상태 |
+|---|---|---|---|
+| P0 / MVP-00 | 필수 보안 결함만 보완. 문서 추출 저장 직전 최신 DB 계정/epoch/객체 권한 재검증 및 철회/동시성 음성 테스트, 기존 인증·CSRF·소유권 회귀. 실제 계정 사고 조치는 중앙 비공개 원장에서 별도 추적. | PR #5, SM03 | PARTIAL / RELEASE_BLOCKED |
+| P1 / MVP-01 | 공고 목록/상세/검색·분류·마감/취소/정정 및 공식 링크. 기존 importer/API/UI 재사용, 승인 공개 데이터/합성 데이터의 명시적 가져오기·수동 최신화 우선. 중복·누락·최신성·실패 상태 검증. 실 API는 승인 연결로만. | SM04/05/06, BID-04/05 | PARTIAL, 서버 수집 E2E 미확정 |
+| P1 / MVP-02 | 상세검토 후보 추천 및 공식 RFP 근거, 법적 필수 자격·실적·기술·인력/MM 확인. 출처/차수/원문 위치·검증 상태 결속. 지원 불가 형식은 공식 원문·수기 근거 확인으로 대체. 취소·정정·불충분 근거는 보류. 작은 승인 정답 표본 비교; 없으면 NOT_EVALUATED. | BID-05/06/07, A02~05, SM04/06 | PARTIAL / BLOCKED_EVIDENCE |
+| P1 / MVP-03 | 사업부 총인건비·기준/가용 MM·표준 비용의 승인 버전, 필요 MM/보완비 및 VAT 제외 공급가액 기반 예상 이익·이익률 서버 계산. 누락/만료/충돌 구분, 개인급여/단가 입력·저장 금지, 소그룹 역산 방지. 실제 원가와 정책은 승인 전 사용 금지. | AGG-01/02/04, BID-07 | CODE_IMPLEMENTED / SYNTHETIC_ONLY; 실제 원가·조직 정책 HOLD |
+| P1 / MVP-04 | 승인된 동일 사업부 사용자에게 안전한 추천·손익·의견 공통 조회, 지정 권한자만 기준 변경·최종 Bid/No-Bid/Hold. 출처·버전·작성자·시각·이력 보존. 부서 경계, 기존 개인 작업/비밀/원본 소유권, 역할·CSRF·동시 수정·재식별 음성 테스트. | AGG-01/03/04, BID-08, SM03/06 | CODE_IMPLEMENTED / SYNTHETIC_ONLY; 실제 조직 권한 미승인 |
+| P0 release gate / MVP-05 | 정확 SHA CI, 필수 자체 보안·회귀 검증(독립 AI 검토 선택), 승인 백업 범위·DB/파일 통합 복원·롤백, 브라우저 390/1440에서 로그인→공고→RFP→예상 손익→의견→판단→재조회 인수. 승인된 사내 격리 환경/HTTPS/권한·운영 계정/백업을 확인하고 제한 시범 운영 및 피드백. | SM07/08, AGG-04/05, BID-09 | BLOCKED / 실제 릴리스 증거 필요 |
+
+P0 보안 보완부터 시작하되 실제 관리자 조치·운영 승인·독립 검수가 지연되어도 비릴리스 브랜치에서 합성 MVP 개발을 지속한다. 동일 파일 동시 변경 방지 및 기존 후보/운영 환경 보존. 모든 적용되는 릴리스 차단 조건을 해소하기 전 main 병합·실제 배포 금지.
+
+### MVP 이후 우선순위 (기존 백로그를 삭제하지 않음)
+
+| 우선순위 | 후속 작업 |
+|---|---|
+| P2 | 자동 수집/정기 갱신 및 스케줄러·워커 운영 고도화(최소 오류/중복 안전은 MVP 필수) |
+| P2 | 대량 OCR·전 형식 자동 추출·고급 AI 분석 확장/실자료 평가 확대(최소 AGW-05/08 모델 수직 슬라이스는 P0)(외부 전송 별도 승인; 공식 원문/수동 검토는 MVP 필수) |
+| P2 | 편의 UI, 고급 통계/보고서, 운영 관측/백업 자동화 고도화(기본 권한·로그·복구는 MVP 필수) |
+| P3 | 제안서 자동 생성/편집/HWPX·DOCX 산출물 고도화, 포괄적 하네스·다중 Agent 확장(H02/03 등) |
+
+### 2026-11-19 MVP-00 진행 기록
+
+- [ ] 문서 추출 최신 계정·epoch·소유권 재검증 및 잠금 보완 코드/합성 회귀 작성(IMPLEMENTED_UNVERIFIED), 동일 SHA CI·독립 검수 대기. 릴리스 NO_GO 유지. 검증 후 MVP-01로 진행.
+
+### 2026-11-19 MVP-01 진행 기록
+
+- 기존 운영자 CLI/조회 API/웹 workspace 재사용. 동일 과거 해시 replay로 취소/정정 회귀 방지, 낮은 공식 차수 거부, 날짜만 확인된 공고는 진행중 제외. 합성 CLI→검색/분류/상세→취소→이전 snapshot 재실행 및 마감 상태 회귀를 추가했다. IMPLEMENTED_UNVERIFIED; 실제 수집 연동·새 SHA CI·독립 검수 미완료. 별도 최신화 자동화는 후순위.
+- 다음: 정확 SHA 회귀 결과 확인, MVP-01의 남은 수집 연결/인수 경계 정리 → MVP-02. 기존 사용자/운영 승인 및 RELEASE NO_GO 유지.
+
+### 2026-11-19 MVP-02 진행 기록
+
+- MVP-00 exact 670c846 CI 4/4 PASS (44475843497, 44475843470, 44475843483, 44475843436). MVP-01 exact 77af24f server foundation/sprint/harness PASS (44476320891, 44476320789, 44476320938); Windows 44476320768 당시 진행중. 실 API·독립 검수·릴리스 미완료.
+- MVP-02 상세검토 후보 정렬(공고 메타데이터, 마감순)과 현재 문서/추출 구절 기반 미검증 RFP 체크리스트 API/화면 구현. 취소·정정·마감/출처/근거 미확인 보류. 합성 인수 테스트 추가; 새 SHA CI 대기. 회사 증빙·승인 정답 표본 없음으로 NOT_EVALUATED; 지원 불가 형식은 공식 원문 수동 확인, 실제 검수 저장/최종 판단은 MVP-04에 연결한다.
+- 다음: 정확 SHA CI 확인 및 문제 수정 → MVP-03 집계 원가·수익성 계산. RELEASE NO_GO / REVIEW_DEBT 유지.
+
+### 2026-11-19 MVP-03 진행 기록
+
+- MVP-02  cac2ec8 서버 foundation 3 jobs PASS 관측(44476964728); 전체 CI 상태 별도 확인.
+- 집계 원가 기준/사업부 명시 membership 모델·migration, 승인 가공 단가/가용량으로 VAT 제외 공급가액 및 MM/비용 가정의 결정적 Decimal 계산과 상세 화면 연결. 실제 정책 승인·기준 작성/승인 운영 명령, 원가 구성/기간 배부 방식 확정, 저장된 승인 견적/공유 및 감사는 MVP-04 연결 필요. 실제 원가 미입력, 기본 차단. 합성 테스트 추가·새 SHA CI 대기. RELEASE NO_GO / REVIEW_DEBT.
+- 다음: 정확 SHA CI 및 migration 검사 → MVP-04 공동 검토/권한/의사결정. 실자료/공개 규모·가공 단위는 승인 전 보류.
+
+- MVP-02 Sprint 1 frontend mock regression identified (135399739371); mock DOM + hostile RFP/cost close regression updated. Verify exact new SHA before marking complete.
+
+### 2026-11-19 MVP-04 진행 기록
+
+- 사업부 공동 검토 event + 별도 결정 권한, 정형 의견, 지정 원가 승인자의 공유 견적 게시, 지정 결정자의 명시 5개 확인 및 참여/보류/미참여, revision 및 최신 기준 검증. IMPLEMENTED_UNVERIFIED; 실제 조직 정책/기준 발급 및 이전 공고 차수 이력 조회, 독립 검수 및 CI 남음. 다음 MVP-05 통합 인수, 남은 MVP 차단 확인 및 승인 범위 점검.
+
+### 2026-11-19 MVP-05 진행 기록
+
+- b37faa6 Windows CDP logout failure (135405606098), PostgreSQL/Ubuntu PASS. 합성 상세 패널 순차조회·대기 및 입력변경 안전성 보완, 실제 Chrome CDP RFP→손익→공유 견적→의견→참여→재조회→로그아웃, 1440/390 viewport 요소 확인 및 DB 이벤트 assertion 추가. 정확 새 SHA CI 미확정. [시범 배포 게이트](docs/reviews/MVP05_PILOT_GATE_2026-11-19.md) 기준으로 잔여 검증 진행. REVIEW_DEBT / RELEASE NO_GO 유지.
+
+- 19f14e0 Chrome 통합 MVP 1440/390 PASS 실제 CI 로그 확인(135407660216), PostgreSQL/Ubuntu PASS. 복구 manifest v2 및 비어있지 않은 합성 원가/결정 DB+파일 복원 검증 추가. 최신 SHA CI와 별도 독립 검수 대기; 운영 복구/롤백 미실행.
+
+- c5b35d9 PostgreSQL 222 tests(2 skip), MVP DB+file nonempty content restore PASS (135409832456). 자체 보안 검토에서 승인자 계정 상태와 공유 견적 기준 변경 시 검증 보완, 회귀 추가. 독립 검수가 아니며 실제 운영 설정/복구·rollback 승인 미완료.
+
+- b0983db PostgreSQL/Ubuntu regression PASS 관측. 시범 운영자용 읽기 전용 pilot_preflight, 합성 테스트, [운영 인계](docs/reviews/MVP05_PILOT_OPERATIONS_2026-11-19.md) 추가. 정확 신규 SHA CI 대기, 실제 환경 미접속·독립 검수 REVIEW_DEBT 유지.
+
+- 4cfe86f 사전점검 foundation 3 jobs PASS. `pilot_provision` 최초 사업부 지정/기존 계정 연결과 원가 신규 revision 발급 후보 구현(기본 검증만, 실제 적용 별도 승인). 신규 SHA CI, 독립검수, 비공개 조치, 실제 정책/설치/rollback 승인 남음.
+
+- NAS 합성 미리보기: 4853ab2 정확 CI 4/4 PASS, NAS 24개 핵심 테스트 PASS, 전용 app/relay 컨테이너 로컬 health/workspace 200·익명 공고 401 확인. Tailscale Serve 권한 거부, 기존 설정 보존. 별도 HTTPS 경로 승인 및 실제 인증 브라우저 검증이 다음 작업. 정식 릴리스 NO_GO 유지.
+
+- NAS 합성 미리보기: 사용자 HTTPS 경로 등록 완료. 별도 노트북 Tailnet HTTPS health/login shell 200, 익명 공고 401 검증. 기존 경로 불변, Funnel 미사용. 사용자 로그인/업무 플로우 및 재부팅 지속성 미검증, 정식 배포 NO_GO 유지.
+
+- 사용자 NAS 접속 및 화면 확인 보고. 인증 후 공고·RFP·손익·공동 판단 검증과 데이터/재부팅 지속성은 미확인. 정식 릴리스 NO_GO 유지.
+
+### 실행 원칙 및 다음 재개 지점
+
+- 다음: MVP-05 최신 SHA 통합 복구 CI 확인 및 실패 수정 → 독립 최종 검수 → 정책/실자료/운영 승인 게이트. 이미 성공한 DB 개별 복원 및 브라우저 기록은 해당 SHA/범위에서 재사용한다. 통합 복원·릴리스 롤백은 별도이며 새 SHA에서 과거 CI를 재사용해 통과라 주장하지 않는다. 검수는 논리적 단위로 수행하고 불필요한 반복 조사/완벽주의를 피한다.
+- 기존 PR #5 릴리스 차단은 유지한다. 개인 독립 AI 검토는 최신 CONTROL(2026-11-20) 기준 선택(NOT_RUN_OPTIONAL)이며, 미실행만을 REVIEW_DEBT/릴리스 차단으로 사용하지 않는다. 실제 보안/품질 결함, 조직 승인, 중앙 계정 회전 Issue #26, 복구·배포 게이트는 별도 유지한다. AGY/Gemini 자동 위임 및 기존 예약 재활성화 금지.
+- 승인 없는 회사 실자료/정답/원가 생성·외부 전송·계정 변경·실제 서버 설치·입찰 제출 금지. 사업부 귀속/공개 정책 미확정은 합성 개발과 실사용 차단을 구분한다.
+- 카드별 실제 구현·검증·실자료 검증·배포 상태를 CURRENT_STATE.md/TASKS.md에 증거로 추가한다. 이번 변경은 실행 계획이며 코드 변경·배포·게이트 해제를 하지 않는다.
+
+---
+
+## 2026-11-19 PR #5 checkpoint — actual notebook browser
+
+- [x] Prior 89253db7 and fixed browser-test 7dba0209 exact-head CI 4/4 PASS.
+- [x] Actual notebook Chrome 158 CDP synthetic workspace acceptance at b5a732dd PASS; existing checkout/listener preserved, zero matching test processes. No driver installation.
+- [ ] Latest test-only file-lock fix rerun on notebook, if needed for exact release binding; isolated fetch timed out; candidate remains prior clean SHA. Fixed hosted Windows acceptance PASS.
+- [ ] Central private user action #26 OPEN; authorized actual credential/session remediation and old UI containment. Fresh-context independent review (REVIEW_DEBT), complete approved backup scope and release rollback. Main merge/deployment still NO_GO.
+
+## 2026-11-19 PR #5 checkpoint — portable browser and containment tooling
+
+- [x] Bounded legacy RFP original-file inventory: zero matching original-document extensions in known tree; extracted cache only is backed up. Binary elsewhere / coordinated snapshot remains unknown.
+- [x] Portable Windows/Linux real Chrome synthetic gate passes on 2622212e; enforce dedicated test settings before setup.
+- [x] Interactive local operator rotation/disable command added and synthetic SQLite/PostgreSQL tests PASS. Operator procedure documented in server/README.md.
+- [ ] Central private user action #26 OPEN; administrator remediation/session revocation and safe cutover evidence required; do not apply test credentials or run reset on real users without the authorized operator.
+- [ ] Complete exact-head CI, fresh-context independent review (REVIEW_DEBT), actual notebook ChromeDriver availability and synthetic browser acceptance, approved full recovery scope and rollback. No main merge or live release while gated.
+
+## 2026-11-19 PR #5 checkpoint — current DB parity and RFP cache backup
+
+- [x] Previous b34fb62f CI 4/4; actual current-source vs restored row count/content fingerprint 11/11 matches. Not source archive-time snapshot parity.
+- [x] Actual persisted RFP extracted-cache scope 124 files copied privately; source/copy SHA-256 match, manifest/ACL recheck and internal chunk contract 124/124 PASS. No original binary claim.
+- [ ] Establish original PDF/HWP binary availability and authoritative legacy backup scope; do not copy unrelated stage/backup directories. Coordinated snapshot and full recovery remain distinct. No external transfers.
+- [ ] Historical credential applicability/remediation, fresh-context independent review, actual notebook browser/rollback and private rehearsal cleanup plan. Main merge/deploy NO_GO.
+
+## 2026-11-19 PR #5 checkpoint — actual archive restore PASS
+
+- [x] Exact 0654f315 CI 4/4; versioned recovery runner uses Windows pg_ctl restricted-token launch, separate private loopback cluster.
+- [x] Actual same-device archive restore succeeded, 11 selected tables fingerprinted, FK validation and write rollback passed, isolated cluster stopped; independent status probe confirms no recovery listener and existing service remains.
+- [ ] Original archive-time row parity NOT_VERIFIED; current-source comparison timed out with termination unconfirmed. Reconcile before retry; new coordinated backup should capture source fingerprints at the same snapshot. Retain private scratch safely until specific cleanup.
+- [ ] Legacy RFP corpus/complete backup scope, credential applicability/remediation, fresh-context independent review, actual browser and release rollback. Main merge/deploy NO_GO.
+
+## 2026-11-19 PR #5 checkpoint — actual archive recovery
+
+- [x] Exact a488cdd6 CI 4/4; actual archive hash/ACL/TOC preflight and full offline pg_restore SQL decoding PASS.
+- [x] Private independent SCRAM-authenticated PostgreSQL 17 recovery cluster initialized on notebook; no recovery PID/listener at final observation, existing 8000 listener present.
+- [ ] Actual SQL execution/restore BLOCKED: combined remote command and separate startup timed out, managed runner save timed out (no runner found). Review/implement short-launch managed runner; verify exact separate target, least-privilege restore, source/restore parity, FK/rollback and stop. Private scratch generation/credential still present, never publish or overwrite. Offline decode is not full restore.
+- [ ] RFP backup and coordinated release recovery scope; historical credential applicability, independent review, actual browser/rollback, main merge/deploy remain gated.
+
+## 2026-11-19 PR #5 checkpoint — actual PostgreSQL backup
+
+- [x] Exact previous head 8ee65210 CI 4/4 pass; bounded native psql read-only connection succeeds, 11/11 expected tables, no export artifact references at observation.
+- [x] Protected same-device backup-only directory created; actual DB-only custom archive created, 11 table-data entries in archive TOC, stable SHA-256, persisted private manifest independently reread and verified. Legacy baseline and existing checkout/listener observed unchanged.
+- [ ] Actual restore NOT RUN; isolated trusted cluster and source parity/rollback needed (custom archive uses pg_restore, not existing plain SQL rehearsal entrypoint). No overwrite, no live-target recovery. Map full legacy RFP corpus and coordinated backup boundary. DB_ONLY does not satisfy full release backup gate.
+- [ ] Credential applicability/remediation; fresh-context independent review; actual browser acceptance and release rollback. Main merge/deploy NO_GO.
+
+## 2026-11-19 PR #5 checkpoint — explicit DB backup selection
+
+- [x] Remove backup/restore Python implicit DB config fallback; shared strict local loader and new tests. Server foundation CI passed on 010accd5.
+- [x] Notebook local DB listener/config preflight; dedicated media empty.
+- [ ] Actual DB identity/read-only catalog probe BLOCKED (job_01M7S2BHTF00KNHT01NPYR8QMJ TIMEOUT_TERMINATION_UNCONFIRMED); reconcile and split bounded commands. Actual operational backup NOT RUN. Establish full RFP/data roots, quiescence and approved private destination; trusted isolated recovery.
+- [ ] Verify remaining same-head CI, credential applicability, independent review and release rollback. Main merge/deployment NO_GO.
+
+## 2026-11-19 PR #5 checkpoint — backup/restore rehearsal
+
+- [x] Explicit CLI backup config, output and storage scope; reject omission/mismatch with selected service media. Combined inventory and temporary storage recovery with regressions.
+- [x] a9c19adb actual hosted PostgreSQL 17.12 synthetic DB+file restore PASS, count/FK/new write rollback evidence in 135345699852. Notebook tool versions confirmed; retained legacy baseline 4 present/4 absent matched.
+- [ ] Remaining exact-head CI if incomplete at observation; actual operational DB/RFP backup scope and coordinated trusted isolated recovery; review legacy Python config fallback and manifest/artifact-reference completeness. Do not use actual source as a rehearsal target or publish private data.
+- [ ] Credential incident applicability/remediation, fresh-context independent review, notebook browser and release rollback. Main merge/deploy remains NO_GO.
+
+## 2026-11-19 PR #5 checkpoint — private service media
+
+- [x] Dedicated separate preprovisioned media root, strict local config and launcher ACL preflight; exact app candidate 6ee0b8de CI 4/4 PASS.
+- [x] Actual notebook root created and protected, launcher ValidateOnly PASS, synthetic store/read/digest rejection and ACL cleanup PASS. Existing service still unchanged.
+- [ ] Confirm backup uses explicitly selected media root; approved coordinated PostgreSQL/RFP backup, trusted isolated recovery/rollback and retained legacy baseline comparison. Do not copy operational data outside approved private storage.
+- [ ] Credential incident applicability/remediation, independent fresh-context review and actual notebook browser. Main merge/deploy remains NO_GO.
+
+## 2026-11-19 PR #5 checkpoint — durable legacy JSON baseline
+
+- [x] New protected evidence-only directory created; verified directory/file ACL entries limited to current user, SYSTEM and Administrators.
+- [x] Stored source-bound manifest for 8 designated JSON paths (4 present, 4 absent); independent reread of current bytes matched all 4 stored hashes. Preserve this file locally, never commit actual digest or private path; compare before/after an approved release.
+- [ ] Actual service private-media path still absent: existing app and LocalAppData parents have other delete/create rights. Require explicit safe alternate root / approved parent remediation and verify ACL before use. Do not change existing ACLs or conflate evidence directory and media.
+- [ ] Full coordinated PostgreSQL/RFP backup and recovery, credential applicability, fresh-context independent review, actual Windows browser and rollback. Main merge/release remains NO_GO.
+
+## 2026-11-19 PR #5 checkpoint — protected-data preflight
+
+- [x] Exact-head 7cfbd3ff CI 4/4 passed.
+- [x] Documented legacy JSON root discovered; four known present files pass two consecutive local SHA-256 reads. Preliminary broad-SID ACL checks on data files/key/config and actual local Django system check passed.
+- [ ] Durable private baseline BLOCKED: prior manifest job timeout/termination unconfirmed, zero matching files found; proposed parent has 4 unexpected allow ACEs under strict allowlist. Verify isolated evidence directory with restrictive ACL, capture baseline without publishing hashes, identify additional legacy and PostgreSQL/RFP roots and coordinate backup/rollback. No claim full operational data integrity.
+- [ ] Private media root absent; verify approved provisioning and ACL; resolve credential incident applicability; fresh-context independent review and actual notebook browser/rollback. Main merge and existing localhost release remain gated.
+
+## 2026-11-19 PR #5 checkpoint — isolated notebook HTTP verified
+
+- [x] Exact 0b4589fd: four CI workflows pass after one unchanged-source Windows Chrome startup retry; portable HTTP Windows/Linux and Ubuntu Chrome steps confirmed.
+- [x] Actual notebook isolated source checkout, dependency check, Django check, portable HTTP (1), proposal regression (16) PASS; original checkout/status count and loopback listener observed unchanged.
+- [ ] Full protected-data baseline / actual approved storage roots and ACL, credential incident applicability/remediation, independent fresh-context review, actual Windows browser and rollback. Combined remote command timed out; use bounded individual commands, do not terminate unrelated processes. Main merge/deployment NO_GO pending gates.
+
+## 2026-11-19 PR #5 checkpoint — notebook timeout and portable HTTP
+
+- [x] Exact 78fa5904: four CI workflows passed; actual Chrome test log confirmed; 188 foundation tests (5 skipped).
+- [ ] Notebook isolated acceptance BLOCKED by Gateway TIMEOUT_TERMINATION_UNCONFIRMED. Follow-up original HEAD/44 changes/listener unchanged at observation, no candidate folder; full hashes and test NOT RUN/NOT VERIFIED. Reconcile timed-out process before a new clone/test, split steps and keep source/data isolated.
+- [ ] Verify portable HTTP candidate f55b35b1 on exact-head Linux/Windows hosted CI alongside existing Chrome gate.
+- [ ] Independent review, credential incident applicability/remediation, protected-data baseline and isolated actual notebook acceptance/rollback/private media ACL. Main merge and deployment NO_GO.
+
+## 2026-11-19 PR #5 checkpoint — proposal relationship security
+
+- [x] Previous revision contract server foundation (including Chrome and PostgreSQL), Windows synthetic, development harness passed on 17dfc334; Sprint 1 still pending at observation.
+- [ ] Verify 3c379017 candidate (owned current revision, related notice source consistency, fresh account eligibility, worker/export boundaries) with exact-head CI.
+- [ ] Remaining release gates: independent semantic review; credential incident applicability and remediation if used; immutable protected-data baseline; fixed-SHA isolated Windows HTTP/browser and rollback (not original dirty checkout); private media ACL. Main merge and existing localhost release remain NO_GO.
+
+## 2026-11-19 PR #5 checkpoint — Chrome PASS and revision contract
+
+- [x] Exact db926073: all CI families SUCCESS, actual Chrome test PASS (job 135188347561).
+- [ ] Verify revision validation and optimistic concurrency candidate 16a0126f on exact-head CI. API clients must supply expected_parent_seq and valid complete section fields.
+- [ ] Independent semantic review, credential incident applicability and remediation if used, protected-data hash baseline, private media ACL, isolated Windows HTTP/browser and rollback. Do not modify dirty original checkout or existing listener. Only then approved main merge and existing localhost deployment.
+
+## 2026-11-19 PR #5 checkpoint — browser failure recovery
+
+- [x] Inspect exact-head browser failure logs and distinguish passing foundation/PostgreSQL from Chrome failure; implement temporary static/media root isolation.
+- [x] Inspect second failure (session creation timeout), add explicit installed Chrome binary/version, temporary profile, separate HTTP preflight and bounded startup.
+- [x] Notebook read-only preflight: original dirty checkout (44 entries), active loopback 8000, Python/Chrome/key/config present, local-media absent.
+- [ ] Verify f531457a (or later exact head) all CI including Chrome step; no skips or relaxed security. Root cause of second failure not confirmed.
+- [ ] Complete independent review and credential incident applicability; preserve original data, approve/verify private media ACL and use separate clean fixed-SHA isolated Windows loopback test/rollback. Main merge and existing localhost deployment remain gated.
+
+## 2026-11-19 PR #5 checkpoint — browser acceptance gate
+
+- [x] Previous workspace candidate: four CI workflow successes at 071aaecb, confirmed frontend VM regression step.
+- [ ] Candidate c412b56b: limited/expired session shell recovery, hash-bound CSP, no inline event handlers, no static preview fallback, real Chrome + synthetic Django loopback test. Verify exact-head CI and actual Chrome step, do not mark done merely because test exists.
+- [ ] Credential incident applicability/rotation if used, complete API/UI and workflow/dependency review, independent review, protected data hashes and isolated Windows HTTP/browser/rollback. Main merge / existing localhost deployment only after gates pass.
+
+## 2026-11-19 PR #5 checkpoint — live workspace
+
+- [x] Third focused review CI 4/4 at 5d48f6a3; independent and runtime review pending.
+- [ ] Workspace candidate 01cec9f9: explicit auth, safe rendering, honest dashboard, paging, synthetic regression. Verify exact-head CI, then real isolated browser flows and API contract.
+- [ ] Verify whether publicly committed fixed login material was used against an actual account. If so, revoke/rotate affected credential, invalidate affected sessions and review artifact/log/history exposure through approved process; never reproduce the value. Removing source is not rotation; no history rewrite or runtime change yet.
+- [ ] Review remaining UI/API compatibility, limited-session reload, data collection/provider functionality, workflow/dependency gates and independent full PR review. Protected-data baseline, isolated Windows smoke and rollback before merge/approved localhost deployment.
+
+## 2026-11-19 PR #5 checkpoint — third focused review
+
+- [x] Second focused review candidate: CI 4/4 at aecb602a; independent review remains.
+- [ ] Third review candidate e9fbd75b: loopback settings, local startup, backup isolation, restore provenance precondition, two CI workflow action pins. Verify new exact-head CI.
+- [ ] Remaining release gates: complete dependency/workflow trust review, API/UI compatibility, source/provider and unimplemented handler policy, separate-context independent semantic review, protected original data hashes and isolated Windows runtime smoke/rollback. Keep main merge and deployment NO_GO until gates pass.
+
+## 2026-11-19 PR #5 recovery checkpoint
+
+- [x] Artifact and provenance changes: previous same-head CI 4/4 at 24e395bf; independent review remains pending.
+- [x] First focused review: parser limits and format binding, no fictitious worker success; same-head CI 4/4 at 40f1cae2.
+- [ ] Second focused review candidate 04c30300: session validity, storage/secret separation, legacy attachment digest, shared URL/metadata projection. Await exact-head CI and review.
+- [ ] Inspect local settings/launcher and credential/reauthentication limits; remaining public data and provider/collection trust boundary; CI workflow trust and dependency audit; update the API/UI contract and check feature regressions from fail-closed behavior. Do not treat missing handlers as working functionality.
+- [ ] Independent whole-PR review; protected-data hash, isolated Windows HTTP and rollback evidence; main merge and approved localhost deployment only after all gates.
+
+## 2026-11-17 PR #5 P1 extraction integrity fix
+
+- [x] Remove fabricated RFP fallback and reject missing/short input; add HTTP regression tests (source commit pending verification).
+- [ ] Same-head CI and independent review of document source binding, format validation, object scope and upload size.
+- [ ] Full PR semantic review, protected data SHA evidence, Windows isolated HTTP smoke, merge gates.
+
+## 2026-11-17 PR #5 focused security review blocker
+
+- [ ] SEC-REVIEW-20261117-P1: [검수 기록](docs/reviews/PR5_SECURITY_SEMANTIC_2026-11-17.md) — DocumentExtractAPIView empty/short request silently fabricates RFP source and persists extraction. Reject without writes, add negative test and confirm document scope. Draft 유지, merge NO_GO until fixed/tested. Windows source has 34 untracked files and modified tracked files; original must not be touched.
+
+## 2026-11-17 사업부 집계 원가·공동 사업 검토 — 후속 구현 백로그
+
+정본: [사업부 집계 원가·공동 검토 설계](docs/server-migration/09-aggregate-cost-and-shared-review.md). PR #5 보안 검수 및 로컬 인수 게이트를 우회하지 않으며, 이후 SM04~SM07에 아래 작업을 순차 연결한다.
+
+- [ ] AGG-01 (SM03/04): 권한/공개 정책 및 집계 기준·원가 정의 확정, API/DB schema allowlist 설계, 합성 fixture. 급여/개인원가 원본 수집·저장·업로드 금지.
+- [ ] AGG-02 (SM04/06): 사업부 총인건비·총 MM·가용 MM 승인 버전/변경 이력, 평균 원가와 사업별 손익 결정적 계산, 누락/만료/충돌 상태, 개인·소그룹 원가 비노출.
+- [ ] AGG-03 (SM06): 동일 사업부 전 사용자 공통 분석 화면 및 의견, 기준 수정·최종 결정 권한 분리. 개인 작업/비밀/원본 범위 보존.
+- [ ] AGG-04 (SM06/07): 집계 역산/과거 버전·export·로그/API·타 부서·직책 우회 음성 테스트, 비용 계산 단위/정합성, 동시 수정, UI 인수, 별도 문맥 독립 검수. 기존 자료는 읽기 전용 검토/승인 집계만 복사하고 원본 불변 해시 확인.
+- [ ] AGG-05 (SM07): 회사 승인된 격리 시범 환경에서 사용자 피드백 수집, 승인된 집계만 등록, backup/restore/rollback 및 접근권한 검증. 실제 회사 서버 설치는 별도 허가·작업공간 확정 후 진행.
+
+## 2026-11-17 PR #5 security follow-up
+
+- [ ] Verify job ledger fencing, cancellation and owner-scope candidate regression tests on exact HEAD and independently review.
+- [ ] Review pre-publication domain side effects, cross-owner business-key handling/concurrency, remaining PR files, secrets, Windows isolation and protected-data hashes before merge.
+
+## 2026-11-14 현재 화면·UI 후보 문서화
+
+- [현재 화면 대응표·설계 완성도·GitHub UI 후보](docs/server-migration/08-current-screens-and-ui-references.md) 추가. 기본 설계는 준비됐으나 전체 상세 설계/UI 승인/서버 구현은 미완료다.
+- shadcn/ui·TanStack Table·PDF.js 조합을 제안하며 UI 패키지 설치/선정 확정은 하지 않았다. 소스 조사이며 운영 화면 재검증은 NOT RUN.
+
+## 2026-11-14 Astra 설계·스킬 검수 반영
+
+- GPT-6 Astra / medium 별도 읽기 전용 검수: 최초 P2 1건 수정 후 문서 범위 GO. 이관 식별키·파일/DB 실패 경계·예약 권한을 보완했다.
+- [스킬 선정·검수 기록](docs/server-migration/07-codex-skills-and-review.md): Django/React 선별 적용 조건, 일괄 워크플로 도입 보류, 독립 검수 절차. 스킬 설치·서비스 구현·배포는 하지 않았다.
+
 ## 2026-11-14 서버 전환 설계
 
 - [x] SM01 설계 초안: 스택·DB 계정/최초 암호 변경·정책 원본 연결·화면/API/데이터·이관 목차 작성. 별도 문맥 설계 게시 검수 GO·링크/정합성 검사 PASS. 구현 상태는 별도.

@@ -1,0 +1,4 @@
+# CPython 3.12, isolated foundation only
+Django==5.2.19
+djangorestframework==3.18.3
+psycopg[binary]==3.3.9

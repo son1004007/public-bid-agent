@@ -1,0 +1,50 @@
+name: Read-only public MCP protocol smoke
+
+on:
+  push:
+    branches: [fix/bid-security-20261116]
+    paths:
+      - 'server/bid_mcp/**'
+      - 'server/tests/test_mcp_public_scope.py'
+      - 'server/tests/test_mcp_db_scope.py'
+      - 'server/tests/smoke_mcp_protocol.py'
+      - 'server/mcp-requirements.in'
+      - '.github/workflows/mcp-readonly-smoke.yml'
+  pull_request:
+    paths:
+      - 'server/bid_mcp/**'
+      - 'server/tests/test_mcp_public_scope.py'
+      - 'server/tests/test_mcp_db_scope.py'
+      - 'server/tests/smoke_mcp_protocol.py'
+      - 'server/mcp-requirements.in'
+      - '.github/workflows/mcp-readonly-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-smoke:
+    # Public repository code only on ephemeral GitHub-hosted runner; never move to trusted device-control runner.
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Check static scope and syntax
+        run: |
+          python -m compileall -q server/bid_mcp server/tests/test_mcp_public_scope.py server/tests/test_mcp_db_scope.py server/tests/smoke_mcp_protocol.py
+          PYTHONPATH=server python -m unittest server.tests.test_mcp_public_scope -v
+      - name: Synthetic Django DB scope (in-memory SQLite only)
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: --require-hashes -r server/requirements.lock
+          PYTHONPATH=server python server/manage.py test tests.test_mcp_db_scope --settings=bid_server.settings.test --verbosity 1
+      - name: Isolated MCP SDK protocol smoke (no DB or external model)
+        run: |
+          python -m pip install --disable-pip-version-check --only-binary=:all: -r server/mcp-requirements.in
+          PYTHONPATH=server python server/tests/smoke_mcp_protocol.py

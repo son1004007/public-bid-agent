@@ -1,0 +1,44 @@
+name: AI Gateway core routing and evidence tests
+
+on:
+  push:
+    branches: [fix/bid-security-20261116]
+    paths:
+      - 'server/ai_gateway_core/**'
+      - 'server/tests/test_ai_gateway_core.py'
+      - 'server/tests/test_codex_adapter.py'
+      - 'server/tests/test_nas_docker_codex.py'
+      - 'server/tests/test_ai_gateway_snapshot.py'
+      - 'server/tests/test_ai_gateway_official_capture.py'
+      - '.github/workflows/ai-gateway-core.yml'
+  pull_request:
+    paths:
+      - 'server/ai_gateway_core/**'
+      - 'server/tests/test_ai_gateway_core.py'
+      - 'server/tests/test_codex_adapter.py'
+      - 'server/tests/test_nas_docker_codex.py'
+      - 'server/tests/test_ai_gateway_snapshot.py'
+      - 'server/tests/test_ai_gateway_official_capture.py'
+      - '.github/workflows/ai-gateway-core.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  core-logic:
+    # No private company RFP, provider credentials, CLI auth, or model requests.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m compileall -q server/ai_gateway_core server/tests/test_ai_gateway_core.py server/tests/test_codex_adapter.py server/tests/test_nas_docker_codex.py server/tests/test_ai_gateway_snapshot.py server/tests/test_ai_gateway_official_capture.py
+      - name: Run fail-closed 0-1-2 and evidence comparison tests
+        run: PYTHONPATH=server python -m unittest server.tests.test_ai_gateway_core server.tests.test_codex_adapter server.tests.test_nas_docker_codex server.tests.test_ai_gateway_snapshot server.tests.test_ai_gateway_official_capture -v

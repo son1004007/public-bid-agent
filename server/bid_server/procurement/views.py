@@ -1,0 +1,549 @@
+"""조달 공고 API 뷰 계약.
+목적: 공고 목록 검색/필터링, 상세 조회, 버전 이력 조회 및 대시보드 통계 집계 엔드포인트를 제공한다.
+경계: 세션 인증된 사용자만 접근 가능(ClosedUntilAuthentication). 원문 임의 수정 금지.
+관련: docs/server-migration/18-screen-api-contract.md §31-35.
+"""
+from datetime import timedelta
+import hashlib
+from django.db import connection
+from django.db.models import Count, Q, F, Prefetch
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.http import HttpResponse
+from django.utils.http import content_disposition_header
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from bid_server.core.permissions import ClosedUntilAuthentication
+from bid_server.core.errors import json_error
+from bid_server.core.responses import PageResponse
+from .models import (
+    Notice,
+    NoticeVersion,
+    DeadlineStatus,
+    Document,
+    DocumentVersion,
+    Proposal,
+    ProposalRevision,
+    ProposalSection,
+    DocumentStructure,
+    ExportArtifact,
+)
+from .serializers import (
+    NoticeSummarySerializer,
+    NoticeDetailSerializer,
+    NoticeVersionHistorySerializer,
+    ProposalSerializer,
+    ProposalRevisionSerializer,
+    DocumentStructureSerializer,
+)
+from .proposal_service import (
+    ProposalService, ProposalAccessError, owned_proposals, owned_proposal_revisions,
+    RevisionConflictError, PayloadTooLargeError,
+)
+from .parser import ParserError
+from .generator import ProposalExportService
+from .artifact_storage import ArtifactStorageError, read_verified_artifact
+from .review_service import review_projection
+from .extractor_service import (
+    ExtractionService, DocumentSourceMismatchError, DocumentAccessError, scoped_document_versions,
+)
+from bid_server.jobs.models import JobKind
+from bid_server.jobs.service import JobService
+
+
+class NoticeListAPIView(APIView):
+    permission_classes = [ClosedUntilAuthentication]
+
+    def get(self, request):
+        q = request.query_params.get("q", "").strip()
+        field = request.query_params.get("field", "").strip().upper()
+        status_filter = request.query_params.get("status", "").strip().lower()
+        buyer = request.query_params.get("buyer", "").strip()
+        deadline_from = request.query_params.get("deadline_from", "").strip()
+        deadline_to = request.query_params.get("deadline_to", "").strip()
+        sort = request.query_params.get("sort", "deadline").strip().lower()
+
+        limit_str = request.query_params.get("limit", "20")
+        try:
+            limit = min(max(int(limit_str), 1), 100)
+        except ValueError:
+            limit = 20
+
+        offset_str = request.query_params.get("offset", "0")
+        try:
+            offset = max(int(offset_str), 0)
+        except ValueError:
+            offset = 0
+
+        visible_versions = scoped_document_versions(request.user)
+        qs = Notice.objects.select_related("current_version").annotate(
+            document_count=Count(
+                "documents", filter=Q(documents__versions__in=visible_versions), distinct=True,
+            )
+        )
+
+        now = timezone.now()
+
+        # 1. 키워드 검색
+        if q:
+            qs = qs.filter(
+                Q(current_version__title__icontains=q)
+                | Q(current_version__buyer__icontains=q)
+                | Q(notice_number__icontains=q)
+            )
+
+        # 2. 발주기관 검색
+        if buyer:
+            qs = qs.filter(current_version__buyer__icontains=buyer)
+
+        # 3. 도메인 분류 필터 (AI, DATA, SW 등)
+        if field:
+            if connection.vendor == "sqlite":
+                qs = qs.filter(current_version__department_categories__icontains=f'"{field}"')
+            else:
+                qs = qs.filter(current_version__department_categories__contains=[field])
+
+        # DATE_ONLY does not establish a time; never advertise it as open.
+        known_deadline = Q(current_version__deadline_status__in=[
+            DeadlineStatus.PARSED, DeadlineStatus.EXPIRED,
+        ], current_version__deadline_at__isnull=False)
+
+        # 4. 상태 필터 (open, closed, cancelled, unknown)
+        if status_filter == "open":
+            qs = qs.filter(
+                known_deadline,
+                current_version__cancellation=False,
+                current_version__deadline_status=DeadlineStatus.PARSED,
+                current_version__deadline_at__gt=now,
+            )
+        elif status_filter in ("closed", "expired"):
+            qs = qs.filter(
+                known_deadline, current_version__cancellation=False,
+                current_version__deadline_at__lte=now,
+            )
+        elif status_filter == "cancelled":
+            qs = qs.filter(current_version__cancellation=True)
+        elif status_filter == "unknown":
+            qs = qs.filter(current_version__cancellation=False).exclude(known_deadline)
+
+        # 5. 마감일 범위 필터
+        if deadline_from:
+            qs = qs.filter(current_version__deadline_at__gte=deadline_from)
+        if deadline_to:
+            qs = qs.filter(current_version__deadline_at__lte=deadline_to)
+
+        # 5-1. 잔여 일수(D-Day) 최소 기준 필터
+        days_left_min_str = (
+            request.query_params.get("days_left_min", "")
+            or request.query_params.get("d_day_min", "")
+        ).strip()
+        if days_left_min_str.isdigit():
+            min_deadline = now + timedelta(days=int(days_left_min_str))
+            qs = qs.filter(known_deadline, current_version__deadline_status=DeadlineStatus.PARSED,
+                           current_version__cancellation=False, current_version__deadline_at__gt=now,
+                           current_version__deadline_at__gte=min_deadline)
+
+        # 5-2. 배정예산 범위 필터 (원 단위)
+        budget_min_str = request.query_params.get("budget_min", "").strip()
+        budget_max_str = request.query_params.get("budget_max", "").strip()
+        if budget_min_str.isdigit():
+            qs = qs.filter(current_version__budget_amount__gte=int(budget_min_str))
+        if budget_max_str.isdigit():
+            qs = qs.filter(current_version__budget_amount__lte=int(budget_max_str))
+
+        # 6. 정렬
+        if sort == "review":
+            # Metadata-only screening; the detail review still requires RFP and human checks.
+            qs = qs.filter(
+                source="G2B_OFFICIAL_API",
+                current_version__notice_id=F("id"),
+                current_version__cancellation=False, current_version__correction=False,
+                current_version__deadline_status=DeadlineStatus.PARSED,
+                current_version__deadline_at__gt=now,
+            )
+            categories = Q()
+            for category in ("AI", "DATA", "SW", "SECURITY"):
+                if connection.vendor == "sqlite":
+                    categories |= Q(current_version__department_categories__icontains=f'"{category}"')
+                else:
+                    categories |= Q(current_version__department_categories__contains=[category])
+            qs = qs.filter(categories).order_by("current_version__deadline_at", "id")
+        elif sort == "deadline":
+            qs = qs.order_by(
+                F("current_version__deadline_at").asc(nulls_last=True),
+                "-created_at",
+            )
+        elif sort == "budget":
+            qs = qs.order_by(
+                F("current_version__budget_amount").desc(nulls_last=True),
+                "-created_at",
+            )
+        elif sort == "observed" or sort == "newest":
+            qs = qs.order_by("-current_version__observed_at", "-created_at")
+        else:
+            qs = qs.order_by("-created_at")
+
+        total = qs.count()
+        notices = list(qs[offset : offset + limit])
+
+        next_cursor = None
+        if offset + limit < total:
+            next_cursor = str(offset + limit)
+
+        serializer = NoticeSummarySerializer(notices, many=True)
+        return PageResponse(serializer.data, next_cursor=next_cursor, total=total)
+
+
+class NoticeDetailAPIView(APIView):
+    permission_classes = [ClosedUntilAuthentication]
+
+    def get(self, request, notice_id):
+        visible_versions = scoped_document_versions(request.user)
+        visible_documents = Document.objects.filter(
+            versions__in=visible_versions,
+        ).distinct().prefetch_related(Prefetch("versions", queryset=visible_versions))
+        notice = get_object_or_404(
+            Notice.objects.select_related("current_version")
+            .prefetch_related(Prefetch("documents", queryset=visible_documents), "versions")
+            .annotate(total_versions=Count("versions", distinct=True)),
+            id=notice_id,
+        )
+        serializer = NoticeDetailSerializer(notice)
+        data = dict(serializer.data)
+        data["review"] = review_projection(notice, request.user)
+        return Response(data)
+
+
+class NoticeVersionsAPIView(APIView):
+    permission_classes = [ClosedUntilAuthentication]
+
+    def get(self, request, notice_id):
+        notice = get_object_or_404(Notice, id=notice_id)
+        versions = notice.versions.order_by("-version_seq")
+        serializer = NoticeVersionHistorySerializer(versions, many=True)
+        return Response(serializer.data)
+
+
+class DashboardAPIView(APIView):
+    permission_classes = [ClosedUntilAuthentication]
+
+    def get(self, request):
+        now = timezone.now()
+        urgent_window = now + timedelta(days=3)
+
+        total_notices = Notice.objects.count()
+        open_notices = Notice.objects.filter(
+            current_version__cancellation=False,
+            current_version__deadline_status=DeadlineStatus.PARSED,
+            current_version__deadline_at__gt=now,
+        ).count()
+        cancelled_notices = Notice.objects.filter(
+            current_version__cancellation=True
+        ).count()
+
+        if connection.vendor == "sqlite":
+            ai_count = Notice.objects.filter(
+                current_version__cancellation=False,
+                current_version__department_categories__icontains='"AI"',
+            ).count()
+            data_count = Notice.objects.filter(
+                current_version__cancellation=False,
+                current_version__department_categories__icontains='"DATA"',
+            ).count()
+            sw_count = Notice.objects.filter(
+                current_version__cancellation=False,
+                current_version__department_categories__icontains='"SW"',
+            ).count()
+        else:
+            ai_count = Notice.objects.filter(
+                current_version__cancellation=False,
+                current_version__department_categories__contains=["AI"],
+            ).count()
+            data_count = Notice.objects.filter(
+                current_version__cancellation=False,
+                current_version__department_categories__contains=["DATA"],
+            ).count()
+            sw_count = Notice.objects.filter(
+                current_version__cancellation=False,
+                current_version__department_categories__contains=["SW"],
+            ).count()
+
+        urgent_count = Notice.objects.filter(
+            current_version__cancellation=False,
+            current_version__deadline_status=DeadlineStatus.PARSED,
+            current_version__deadline_at__gt=now,
+            current_version__deadline_at__lte=urgent_window,
+        ).count()
+
+        latest_version = (
+            NoticeVersion.objects.order_by("-observed_at").first()
+        )
+        last_sync = latest_version.observed_at.isoformat() if latest_version else None
+
+        data = {
+            "counts": {
+                "total_notices": total_notices,
+                "open_notices": open_notices,
+                "cancelled_notices": cancelled_notices,
+                "ai_candidates": ai_count,
+                "data_candidates": data_count,
+                "sw_candidates": sw_count,
+                "urgent_deadline_3d": urgent_count,
+                "major_candidates": Notice.objects.filter(
+                    current_version__cancellation=False,
+                    current_version__deadline_status=DeadlineStatus.PARSED,
+                    current_version__deadline_at__gt=now,
+                    current_version__budget_amount__gte=300000000,
+                ).count(),
+            },
+            "collection_health": {
+                "status": "UNVERIFIED",
+                "source": None,
+                "last_sync_at": last_sync,
+            },
+            "as_of": now.isoformat(),
+        }
+        return Response(data)
+
+
+class ProposalListAPIView(APIView):
+    """제안서 목록 조회 API."""
+    permission_classes = [ClosedUntilAuthentication]
+
+    def get(self, request):
+        notice_id = request.query_params.get("notice_id", "").strip()
+        qs = owned_proposals(request.user).select_related("notice", "current_revision")
+        if notice_id:
+            qs = qs.filter(notice_id=notice_id)
+        serializer = ProposalSerializer(qs, many=True)
+        return Response(serializer.data)
+
+
+class ProposalDetailAPIView(APIView):
+    """제안서 상세 및 리비전 조회 API."""
+    permission_classes = [ClosedUntilAuthentication]
+
+    def get(self, request, pk):
+        proposal = get_object_or_404(
+            owned_proposals(request.user).select_related("notice", "current_revision"), pk=pk
+        )
+        serializer = ProposalSerializer(proposal)
+        return Response(serializer.data)
+
+
+class ProposalRevisionCreateAPIView(APIView):
+    """DEF-02: 제안서 신규 리비전 및 전체 절 원자적 커밋 API."""
+    permission_classes = [ClosedUntilAuthentication]
+
+    def post(self, request, pk):
+        proposal = get_object_or_404(owned_proposals(request.user), pk=pk)
+        data = request.data
+        # Every HTTP save carries an explicit optimistic-concurrency base.
+        # Reject malformed snapshots before any write or database constraint error.
+        if not isinstance(data, dict) or set(data) - {"title", "sections", "expected_parent_seq", "summary"}:
+            return json_error(request, 422)
+        title = data.get("title", "")
+        sections = data.get("sections")
+        expected_parent_seq = data.get("expected_parent_seq")
+        summary = data.get("summary", "")
+        if (type(expected_parent_seq) is not int or not 0 <= expected_parent_seq <= 2147483647
+                or not isinstance(title, str) or not title.strip() or len(title) > 500
+                or not isinstance(summary, str) or len(summary) > 50000
+                or not isinstance(sections, list) or not 1 <= len(sections) <= 100):
+            return json_error(request, 422)
+        keys, ordinals = set(), set()
+        for section in sections:
+            if not isinstance(section, dict) or set(section) != {"section_key", "ordinal", "title", "body"}:
+                return json_error(request, 422)
+            key, ordinal, heading, body = (section[name] for name in ("section_key", "ordinal", "title", "body"))
+            if (not isinstance(key, str) or not key.strip() or len(key) > 100
+                    or type(ordinal) is not int or not 1 <= ordinal <= 2147483647
+                    or not isinstance(heading, str) or not heading.strip() or len(heading) > 300
+                    or not isinstance(body, str)):
+                return json_error(request, 422)
+            if len(body) > 50000:
+                return json_error(request, 413)
+            if any("\x00" in value for value in (key, heading, body)) or key in keys or ordinal in ordinals:
+                return json_error(request, 422)
+            keys.add(key)
+            ordinals.add(ordinal)
+        if "\x00" in title or "\x00" in summary:
+            return json_error(request, 422)
+
+        try:
+            new_rev = ProposalService.create_atomic_revision(
+                proposal=proposal,
+                title=title,
+                sections=sections,
+                author=request.user,
+                actor_user=request.user,
+                expected_parent_seq=expected_parent_seq,
+                summary=summary,
+                provenance="HUMAN",
+                status="EDITED",
+            )
+            serializer = ProposalRevisionSerializer(new_rev)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except ProposalAccessError:
+            return Response({"error": "PROPOSAL_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+        except PayloadTooLargeError:
+            return json_error(request, 413)
+        except RevisionConflictError:
+            return json_error(request, 409)
+
+
+class ProposalExportAPIView(APIView):
+    """A29: 제안서 HWPX/DOCX 산출물 생성 및 바이너리 다운로드 API."""
+    permission_classes = [ClosedUntilAuthentication]
+
+    def perform_content_negotiation(self, request, force=False):
+        # DRF 기본 컨텐트 협상은 '?format=' 쿼리를 포맷 접미사 필터로 취급하여 404를 발생시킴.
+        # 파일 다운로드 및 JSON 오류 응답을 안전하게 처리하기 위해 기본 렌더러를 직접 반환.
+        renderers = self.get_renderers()
+        return (renderers[0], renderers[0].media_type)
+
+    def get(self, request, pk):
+        try:
+            proposal = owned_proposals(request.user).select_related("current_revision", "notice").get(pk=pk)
+        except Proposal.DoesNotExist:
+            return Response({"error": "PROPOSAL_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+
+        rev = proposal.current_revision
+        if not rev:
+            return Response(
+                {"error": "NO_REVISION", "detail": "제안서 리비전이 존재하지 않습니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        fmt = request.query_params.get("format", "hwpx").strip().lower()
+        try:
+            raw_bytes, file_name, sha256_hash, size_bytes = ProposalExportService.export_proposal_revision(
+                rev, fmt
+            )
+        except ValueError as v_err:
+            return Response(
+                {"error": "INVALID_FORMAT", "detail": str(v_err)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # GET is a read-only, on-demand download. Do not persist an artifact
+        # record for bytes that are not actually stored at storage_path.
+        # A future persisted export must use a separately authorized POST.
+
+        content_type = (
+            "application/x-hwp" if fmt == "hwpx"
+            else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        response = HttpResponse(raw_bytes, content_type=content_type)
+        response["Content-Disposition"] = content_disposition_header(True, file_name)
+        response["X-Artifact-SHA256"] = sha256_hash
+        return response
+
+
+class StoredArtifactDownloadAPIView(APIView):
+    """Download a published artifact only after authorization and byte verification."""
+    permission_classes = [ClosedUntilAuthentication]
+
+    def get(self, request, pk):
+        artifact = get_object_or_404(
+            ExportArtifact.objects.filter(
+                proposal_revision__in=owned_proposal_revisions(request.user),
+            ),
+            pk=pk,
+        )
+        if artifact.format not in ("HWPX", "DOCX"):
+            return Response({"error": "ARTIFACT_UNAVAILABLE"}, status=status.HTTP_409_CONFLICT)
+        try:
+            raw = read_verified_artifact(artifact.storage_path, artifact.sha256, artifact.size_bytes)
+        except ArtifactStorageError:
+            return Response({"error": "ARTIFACT_UNAVAILABLE"}, status=status.HTTP_409_CONFLICT)
+        content_type = (
+            "application/x-hwp" if artifact.format == "HWPX"
+            else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        response = HttpResponse(raw, content_type=content_type)
+        response["Content-Disposition"] = content_disposition_header(True, artifact.file_name)
+        response["X-Artifact-SHA256"] = artifact.sha256
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+
+class DocumentExtractAPIView(APIView):
+    """DEF-03: 첨부문서 파싱 및 구조 추출 실행 API."""
+    permission_classes = [ClosedUntilAuthentication]
+
+    def post(self, request, pk):
+        doc_version = get_object_or_404(
+            scoped_document_versions(request.user, write=True).select_related("document"), pk=pk
+        )
+        # No synthetic fallback: only explicitly supplied source bytes may be parsed.
+        # This endpoint currently accepts plain-text payloads only; binary document
+        # formats require a separately validated upload/storage contract.
+        if (request.content_type != "text/plain"
+                or doc_version.media_type.split(";")[0].strip().lower() != "text/plain"):
+            return Response(
+                {"error": "UNSUPPORTED_MEDIA_TYPE"},
+                status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            )
+        raw_bytes = request.body
+        if len(raw_bytes) < 4:
+            return Response(
+                {"error": "DOCUMENT_BODY_REQUIRED"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(raw_bytes) > 10 * 1024 * 1024:
+            return Response(
+                {"error": "DOCUMENT_TOO_LARGE"},
+                status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            )
+
+        # The extraction must be bound to the immutable source document version.
+        # A valid-looking arbitrary payload is not evidence of the stored RFP.
+        if (
+            len(raw_bytes) != doc_version.size_bytes
+            or hashlib.sha256(raw_bytes).hexdigest() != doc_version.sha256.lower()
+        ):
+            return Response(
+                {"error": "DOCUMENT_SOURCE_MISMATCH"},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        try:
+            run = ExtractionService.extract_and_persist(
+                document_version=doc_version,
+                raw_bytes=raw_bytes,
+                file_name=doc_version.document.logical_key + ".txt",
+                actor_user=request.user,
+            )
+        except ParserError:
+            return Response({"error": "DOCUMENT_FORMAT_INVALID"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        except DocumentAccessError:
+            return Response({"error": "DOCUMENT_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+        except DocumentSourceMismatchError:
+            return Response(
+                {"error": "DOCUMENT_SOURCE_MISMATCH"},
+                status=status.HTTP_409_CONFLICT,
+            )
+        except DocumentVersion.DoesNotExist:
+            return Response(
+                {"error": "DOCUMENT_SOURCE_MISMATCH"},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return Response({
+            "extraction_run_id": str(run.id),
+            "state": run.state,
+            "coverage": run.coverage,
+            "warnings": run.warnings,
+        }, status=status.HTTP_201_CREATED)
+
+
+class DocumentStructureAPIView(APIView):
+    """DEF-03: 추출된 문서 구조(표/각주 포함) 조회 API."""
+    permission_classes = [ClosedUntilAuthentication]
+
+    def get(self, request, pk):
+        doc_version = get_object_or_404(scoped_document_versions(request.user), pk=pk)
+        structures = DocumentStructure.objects.filter(document_version=doc_version)
+        serializer = DocumentStructureSerializer(structures, many=True)
+        return Response(serializer.data)

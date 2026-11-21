@@ -1,9 +1,9 @@
 # 서버 전환 설계 — AI·개발자 공통 시작점
 
-- 기준일: 2026-11-14 (Asia/Seoul)
-- 상태: **STACK_DECIDED / DESIGN_DRAFT / NOT_IMPLEMENTED**
+- 기준일: 2026-11-14 (Asia/Seoul), 집계 원가/업무 권한 설계 갱신: 2026-11-17
+- 상태: **STACK_DECIDED / CODE_PARTIAL / COMPANY_DATA1_NOT_DEPLOYED** (최신 실제 상태는 CURRENT_STATE.md와 TASKS.md)
 - 사용자 확정: Linux 서버 운영, PostgreSQL, React/TypeScript 웹, Django/DRF API, DB 로컬 계정, SSO 제외, 최초 로그인 후 비밀번호 변경 강제.
-- 이번 산출물은 설계 문서다. DB 생성·데이터 이전·인증 구현·신규 서버 배포·공개는 수행하지 않는다. 기존 로컬 운영은 보존한다.
+- 최초 작성 시점에는 설계 문서였다. 2026-11-20 현재 Django 합성 DB 모델/인증·작업 API 일부와 AGW Docker Session Adapter 구현·테스트 증거가 존재한다. **회사 운영 DB 이관·회사 data1 서버 배포·신규 서비스 공개는 아직 수행하지 않았다.** 최신 코드·실행 증거는 CURRENT_STATE/TASKS 및 AGW 실측 문서를 확인한다.
 
 ## 목차와 읽기 순서
 
@@ -17,6 +17,21 @@
 | 5 | [화면별 설계](04-screens.md) | 사용자가 화면마다 무엇을 보고 실행하는가? |
 | 6 | [데이터·API·작업 계약](05-data-api-jobs.md) | DB/파일/작업/권한의 경계는 무엇인가? |
 | 7 | [이관·검증·운영·실행 순서](06-migration-and-acceptance.md) | 무엇부터 만들고 어떤 증거로 완료하는가? |
+| 8 | [Codex 스킬 선정·독립 검수](07-codex-skills-and-review.md) | 어떤 스킬을 선별하고 다른 Codex가 어떻게 검수하는가? |
+| 9 | [현재 화면·설계 완성도·UI 후보](08-current-screens-and-ui-references.md) | 지금 있는 기능과 남은 설계, 화면 개선에 참고할 저장소는 무엇인가? |
+| 10 | [사업부 집계 원가·공동 사업 검토](09-aggregate-cost-and-shared-review.md) | 개인 급여 미수집, 집계 원가 계산과 전 사용자 공유 범위, 역할별 변경·결정 권한은 무엇인가? |
+| 11 | [Hybrid RAG 입찰 판단 설계](10-hybrid-rag-bid-decision.md) | 실제 RFP와 사업부 증빙 검색 + SQL 사실·손익·판정 계약 |
+| 12 | [사업 담당자 이해용 설명](11-hybrid-rag-business-guide.md) | 도식·가상 업무 예시 |
+| 13 | [전사 역량·부서 협업 및 전체 아키텍처](12-enterprise-capability-hybrid-rag.md) | 법인과 부서, 지원 요청/가용성, 정량·정성 및 비용 시나리오 |
+| 14 | [GPT·Claude·Gemini 연동 후보](13-multi-llm-provider-routing.md) | LLM 공급자 교체 구조, 과금·사내 반출 승인, 검증 순서 |
+| 15 | [공개 입찰 MCP 연결·검증](14-bid-mcp-interface.md) | 공개 공고/승인 RFP 읽기 도구·stdio 구현과 인증된 원격 연결 조건 |
+| 16 | [Codex·Claude 조건부 교차 검증 및 MCP·구독 정책](15-mcp-provider-executor-subscription-policy.md) | 가용 0/1/2개별 동작, 독립 분석/근거 비교/JSON 저장, 허가된 실행과 개인 CLI 경계 |
+| 17 | [사용자별 Codex·Claude CLI 로그인·resume·증거 기반 교차 검증](16-user-cli-session-and-blind-cross-check.md) | 세션 장기 보존, 원본 답변 비공유, 불일치 때만 별도 이슈 세션 검증 |
+| 18 | [AI Gateway 실제 구현용 AGW-00~15 상세 카드/의존성](../implementation/ai-gateway/README.md) | 16개 단위 설계·계획서: CLI 로그인·세션·실행·JSON·교차 검증·UI·배포/평가, 공통 DB/API 계약 |
+| 19 | [AI Gateway 2026-11-20 실제 구현·검증 기록](../implementation/ai-gateway/AGW-RUN-2026-11-20.md) | 사용자별 서버 API/모델과 개인 Windows Codex E2E 분리, CI 증거 및 남은 실행 허가 |
+| 20 | [NAS Docker Codex 동일 세션 Resume·AGW-02/04 구현 및 테스트 증거](../implementation/ai-gateway/AGW-NAS-SESSION-E2E-2026-11-20.md) | 실제 NAS Docker 2회 모델/동일 session, DB lease/fencing·컨테이너 runner, 운영 차단 조건 |
+| 21 | [AGW-05/09 합성 RFP 출처 packet·JSON 검증/DB 실행 이력 구현](../implementation/ai-gateway/AGW-05-09-IMPLEMENTATION-2026-11-20.md) | 2026-11-20 P0 첫 구현, CI 증거 및 남은 공개 공고·Fact·보안 게이트 |
+| 22 | [AGW-05 공고·첨부 원본 바이트 SHA·PUBLIC 승인 구현 인수](../implementation/ai-gateway/AGW-05-PUBLIC-PROVENANCE-2026-11-20.md) | 초과 Chunk 차단, 공식 출처/승인, 무결성 재검증, 실제 공고 수집·실행 HOLD |
 
 ## 다른 AI에게 전달할 짧은 시작 지시
 
@@ -26,10 +41,15 @@ AGENTS.md와 DECISIONS.md의 최신 결정을 읽고 docs/server-migration/READM
 현재 브랜치/HEAD/미커밋 파일/동시 실행/실제 운영 버전을 먼저 확인한다.
 설계 문서를 구현 완료로 해석하지 않는다. 기존 JSON/첨부/검수 이력/설정은 보존한다.
 SSO를 추가하지 않는다. DB 계정과 최초 비밀번호 변경 게이트를 서버에서 강제한다.
+09의 최신 원가/공유 정책을 우선 적용한다. 개인별 급여/단가 미수집, 집계 기준과 승인된 결과 공유, 수정/결정 권한 분리.
 작업 카드 하나를 선택하고 변경 영역 검증→필요 회귀→별도 문맥 독립 검수 순으로 수행한다.
 회사 비공개 자료·정책·암호·원문은 공개 Git/외부 로그에 복제하지 않는다.
 배포 대상/운영 이전 승인은 별도 확인한다. 실제 입찰·자동 투찰은 절대 수행하지 않는다.
 ```
+
+## 설계 완성도
+
+기본 설계·구현 순서는 준비됐지만 전체 상세 설계 완료는 아니다. 화면 시안/필드·권한표·실제 DB/API 세부 계약·운영 환경은 각 SM 카드 전에 구체화한다. [현재 화면 대응표와 남은 상세](08-current-screens-and-ui-references.md)를 확인한다. 설계 GO를 UI 승인·구현 완료로 해석하지 않는다.
 
 ## 문서 권위와 미정 사항
 
@@ -40,3 +60,5 @@ SSO를 추가하지 않는다. DB 계정과 최초 비밀번호 변경 게이트
 ## 설계 문서 검수 기록
 
 2026-11-14 별도 문맥 읽기 전용 Codex 검수 `server_design_readonly`: 최초 NO_GO(P2: 암호 변경 commit 이후 응답 유실의 결과 불명을 rollback과 혼동), 지적 수정 후 **GO — 문서 게시 검수 한정**. 원본 조직 정책/개인 설정/운영 데이터 접근 없이 공개 문서만 검토했다. 상대 링크와 diff 공백 검사 PASS. 앱 테스트 NOT RUN(문서만 변경). 이 기록은 구현·보안 인증·UI 승인·서버 배포 완료를 뜻하지 않는다.
+
+2026-11-14 추가 사용자 요청에 따른 GPT-6 Astra / medium 독립 설계·스킬 검수: 이관 식별키 P2 수정 및 실패/권한 계약 보완 후 **GO(문서 범위)**. [상세 근거·적용 조건](07-codex-skills-and-review.md#7-검수-기록). 외부 스킬은 설치하지 않았다.

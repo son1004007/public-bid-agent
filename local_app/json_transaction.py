@@ -48,10 +48,9 @@ def transaction(root: Path, timeout: float = 10.0, *, name: str = _LOCK_FILE):
     with _local_lock(path, max(0.0, deadline - time.monotonic())), path.open("a+b") as handle:
         if os.name == "posix":
             os.chmod(path, 0o600)
-        handle.seek(0, 2)
-        if handle.tell() == 0:
-            handle.write(b"\0")
-            handle.flush()
+        # Do not write a sentinel before acquiring the OS lock: on Windows
+        # another process may already hold a byte-range lock on this file.
+        # msvcrt.locking can lock the first byte of an empty lock file.
         if os.name == "nt":
             import msvcrt
             handle.seek(0)
