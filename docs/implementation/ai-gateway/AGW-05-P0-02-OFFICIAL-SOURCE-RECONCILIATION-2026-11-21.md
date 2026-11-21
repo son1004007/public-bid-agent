@@ -104,3 +104,23 @@
 - `job_01M7XRRNQZ001FD57PJVC6N31R`: 운영 반영 후 새 custom-format PostgreSQL 덤프 **1,977,333 bytes**, `pg_restore --list`와 SHA 검증 PASS. 이 후속 덤프는 owner/ACL을 포함하지만 데이터베이스 외 cluster-wide roles/global 설정 보장은 별도.
 - **남은 P0-02:** 기존 운영 계정 1건 중 승인된 staff 0명이라 `reconcile_official_g2b_source --apply`의 실제 `OfficialSourceLink` 영속 기록은 안전하게 **NOT_RUN**. 임의 staff 승격·대리 actor·직접 INSERT/승인우회 금지. [중앙 USER ACTION #35](https://github.com/son1004007/ai-agent-workflow-playbook/issues/35)에서 적법한 운영자 계정 확보 후 동일 고정 source + 현 원본/ACL 재검산 → dry-run → 1건 apply/replay → read-back 인수. [자격증명 USER ACTION #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26)은 PR #5 릴리스 차단으로 계속 열림.
 - 기존 영속 수집·추출 원본, 서비스 계정 권한, 운영 이미지, PUBLIC attestation, 모델 export, data1 배포, 기존 예약 전부 **변경/활성화하지 않음**. 전체 P0-02는 `SCHEMA_DONE / REAL_LINK_BLOCKED`이고 PR은 Draft/미병합 상태 유지.
+
+## 9. 2026-11-21 개인 NAS 직원 관리자 1명 신규 생성·보안 게이트 실증
+
+**최신 판정:** `LIVE_DB_SCHEMA_APPLIED` / `RESTRICTED_STAFF_ACCOUNT_CREATED` / `FIRST_PASSWORD_CHANGE_REQUIRED` / `REAL_OFFICIAL_SOURCE_LINK_NOT_APPLIED`.
+
+### 사용자 명시 요청과 계정 생성
+
+- 사용자가 **“직원 관리자 계정 생성하고 다시 진행해봐”**로 신규 관리자 계정 생성을 명시 승인. 신규 전용 관리자 bootstrap 코드 `server/bid_server/accounts/management/commands/bootstrap_staff_operator.py`를 GitHub 작업 브랜치에 추가.
+- 기존 운영 DB에서 기존 사용자 1/관리자 0 및 보존된 데이터/백업 검증 후, 본인 소유 NAS의 비승격·무네트워크·read-only Docker 실행기 + PostgreSQL socket/secret readonly로 **기존 사용자를 수정하지 않고 신규 사용자 1명 생성**. 신규 계정은 최소권한 `is_staff=True`, `role=lead`, `is_superuser=False`, `is_active=True`, `must_change_password=True`, `password_changed_at=NULL`, 24시간 임시 암호 만료. 타 사용자 권한 변경 없음.
+- 임시 자격증명은 32-byte 비밀난수 기반 token URL-safe 형식으로 생성하며 비밀값을 CLI 인자/환경변수/터미널/ChatGPT/GitHub/로그에 출력하거나 기록하지 않음. NAS 소유자 전용 권한 `0700` 디렉터리 아래 `0600` 파일로 보관하여, stdin private pipe로만 안전한 `Django.set_password`에 전달. 비밀번호 검증 `validate_password` 선행. 백엔드 DB 저장값은 Django 비복호화 해시. 로그인 뒤 사용자 본인이 최초 변경해야 업무 권한이 활성화되는 정책 준수.
+- **실운영 적용:** `job_01M7YFAKVV00M1QD7RDVSWW9CA` — dry-run `STAFF_OPERATOR_DRY_RUN_VALID`, 신규 row 생성 `STAFF_OPERATOR_CREATED_PASSWORD_CHANGE_REQUIRED` 성공. 같은 실행 끝의 사후 검증은 구버전 운영 앱 이미지에 `ai_gateway` 코드가 없어 ImportError였으나 **실제 별도 고정 SHA 코드/운영 DB read-only 검증** `job_01M7YFBT6R00P233KJE42ENXB2` PASS: 사용자 2/관리자 1/유효 staff 0/SourceLink 0/PUBLIC 승인 0/기존 문서 8/Chunk 14,612/부트스트랩 감사이벤트 1/기존 웹 재시작 0. 실패한 초기 검증과 실 계정 생성 성공을 명확히 분리.
+- 변경 후 DB 추가 백업 `job_01M7YFHS38009M0FKQFW0KJW26` — `pg_dump -Fc` 1,977,528 bytes / SHA 검산 / `pg_restore --list` PASS, NAS 소유자 보호 경로에 보관.
+- 신규 코드 **SHA `d85d9309b242ce53f78ed58cf8be81441722bcb2`** GitHub 주요 6개 CI workflow SUCCESS(Windows synthetic 포함). 기존 실 운영 백업 복원본에서 실제 staff bootstrap 테스트 PASS `job_01M7YF8ZNB00H4FSTYT72ES79A`, 기존 사용자 데이터 보존·첫 암호 변경 게이트 테스트. NAS 최소 단위 계정 secret parser 3 tests PASS `job_01M7YFEGJX009ZV5D8JEPXPG7E`. GitHub CI는 실제 운영 계정 활성화 증거가 아님.
+
+### 운영 출처 재검증 및 현재 유효한 차단
+
+- 원본/manifest/HWPX/현행 NoticeVersion/DocumentVersion/ACL/source URL/sha 분리 **실제 운영 데이터 재검증 PASS**, `job_01M7YFFXY8005ZXJ4HCF8WS1HR`. 미완료 최초 암호 변경 계정에 `reconcile_official_source_capture(..., apply=False)` 호출 시 `LINK_OPERATOR_NOT_AUTHORIZED` 거부됨을 확인; **신규 실제 SourceLink는 0건**. 승인 우회, 가짜 staff actor, `must_change_password=False` SQL 직접 수정, 프로그램에 의한 대리 최초 변경 금지.
+- 기존 NAS RFP 미리보기 웹은 `GET /api/auth/csrf`, `/api/auth/session` 미구현(404). 사용자가 직접 인증·비밀번호 변경할 수 있도록 `complete_staff_first_password_change` **TTY 전용 인터랙티브 관리 명령** 추가, 해당 소스 고정 SHA로 NAS 소유자 전용 비공개 shell helper를 마련. helper는 프롬프트를 통해 현재 임시 암호와 새 암호 2회 입력, `check_password` + Django validator + DB 행 잠금/epoch 갱신/세션 폐기, 성공 시 임시 평문 비밀 파일 제거. 비TTY 호출 거부 `job_01M7YFJQ5X00393CF6H335A6GF` PASS. **사용자 실제 최초 비밀번호 변경은 현재 NOT_RUN**.
+- [중앙 사용자 작업 #35](https://github.com/son1004007/ai-agent-workflow-playbook/issues/35)의 차단 범위는 **계정 미생성**에서 **신규 계정 최초 비밀번호 변경 필요**로 좁혀짐. 완료 확인 시 최신 고정 소스, 원본·DB 재검증 후 `reconcile_official_g2b_source` dry-run → 명시 apply 1건 → read-back/replay를 재개. 해당 변경은 PUBLIC 승인 또는 provider export/AI 실행을 포함하지 않음.
+- [기존 인증정보 회전/세션폐기 이슈 #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) 및 PR #5 Draft release 제한 유지. 기존 컨테이너, 비공개 원문, 회사 data1, 자동 스케줄, 직원별 업무 역할은 변경하지 않음.
