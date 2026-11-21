@@ -1,3 +1,5 @@
+> **2026-11-21 P0-04 PUBLIC source-link 보강:** P0-02 공식 raw 응답 SHA와 기존 canonical metadata SHA는 다릅니다. PUBLIC staff 승인 및 분석 snapshot/dispatch 검증은 이제 `OfficialSourceLink` 존재·일치와 실제 raw 바이트를 검증하고, 링크 누락/변경에 fail-closed합니다. 합성 회귀를 추가했으며 최신 CI는 별도 확인. NAS 운영 DB 신규 migration/실자료 승인/모델 호출·회사 배포는 미실행. 자세한 작업 상태는 [TASKS](TASKS.md), [CURRENT_STATE](CURRENT_STATE.md) 참조.
+
 > **2026-11-21 P0-03 source-exact chunking/coverage:** [P0-03 HWPX 원문 보존 Chunk·실제 NAS 5건 읽기 전용 검증](docs/implementation/ai-gateway/AGW-05-P0-03-EXTRACTION-COVERAGE-2026-11-21.md). 모든 문단/표 셀/각주 Chunk 1,800 UTF-8 byte 이하·문서/원문 조각 SHA·추출 텍스트 상대 char/byte offset, 5글자 이하 표 셀 149건 보존 검증. 실제 5개 HWPX 재파싱·SHA 및 신규 예상 14,743건은 **비파괴 read-only 시뮬레이션**, 운영 DB 신규 Chunk 기록은 NOT_RUN, coverage.complete FALSE/표·각주 구조 미인증, P0-04 PUBLIC/모델 송신 OFF.
 
 > **2026-11-21 P0-02 공식 raw/canonical SHA 독립 매핑:** [설계·구현·검증·보안 게이트](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md). 기존 G2B 공고/문서 버전은 덮어쓰지 않고 별도 불변 SourceLink/DB migration/운영자 기본 read-only 명령으로 출처를 결속하도록 구현. NAS 원본 SHA와 DB 정규화 SHA가 실제로 다름을 검증했으나, 기존 NAS DB의 새 migration/SourceLink 적용과 공개·모델 승인은 아직 하지 않음.
