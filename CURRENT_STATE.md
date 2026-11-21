@@ -1,3 +1,11 @@
+## 2026-11-21 P0-04 공식 PUBLIC 출처 검증 코드 보강 (실제 승인·운영 미실행)
+
+- `public_source.py`: 공식 raw notice 응답 해시를 기존 NoticeVersion canonical metadata 해시와 동일시하던 P0-04 결함 수정. 승인 전 P0-02 `OfficialSourceLink`의 문서/공고/차수/각 SHA·size·storage key 불변 결속을 확인하고, 실제 raw notice/document 바이트를 결속된 값과 대조합니다.
+- `analysis_service.py`: snapshot 생성, dispatch preflight, 결과 revision 검증에서 `PublicRfpAttestation.notice_source_sha256`을 **OfficialSourceLink.raw_notice_sha256**과 비교합니다. missing/stale link 또는 승인 철회는 fail-closed. synthetic 불일치 SHA·missing link·stale canonical digest·승인 후 storage 변경 회귀 추가.
+- **상태:** 브랜치 코드 변경 / 최신 CI 판정 별도 확인. 기존 개인 NAS는 연결되어 읽기 전용으로 실행 중인 bid 컨테이너 확인; 현 설치 이미지에 신규 `0004` migration 없음. **운영 DB 백업·독립 복구 인수/DB migration/실 SourceLink insert/실 staff PUBLIC attestation/모델 송신/회사 data1 배포는 전부 NOT_RUN**. 중앙 credential [USER ACTION #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) 열림, PR #5 Draft 유지.
+
+---
+
 ## 2026-11-21 P0-02 실 NAS 인수 — 격리 PG/복구 PASS, 운영 실자료 read-only PASS
 
 > **2026-11-21 P0-02 실 NAS 격리 DB/복구 인수:** [격리 PostgreSQL migration·복구·실원본 대조](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md#6-2026-11-21-격리-db-배포복구-및-실원본-검증). 작업 브랜치 e2756f38의 별도 임시 checkout + 네트워크 차단 PostgreSQL 16.15 tmpfs 환경에서 신규 0004 테이블/불변 트리거 설치, 합성 SourceLink 1건 INSERT, 독립 DB 백업·복구 및 rollback/reapply 모두 **PASS**. 실제 공식 원본과 기존 운영 DB는 정확한 최신 검증 함수로 **읽기 전용 PASS**. **운영 DB migration/실원본 INSERT는 NOT_APPLIED**, 격리 DB로 실제 raw 바이트 INSERT는 도구 안전검사에서 차단되어 **NOT_RUN**. 임시 컨테이너·checkout 폐기, 기존 NAS 앱 running. 직원 승인/AI 반출/회사 배포 및 PR #5 release 차단 유지.
