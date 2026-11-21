@@ -1,3 +1,13 @@
+## 2026-11-21 P0-02 NAS 운영 DB 스키마 실반영 — SCHEMA_DONE / REAL_LINK_BLOCKED
+
+- 사용자 요청으로 개인 NAS 기존 PostgreSQL 16.15 DB에 ai_gateway 0001~0004 마이그레이션 적용 **PASS**, OfficialSourceLink table/immutability trigger 생성. 코드 고정 SHA 26a0404cbddb0b8a9f31f4d64c3d1fbefd45b4c0, 운영 이미지 교체/재시작 없음.
+- 변경 전 운영 데이터 pg_dump, media 및 capture 별도 볼륨 백업·SHA 검증, 실제 DB 독립 복원 및 복원본 마이그레이션, HWPX 5개·공식 capture 2개 독립 tmpfs 복원 PASS. 변경 후 DB 추가 덤프 생성·검산. 백업은 NAS 비공개 0700 디렉터리에 유지하며 오프호스트 DR/cluster globals 증거는 아님.
+- 운영 사후 실측: 사용자 1건/DocumentVersion 8건/Chunk 14,612건, ai_gateway migration 4/SourceLink 0/PUBLIC 승인 0/불변 트리거 1; 기존 web container restart 0 및 UNIX socket GET / = HTTP 200. Gateway migration job_01M7XRNKNK009B5CMVJNPSTP8C, service+DB job_01M7XRQGGV00Q8RDEME6ZNEHVJ, real restore+migration job_01M7XRK1JM00QKF6VRF54FV2N7.
+- 활성 직원 관리자 조건 충족 계정 0명으로 실제 SourceLink row 생성 미실행. [중앙 USER ACTION #35](https://github.com/son1004007/ai-agent-workflow-playbook/issues/35) 해결 후 trusted operator dry-run→apply→read-back 재개. [자격증명 #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) 및 Draft PR #5 release 차단 유지. PUBLIC 승인/모델 호출/회사 data1/기존 스케줄/직원권한 변경 없음.
+- [실제 백업·마이그레이션·검증 상세 §8](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md#8-2026-11-21-실제-nas-운영-postgresql-스키마-적용-사용자-명시-요청).
+
+---
+
 > **2026-11-21 P0-04 정확 SHA CI / P0-02 운영 관측:** 코드 SHA [`0c1e1ac7`](https://github.com/son1004007/public-bid-agent/commit/0c1e1ac73151ecdd25db0a8e83238bd9945cdf4a)의 [Server foundation CI](https://github.com/son1004007/public-bid-agent/actions/runs/44843275144)에서 Win/Linux/PostgreSQL 각 441 tests PASS, migration check PASS. Gateway 개인 NAS `job_01M7XQHRZ20042J8SDZ43DY1CT`/`job_01M7XQR92800SFKFN723XY1XFR` 비변경 관측에서 기존 컨테이너 실행, 신규 migration 미설치, pg_dump/pg_restore 16.15 존재 확인. **기존 운영 데이터·파일 백업 복구/DB migration/SourceLink 영속화/실원본 PUBLIC 승인·AI 호출 전부 NOT_RUN**, [P0-02 인수 기록 §7](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md#7-2026-11-21-운영-반영-가능성-추가-관측-변경-없음) 참조.
 
 ## 2026-11-21 P0-04 공식 PUBLIC 출처 검증 코드 보강 (실제 승인·운영 미실행)
