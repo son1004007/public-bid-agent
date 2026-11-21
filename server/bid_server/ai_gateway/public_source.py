@@ -14,7 +14,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from bid_server.procurement.models import DocumentFreshness, DocumentVersion
-from .models import PublicRfpAttestation
+from .models import OfficialSourceLink, PublicRfpAttestation
 
 # Official government/G2B endpoints verified in procurement agency open API docs.
 # Exact host comparison prevents attacker.example.g2b.go.kr.evil.test confusion.
@@ -53,6 +53,36 @@ def official_source_url(value: str) -> bool:
         return bool(url.path and url.path.startswith("/"))
     except (ValueError, TypeError):
         return False
+
+
+
+def verified_official_source_link(*, doc, notice_version):
+    """공식 raw digest와 기존 canonical digest의 불변 DB 결속을 검증합니다.
+
+    원본 재다운로드나 권한 변경 없이 저장된 P0-02 mapping만 확인합니다.
+    실제 원본 byte 검증은 staff 승인 시 별도로 수행해야 합니다.
+    """
+    try:
+        link = OfficialSourceLink.objects.get(document_version_id=doc.pk)
+    except OfficialSourceLink.DoesNotExist:
+        raise PublicSourceError("OFFICIAL_SOURCE_LINK_MISSING") from None
+    if (
+        link.notice_version_id != notice_version.pk
+        or notice_version.notice.current_version_id != notice_version.pk
+        or notice_version.cancellation or notice_version.correction
+        or doc.notice_version_id != notice_version.pk
+        or doc.document.notice_id != notice_version.notice_id
+        or link.metadata_canonical_sha256 != notice_version.source_payload_digest
+        or link.document_sha256 != doc.sha256
+        or link.document_size_bytes != doc.size_bytes
+        or link.existing_document_storage_key != doc.storage_key
+        or not isinstance(notice_version.source_revision, str)
+        or not notice_version.source_revision.isdecimal()
+        or not link.official_revision.isdecimal()
+        or int(link.official_revision) != int(notice_version.source_revision)
+    ):
+        raise PublicSourceError("OFFICIAL_SOURCE_LINK_STALE")
+    return link
 
 
 def approve_official_public_document(
@@ -98,7 +128,7 @@ def approve_official_public_document(
         if (
             notice.source != "G2B_OFFICIAL_API"
             or notice.current_version_id != notice_version.pk
-            or notice_version.cancellation
+            or notice_version.cancellation or notice_version.correction
             or doc.document.notice_id != notice.pk
             or doc.freshness != DocumentFreshness.CURRENT
             or not doc.shared_read_approved
@@ -109,7 +139,17 @@ def approve_official_public_document(
             raise PublicSourceError("PUBLIC_SOURCE_NOT_VERIFIED")
         doc_digest = hashlib.sha256(raw_document_bytes).hexdigest()
         notice_digest = hashlib.sha256(raw_notice_payload_bytes).hexdigest()
-        if doc.sha256 != doc_digest or notice_version.source_payload_digest != notice_digest:
+        if doc.sha256 != doc_digest:
+            raise PublicSourceError("PUBLIC_SOURCE_BYTES_MISMATCH")
+        # The importer metadata digest is intentionally NOT the raw HTTP SHA.
+        # The source link was established by the separate P0-02 capture gate.
+        link = verified_official_source_link(doc=doc, notice_version=notice_version)
+        if (
+            link.raw_notice_sha256 != notice_digest
+            or link.raw_notice_size_bytes != len(raw_notice_payload_bytes)
+            or link.document_sha256 != doc_digest
+            or link.document_size_bytes != len(raw_document_bytes)
+        ):
             raise PublicSourceError("PUBLIC_SOURCE_BYTES_MISMATCH")
         if PublicRfpAttestation.objects.filter(document_version=doc).exists():
             raise PublicSourceError("ATTESTATION_ALREADY_EXISTS")
