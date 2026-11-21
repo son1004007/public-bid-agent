@@ -15,7 +15,9 @@ from bid_server.procurement.models import (
     Chunk, ChunkCategory, Document, DocumentVersion, ExtractionRun,
     ExtractionState, Notice, NoticeVersion,
 )
-from bid_server.ai_gateway.models import PublicRfpAttestation, AnalysisRun, AnalysisRevision
+from bid_server.ai_gateway.models import (
+    OfficialSourceLink, PublicRfpAttestation, AnalysisRun, AnalysisRevision,
+)
 from bid_server.ai_gateway.analysis_service import (
     AnalysisServiceError, create_attested_public_analysis_run,
     create_synthetic_analysis_run, append_validated_result,
@@ -44,7 +46,10 @@ class AttestedPublicSourceTests(TestCase):
         self.version = NoticeVersion.objects.create(
             notice=self.notice, version_seq=1, observed_at=timezone.now(),
             title="Synthetic official-looking sample", buyer="Synthetic Office",
-            source_payload_digest=hashlib.sha256(self.raw_notice).hexdigest(),
+            source_revision="000",
+            source_payload_digest=hashlib.sha256(
+                b"synthetic normalized metadata, not HTTP response"
+            ).hexdigest(),
             source_url="https://www.g2b.go.kr/pn/pnp/test/notice",
         )
         self.notice.current_version = self.version
@@ -54,8 +59,26 @@ class AttestedPublicSourceTests(TestCase):
             document=self.document, notice_version=self.version, version_seq=1,
             sha256=hashlib.sha256(self.raw_doc).hexdigest(),
             size_bytes=len(self.raw_doc),
+            storage_key="public-rfp/" + hashlib.sha256(self.raw_doc).hexdigest() + ".hwpx",
+            owner_user=self.reviewer,
             source_url="https://www.g2b.go.kr/pn/pnp/file/download",
             shared_read_approved=True,
+        )
+        # Synthetic P0-02 link: canonical metadata SHA deliberately differs
+        # from raw notice SHA. No real source/manifest/network is used.
+        self.source_link = OfficialSourceLink.objects.create(
+            notice_version=self.version, document_version=self.doc,
+            linked_by=self.reviewer,
+            capture_id=hashlib.sha256(b"synthetic official source link").hexdigest(),
+            official_revision="000",
+            metadata_canonical_sha256=self.version.source_payload_digest,
+            raw_notice_sha256=hashlib.sha256(self.raw_notice).hexdigest(),
+            raw_notice_size_bytes=len(self.raw_notice),
+            raw_notice_storage_key="official-g2b/synthetic.notice.raw.json",
+            manifest_storage_key="official-g2b/synthetic.manifest.json",
+            document_sha256=self.doc.sha256,
+            document_size_bytes=self.doc.size_bytes,
+            existing_document_storage_key=self.doc.storage_key,
         )
         self.extraction = ExtractionRun.objects.create(
             document_version=self.doc, extractor_version="synthetic-only-v1",
@@ -142,6 +165,49 @@ class AttestedPublicSourceTests(TestCase):
     def test_notice_byte_mismatch_denied(self):
         with self.assertRaisesRegex(PublicSourceError, "PUBLIC_SOURCE_BYTES_MISMATCH"):
             self.approve(raw_notice_payload_bytes=b"X" * len(self.raw_notice))
+
+    def test_distinct_raw_and_canonical_sha_are_accepted_only_with_link(self):
+        self.assertNotEqual(
+            self.version.source_payload_digest,
+            hashlib.sha256(self.raw_notice).hexdigest(),
+        )
+        approval = self.approve()
+        self.assertEqual(
+            approval.notice_source_sha256, self.source_link.raw_notice_sha256,
+        )
+        self.assertNotEqual(
+            approval.notice_source_sha256, self.version.source_payload_digest,
+        )
+
+    def test_missing_official_link_fails_closed(self):
+        unlinked = Document.objects.create(
+            notice=self.notice, logical_key="UNLINKED-SYNTHETIC",
+        )
+        other = DocumentVersion.objects.create(
+            document=unlinked, notice_version=self.version, version_seq=1,
+            sha256=self.doc.sha256, size_bytes=self.doc.size_bytes,
+            storage_key=self.doc.storage_key, owner_user=self.reviewer,
+            source_url=self.doc.source_url, shared_read_approved=True,
+        )
+        with self.assertRaisesRegex(PublicSourceError, "OFFICIAL_SOURCE_LINK_MISSING"):
+            self.approve(document_version_id=other.pk)
+        self.assertFalse(PublicRfpAttestation.objects.exists())
+
+    def test_canonical_source_modified_after_link_fails_closed(self):
+        self.version.source_payload_digest = hashlib.sha256(b"drift").hexdigest()
+        self.version.save(update_fields=["source_payload_digest"])
+        with self.assertRaisesRegex(PublicSourceError, "OFFICIAL_SOURCE_LINK_STALE"):
+            self.approve()
+        self.assertFalse(PublicRfpAttestation.objects.exists())
+
+    def test_document_storage_mapping_changed_after_approval_blocks_dispatch(self):
+        from bid_server.ai_gateway.analysis_service import verify_run_snapshot_for_dispatch
+        self.approve()
+        run = self.make_run()
+        self.doc.storage_key = "public-rfp/changed-after-approval.hwpx"
+        self.doc.save(update_fields=["storage_key"])
+        with self.assertRaisesRegex(AnalysisServiceError, "PUBLIC_SOURCE_NOT_APPROVED"):
+            verify_run_snapshot_for_dispatch(actor=self.actor, run_id=run.pk)
 
     def test_export_not_approved_denies_packet(self):
         self.approve(provider_export_approved=False)
