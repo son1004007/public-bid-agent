@@ -24,7 +24,9 @@ from bid_server.procurement.models import (
     NoticeVersion,
 )
 from .models import AnalysisRun, AnalysisRevision, ProviderName, PublicRfpAttestation
-from .public_source import official_source_url
+from .public_source import (
+    PublicSourceError, official_source_url, verified_official_source_link,
+)
 
 
 class AnalysisServiceError(ValueError):
@@ -102,6 +104,14 @@ def _trusted_chunks(*, chunk_ids, expected_version, actor, source_mode="SYNTHETI
                 ).get(document_version=doc)
             except PublicRfpAttestation.DoesNotExist as exc:
                 raise AnalysisServiceError("PUBLIC_SOURCE_NOT_APPROVED") from exc
+            # Dispatch/replay must re-check the same immutable official raw
+            # mapping approved by staff, not the legacy canonical metadata hash.
+            try:
+                link = verified_official_source_link(
+                    doc=doc, notice_version=expected_version,
+                )
+            except PublicSourceError as exc:
+                raise AnalysisServiceError("PUBLIC_SOURCE_NOT_APPROVED") from exc
             if (
                 attestation.revoked
                 or not attestation.packet_approved
@@ -110,7 +120,7 @@ def _trusted_chunks(*, chunk_ids, expected_version, actor, source_mode="SYNTHETI
                 or not attestation.approved_by.is_staff
                 or attestation.source_url != doc.source_url
                 or attestation.document_sha256 != doc.sha256
-                or attestation.notice_source_sha256 != expected_version.source_payload_digest
+                or attestation.notice_source_sha256 != link.raw_notice_sha256
             ):
                 raise AnalysisServiceError("PUBLIC_SOURCE_NOT_APPROVED")
         elif source_mode != "SYNTHETIC":
