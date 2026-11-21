@@ -1,3 +1,13 @@
+## 2026-11-21 운영 직원 관리자 신규 생성 — FIRST_CHANGE_PENDING
+
+- 사용자 명시 요청으로 기존 NAS 운영 PostgreSQL에 신규 최소권한 직원 관리자 1명 생성: `is_staff=True`, `is_superuser=False`, `role=lead`, `is_active=True`, 최초 비밀번호 변경 필수 `must_change_password=True`/24시간 임시만료. 기존 계정 수정/권한 승격 없음. 운영 사용자 2/관리자 1/실제 SourceLink 행 0/PUBLIC 승인 0/기존 문서 8/Chunk 14,612. 변경 감사이벤트 1, 기존 웹 컨테이너 재시작 0. Gateway 적용 `job_01M7YFAKVV00M1QD7RDVSWW9CA`, 독립 사후 DB 검증 `job_01M7YFBT6R00P233KJE42ENXB2`.
+- 사용자 실제 최초 비밀번호 변경은 **미실행**이며 업무 권한 미활성. NAS 소유자만 접근 가능한 0700 디렉터리/0600 임시 비밀번호 파일과 TTY 전용 비밀번호 변경 helper를 준비(평문 비밀값은 채팅·GitHub·로그 미출력). 기존 미리보기 웹은 신규 Django 인증 API 미노출(404)이므로 본인이 NAS SSH TTY로 변경. 비TTY 차단 테스트 PASS. 이후 비밀 파일 제거.
+- 새 관리 명령 소스 SHA `d85d9309b242ce53f78ed58cf8be81441722bcb2`: 주요 GitHub Actions 6개 workflow PASS. 실제 운영 DB 백업 복원본에서 계정 생성·최초변경 게이트 PASS, 해당 계정 원본 등록 dry-run은 `LINK_OPERATOR_NOT_AUTHORIZED`로 정상 차단. 운영 원본/manifest/HWPX/current DB 독립 read-only PASS `job_01M7YFFXY8005ZXJ4HCF8WS1HR`.
+- 관리자 생성 후 DB 추가 백업·archive/SHA 검증 PASS `job_01M7YFHS38009M0FKQFW0KJW26`. 기존 운영 DB 스키마 0001~0004 적용 상태 유지. [P0-02 §9 전체 증거](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md#9-2026-11-21-개인-nas-직원-관리자-1명-신규-생성보안-게이트-실증).
+- 다음: 본인 최초 비밀번호 변경 → staff 활성 read-only 확인 → 고정 원본 재검증/OfficialSourceLink dry-run→명시 apply→재검증. [USER ACTION #35](https://github.com/son1004007/ai-agent-workflow-playbook/issues/35) 대기. 기존 [credential #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26)/Draft PR #5 release 차단 지속, 회사 data1/모델/스케줄 무변경.
+
+---
+
 ## 2026-11-21 P0-02 NAS 운영 DB 스키마 실반영 — SCHEMA_DONE / REAL_LINK_BLOCKED
 
 - 사용자 요청으로 개인 NAS 기존 PostgreSQL 16.15 DB에 ai_gateway 0001~0004 마이그레이션 적용 **PASS**, OfficialSourceLink table/immutability trigger 생성. 코드 고정 SHA 26a0404cbddb0b8a9f31f4d64c3d1fbefd45b4c0, 운영 이미지 교체/재시작 없음.
