@@ -75,3 +75,32 @@
 - **운영 DB·비공개 media·capture 원본의 동일 시점 백업과 독립 복원은 아직 NOT_RUN**. DB 도구가 설치된 사실은 데이터·파일 복원 인수가 아님. 최신 배포 이미지 pin/권한·자격증명/회전 및 rollback window 검증 후에만 0004/real mapping 적용.
 - 중앙 [USER ACTION #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) 열림(PR #5 release 한정). 운영 서비스와 DB 변경/재시작, 외부 포트·자동 스케줄·보안 정책 변경 0.
 - 별도 진행 가능한 P0-04 코드의 공식 raw/canonical SHA 검증 결함을 보완. synthetic [code SHA `0c1e1ac7`](https://github.com/son1004007/public-bid-agent/commit/0c1e1ac73151ecdd25db0a8e83238bd9945cdf4a)에서 [Server foundation CI](https://github.com/son1004007/public-bid-agent/actions/runs/44843275144) Windows/Linux/PostgreSQL 441 tests each PASS. **실제 운영 migration/attestation/모델 호출의 PASS 아님**.
+
+## 8. 2026-11-21 실제 NAS 운영 PostgreSQL 스키마 적용 (사용자 명시 요청)
+
+**최신 판정:** `LIVE_DB_SCHEMA_APPLIED_0001_TO_0004` / `IMMUTABLE_TRIGGER_PRESENT` / `REAL_SOURCE_LINK_ROW_BLOCKED_NO_AUTHORIZED_STAFF` / `PUBLIC_APPROVAL_AND_PROVIDER_EGRESS_OFF`.
+
+### 사용자 승인 범위 및 실행
+
+- 사용자가 현재 대화에서 **“P0-02 기존 NAS 운영 DB 반영해”**를 명시함. 개인 Synology의 기존 PostgreSQL DB 스키마만 대상으로 하며, 회사 data1/공개 웹/모델/기존 예약/인증·권한 설정 변경은 승인 범위에 포함하지 않음.
+- GitHub Draft PR #5 고정 소스 SHA `26a0404cbddb0b8a9f31f4d64c3d1fbefd45b4c0`를 NAS 격리 작업 디렉터리에 fetch, HEAD 일치 검증. 기존 `public-bid-mvp-pg-rfp-web` 배포 이미지 `sha256:af0a167f2a10...`의 Django 5.2.19 환경을 재사용하되 최신 `server/` 코드만 readonly mount하여 일회성 CLI 실행. **기존 서비스 이미지 교체/재시작 없음**, Docker `--network none`, 비승격 UID 65534, immutable source bind, DB socket/비밀 설정 read-only mount, cap-drop ALL, no-new-privileges 및 read-only rootfs. 외부 포트 공개 없음.
+- 반영 전 실제 운영 DB `ai_gateway` 적용 이력 0건, `OfficialSourceLink` 테이블 없음, accounts 1/document versions 8/chunks 14,612. 실제 직원 관리자 인수 조건을 충족하는 활성 계정 **0명** (개인 식별정보 조회·출력 없음). 신규 마이그레이션 DDL 실행 권한은 DB 계정에서 검증.
+- 실제 DB 사전 정합성: `job_01M7XRMFQ400ST7GD8TV28MV6C` read-only; 계획은 정확히 `ai_gateway 0001 → 0002 → 0003 → 0004` 4건이며 다른 앱 migration 없음.
+
+### 실제 운영 데이터/비공개 파일 백업과 독립 복원 (선행 통과)
+
+- `job_01M7XRD11P002R0DWE6A0GD28G`: 운영 DB PostgreSQL 16.15 `pg_dump -Fc --no-owner --no-acl` 생성 **1,950,485 bytes**, SHA-256 파일로 무결성 검산, `pg_restore --list` PASS. 기존 DB 계정 비밀은 승인된 로컬 앱 설정에서 메모리 파이프로만 사용하고 stdout/파일/원격 입력/로그에 노출하지 않음.
+- `job_01M7XREDNJ00P87MSJ1NX0Z872`: 별도 비공개 Docker volume의 media(4,018,176-byte TAR)와 official capture(12,288-byte TAR) 백업, SHA-256 검산 PASS. 원본 volume/source는 readonly 사용, 복원 파일 원본에 쓰기 없음.
+- `job_01M7XRFEBA00F6598ZF36V0R77`: **실제 운영 DB 덤프를 독립 PostgreSQL 16.15 무네트워크·tmpfs 컨테이너에 복원**하여 사용자 1/DocumentVersion 8/Chunk 14,612/기존 migration 25건 확인. 독립 DB 폐기.
+- `job_01M7XRG83Q009W4XE0W3M9TTZN`: media HWPX **5개 개별 SHA=파일명** 무결성, 별도 capture 원본 파일 2개(공식 raw 5,764-byte SHA 일치) 임시 tmpfs 독립 복원 PASS.
+- `job_01M7XRK1JM00QKF6VRF54FV2N7`: 위 **실제 운영 DB 복원본**에 고정 SHA의 최신 Django `ai_gateway 0001~0004` 실행 및 trigger/원본 데이터 보존 인수. 이전 25건과 추가 migration 4건 계획 외 없음을 확인; 최종 user 1/doc 8/new SourceLink 0/immutable trigger 1. ephemeral DB/network 폐기.
+- 백업 파일은 NAS 사용자만 접근 가능한 `0700` 비공개 작업 디렉터리에 보존. **동일 NAS 내 백업이므로 오프호스트 재해 복구까지 입증하지 않음.** 최초 dump는 restore 용도로 owner/ACL을 제외했으며 별도 cluster globals/role secret 백업은 아님.
+
+### 실 운영 DB 적용, 후속 인수
+
+- `job_01M7XRNKNK009B5CMVJNPSTP8C` exit 0: **운영 DB에서 `ai_gateway.0001_initial`, `0002_analysis_results`, `0003_public_rfp_attestation`, `0004_official_source_link` 전부 OK**. 기존 데이터 변경/삭제 migration 없음. `OfficialSourceLink` 테이블 + PostgreSQL UPDATE/DELETE 차단 트리거 생성.
+- `job_01M7XRQGGV00Q8RDEME6ZNEHVJ`: 운영 DB 읽기 전용 검산 사용자 1/문서 버전 8/Chunk 14,612/`ai_gateway` 적용 4/SourceLink 0/PUBLIC 승인 0/trigger 1. 기존 웹 컨테이너 running, restart 0. 실제 Unix socket `GET /` → HTTP 200 OK. `GET /health`는 운영 앱에 미구현되어 404이며 정상 health endpoint라는 주장은 하지 않음.
+- `job_01M7XRPRJ000ZH1NKZ9DDGVXM6`: 기존 서비스/PG 컨테이너 유지, backup SHA 재검산, 임시 테스트 컨테이너·Docker 네트워크 잔존 0.
+- `job_01M7XRRNQZ001FD57PJVC6N31R`: 운영 반영 후 새 custom-format PostgreSQL 덤프 **1,977,333 bytes**, `pg_restore --list`와 SHA 검증 PASS. 이 후속 덤프는 owner/ACL을 포함하지만 데이터베이스 외 cluster-wide roles/global 설정 보장은 별도.
+- **남은 P0-02:** 기존 운영 계정 1건 중 승인된 staff 0명이라 `reconcile_official_g2b_source --apply`의 실제 `OfficialSourceLink` 영속 기록은 안전하게 **NOT_RUN**. 임의 staff 승격·대리 actor·직접 INSERT/승인우회 금지. [중앙 USER ACTION #35](https://github.com/son1004007/ai-agent-workflow-playbook/issues/35)에서 적법한 운영자 계정 확보 후 동일 고정 source + 현 원본/ACL 재검산 → dry-run → 1건 apply/replay → read-back 인수. [자격증명 USER ACTION #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26)은 PR #5 릴리스 차단으로 계속 열림.
+- 기존 영속 수집·추출 원본, 서비스 계정 권한, 운영 이미지, PUBLIC attestation, 모델 export, data1 배포, 기존 예약 전부 **변경/활성화하지 않음**. 전체 P0-02는 `SCHEMA_DONE / REAL_LINK_BLOCKED`이고 PR은 Draft/미병합 상태 유지.
