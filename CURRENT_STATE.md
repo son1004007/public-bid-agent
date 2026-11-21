@@ -1,3 +1,5 @@
+> **2026-11-21 P0-04 정확 SHA CI / P0-02 운영 관측:** 코드 SHA [`0c1e1ac7`](https://github.com/son1004007/public-bid-agent/commit/0c1e1ac73151ecdd25db0a8e83238bd9945cdf4a)의 [Server foundation CI](https://github.com/son1004007/public-bid-agent/actions/runs/44843275144)에서 Win/Linux/PostgreSQL 각 441 tests PASS, migration check PASS. Gateway 개인 NAS `job_01M7XQHRZ20042J8SDZ43DY1CT`/`job_01M7XQR92800SFKFN723XY1XFR` 비변경 관측에서 기존 컨테이너 실행, 신규 migration 미설치, pg_dump/pg_restore 16.15 존재 확인. **기존 운영 데이터·파일 백업 복구/DB migration/SourceLink 영속화/실원본 PUBLIC 승인·AI 호출 전부 NOT_RUN**, [P0-02 인수 기록 §7](docs/implementation/ai-gateway/AGW-05-P0-02-OFFICIAL-SOURCE-RECONCILIATION-2026-11-21.md#7-2026-11-21-운영-반영-가능성-추가-관측-변경-없음) 참조.
+
 ## 2026-11-21 P0-04 공식 PUBLIC 출처 검증 코드 보강 (실제 승인·운영 미실행)
 
 - `public_source.py`: 공식 raw notice 응답 해시를 기존 NoticeVersion canonical metadata 해시와 동일시하던 P0-04 결함 수정. 승인 전 P0-02 `OfficialSourceLink`의 문서/공고/차수/각 SHA·size·storage key 불변 결속을 확인하고, 실제 raw notice/document 바이트를 결속된 값과 대조합니다.
