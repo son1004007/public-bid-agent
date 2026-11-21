@@ -1,3 +1,5 @@
+> **2026-11-21 서버 AI Gateway P0-04:** 별도 Django 경로의 PUBLIC 원본 검증은 `OfficialSourceLink.raw_notice_sha256`과 기존 canonical metadata digest를 분리해 검사하도록 보강했습니다. local_app의 수집·로그인/서빙 동작은 변경하지 않았습니다. 기존 NAS DB migration, 실원본 staff 승인·모델 송신은 미실행. [상태 정본](../CURRENT_STATE.md).
+
 > **2026-11-20 별도 Django AI Gateway 원본 캡처:** [AGW-05 수동 공식 원본 보관](../docs/implementation/ai-gateway/AGW-05-OFFICIAL-RAW-CAPTURE-2026-11-20.md)은 기존 local_app의 대화형 문서 텍스트 미리보기와 별도 경로입니다. 원본은 별도 비공개 root에서만 저장; staff 승인·DB digest/coverage·모델 실행/일정 반영은 미완료. 기존 local_app 수집/운영 정책 변경 없음.
 
 > **2026-11-19 pilot provisioning candidate:** operator-only `pilot_provision` validates private, independently hashed aggregate plans; dry-run by default; explicit apply creates initial scope for existing accounts or appends a new cost basis revision without modifying existing membership. No actual company values/roles or deployment applied. See pilot operations handoff.
