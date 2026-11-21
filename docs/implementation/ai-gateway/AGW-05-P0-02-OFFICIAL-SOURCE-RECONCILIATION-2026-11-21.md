@@ -67,3 +67,11 @@
 - 공식 raw 원본을 격리 DB에 실제 INSERT하는 혼합 도구 요청은 안전 검사에서 차단되어 **NOT_RUN**. 합성 데이터의 DB 실삽입과 실제 raw/운영 DB read-only 검증을 합쳐 실원본 INSERT가 끝났다고 주장하지 않음.
 - 기존 운영 DB 0004 마이그레이션 및 실데이터 SourceLink INSERT를 위해서는 현재 SHA와 일치하는 설치 이미지, 운영 DB·비공개 media·capture 원본의 일관된 백업/격리 복원, 운영자 권한·롤백·인수 승인이 별도로 필요함. 이번 합성 DB 백업 테스트는 운영 데이터의 복구 근거가 아님.
 - P0-03 기존 DB 재추출 및 P0-04 staff PUBLIC/별도 provider_export 승인·AI 호출은 전부 NOT_RUN. 중앙 credential USER ACTION #26, PR #5 Draft/회사 data1/구독 공유·자동 스케줄 제한 유지.
+
+## 7. 2026-11-21 운영 반영 가능성 추가 관측 (변경 없음)
+
+- Gateway 개인 NAS 비승격 SSH read-only 관측: `job_01M7XQHRZ20042J8SDZ43DY1CT`에서 기존 bid 컨테이너 6개 실행 중. `public-bid-mvp-pg-rfp-web`의 현재 배포 이미지에는 확인된 경로의 `ai_gateway/migrations/0004_official_source_link.py`가 없음. 확인 명령의 탐색 경로 외 임의 레이아웃의 부재까지 증명하는 것은 아님.
+- `job_01M7XQR92800SFKFN723XY1XFR`: PostgreSQL과 RFP 웹 컨테이너 모두 RUNNING. PostgreSQL 데이터/소켓은 Docker volume, RFP 웹은 별도 secret read-only·media·PG socket mount. Docker 24.0.2, PostgreSQL pg_dump/pg_restore 16.15 도구 존재 확인. 비승격 환경에서 Docker PATH를 `/usr/local/bin/docker`로 명시한 읽기 전용 조회만 수행.
+- **운영 DB·비공개 media·capture 원본의 동일 시점 백업과 독립 복원은 아직 NOT_RUN**. DB 도구가 설치된 사실은 데이터·파일 복원 인수가 아님. 최신 배포 이미지 pin/권한·자격증명/회전 및 rollback window 검증 후에만 0004/real mapping 적용.
+- 중앙 [USER ACTION #26](https://github.com/son1004007/ai-agent-workflow-playbook/issues/26) 열림(PR #5 release 한정). 운영 서비스와 DB 변경/재시작, 외부 포트·자동 스케줄·보안 정책 변경 0.
+- 별도 진행 가능한 P0-04 코드의 공식 raw/canonical SHA 검증 결함을 보완. synthetic [code SHA `0c1e1ac7`](https://github.com/son1004007/public-bid-agent/commit/0c1e1ac73151ecdd25db0a8e83238bd9945cdf4a)에서 [Server foundation CI](https://github.com/son1004007/public-bid-agent/actions/runs/44843275144) Windows/Linux/PostgreSQL 441 tests each PASS. **실제 운영 migration/attestation/모델 호출의 PASS 아님**.
